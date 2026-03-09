@@ -415,7 +415,7 @@ export default function AnimalDetailScreen() {
                 {/* STATUS & FLAG */}
                 <div>
                   <div style={subLabel}>STATUS & FLAG</div>
-                  <div className="space-y-3">
+                  <div className="space-y-1.5">
                     <FieldRow label="Status">
                       <SelectInput value={fields.status} options={statusOptions} onChange={update("status")} />
                     </FieldRow>
