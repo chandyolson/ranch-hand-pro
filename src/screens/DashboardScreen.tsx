@@ -308,15 +308,6 @@ const DashboardScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* SECTION 6 — Quick Actions */}
-      <div className="flex gap-3 pb-4">
-        <PillButton size="lg" onClick={() => navigate("/animals/new")} style={{ flex: 1 }}>
-          New Record
-        </PillButton>
-        <PillButton size="lg" variant="outline" onClick={() => navigate("/cow-work")} style={{ flex: 1 }}>
-          Start Session
-        </PillButton>
-      </div>
     </div>
   );
 };
