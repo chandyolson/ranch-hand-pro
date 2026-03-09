@@ -381,7 +381,7 @@ export default function AnimalDetailScreen() {
                 {/* IDENTITY */}
                 <div>
                   <div style={subLabel}>IDENTITY</div>
-                  <div className="space-y-3">
+                  <div className="space-y-1.5">
                     <div>
                       <FieldRow label="Tag">
                         <TextInput value={fields.tag} onChange={update("tag")} />
