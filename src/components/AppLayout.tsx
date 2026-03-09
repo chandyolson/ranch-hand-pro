@@ -8,6 +8,7 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/animals": { title: "Animals", subtitle: "847 Total · 798 Active" },
   "/calving": { title: "Calving", subtitle: "2026 Season · 23 Calves" },
   "/cow-work": { title: "Cow Work", subtitle: "5 Active Projects" },
+  "/cow-work/new": { title: "New Project", subtitle: "Create Work Project" },
   "/red-book": { title: "Red Book", subtitle: "Ranch Notes & Records" },
   "/reference": { title: "Reference", subtitle: "Settings & Lookups" },
 };
