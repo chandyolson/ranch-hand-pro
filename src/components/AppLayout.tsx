@@ -41,6 +41,10 @@ const AppLayout: React.FC = () => {
       config = { title: "Animal Record", subtitle: "Animal Detail" };
     } else if (path === "/animals/new") {
       config = { title: "Add Animal", subtitle: "New Record" };
+    } else if (/^\/cow-work\/[^/]+$/.test(path) && path !== "/cow-work/new") {
+      config = { title: "Cow Work", subtitle: "Project Detail" };
+    } else if (/^\/cow-work\/[^/]+\/close-out$/.test(path)) {
+      config = { title: "Close Out", subtitle: "Finalize Project" };
     } else {
       config = { title: "ChuteSide", subtitle: "" };
     }
