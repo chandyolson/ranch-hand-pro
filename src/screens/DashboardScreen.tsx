@@ -296,13 +296,18 @@ const DashboardScreen: React.FC = () => {
           </div>
           <div className="space-y-2">
             {filteredAnimals.map((animal) => (
-              <DataCard
+              <div
                 key={animal.title}
-                title={animal.title}
-                values={animal.values}
-                subtitle={animal.subtitle}
-                trailing={<FlagIcon color={animal.flag} size="sm" />}
-              />
+                className="cursor-pointer active:scale-[0.99] transition-transform duration-100"
+                onClick={() => navigate("/animals/" + animal.title.replace("Tag ", ""))}
+              >
+                <DataCard
+                  title={animal.title}
+                  values={animal.values}
+                  subtitle={animal.subtitle}
+                  trailing={<FlagIcon color={animal.flag} size="sm" />}
+                />
+              </div>
             ))}
           </div>
         </div>
