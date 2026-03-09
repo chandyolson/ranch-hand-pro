@@ -51,7 +51,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           overflow: "hidden",
         }}
       >
-        <div className="px-4 pb-4 pt-1" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
+        <div className="px-3.5 pb-3 pt-1" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
           {children}
         </div>
       </div>
