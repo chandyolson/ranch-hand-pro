@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ToastProvider } from "@/components/ToastContext";
 import AppLayout from "@/components/AppLayout";
 import DashboardScreen from "@/screens/DashboardScreen";
+import AnimalDetailScreen from "@/screens/AnimalDetailScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
 
 const App = () => (
