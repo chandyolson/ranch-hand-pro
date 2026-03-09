@@ -120,7 +120,7 @@ export default function AnimalDetailScreen() {
   const [originalFields] = useState({ ...animalRecord });
   const [originalMemo] = useState(animalRecord.memo);
   const [originalQuickNotes] = useState(["Hard keeper", "Good mother"]);
-  const { showToast } = useToast();
+  const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
 
   const update = (key: keyof typeof fields) => (val: string) =>
