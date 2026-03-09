@@ -7,6 +7,8 @@ import AnimalDetailScreen from "@/screens/AnimalDetailScreen";
 import CowWorkScreen from "@/screens/CowWorkScreen";
 import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
 import CowWorkProjectDetailScreen from "@/screens/CowWorkProjectDetailScreen";
+import CalvingScreen from "@/screens/CalvingScreen";
+import CalvingNewScreen from "@/screens/CalvingNewScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
 
 const App = () => (
@@ -22,7 +24,8 @@ const App = () => (
           <Route path="cow-work/new" element={<CowWorkNewProjectScreen />} />
           <Route path="cow-work/:id" element={<CowWorkProjectDetailScreen />} />
           <Route path="cow-work/:id/close-out" element={<PlaceholderScreen title="Close Out" />} />
-          <Route path="calving" element={<PlaceholderScreen title="Calving" />} />
+          <Route path="calving" element={<CalvingScreen />} />
+          <Route path="calving/new" element={<CalvingNewScreen />} />
           <Route path="red-book" element={<PlaceholderScreen title="Red Book" />} />
           <Route path="reference" element={<PlaceholderScreen title="Reference" />} />
         </Route>
