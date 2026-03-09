@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import FlagIcon from "../components/FlagIcon";
 import CollapsibleSection from "../components/CollapsibleSection";
 import PillButton from "../components/PillButton";
-import { useToast } from "../components/ToastContext";
+import { useChuteSideToast } from "../components/ToastContext";
 
 type FlagColor = "teal" | "gold" | "red";
 
