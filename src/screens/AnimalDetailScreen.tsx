@@ -419,39 +419,42 @@ export default function AnimalDetailScreen() {
                     <FieldRow label="Status">
                       <SelectInput value={fields.status} options={statusOptions} onChange={update("status")} />
                     </FieldRow>
-                    <FieldRow label="Flag">
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", flex: 1, paddingTop: 4 }}>
-                        {flagOptions.map(fo => {
-                          const active = fields.flag === fo.color;
+                    {/* Flag picker */}
+                    <div className="flex items-center gap-3 font-['Inter']">
+                      <span style={{ width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>
+                        Flag
+                      </span>
+                      <div className="flex flex-row gap-2">
+                        {[
+                          { color: "teal" as const,  label: "Management", hex: "#55BAAA" },
+                          { color: "gold" as const,  label: "Production",  hex: "#F3D12A" },
+                          { color: "red"  as const,  label: "Cull",        hex: "#9B2335" },
+                        ].map((opt) => {
+                          const isActive = fields.flag === opt.color;
                           return (
                             <button
-                              key={fo.color}
-                              onClick={() => {
-                                if (!isEditing) return;
-                                update("flag")(active ? "" : fo.color);
-                                if (active) setFields(prev => ({ ...prev, flag: null }));
-                                else setFields(prev => ({ ...prev, flag: fo.color }));
-                              }}
-                              style={{
-                                display: "flex", alignItems: "center", gap: 6, borderRadius: 9999,
-                                fontFamily: "'Inter', sans-serif", padding: "6px 14px", fontSize: 12, fontWeight: 600,
-                                cursor: isEditing ? "pointer" : "default",
-                                backgroundColor: active ? fo.hex : "transparent",
-                                color: active ? "white" : fo.hex,
-                                border: `1.5px solid ${active ? fo.hex : fo.hex + "40"}`,
-                                opacity: !isEditing && !active ? 0.4 : 1,
-                                transition: "all 150ms",
-                              }}
-                              className={isEditing ? "active:scale-[0.97]" : ""}
+                              key={opt.color}
                               type="button"
+                              onClick={() => !isEditing ? undefined : setFields(prev => ({ ...prev, flag: isActive ? null : opt.color }))}
+                              className="rounded-full font-['Inter'] transition-all"
+                              style={{
+                                padding: "5px 12px",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                whiteSpace: "nowrap",
+                                cursor: isEditing ? "pointer" : "default",
+                                backgroundColor: isActive ? opt.hex : "transparent",
+                                color: isActive ? (opt.color === "gold" ? "#1A1A1A" : "white") : opt.hex,
+                                border: `1.5px solid ${isActive ? opt.hex : opt.hex + "50"}`,
+                                opacity: !isEditing && !isActive ? 0.4 : 1,
+                              }}
                             >
-                              <FlagIcon color={fo.color} size="sm" />
-                              {fo.label}
+                              {opt.label}
                             </button>
                           );
                         })}
                       </div>
-                    </FieldRow>
+                    </div>
                     <FieldRow label="Flag Reason">
                       <TextInput value={fields.flagReason} onChange={update("flagReason")} placeholder="Reason for flag" />
                     </FieldRow>
