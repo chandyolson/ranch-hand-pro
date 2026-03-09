@@ -410,7 +410,7 @@ export default function AnimalDetailScreen() {
                   </div>
                 </div>
 
-                <div style={{ borderTop: "1px solid rgba(26,26,26,0.06)", margin: "12px 0" }} />
+                <div style={{ borderTop: "1px solid rgba(26,26,26,0.06)", margin: "8px 0" }} />
 
                 {/* STATUS & FLAG */}
                 <div>
