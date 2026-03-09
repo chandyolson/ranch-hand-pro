@@ -377,7 +377,7 @@ export default function AnimalDetailScreen() {
                 </div>
               }
             >
-              <div className="space-y-4" style={{ paddingTop: 8 }}>
+              <div className="space-y-1.5" style={{ paddingTop: 8 }}>
                 {/* IDENTITY */}
                 <div>
                   <div style={subLabel}>IDENTITY</div>
