@@ -33,7 +33,7 @@ export default function CowWorkNewProjectScreen() {
   const navigate = useNavigate();
 
   return (
-    <div className="px-5 pt-4 pb-10 space-y-4 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
       {/* Section label */}
       <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>
         PROJECT SETUP
