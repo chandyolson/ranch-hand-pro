@@ -5,6 +5,7 @@ import AppLayout from "@/components/AppLayout";
 import DashboardScreen from "@/screens/DashboardScreen";
 import AnimalsScreen from "@/screens/AnimalsScreen";
 import AnimalDetailScreen from "@/screens/AnimalDetailScreen";
+import AddAnimalScreen from "@/screens/AddAnimalScreen";
 import CowWorkScreen from "@/screens/CowWorkScreen";
 import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
 import CowWorkProjectDetailScreen from "@/screens/CowWorkProjectDetailScreen";
