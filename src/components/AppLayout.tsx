@@ -11,6 +11,7 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/cow-work": { title: "Cow Work", subtitle: "5 Active Projects" },
   "/cow-work/new": { title: "New Project", subtitle: "Create Work Project" },
   "/red-book": { title: "Red Book", subtitle: "Ranch Notes & Records" },
+  "/red-book/new": { title: "New Note", subtitle: "Red Book Entry" },
   "/reference": { title: "Reference", subtitle: "Settings & Lookups" },
 };
 
