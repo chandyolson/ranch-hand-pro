@@ -1,0 +1,232 @@
+// ── Design System Colors ──
+
+export const COLORS = {
+  navy: '#0E2646',
+  midNavy: '#153566',
+  teal: '#55BAAA',
+  gold: '#F3D12A',
+  cullRed: '#9B2335',
+  destructiveRed: '#D4183D',
+  background: '#F5F5F0',
+  white: '#FFFFFF',
+  textOnDark: '#F0F0F0',
+  textOnLight: '#1A1A1A',
+  mutedText: '#717182',
+  inputBg: '#F3F3F5',
+  borderDivider: '#D4D4D0',
+  switchBg: '#CBCED4',
+} as const;
+
+// ── Flag System ──
+
+export type FlagColor = 'teal' | 'gold' | 'red';
+
+export const FLAG_OPTIONS: { color: FlagColor; label: string; hex: string }[] = [
+  { color: 'teal', label: 'Management', hex: '#55BAAA' },
+  { color: 'gold', label: 'Production', hex: '#F3D12A' },
+  { color: 'red',  label: 'Cull',       hex: '#9B2335' },
+];
+
+export const FLAG_HEX_MAP: Record<FlagColor, string> = {
+  teal: '#55BAAA',
+  gold: '#F3D12A',
+  red: '#9B2335',
+};
+
+// ── Quick Notes with Flag Mapping (17 canonical) ──
+
+export interface QuickNoteConfig {
+  label: string;
+  flag: FlagColor | null;
+  context: 'all' | 'calving';
+}
+
+export const QUICK_NOTES: QuickNoteConfig[] = [
+  { label: 'Cull',            flag: 'red',  context: 'all' },
+  { label: 'Bad Bag',         flag: 'gold', context: 'all' },
+  { label: 'Bad Feet',        flag: 'gold', context: 'all' },
+  { label: 'Lame',            flag: 'gold', context: 'all' },
+  { label: 'Lump Jaw',        flag: 'gold', context: 'all' },
+  { label: 'Bad Disposition',  flag: 'gold', context: 'all' },
+  { label: 'Bad Mother',      flag: 'gold', context: 'all' },
+  { label: 'Old',             flag: 'gold', context: 'all' },
+  { label: 'Poor Calf',       flag: 'gold', context: 'all' },
+  { label: 'Poor Condition',   flag: 'gold', context: 'all' },
+  { label: 'Needs Tag',       flag: 'teal', context: 'all' },
+  { label: 'DNA',             flag: 'teal', context: 'all' },
+  { label: 'Needs Treated',   flag: 'teal', context: 'all' },
+  { label: 'Sorted',          flag: null,   context: 'all' },
+  { label: 'Treated',         flag: null,   context: 'all' },
+  { label: 'Twin',            flag: null,   context: 'calving' },
+  { label: 'Freemartin',      flag: null,   context: 'all' },
+];
+
+// Quick note pill colors based on flag tier
+
+export const QUICK_NOTE_PILL_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  red:  { bg: 'rgba(155,35,53,0.12)',  border: 'rgba(155,35,53,0.25)',  text: '#9B2335' },
+  gold: { bg: 'rgba(243,209,42,0.12)', border: 'rgba(243,209,42,0.30)', text: '#B8860B' },
+  teal: { bg: 'rgba(85,186,170,0.12)', border: 'rgba(85,186,170,0.25)', text: '#55BAAA' },
+  none: { bg: '#F5F5F0',               border: '#D4D4D0',               text: 'rgba(26,26,26,0.55)' },
+};
+
+// ── Tag Colors ──
+
+export const TAG_COLOR_OPTIONS = ['Red', 'Yellow', 'Green', 'White', 'Orange', 'Blue', 'Purple', 'Pink', 'None'] as const;
+
+export const TAG_COLOR_HEX: Record<string, string> = {
+  Red: '#D4606E',
+  Yellow: '#F3D12A',
+  Green: '#55BAAA',
+  White: '#E0E0E0',
+  Orange: '#E8863A',
+  Blue: '#5B8DEF',
+  Purple: '#A77BCA',
+  Pink: '#E8A0BF',
+  None: '#999999',
+};
+
+// ── Animal Dropdowns ──
+
+export const SEX_OPTIONS = ['Bull', 'Cow', 'Steer', 'Spayed Heifer'] as const;
+export const CALF_SEX_OPTIONS = ['Bull', 'Heifer'] as const;
+export const ANIMAL_TYPE_OPTIONS = ['Calf', 'Feeder', 'Replacement', 'Cow', 'Bull'] as const;
+export const STATUS_OPTIONS = ['Active', 'Dead', 'Sold'] as const;
+export const YEAR_OPTIONS = Array.from({ length: 12 }, (_, i) => (2026 - i).toString());
+export const BREED_OPTIONS = ['Angus', 'Hereford', 'Simmental', 'Charolais', 'Limousin', 'Red Angus', 'Shorthorn', 'Brahman', 'Brangus', 'Mixed / Commercial', 'Other'] as const;
+
+// ── Work Types (9 codes from Build Manual) ──
+
+export interface WorkTypeConfig {
+  code: string;
+  name: string;
+  appliesTo: string;
+}
+
+export const WORK_TYPES: WorkTypeConfig[] = [
+  { code: 'PREG',    name: 'Pregnancy Check',        appliesTo: 'Cow, Replacement' },
+  { code: 'AI',      name: 'Artificial Insemination', appliesTo: 'Cow, Replacement' },
+  { code: 'BSE',     name: 'Breeding Soundness Exam', appliesTo: 'Bull' },
+  { code: 'BV',      name: 'Booster Vaccine',         appliesTo: 'Calf, Feeder, Cow' },
+  { code: 'PRE',     name: 'Pre-conditioning',        appliesTo: 'Calf' },
+  { code: 'WN',      name: 'Weaning',                 appliesTo: 'Calf' },
+  { code: 'SALE',    name: 'Sale/Ship',               appliesTo: 'All' },
+  { code: 'TX',      name: 'Treatment',               appliesTo: 'All' },
+  { code: 'PROCESS', name: 'General Processing',      appliesTo: 'All' },
+];
+
+// ── Preg Check Calf Sex (for cow work preg projects) ──
+
+export const PREG_CALF_SEX_OPTIONS = ['None', 'Bull', 'Heifer', 'Twin Bulls', 'Twin Heifers', 'Twin Heifer/Bull'] as const;
+
+// ── Product / Treatment ──
+
+export type ProductCategory = 'vaccine' | 'antibiotic' | 'hormone' | 'mineral' | 'other';
+
+export const PRODUCT_CATEGORIES: ProductCategory[] = ['vaccine', 'antibiotic', 'hormone', 'mineral', 'other'];
+
+export const PRODUCT_CATEGORY_CONFIG: Record<ProductCategory, { label: string; color: string; bg: string }> = {
+  vaccine:    { label: 'Vaccine',    color: '#55BAAA', bg: 'rgba(85,186,170,0.12)' },
+  antibiotic: { label: 'Antibiotic', color: '#E87461', bg: 'rgba(232,116,97,0.12)' },
+  hormone:    { label: 'Hormone',    color: '#A8A8F0', bg: 'rgba(168,168,240,0.12)' },
+  mineral:    { label: 'Mineral',    color: '#F3D12A', bg: 'rgba(243,209,42,0.12)' },
+  other:      { label: 'Other',      color: '#A8A8A8', bg: 'rgba(168,168,168,0.12)' },
+};
+
+export const ROUTE_OPTIONS = ['SubQ', 'IM', 'IV', 'Oral', 'Topical', 'Pour-On'] as const;
+
+// ═══ CALVING TRAIT SCORE LABELS (Build Manual, Section 8) ═══
+// Scores stored as integers. UI shows TEXT ONLY — no integer prefix.
+// Index 0 = empty (unselected). Index N = score N.
+
+export const TRAIT_LABELS = {
+  assistance: [
+    '',
+    'No Assistance',         // 1
+    'Easy Pull',             // 2
+    'Hard Pull',             // 3
+    'C-Section',             // 4
+    'Abnormal Presentation', // 5
+  ],
+  disposition: [
+    '',
+    'Docile',                // 1
+    'Restless',              // 2
+    'Nervous',               // 3
+    'Flighty/Excitable',     // 4
+    'Aggressive',            // 5
+    'Very Aggressive',       // 6
+  ],
+  udder: [
+    '',
+    'Poor (1)',              // 1
+    'Poor (2)',              // 2
+    'Marginal (3)',          // 3
+    'Marginal (4)',          // 4
+    'Acceptable (5)',        // 5
+    'Acceptable (6)',        // 6
+    'Desirable (7)',         // 7
+    'Desirable (8)',         // 8
+    'Excellent',             // 9
+  ],
+  teat: [
+    '',
+    'Poor (1)',              // 1
+    'Poor (2)',              // 2
+    'Marginal (3)',          // 3
+    'Marginal (4)',          // 4
+    'Acceptable (5)',        // 5
+    'Acceptable (6)',        // 6
+    'Desirable (7)',         // 7
+    'Desirable (8)',         // 8
+    'Excellent',             // 9
+  ],
+  claw: [
+    '',
+    'Extremely Open/Divergent',   // 1 (worst)
+    'Open/Divergent',             // 2
+    'Moderately Open',            // 3
+    'Slightly Open',              // 4
+    'Ideal',                      // 5 (best)
+    'Slight Curl Tendency',       // 6
+    'Curl Tendency',              // 7
+    'Moderate Scissor/Screw',     // 8
+    'Extreme Scissor/Screw',      // 9 (worst)
+  ],
+  foot: [
+    '',
+    'Extremely Straight Pasterns', // 1 (worst)
+    'Straight Pasterns',           // 2
+    'Moderately Straight',         // 3
+    'Slightly Straight',           // 4
+    'Ideal',                       // 5 (best)
+    'Slightly Shallow Heel',       // 6
+    'Moderately Shallow Heel',     // 7
+    'Shallow Heel/Long Toe',       // 8
+    'Extremely Shallow/Long',      // 9 (worst)
+  ],
+  mothering: [
+    '',
+    'Excellent',       // 1 (best)
+    'Good',            // 2
+    'Fair',            // 3
+    'Poor',            // 4
+    'Rejects Calf',    // 5 (worst)
+  ],
+  calfVigor: [
+    '',
+    'Excellent',       // 1 (best)
+    'Good',            // 2
+    'Fair',            // 3
+    'Poor',            // 4
+    'Dead/Stillborn',  // 5 (worst)
+  ],
+  calfSize: [
+    '',
+    'Very Small',      // 1
+    'Small',           // 2
+    'Average',         // 3
+    'Large',           // 4
+    'Very Large',      // 5
+  ],
+} as const;
