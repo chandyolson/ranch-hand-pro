@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ToastProvider } from "@/components/ToastContext";
 import AppLayout from "@/components/AppLayout";
 import DashboardScreen from "@/screens/DashboardScreen";
+import AnimalsScreen from "@/screens/AnimalsScreen";
 import AnimalDetailScreen from "@/screens/AnimalDetailScreen";
 import CowWorkScreen from "@/screens/CowWorkScreen";
 import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
@@ -27,7 +28,7 @@ const App = () => (
       <Routes>
         <Route path="/" element={<AppLayout />}>
           <Route index element={<DashboardScreen />} />
-          <Route path="animals" element={<PlaceholderScreen title="Animals" />} />
+          <Route path="animals" element={<AnimalsScreen />} />
           <Route path="animals/new" element={<PlaceholderScreen title="Add Animal" />} />
           <Route path="animals/:id" element={<AnimalDetailScreen />} />
           <Route path="cow-work" element={<CowWorkScreen />} />
