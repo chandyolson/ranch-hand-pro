@@ -351,7 +351,7 @@ export default function CalvingNewScreen() {
                 />
               </div>
               {calfSize && calfSizeLabels[parseInt(calfSize)] && (
-                <div style={{ marginLeft: 117, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
+                <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
                   {calfSizeLabels[parseInt(calfSize)]}
                 </div>
               )}
