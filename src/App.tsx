@@ -37,6 +37,7 @@ const App = () => (
           <Route path="cow-work/:id/close-out" element={<PlaceholderScreen title="Close Out" />} />
           <Route path="calving" element={<CalvingScreen />} />
           <Route path="calving/new" element={<CalvingNewScreen />} />
+          <Route path="calving/:id" element={<PlaceholderScreen title="Calving Record" />} />
           <Route path="red-book" element={<RedBookScreen />} />
           <Route path="red-book/new" element={<RedBookNewScreen />} />
           <Route path="red-book/:id" element={<PlaceholderScreen title="Note Detail" />} />
