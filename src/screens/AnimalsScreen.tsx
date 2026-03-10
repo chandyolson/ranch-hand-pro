@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DataCard from "@/components/DataCard";
 import FlagIcon from "@/components/FlagIcon";
-import PillButton from "@/components/PillButton";
+import ListScreenToolbar from "@/components/ListScreenToolbar";
+import { useChuteSideToast } from "@/components/ToastContext";
 
 type FlagColor = "teal" | "gold" | "red";
 
@@ -31,119 +32,69 @@ const animals: Animal[] = [
   { id: "2905", tag: "2905", breed: "Simmental", weight: "1,180 lbs", location: "Feedlot", sex: "Steer", status: "Active", flag: "gold" },
 ];
 
-const statusFilters = ["All", "Active", "Sold", "Culled", "Dead"];
-const flagFilters: { label: string; value: string; color?: FlagColor }[] = [
-  { label: "All Flags", value: "all" },
-  { label: "Management", value: "teal", color: "teal" },
-  { label: "Production", value: "gold", color: "gold" },
-  { label: "Cull", value: "red", color: "red" },
-];
+const parseWeight = (w: string) => parseInt(w.replace(/[^0-9]/g, "")) || 0;
 
 const AnimalsScreen: React.FC = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [flagFilter, setFlagFilter] = useState("all");
+  const [sort, setSort] = useState("tag-asc");
   const navigate = useNavigate();
+  const { showToast } = useChuteSideToast();
 
   const filtered = animals
     .filter(a => statusFilter === "All" || a.status === statusFilter)
-    .filter(a => flagFilter === "all" || a.flag === flagFilter)
     .filter(a =>
       !search ||
       a.tag.toLowerCase().includes(search.toLowerCase()) ||
       a.breed.toLowerCase().includes(search.toLowerCase()) ||
       a.location.toLowerCase().includes(search.toLowerCase())
-    );
+    )
+    .sort((a, b) => {
+      switch (sort) {
+        case "tag-asc": return a.tag.localeCompare(b.tag);
+        case "tag-desc": return b.tag.localeCompare(a.tag);
+        case "breed": return a.breed.localeCompare(b.breed);
+        case "weight": return parseWeight(b.weight) - parseWeight(a.weight);
+        case "location": return a.location.localeCompare(b.location);
+        default: return 0;
+      }
+    });
+
+  const isFiltering = search.length > 0 || statusFilter !== "All";
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <span style={{ fontSize: 22, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em", fontFamily: "'Inter', sans-serif" }}>
-          Animals
-        </span>
-        <button
-          className="rounded-full h-9 px-4 flex items-center gap-1.5 cursor-pointer active:scale-[0.97]"
-          style={{ backgroundColor: "#F3D12A", border: "none", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}
-          onClick={() => navigate("/animals/new")}
-        >
-          <span style={{ fontSize: 16, fontWeight: 600 }}>+</span> New Animal
-        </button>
-      </div>
-
-      {/* Search */}
-      <div
-        className="flex items-center gap-2 bg-white rounded-xl px-3 h-11"
-        style={{ border: "1px solid rgba(212,212,208,0.60)" }}
-      >
-        <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="shrink-0">
-          <circle cx="8" cy="8" r="5.5" stroke="rgba(26,26,26,0.30)" strokeWidth="1.5" />
-          <path d="M12.5 12.5L16 16" stroke="rgba(26,26,26,0.30)" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search tags, breeds, locations…"
-          className="flex-1 outline-none bg-transparent"
-          style={{ fontSize: 16, fontFamily: "'Inter', sans-serif", color: "#1A1A1A" }}
-        />
-        {search.length > 0 && (
-          <button
-            className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 cursor-pointer"
-            style={{ backgroundColor: "rgba(26,26,26,0.08)", border: "none", fontSize: 12, color: "rgba(26,26,26,0.50)" }}
-            onClick={() => setSearch("")}
-          >×</button>
-        )}
-      </div>
-
-      {/* Status filter chips */}
-      <div className="flex gap-2 flex-wrap">
-        {statusFilters.map(s => (
-          <button
-            key={s}
-            className="rounded-full px-3 py-1.5 cursor-pointer border transition-all active:scale-[0.96]"
-            style={{
-              backgroundColor: statusFilter === s ? "#0E2646" : "white",
-              borderColor: statusFilter === s ? "#0E2646" : "rgba(212,212,208,0.80)",
-              color: statusFilter === s ? "white" : "rgba(26,26,26,0.50)",
-              fontSize: 12,
-              fontWeight: statusFilter === s ? 700 : 500,
-              fontFamily: "'Inter', sans-serif",
-            }}
-            onClick={() => setStatusFilter(s)}
-          >{s}</button>
-        ))}
-      </div>
-
-      {/* Flag filter chips */}
-      <div className="flex gap-2 flex-wrap">
-        {flagFilters.map(f => (
-          <button
-            key={f.value}
-            className="rounded-full px-3 py-1.5 cursor-pointer border transition-all active:scale-[0.96] flex items-center gap-1.5"
-            style={{
-              backgroundColor: flagFilter === f.value ? "#0E2646" : "white",
-              borderColor: flagFilter === f.value ? "#0E2646" : "rgba(212,212,208,0.80)",
-              color: flagFilter === f.value ? "white" : "rgba(26,26,26,0.50)",
-              fontSize: 12,
-              fontWeight: flagFilter === f.value ? 700 : 500,
-              fontFamily: "'Inter', sans-serif",
-            }}
-            onClick={() => setFlagFilter(f.value)}
-          >
-            {f.color && <FlagIcon color={f.color} size="sm" />}
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Results count */}
-      {(search || statusFilter !== "All" || flagFilter !== "all") && (
-        <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.40)", fontFamily: "'Inter', sans-serif" }}>
-          {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-        </div>
-      )}
+      <ListScreenToolbar
+        title="Animals"
+        addLabel="New Animal"
+        onAdd={() => navigate("/animals/new")}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search tags, breeds, locations…"
+        filterChips={[
+          { value: "All", label: "All" },
+          { value: "Active", label: "Active" },
+          { value: "Sold", label: "Sold" },
+          { value: "Dead", label: "Dead" },
+        ]}
+        activeFilter={statusFilter}
+        onFilterChange={setStatusFilter}
+        sortOptions={[
+          { value: "tag-asc", label: "Tag ↑" },
+          { value: "tag-desc", label: "Tag ↓" },
+          { value: "breed", label: "Breed" },
+          { value: "weight", label: "Weight" },
+          { value: "location", label: "Location" },
+        ]}
+        activeSort={sort}
+        onSortChange={setSort}
+        onImport={() => showToast("info", "Import — coming soon")}
+        onExport={() => showToast("info", "Export — coming soon")}
+        onMassSelect={() => showToast("info", "Mass Select — coming soon")}
+        onMassEdit={() => showToast("info", "Mass Edit — coming soon")}
+        resultCount={filtered.length}
+        isFiltering={isFiltering}
+      />
 
       {/* Animal list */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
