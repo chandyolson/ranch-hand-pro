@@ -101,6 +101,7 @@ export default function CalvingScreen() {
         addLabel="New Entry"
         hideTitle
         compactAdd
+        hideSort
         onAdd={() => navigate("/calving/new")}
         searchValue={search}
         onSearchChange={setSearch}
@@ -128,10 +129,47 @@ export default function CalvingScreen() {
         isFiltering={isFiltering}
       />
 
-
-      {/* Section label */}
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>
-        RECENT RECORDS
+      {/* Section label + sort */}
+      <div className="flex items-center justify-between">
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>
+          RECENT RECORDS
+        </span>
+        <div className="relative" ref={sortRef}>
+          <button
+            className="flex items-center gap-1 cursor-pointer active:scale-[0.96]"
+            style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.40)", background: "none", border: "none", padding: 0 }}
+            onClick={() => setSortOpen(!sortOpen)}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            {sortOptions.find(s => s.value === sort)?.label || "Sort"}
+          </button>
+          {sortOpen && (
+            <div
+              className="absolute right-0 mt-1 z-50 rounded-xl py-1"
+              style={{ backgroundColor: "white", border: "1px solid #D4D4D0", boxShadow: "0 10px 25px rgba(0,0,0,0.12)", minWidth: 130 }}
+            >
+              {sortOptions.map(opt => (
+                <button
+                  key={opt.value}
+                  className="flex items-center w-full cursor-pointer"
+                  style={{
+                    height: 36,
+                    paddingLeft: 12,
+                    paddingRight: 12,
+                    border: "none",
+                    backgroundColor: sort === opt.value ? "rgba(14,38,70,0.06)" : "transparent",
+                    fontSize: 12,
+                    fontWeight: sort === opt.value ? 700 : 500,
+                    color: "#1A1A1A",
+                  }}
+                  onClick={() => { setSort(opt.value); setSortOpen(false); }}
+                >{opt.label}</button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Record list */}
