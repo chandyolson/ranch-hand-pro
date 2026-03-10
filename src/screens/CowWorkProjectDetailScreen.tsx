@@ -512,7 +512,7 @@ export default function CowWorkProjectDetailScreen() {
             </div>
 
             {/* Preg breakdown */}
-            <div className="rounded-xl bg-white px-4 py-4" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div className="rounded-xl bg-white px-3 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646", marginBottom: 12 }}>Preg Results</div>
               {[
                 { label: "Confirmed", count: confirmedCount, color: "#55BAAA" },
