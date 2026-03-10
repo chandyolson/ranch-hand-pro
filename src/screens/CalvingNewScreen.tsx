@@ -49,7 +49,7 @@ const quickNoteOptions = ["Hard keeper","Easy keeper","Good mother","Poor mother
 
 /* ── Shared styles ── */
 const inputStyle: React.CSSProperties = {
-  flex: 1, height: 40, borderRadius: 8, border: "1px solid #D4D4D0",
+  width: "100%", height: 40, borderRadius: 8, border: "1px solid #D4D4D0",
   backgroundColor: "white", paddingLeft: 12, paddingRight: 12,
   fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 400,
   color: "#1A1A1A", outline: "none",
@@ -67,7 +67,7 @@ const cardStyle = "rounded-xl font-['Inter']";
 const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="flex items-center gap-2">
     <span style={labelStyle}>{label}</span>
-    {children}
+    <div className="flex-1 min-w-0">{children}</div>
   </div>
 );
 
@@ -82,9 +82,9 @@ const ScoreRow = ({ label, value, onChange, max, labels }: { label: string; valu
         onFocus={e => { e.currentTarget.style.borderColor = "#F3D12A"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(243,209,42,0.25)"; }}
         onBlur={e => { e.currentTarget.style.borderColor = "#D4D4D0"; e.currentTarget.style.boxShadow = "none"; }}
       >
-        <option value="">Select 1–{max}</option>
-        {Array.from({ length: max }, (_, i) => (
-          <option key={i + 1} value={String(i + 1)}>{i + 1}</option>
+        <option value="">Select…</option>
+        {labels.slice(1).map((lbl, i) => (
+          <option key={i + 1} value={String(i + 1)}>{lbl}</option>
         ))}
       </select>
     </div>
@@ -209,7 +209,7 @@ export default function CalvingNewScreen() {
       {activeTab === "entry" ? (
         <div className="space-y-3">
           {/* CALVING INFO */}
-          <div className={`${cardStyle} border px-3 py-3.5 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
+          <div className={`${cardStyle} border px-3 py-3.5 space-y-2 overflow-hidden`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
             <div style={sectionLabel}>CALVING INFO</div>
 
             <FieldRow label="Date">
@@ -220,7 +220,7 @@ export default function CalvingNewScreen() {
             <div>
               <div className="flex items-center gap-2">
                 <span style={labelStyle}>Dam Tag</span>
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <input
                     type="text"
                     value={damTag}
@@ -282,7 +282,7 @@ export default function CalvingNewScreen() {
           </div>
 
           {/* CALF INFO */}
-          <div className={`${cardStyle} border px-3 py-3.5 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
+          <div className={`${cardStyle} border px-3 py-3.5 space-y-2 overflow-hidden`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
             <div style={sectionLabel}>CALF INFO</div>
 
             <FieldRow label="Calf Tag">
@@ -391,13 +391,13 @@ export default function CalvingNewScreen() {
             collapsedContent={
               cowScoresSet.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {disposition && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Disp: {disposition}</span>}
-                  {assistance && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Assist: {assistance}</span>}
-                  {udder && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Udder: {udder}</span>}
-                  {teat && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Teat: {teat}</span>}
-                  {claw && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Claw: {claw}</span>}
-                  {foot && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Foot: {foot}</span>}
-                  {mothering && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Mother: {mothering}</span>}
+                  {disposition && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Disp: {dispositionLabels[parseInt(disposition)] || disposition}</span>}
+                  {assistance && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Assist: {assistanceLabels[parseInt(assistance)] || assistance}</span>}
+                  {udder && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Udder: {udderLabels[parseInt(udder)] || udder}</span>}
+                  {teat && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Teat: {teatLabels[parseInt(teat)] || teat}</span>}
+                  {claw && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Claw: {clawLabels[parseInt(claw)] || claw}</span>}
+                  {foot && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Foot: {footLabels[parseInt(foot)] || foot}</span>}
+                  {mothering && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Mother: {motheringLabels[parseInt(mothering)] || mothering}</span>}
                 </div>
               ) : (
                 <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>Tap to record scores</span>
@@ -422,7 +422,7 @@ export default function CalvingNewScreen() {
             collapsedContent={
               calfScoresSet.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {calfVigor && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Vigor: {calfVigor}</span>}
+                  {calfVigor && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Vigor: {vigorLabels[parseInt(calfVigor)] || calfVigor}</span>}
                 </div>
               ) : (
                 <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>Tap to record scores</span>
@@ -440,27 +440,28 @@ export default function CalvingNewScreen() {
             </div>
           </CollapsibleSection>
 
-          {/* NOTES */}
-          <div className={`${cardStyle} border px-3 py-3.5 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
-            <div style={sectionLabel}>NOTES</div>
-
-            <div className="flex items-center justify-between mb-2">
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>QUICK NOTES</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
+          {/* QUICK NOTES */}
+          <CollapsibleSection
+            title="Quick Notes"
+            defaultOpen={false}
+            collapsedContent={
+              selectedQuickNotes.length > 0
+                ? <span style={{ fontSize: 12, color: "#0E2646", fontFamily: "'Inter', sans-serif" }}>{selectedQuickNotes.join(" · ")}</span>
+                : <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>None selected</span>
+            }
+          >
+            <div className="flex flex-wrap gap-2 pt-1">
               {quickNoteOptions.map(note => {
                 const sel = selectedQuickNotes.includes(note);
                 return (
                   <button
                     key={note}
                     onClick={() => setSelectedQuickNotes(prev => sel ? prev.filter(n => n !== note) : [...prev, note])}
-                    className="rounded-full font-['Inter'] cursor-pointer transition-all active:scale-[0.96]"
+                    className="rounded-full px-3 py-1.5 font-['Inter'] cursor-pointer transition-all active:scale-[0.96]"
                     style={{
-                      padding: "6px 12px", fontSize: 13,
-                      fontWeight: sel ? 700 : 500,
-                      backgroundColor: sel ? "#0E2646" : "white",
-                      color: sel ? "white" : "rgba(26,26,26,0.50)",
-                      border: `1px solid ${sel ? "#0E2646" : "#D4D4D0"}`,
+                      fontSize: 13, fontWeight: 600, border: "none",
+                      background: sel ? "#0E2646" : "rgba(14,38,70,0.06)",
+                      color: sel ? "white" : "#0E2646",
                     }}
                   >
                     {note}
@@ -468,22 +469,19 @@ export default function CalvingNewScreen() {
                 );
               })}
             </div>
-
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.40)", textTransform: "uppercase", marginBottom: 6 }}>MEMO</div>
+            <div className="mt-3">
+              <div className="font-['Inter'] mb-1.5" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>MEMO</div>
               <textarea
                 value={memo}
                 onChange={e => setMemo(e.target.value)}
-                placeholder="Notes about this calving…"
-                className="w-full font-['Inter'] outline-none transition-all"
-                style={{
-                  minHeight: 56, resize: "none", borderRadius: 8, padding: "10px 12px",
-                  backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16,
-                }}
-                onFocus={focusGold} onBlur={blurReset}
+                placeholder="Notes about this calving event…"
+                className="w-full min-h-[64px] resize-none rounded-lg px-3 py-2.5 font-['Inter'] outline-none transition-all"
+                style={{ fontSize: 16, background: "#F5F5F0", border: "1px solid #D4D4D0" }}
+                onFocus={e => { e.target.style.borderColor = "#F3D12A"; }}
+                onBlur={e => { e.target.style.borderColor = "#D4D4D0"; }}
               />
             </div>
-          </div>
+          </CollapsibleSection>
 
           {/* ACTION BUTTONS */}
           <div className="flex gap-3 pt-1">
