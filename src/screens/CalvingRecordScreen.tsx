@@ -238,7 +238,7 @@ export default function CalvingRecordScreen() {
       )}
 
       {/* Tab bar */}
-      <div className="flex mx-3 mt-3 gap-0 border-b font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)" }}>
+      <div className="flex mt-3 gap-0 border-b font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)" }}>
         {[
           { key: "record", label: "Record" },
           { key: "dam", label: "Dam History" },
