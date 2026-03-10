@@ -254,7 +254,7 @@ export default function CowWorkProjectDetailScreen() {
             {isMatched && (
               <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
                 <button
-                  className="flex items-center justify-between w-full px-4 py-3 cursor-pointer"
+                  className="flex items-center justify-between w-full px-3 py-3 cursor-pointer"
                   style={{ background: "none", border: "none" }}
                   onClick={() => setHistoryOpen(!historyOpen)}
                 >
