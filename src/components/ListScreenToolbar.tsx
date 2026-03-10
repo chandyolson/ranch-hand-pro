@@ -31,6 +31,7 @@ interface ListScreenToolbarProps {
   isFiltering?: boolean;
   hideTitle?: boolean;
   compactAdd?: boolean;
+  hideSort?: boolean;
 }
 
 const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
