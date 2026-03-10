@@ -89,7 +89,7 @@ const ScoreRow = ({ label, value, onChange, max, labels }: { label: string; valu
       </select>
     </div>
     {value && labels[parseInt(value)] && (
-      <div style={{ marginLeft: 117, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
         {labels[parseInt(value)]}
       </div>
     )}
