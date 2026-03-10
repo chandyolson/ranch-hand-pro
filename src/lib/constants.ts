@@ -159,27 +159,27 @@ export const TRAIT_LABELS = {
   ],
   udder: [
     '',
-    'Poor (1)',              // 1
-    'Poor (2)',              // 2
-    'Marginal (3)',          // 3
-    'Marginal (4)',          // 4
-    'Acceptable (5)',        // 5
-    'Acceptable (6)',        // 6
-    'Desirable (7)',         // 7
-    'Desirable (8)',         // 8
+    'Very Pendulous',        // 1
+    'Pendulous',             // 2
+    'Weak Attachment',       // 3
+    'Moderate Low',          // 4
+    'Average',               // 5
+    'Above Average',         // 6
+    'Good Support',          // 7
+    'Strong Support',        // 8
     'Excellent',             // 9
   ],
   teat: [
     '',
-    'Poor (1)',              // 1
-    'Poor (2)',              // 2
-    'Marginal (3)',          // 3
-    'Marginal (4)',          // 4
-    'Acceptable (5)',        // 5
-    'Acceptable (6)',        // 6
-    'Desirable (7)',         // 7
-    'Desirable (8)',         // 8
-    'Excellent',             // 9
+    'Very Large',            // 1
+    'Large',                 // 2
+    'Thick',                 // 3
+    'Moderate Large',        // 4
+    'Average',               // 5
+    'Above Average',         // 6
+    'Good',                  // 7
+    'Very Good',             // 8
+    'Ideal',                 // 9
   ],
   claw: [
     '',
@@ -230,3 +230,38 @@ export const TRAIT_LABELS = {
     'Very Large',      // 5
   ],
 } as const;
+
+// ── Nine-scale optgroup config for Udder & Teat selectors ──
+
+export interface NineScaleGroup {
+  range: string;
+  label: string;
+  start: number;
+  end: number;
+}
+
+export const NINE_SCALE_GROUPS: Record<string, NineScaleGroup[]> = {
+  udder: [
+    { range: '1-2', label: 'Poor',       start: 1, end: 2 },
+    { range: '3-4', label: 'Marginal',   start: 3, end: 4 },
+    { range: '5-6', label: 'Acceptable', start: 5, end: 6 },
+    { range: '7-8', label: 'Desirable',  start: 7, end: 8 },
+    { range: '9',   label: 'Excellent',  start: 9, end: 9 },
+  ],
+  teat: [
+    { range: '1-2', label: 'Poor',       start: 1, end: 2 },
+    { range: '3-4', label: 'Marginal',   start: 3, end: 4 },
+    { range: '5-6', label: 'Acceptable', start: 5, end: 6 },
+    { range: '7-8', label: 'Desirable',  start: 7, end: 8 },
+    { range: '9',   label: 'Excellent',  start: 9, end: 9 },
+  ],
+};
+
+// ── Graft & Death Reasons (Calving) ──
+
+export const GRAFT_REASONS = ['Dam Died', 'Rejected Calf', 'No Milk', 'Twin', 'Other'] as const;
+
+export const DEATH_REASONS = [
+  'Stillborn', 'Dystocia', 'Scours', 'Pneumonia', 'Exposure/Weather',
+  'Predator', 'Birth Defect', 'Crushed by Dam', 'Unknown', 'Other',
+] as const;
