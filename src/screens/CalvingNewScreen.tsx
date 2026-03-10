@@ -329,7 +329,7 @@ export default function CalvingNewScreen() {
 
             {/* Wt / Size paired row */}
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span style={labelStyle}>Wt / Size</span>
                 <input
                   type="number"
