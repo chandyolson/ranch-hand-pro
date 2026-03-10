@@ -69,6 +69,33 @@ export default function CalvingScreen() {
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
+      {/* Season stats bar */}
+      <div
+        className="rounded-2xl px-4 py-3.5 flex items-center justify-between"
+        style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
+      >
+        {[
+          { label: "TOTAL",   value: calvingStats.total },
+          { label: "HEIFERS", value: calvingStats.heifers },
+          { label: "BULLS",   value: calvingStats.bulls },
+          { label: "DEAD",    value: calvingStats.dead },
+        ].map((stat, i, arr) => (
+          <div key={stat.label} className="flex items-center gap-4">
+            <div className="flex flex-col items-center">
+              <span style={{ fontSize: 24, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>
+                {stat.value}
+              </span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(168,230,218,0.70)", letterSpacing: "0.10em", marginTop: 3 }}>
+                {stat.label}
+              </span>
+            </div>
+            {i < arr.length - 1 && (
+              <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.12)" }} />
+            )}
+          </div>
+        ))}
+      </div>
+
       <ListScreenToolbar
         title="Calving"
         addLabel="New Entry"
