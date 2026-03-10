@@ -114,7 +114,7 @@ export default function CowWorkNewProjectScreen() {
         </button>
 
         {productsOpen && (
-          <div className="px-4 pb-4" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
+          <div className="px-3 pb-3" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
             {products.length === 0 ? (
               <div className="text-center py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products added</div>
             ) : (
