@@ -27,8 +27,12 @@ const recentRecords: CalvingRecord[] = [
 export default function CalvingScreen() {
   const navigate = useNavigate();
 
-  const aliveCount = recentRecords.filter(r => r.calfStatus === "Alive").length;
-  const deadCount = recentRecords.filter(r => r.calfStatus === "Dead").length;
+  const calvingStats = {
+    total: recentRecords.length,
+    heifers: recentRecords.filter(r => r.calfSex === "Heifer").length,
+    bulls: recentRecords.filter(r => r.calfSex === "Bull").length,
+    dead: recentRecords.filter(r => r.calfStatus === "Dead").length,
+  };
 
   return (
     <div className="px-3 pt-4 pb-10 space-y-3 font-['Inter']">
@@ -44,20 +48,29 @@ export default function CalvingScreen() {
         </button>
       </div>
 
-      {/* Season stat cards */}
-      <div className="grid grid-cols-3 gap-2.5">
+      {/* Season stats bar */}
+      <div
+        className="rounded-2xl px-4 py-3.5 flex items-center justify-between font-['Inter']"
+        style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
+      >
         {[
-          { value: recentRecords.length, label: "TOTAL" },
-          { value: aliveCount, label: "ALIVE" },
-          { value: deadCount, label: "DEAD" },
-        ].map(s => (
-          <div
-            key={s.label}
-            className="rounded-xl px-3 py-3 font-['Inter']"
-            style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
-          >
-            <div style={{ fontSize: 24, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>{s.value}</div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(168,230,218,0.70)", textTransform: "uppercase", marginTop: 4 }}>{s.label}</div>
+          { label: "TOTAL",   value: calvingStats.total },
+          { label: "HEIFERS", value: calvingStats.heifers },
+          { label: "BULLS",   value: calvingStats.bulls },
+          { label: "DEAD",    value: calvingStats.dead },
+        ].map((stat, i, arr) => (
+          <div key={stat.label} className="flex items-center gap-4">
+            <div className="flex flex-col items-center">
+              <span style={{ fontSize: 24, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>
+                {stat.value}
+              </span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(168,230,218,0.70)", letterSpacing: "0.10em", marginTop: 3 }}>
+                {stat.label}
+              </span>
+            </div>
+            {i < arr.length - 1 && (
+              <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.12)" }} />
+            )}
           </div>
         ))}
       </div>
