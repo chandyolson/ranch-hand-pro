@@ -431,7 +431,7 @@ export default function CalvingNewScreen() {
           >
             <div className="space-y-2 pt-2">
               <ScoreRow label="Vigor" value={calfVigor} onChange={setCalfVigor} max={5} labels={vigorLabels} />
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span style={labelStyle}>Calf Size</span>
                 <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: calfSize ? "#1A1A1A" : "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>
                   {calfSize ? `${calfSize} — ${calfSizeLabels[parseInt(calfSize)]?.split(" — ")[1] || ""}` : "Set in Calf Info above"}
