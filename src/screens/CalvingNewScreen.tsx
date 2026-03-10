@@ -441,7 +441,7 @@ export default function CalvingNewScreen() {
           </CollapsibleSection>
 
           {/* NOTES */}
-          <div className={`${cardStyle} border px-4 py-4 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
+          <div className={`${cardStyle} border px-3 py-3.5 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
             <div style={sectionLabel}>NOTES</div>
 
             <div className="flex items-center justify-between mb-2">
