@@ -294,7 +294,7 @@ export default function AnimalDetailScreen() {
       <div
         style={{
           marginTop: 12, backgroundColor: "white", borderRadius: 12,
-          border: "1px solid rgba(212,212,208,0.60)", padding: "14px 16px",
+          border: "1px solid rgba(212,212,208,0.60)", padding: "14px 12px",
           fontFamily: "'Inter', sans-serif",
         }}
       >
