@@ -274,7 +274,7 @@ export default function CowWorkProjectDetailScreen() {
                 {historyOpen && (
                   <div style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
                     {/* Sub-tabs */}
-                    <div className="flex px-4" style={{ borderBottom: "1px solid rgba(212,212,208,0.40)" }}>
+                    <div className="flex px-3" style={{ borderBottom: "1px solid rgba(212,212,208,0.40)" }}>
                       {(["info", "calving", "history"] as const).map(t => (
                         <button
                           key={t}
