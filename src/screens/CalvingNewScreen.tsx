@@ -82,9 +82,9 @@ const ScoreRow = ({ label, value, onChange, max, labels }: { label: string; valu
         onFocus={e => { e.currentTarget.style.borderColor = "#F3D12A"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(243,209,42,0.25)"; }}
         onBlur={e => { e.currentTarget.style.borderColor = "#D4D4D0"; e.currentTarget.style.boxShadow = "none"; }}
       >
-        <option value="">Select 1–{max}</option>
-        {Array.from({ length: max }, (_, i) => (
-          <option key={i + 1} value={String(i + 1)}>{i + 1}</option>
+        <option value="">Select…</option>
+        {labels.slice(1).map((lbl, i) => (
+          <option key={i + 1} value={String(i + 1)}>{lbl}</option>
         ))}
       </select>
     </div>
