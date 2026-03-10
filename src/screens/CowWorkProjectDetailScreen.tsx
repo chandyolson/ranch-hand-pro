@@ -61,7 +61,7 @@ const matchedAnimal = {
 
 const flagColorMap: Record<FlagColor, string> = { teal: "#55BAAA", gold: "#F3D12A", red: "#9B2335" };
 
-const labelStyle: React.CSSProperties = { width: 105, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
+const labelStyle: React.CSSProperties = { width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
 const inputStyle: React.CSSProperties = {
   flex: 1, height: 40, borderRadius: 8, border: "1px solid #D4D4D0", backgroundColor: "white",
   padding: "0 12px", fontFamily: "'Inter', sans-serif", outline: "none", fontSize: 16,
@@ -206,7 +206,7 @@ export default function CowWorkProjectDetailScreen() {
         {activeTab === "input" && (
           <>
             {/* Tag / EID field */}
-            <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div className="flex items-center gap-2">
                 <input
                   className="flex-1 h-12 rounded-lg px-3 font-['Inter'] outline-none transition-all"
@@ -254,7 +254,7 @@ export default function CowWorkProjectDetailScreen() {
             {isMatched && (
               <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
                 <button
-                  className="flex items-center justify-between w-full px-4 py-3 cursor-pointer"
+                  className="flex items-center justify-between w-full px-3 py-3 cursor-pointer"
                   style={{ background: "none", border: "none" }}
                   onClick={() => setHistoryOpen(!historyOpen)}
                 >
@@ -274,7 +274,7 @@ export default function CowWorkProjectDetailScreen() {
                 {historyOpen && (
                   <div style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
                     {/* Sub-tabs */}
-                    <div className="flex px-4" style={{ borderBottom: "1px solid rgba(212,212,208,0.40)" }}>
+                    <div className="flex px-3" style={{ borderBottom: "1px solid rgba(212,212,208,0.40)" }}>
                       {(["info", "calving", "history"] as const).map(t => (
                         <button
                           key={t}
@@ -296,7 +296,7 @@ export default function CowWorkProjectDetailScreen() {
 
                     {/* Info sub-tab */}
                     {historyTab === "info" && (
-                      <div className="px-4 py-3">
+                      <div className="px-3 py-3">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                           {[
                             ["TYPE", matchedAnimal.type], ["BREED", matchedAnimal.breed],
@@ -319,9 +319,9 @@ export default function CowWorkProjectDetailScreen() {
 
                     {/* Calving sub-tab */}
                     {historyTab === "calving" && (
-                      <div className="px-4 py-3 space-y-2">
+                      <div className="px-3 py-3 space-y-2">
                         {matchedAnimal.calvingHistory.map(c => (
-                          <div key={c.calfTag} className="rounded-xl px-4 py-3 bg-[#0E2646]">
+                          <div key={c.calfTag} className="rounded-xl px-3 py-3 bg-[#0E2646]">
                             <div className="flex items-center gap-2">
                               <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>Calf {c.calfTag}</span>
                               <span className="rounded-full" style={{
@@ -344,7 +344,7 @@ export default function CowWorkProjectDetailScreen() {
 
                     {/* History sub-tab */}
                     {historyTab === "history" && (
-                      <div className="px-4 py-3 space-y-0">
+                      <div className="px-3 py-3 space-y-0">
                         {matchedAnimal.workHistory.map(w => (
                           <div key={w.project} className="py-2" style={{ borderBottom: "1px solid rgba(26,26,26,0.06)" }}>
                             <div className="flex items-center justify-between">
@@ -368,9 +368,9 @@ export default function CowWorkProjectDetailScreen() {
             )}
 
             {/* PREG fields */}
-            <div className="rounded-xl bg-white px-4 py-4 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 4 }}>PREG CHECK</div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label style={labelStyle}>Preg</label>
                 <select value={pregResult} onChange={e => setPregResult(e.target.value)} style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
@@ -378,12 +378,12 @@ export default function CowWorkProjectDetailScreen() {
                   <option>Confirmed</option><option>Open</option><option>Suspect</option><option>First Calf Heifer</option>
                 </select>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label style={labelStyle}>Days Gest.</label>
                 <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label style={labelStyle}>Calf Sex</label>
                 <select value={calfSex} onChange={e => setCalfSex(e.target.value)} style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
@@ -394,19 +394,19 @@ export default function CowWorkProjectDetailScreen() {
             </div>
 
             {/* Optional fields */}
-            <div className="rounded-xl bg-white px-4 py-4 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 4 }}>ADDITIONAL</div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label style={labelStyle}>Weight</label>
                 <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label style={labelStyle}>Quick Note</label>
                 <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label style={labelStyle}>Sample ID</label>
                 <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
@@ -422,7 +422,7 @@ export default function CowWorkProjectDetailScreen() {
             </div>
 
             {/* Products given */}
-            <div className="rounded-xl bg-white px-4 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div className="rounded-xl bg-white px-3 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.40)", textTransform: "uppercase" }}>PRODUCTS GIVEN</span>
                 <span className="cursor-pointer" style={{ fontSize: 11, fontWeight: 600, color: "#55BAAA" }}>Edit</span>
@@ -465,7 +465,7 @@ export default function CowWorkProjectDetailScreen() {
                   : { bg: "rgba(240,240,240,0.10)", color: "rgba(240,240,240,0.50)" };
                 const tagColor = a.flag ? flagColorMap[a.flag] : "rgba(240,240,240,0.90)";
                 return (
-                  <div key={i} className="rounded-xl px-4 py-3.5 bg-[#0E2646]">
+                  <div key={i} className="rounded-xl px-3 py-3.5 bg-[#0E2646]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span style={{ fontSize: 15, fontWeight: 700, color: tagColor }}>{a.tag}</span>
@@ -512,7 +512,7 @@ export default function CowWorkProjectDetailScreen() {
             </div>
 
             {/* Preg breakdown */}
-            <div className="rounded-xl bg-white px-4 py-4" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div className="rounded-xl bg-white px-3 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646", marginBottom: 12 }}>Preg Results</div>
               {[
                 { label: "Confirmed", count: confirmedCount, color: "#55BAAA" },
@@ -537,7 +537,7 @@ export default function CowWorkProjectDetailScreen() {
 
         {/* =================== DETAILS TAB =================== */}
         {activeTab === "details" && (
-          <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+          <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>PROJECT DETAILS</div>
             {[
               ["Date", project.date],
@@ -547,8 +547,8 @@ export default function CowWorkProjectDetailScreen() {
               ["Status", project.status.charAt(0).toUpperCase() + project.status.slice(1)],
               ["Head Count", String(project.headCount)],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-center gap-3">
-                <span style={{ width: 105, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{label}</span>
+              <div key={label} className="flex items-center gap-2">
+                <span style={{ width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{label}</span>
                 <span style={{ fontSize: 14, color: "rgba(26,26,26,0.70)" }}>{value}</span>
               </div>
             ))}

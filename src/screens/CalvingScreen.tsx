@@ -31,7 +31,7 @@ export default function CalvingScreen() {
   const deadCount = recentRecords.filter(r => r.calfStatus === "Dead").length;
 
   return (
-    <div className="px-5 pt-4 pb-10 space-y-4 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
       {/* Header */}
       <div className="flex items-center justify-between">
         <span style={{ fontSize: 22, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>Calving</span>
@@ -72,7 +72,7 @@ export default function CalvingScreen() {
         {recentRecords.map(r => (
           <div
             key={r.id}
-            className="rounded-xl px-4 py-3.5 font-['Inter'] cursor-pointer active:scale-[0.98] transition-all"
+            className="rounded-xl px-3 py-3.5 font-['Inter'] cursor-pointer active:scale-[0.98] transition-all"
             style={{ backgroundColor: "#0E2646" }}
           >
             {/* Row 1 */}

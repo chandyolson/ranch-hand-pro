@@ -55,7 +55,7 @@ const inputStyle: React.CSSProperties = {
   color: "#1A1A1A", outline: "none",
 };
 const labelStyle: React.CSSProperties = {
-  width: 105, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A",
+  width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A",
   fontFamily: "'Inter', sans-serif",
 };
 const sectionLabel: React.CSSProperties = {
@@ -65,7 +65,7 @@ const sectionLabel: React.CSSProperties = {
 const cardStyle = "rounded-xl font-['Inter']";
 
 const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div className="flex items-center gap-3">
+  <div className="flex items-center gap-2">
     <span style={labelStyle}>{label}</span>
     {children}
   </div>
@@ -73,7 +73,7 @@ const FieldRow = ({ label, children }: { label: string; children: React.ReactNod
 
 const ScoreRow = ({ label, value, onChange, max, labels }: { label: string; value: string; onChange: (v: string) => void; max: number; labels: string[] }) => (
   <div>
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       <span style={labelStyle}>{label}</span>
       <select
         value={value}
@@ -89,7 +89,7 @@ const ScoreRow = ({ label, value, onChange, max, labels }: { label: string; valu
       </select>
     </div>
     {value && labels[parseInt(value)] && (
-      <div style={{ marginLeft: 117, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
         {labels[parseInt(value)]}
       </div>
     )}
@@ -209,7 +209,7 @@ export default function CalvingNewScreen() {
       {activeTab === "entry" ? (
         <div className="space-y-3">
           {/* CALVING INFO */}
-          <div className={`${cardStyle} border px-4 py-4 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
+          <div className={`${cardStyle} border px-3 py-3.5 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
             <div style={sectionLabel}>CALVING INFO</div>
 
             <FieldRow label="Date">
@@ -218,7 +218,7 @@ export default function CalvingNewScreen() {
 
             {/* Dam Tag */}
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span style={labelStyle}>Dam Tag</span>
                 <div className="flex items-center gap-2 flex-1">
                   <input
@@ -243,7 +243,7 @@ export default function CalvingNewScreen() {
               {isDamMatched && (
                 <div
                   className="flex items-center gap-1.5 mt-1 cursor-pointer"
-                  style={{ marginLeft: 117 }}
+                  style={{ marginLeft: 104 }}
                   onClick={() => setActiveTab("dam")}
                 >
                   <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: "#55BAAA", flexShrink: 0 }} />
@@ -253,7 +253,7 @@ export default function CalvingNewScreen() {
                 </div>
               )}
               {!isDamMatched && damTag.length >= 3 && (
-                <div className="flex items-center gap-1.5 mt-1" style={{ marginLeft: 117 }}>
+                <div className="flex items-center gap-1.5 mt-1" style={{ marginLeft: 104 }}>
                   <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: "#E87461", flexShrink: 0 }} />
                   <span style={{ fontSize: 13, fontWeight: 500, color: "#E87461" }}>No match — </span>
                   <button
@@ -282,7 +282,7 @@ export default function CalvingNewScreen() {
           </div>
 
           {/* CALF INFO */}
-          <div className={`${cardStyle} border px-4 py-4 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
+          <div className={`${cardStyle} border px-3 py-3.5 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
             <div style={sectionLabel}>CALF INFO</div>
 
             <FieldRow label="Calf Tag">
@@ -329,7 +329,7 @@ export default function CalvingNewScreen() {
 
             {/* Wt / Size paired row */}
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span style={labelStyle}>Wt / Size</span>
                 <input
                   type="number"
@@ -351,7 +351,7 @@ export default function CalvingNewScreen() {
                 />
               </div>
               {calfSize && calfSizeLabels[parseInt(calfSize)] && (
-                <div style={{ marginLeft: 117, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
+                <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
                   {calfSizeLabels[parseInt(calfSize)]}
                 </div>
               )}
@@ -431,7 +431,7 @@ export default function CalvingNewScreen() {
           >
             <div className="space-y-2 pt-2">
               <ScoreRow label="Vigor" value={calfVigor} onChange={setCalfVigor} max={5} labels={vigorLabels} />
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span style={labelStyle}>Calf Size</span>
                 <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: calfSize ? "#1A1A1A" : "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>
                   {calfSize ? `${calfSize} — ${calfSizeLabels[parseInt(calfSize)]?.split(" — ")[1] || ""}` : "Set in Calf Info above"}
@@ -441,7 +441,7 @@ export default function CalvingNewScreen() {
           </CollapsibleSection>
 
           {/* NOTES */}
-          <div className={`${cardStyle} border px-4 py-4 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
+          <div className={`${cardStyle} border px-3 py-3.5 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
             <div style={sectionLabel}>NOTES</div>
 
             <div className="flex items-center justify-between mb-2">
@@ -560,11 +560,11 @@ export default function CalvingNewScreen() {
             </div>
 
             {/* UPDATE DAM */}
-            <div className={`${cardStyle} border px-4 py-4 space-y-3`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
+            <div className={`${cardStyle} border px-3 py-3.5 space-y-3`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
               <div style={sectionLabel}>UPDATE DAM</div>
 
               {/* Flag picker */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span style={labelStyle}>Flag</span>
                 <div className="flex flex-row gap-2">
                   {([
@@ -665,7 +665,7 @@ export default function CalvingNewScreen() {
             >
               <div className="space-y-2 pt-2">
                 {damLookupResult.recentCalvings.map(c => (
-                  <div key={c.calfTag} className="rounded-xl px-4 py-3" style={{ backgroundColor: "#0E2646" }}>
+                  <div key={c.calfTag} className="rounded-xl px-3 py-3" style={{ backgroundColor: "#0E2646" }}>
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>Calf {c.calfTag}</span>
                       <span className="rounded-full" style={{

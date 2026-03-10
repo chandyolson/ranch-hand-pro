@@ -13,7 +13,7 @@ const templates = [
   { name: "Winter Vaccination", type: "TX" },
 ];
 
-const labelStyle: React.CSSProperties = { width: 105, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
+const labelStyle: React.CSSProperties = { width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
 const inputStyle: React.CSSProperties = {
   flex: 1, height: 40, borderRadius: 8, border: "1px solid #D4D4D0", backgroundColor: "white",
   padding: "0 12px", fontFamily: "'Inter', sans-serif", outline: "none", fontSize: 16,
@@ -33,23 +33,23 @@ export default function CowWorkNewProjectScreen() {
   const navigate = useNavigate();
 
   return (
-    <div className="px-5 pt-4 pb-10 space-y-4 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
       {/* Section label */}
       <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>
         PROJECT SETUP
       </div>
 
       {/* Form card */}
-      <div className="rounded-xl bg-white px-4 py-4 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+      <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         {/* Date */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <label style={labelStyle}>Date</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} style={inputStyle}
             className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
         </div>
 
         {/* Type */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <label style={labelStyle}>Type</label>
           <select value={processingType} onChange={e => setProcessingType(e.target.value)} style={inputStyle}
             className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
@@ -59,7 +59,7 @@ export default function CowWorkNewProjectScreen() {
         </div>
 
         {/* Group */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <label style={labelStyle}>Group</label>
           <select value={group} onChange={e => setGroup(e.target.value)} style={inputStyle}
             className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
@@ -69,7 +69,7 @@ export default function CowWorkNewProjectScreen() {
         </div>
 
         {/* Cattle Type */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <label style={labelStyle}>Cattle Type</label>
           <select value={cattleType} onChange={e => setCattleType(e.target.value)} style={inputStyle}
             className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
@@ -79,7 +79,7 @@ export default function CowWorkNewProjectScreen() {
         </div>
 
         {/* Location */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <label style={labelStyle}>Location</label>
           <select value={location} onChange={e => setLocation(e.target.value)} style={inputStyle}
             className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
@@ -103,7 +103,7 @@ export default function CowWorkNewProjectScreen() {
       {/* Products Given collapsible */}
       <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         <button
-          className="flex items-center justify-between w-full px-4 py-3.5 cursor-pointer active:scale-[0.99]"
+          className="flex items-center justify-between w-full px-3 py-3.5 cursor-pointer active:scale-[0.99]"
           onClick={() => setProductsOpen(!productsOpen)}
         >
           <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>Products Given</span>
@@ -114,7 +114,7 @@ export default function CowWorkNewProjectScreen() {
         </button>
 
         {productsOpen && (
-          <div className="px-4 pb-4" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
+          <div className="px-3 pb-3" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
             {products.length === 0 ? (
               <div className="text-center py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products added</div>
             ) : (
@@ -144,7 +144,7 @@ export default function CowWorkNewProjectScreen() {
       {/* Load from Template collapsible */}
       <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         <button
-          className="flex items-center justify-between w-full px-4 py-3.5 cursor-pointer active:scale-[0.99]"
+          className="flex items-center justify-between w-full px-3 py-3.5 cursor-pointer active:scale-[0.99]"
           onClick={() => setTemplateOpen(!templateOpen)}
         >
           <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>Load from Template</span>
@@ -155,7 +155,7 @@ export default function CowWorkNewProjectScreen() {
         </button>
 
         {templateOpen && (
-          <div className="px-4 pb-2" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
+          <div className="px-3 pb-2" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
             {templates.map(t => (
               <button
                 key={t.name}

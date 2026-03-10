@@ -18,7 +18,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   return (
     <div className="rounded-xl bg-white overflow-hidden font-inter" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
       <button
-        className="flex items-center justify-between w-full px-4 py-3 cursor-pointer bg-white active:bg-page-bg transition-colors"
+        className="flex items-center justify-between w-full px-3 py-3 cursor-pointer bg-white active:bg-page-bg transition-colors"
         onClick={() => setOpen(!open)}
         type="button"
       >
@@ -38,7 +38,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       </button>
 
       {!open && collapsedContent && (
-        <div className="px-4 pb-3" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
+        <div className="px-3 pb-3" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
           {collapsedContent}
         </div>
       )}
@@ -51,7 +51,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           overflow: "hidden",
         }}
       >
-        <div className="px-3.5 pb-3 pt-1" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
+        <div className="px-3 pb-3 pt-1" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
           {children}
         </div>
       </div>
