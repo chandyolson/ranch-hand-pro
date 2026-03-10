@@ -68,7 +68,7 @@ export default function CalvingScreen() {
       </div>
 
       {/* Record list */}
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {recentRecords.map(r => (
           <div
             key={r.id}

@@ -103,7 +103,7 @@ export default function CowWorkScreen() {
       </div>
 
       {/* Project list */}
-      <div className="space-y-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         {filtered.length > 0 ? (
           filtered.map(p => (
             <CowWorkProjectCard

@@ -155,7 +155,7 @@ const RedBookScreen: React.FC = () => {
           <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or category</div>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {filtered.map((e, idx) => (
             <React.Fragment key={e.id}>
               {idx === firstPinnedIdx && e.isPinned && (
