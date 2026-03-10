@@ -206,7 +206,7 @@ export default function CowWorkProjectDetailScreen() {
         {activeTab === "input" && (
           <>
             {/* Tag / EID field */}
-            <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div className="flex items-center gap-2">
                 <input
                   className="flex-1 h-12 rounded-lg px-3 font-['Inter'] outline-none transition-all"
