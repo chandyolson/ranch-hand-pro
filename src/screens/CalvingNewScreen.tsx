@@ -282,7 +282,7 @@ export default function CalvingNewScreen() {
           </div>
 
           {/* CALF INFO */}
-          <div className={`${cardStyle} border px-3 py-3.5 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
+          <div className={`${cardStyle} border px-3 py-3.5 space-y-2 overflow-hidden`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
             <div style={sectionLabel}>CALF INFO</div>
 
             <FieldRow label="Calf Tag">
