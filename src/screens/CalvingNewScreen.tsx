@@ -440,27 +440,28 @@ export default function CalvingNewScreen() {
             </div>
           </CollapsibleSection>
 
-          {/* NOTES */}
-          <div className={`${cardStyle} border px-3 py-3.5 space-y-2`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
-            <div style={sectionLabel}>NOTES</div>
-
-            <div className="flex items-center justify-between mb-2">
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>QUICK NOTES</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
+          {/* QUICK NOTES */}
+          <CollapsibleSection
+            title="Quick Notes"
+            defaultOpen={false}
+            collapsedContent={
+              selectedQuickNotes.length > 0
+                ? <span style={{ fontSize: 12, color: "#0E2646", fontFamily: "'Inter', sans-serif" }}>{selectedQuickNotes.join(" · ")}</span>
+                : <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>None selected</span>
+            }
+          >
+            <div className="flex flex-wrap gap-2 pt-1">
               {quickNoteOptions.map(note => {
                 const sel = selectedQuickNotes.includes(note);
                 return (
                   <button
                     key={note}
                     onClick={() => setSelectedQuickNotes(prev => sel ? prev.filter(n => n !== note) : [...prev, note])}
-                    className="rounded-full font-['Inter'] cursor-pointer transition-all active:scale-[0.96]"
+                    className="rounded-full px-3 py-1.5 font-['Inter'] cursor-pointer transition-all active:scale-[0.96]"
                     style={{
-                      padding: "6px 12px", fontSize: 13,
-                      fontWeight: sel ? 700 : 500,
-                      backgroundColor: sel ? "#0E2646" : "white",
-                      color: sel ? "white" : "rgba(26,26,26,0.50)",
-                      border: `1px solid ${sel ? "#0E2646" : "#D4D4D0"}`,
+                      fontSize: 13, fontWeight: 600, border: "none",
+                      background: sel ? "#0E2646" : "rgba(14,38,70,0.06)",
+                      color: sel ? "white" : "#0E2646",
                     }}
                   >
                     {note}
@@ -468,22 +469,19 @@ export default function CalvingNewScreen() {
                 );
               })}
             </div>
-
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.40)", textTransform: "uppercase", marginBottom: 6 }}>MEMO</div>
+            <div className="mt-3">
+              <div className="font-['Inter'] mb-1.5" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>MEMO</div>
               <textarea
                 value={memo}
                 onChange={e => setMemo(e.target.value)}
-                placeholder="Notes about this calving…"
-                className="w-full font-['Inter'] outline-none transition-all"
-                style={{
-                  minHeight: 56, resize: "none", borderRadius: 8, padding: "10px 12px",
-                  backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16,
-                }}
-                onFocus={focusGold} onBlur={blurReset}
+                placeholder="Notes about this calving event…"
+                className="w-full min-h-[64px] resize-none rounded-lg px-3 py-2.5 font-['Inter'] outline-none transition-all"
+                style={{ fontSize: 16, background: "#F5F5F0", border: "1px solid #D4D4D0" }}
+                onFocus={e => { e.target.style.borderColor = "#F3D12A"; }}
+                onBlur={e => { e.target.style.borderColor = "#D4D4D0"; }}
               />
             </div>
-          </div>
+          </CollapsibleSection>
 
           {/* ACTION BUTTONS */}
           <div className="flex gap-3 pt-1">
