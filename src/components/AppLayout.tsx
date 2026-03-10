@@ -111,8 +111,28 @@ const AppLayout: React.FC = () => {
           )}
         </div>
 
-        {/* Right placeholder */}
-        <div style={{ width: 36, height: 36 }} />
+        {/* Right — Herd Work */}
+        <button
+          className="flex items-center justify-center active:scale-[0.97]"
+          style={{
+            height: 36,
+            paddingLeft: 12,
+            paddingRight: 12,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontFamily: "'Inter', sans-serif",
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            color: "#F3D12A",
+            textShadow: "0 0 6px rgba(243,209,42,0.50), 0 0 14px rgba(243,209,42,0.30), 0 0 28px rgba(243,209,42,0.15)",
+            textTransform: "uppercase",
+          }}
+          onClick={() => navigate("/")}
+        >
+          HERD WORK
+        </button>
       </header>
 
       <NavDrawer
