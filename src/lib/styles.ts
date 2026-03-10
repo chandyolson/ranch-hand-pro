@@ -49,12 +49,12 @@ export const INPUT_CLS =
   "flex-1 h-10 rounded-lg border border-[#D4D4D0] bg-white px-3 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25";
 
 // Focus ring handler (use ONLY when Tailwind focus: classes aren't available)
-export const focusGold = (e: React.FocusEvent) => {
-  e.currentTarget.style.borderColor = '#F3D12A';
-  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(243,209,42,0.25)';
+export const focusGold = (e: React.FocusEvent<HTMLElement>) => {
+  (e.currentTarget as HTMLElement).style.borderColor = '#F3D12A';
+  (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 2px rgba(243,209,42,0.25)';
 };
 
-export const blurReset = (e: React.FocusEvent) => {
-  e.currentTarget.style.borderColor = '#D4D4D0';
-  e.currentTarget.style.boxShadow = 'none';
+export const blurReset = (e: React.FocusEvent<HTMLElement>) => {
+  (e.currentTarget as HTMLElement).style.borderColor = '#D4D4D0';
+  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
 };
