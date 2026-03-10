@@ -166,7 +166,7 @@ export default function CalvingRecordScreen() {
     <div className="px-4 space-y-0 pb-10 font-['Inter']">
       {/* GRADIENT HEADER */}
       <div
-        className="rounded-2xl mx-3 mt-3 font-['Inter']"
+        className="rounded-2xl mt-3 font-['Inter']"
         style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)", padding: "16px" }}
       >
         <div className="flex items-start justify-between gap-3">
