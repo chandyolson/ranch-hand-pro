@@ -38,7 +38,7 @@ export default function CowWorkScreen() {
   const activeHead = allProjects.filter(p => p.status === "pending" || p.status === "in-progress").reduce((s, p) => s + p.headCount, 0);
 
   return (
-    <div className="px-5 pt-4 pb-10 space-y-4 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div style={{ fontSize: 22, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>Cow Work</div>

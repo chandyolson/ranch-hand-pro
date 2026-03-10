@@ -537,7 +537,7 @@ export default function CowWorkProjectDetailScreen() {
 
         {/* =================== DETAILS TAB =================== */}
         {activeTab === "details" && (
-          <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+          <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>PROJECT DETAILS</div>
             {[
               ["Date", project.date],
@@ -547,8 +547,8 @@ export default function CowWorkProjectDetailScreen() {
               ["Status", project.status.charAt(0).toUpperCase() + project.status.slice(1)],
               ["Head Count", String(project.headCount)],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-center gap-3">
-                <span style={{ width: 105, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{label}</span>
+              <div key={label} className="flex items-center gap-2">
+                <span style={{ width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{label}</span>
                 <span style={{ fontSize: 14, color: "rgba(26,26,26,0.70)" }}>{value}</span>
               </div>
             ))}
