@@ -1,10 +1,5 @@
 import React from "react";
-
-const colorMap = {
-  teal: "#55BAAA",
-  gold: "#F3D12A",
-  red: "#9B2335",
-};
+import { FLAG_HEX_MAP, type FlagColor } from "@/lib/constants";
 
 const sizeMap = {
   sm: { w: 18, h: 16, stroke: 1.6 },
@@ -13,12 +8,12 @@ const sizeMap = {
 };
 
 interface FlagIconProps {
-  color: "teal" | "gold" | "red";
+  color: FlagColor;
   size?: "sm" | "md" | "lg";
 }
 
 const FlagIcon: React.FC<FlagIconProps> = ({ color, size = "md" }) => {
-  const fill = colorMap[color];
+  const fill = FLAG_HEX_MAP[color];
   const { w, h, stroke } = sizeMap[size];
 
   return (

@@ -4,8 +4,7 @@ import DataCard from "@/components/DataCard";
 import FlagIcon from "@/components/FlagIcon";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
 import { useChuteSideToast } from "@/components/ToastContext";
-
-type FlagColor = "teal" | "gold" | "red";
+import type { FlagColor } from "@/lib/constants";
 
 interface Animal {
   id: string;
@@ -96,7 +95,6 @@ const AnimalsScreen: React.FC = () => {
         isFiltering={isFiltering}
       />
 
-      {/* Animal list */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {filtered.map(animal => (
           <div
@@ -114,9 +112,8 @@ const AnimalsScreen: React.FC = () => {
         ))}
       </div>
 
-      {/* Empty state */}
       {filtered.length === 0 && (
-        <div className="py-12 text-center space-y-1.5" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="py-12 text-center space-y-1.5">
           <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No animals found</div>
           <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or filter</div>
         </div>
