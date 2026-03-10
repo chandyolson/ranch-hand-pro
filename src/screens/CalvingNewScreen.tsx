@@ -49,7 +49,7 @@ const quickNoteOptions = ["Hard keeper","Easy keeper","Good mother","Poor mother
 
 /* ── Shared styles ── */
 const inputStyle: React.CSSProperties = {
-  flex: 1, height: 40, borderRadius: 8, border: "1px solid #D4D4D0",
+  width: "100%", height: 40, borderRadius: 8, border: "1px solid #D4D4D0",
   backgroundColor: "white", paddingLeft: 12, paddingRight: 12,
   fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 400,
   color: "#1A1A1A", outline: "none",
