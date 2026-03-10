@@ -401,7 +401,7 @@ export default function CowWorkProjectDetailScreen() {
                 <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label style={labelStyle}>Quick Note</label>
                 <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
