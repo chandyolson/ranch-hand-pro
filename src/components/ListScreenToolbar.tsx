@@ -38,7 +38,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
   title, addLabel, onAdd, searchValue, onSearchChange, searchPlaceholder = "Search…",
   filterChips, activeFilter, onFilterChange, sortOptions, activeSort, onSortChange,
   onImport, onExport, onMassSelect, onMassEdit, resultCount, isFiltering,
-  hideTitle, compactAdd,
+  hideTitle, compactAdd, hideSort,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
