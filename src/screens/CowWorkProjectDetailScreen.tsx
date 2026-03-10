@@ -368,9 +368,9 @@ export default function CowWorkProjectDetailScreen() {
             )}
 
             {/* PREG fields */}
-            <div className="rounded-xl bg-white px-4 py-4 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 4 }}>PREG CHECK</div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label style={labelStyle}>Preg</label>
                 <select value={pregResult} onChange={e => setPregResult(e.target.value)} style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
