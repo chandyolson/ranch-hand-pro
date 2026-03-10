@@ -210,7 +210,7 @@ export default function AnimalDetailScreen() {
           {/* Right — flag */}
           {fields.flag && flagHex && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-              <FlagIcon color={fields.flag} size={22} />
+              <FlagIcon color={fields.flag} size="md" />
               <span style={{ fontSize: 9, fontWeight: 600, color: flagHex }}>{flagLabel}</span>
             </div>
           )}
