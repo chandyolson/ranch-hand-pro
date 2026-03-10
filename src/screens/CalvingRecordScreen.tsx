@@ -343,7 +343,7 @@ export default function CalvingRecordScreen() {
                 <span style={{ color: "rgba(26,26,26,0.25)", fontFamily: "'Inter', sans-serif", margin: "0 2px" }}>/</span>
                 <input type="number" min={1} max={5} value={fields.calfSize} onChange={e => set("calfSize", e.target.value)} readOnly={!isEditing} placeholder="1–5" style={{ ...getStyle(isEditing), flex: "unset", width: 72 }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
               </div>
-              {fields.calfSize && scoreLabels.calfSize[parseInt(fields.calfSize)] && (
+              {!isEditing && fields.calfSize && scoreLabels.calfSize[parseInt(fields.calfSize)] && (
                 <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
                   {scoreLabels.calfSize[parseInt(fields.calfSize)]}
                 </div>
