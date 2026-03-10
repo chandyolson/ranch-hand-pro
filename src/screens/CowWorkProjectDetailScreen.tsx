@@ -422,7 +422,7 @@ export default function CowWorkProjectDetailScreen() {
             </div>
 
             {/* Products given */}
-            <div className="rounded-xl bg-white px-4 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div className="rounded-xl bg-white px-3 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.40)", textTransform: "uppercase" }}>PRODUCTS GIVEN</span>
                 <span className="cursor-pointer" style={{ fontSize: 11, fontWeight: 600, color: "#55BAAA" }}>Edit</span>
