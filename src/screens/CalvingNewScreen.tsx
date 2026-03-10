@@ -67,7 +67,7 @@ const cardStyle = "rounded-xl font-['Inter']";
 const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="flex items-center gap-2">
     <span style={labelStyle}>{label}</span>
-    {children}
+    <div className="flex-1 min-w-0">{children}</div>
   </div>
 );
 
