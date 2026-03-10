@@ -159,27 +159,27 @@ export const TRAIT_LABELS = {
   ],
   udder: [
     '',
-    'Poor (1)',              // 1
-    'Poor (2)',              // 2
-    'Marginal (3)',          // 3
-    'Marginal (4)',          // 4
-    'Acceptable (5)',        // 5
-    'Acceptable (6)',        // 6
-    'Desirable (7)',         // 7
-    'Desirable (8)',         // 8
+    'Very Pendulous',        // 1
+    'Pendulous',             // 2
+    'Weak Attachment',       // 3
+    'Moderate Low',          // 4
+    'Average',               // 5
+    'Above Average',         // 6
+    'Good Support',          // 7
+    'Strong Support',        // 8
     'Excellent',             // 9
   ],
   teat: [
     '',
-    'Poor (1)',              // 1
-    'Poor (2)',              // 2
-    'Marginal (3)',          // 3
-    'Marginal (4)',          // 4
-    'Acceptable (5)',        // 5
-    'Acceptable (6)',        // 6
-    'Desirable (7)',         // 7
-    'Desirable (8)',         // 8
-    'Excellent',             // 9
+    'Very Large',            // 1
+    'Large',                 // 2
+    'Thick',                 // 3
+    'Moderate Large',        // 4
+    'Average',               // 5
+    'Above Average',         // 6
+    'Good',                  // 7
+    'Very Good',             // 8
+    'Ideal',                 // 9
   ],
   claw: [
     '',
