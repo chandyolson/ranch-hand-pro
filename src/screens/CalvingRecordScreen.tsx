@@ -535,11 +535,11 @@ function ScoreField({ label, value, max, labels, isEditing, onChange }: {
           </select>
         ) : (
           <div style={{ ...inputReadOnly, display: "flex", alignItems: "center" }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{value || "—"}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{(value && labels[parseInt(value)]) || value || "—"}</span>
           </div>
         )}
       </div>
-      {value && labels[parseInt(value)] && (
+      {isEditing && value && labels[parseInt(value)] && (
         <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
           {labels[parseInt(value)]}
         </div>
