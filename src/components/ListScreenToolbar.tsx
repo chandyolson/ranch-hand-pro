@@ -29,6 +29,8 @@ interface ListScreenToolbarProps {
   onMassEdit?: () => void;
   resultCount?: number;
   isFiltering?: boolean;
+  hideTitle?: boolean;
+  compactAdd?: boolean;
 }
 
 const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
