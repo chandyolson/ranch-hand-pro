@@ -13,6 +13,15 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/red-book": { title: "Red Book", subtitle: "Ranch Notes & Records" },
   "/red-book/new": { title: "New Note", subtitle: "Red Book Entry" },
   "/reference": { title: "Reference", subtitle: "Settings & Lookups" },
+  "/reference/groups": { title: "Groups", subtitle: "Animal Groupings" },
+  "/reference/locations": { title: "Locations", subtitle: "Pastures & Facilities" },
+  "/reference/quick-notes": { title: "Quick Notes", subtitle: "Reusable Phrases" },
+  "/reference/preg-stages": { title: "Preg Stages", subtitle: "Pregnancy Stages" },
+  "/reference/treatments": { title: "Products", subtitle: "Product Library" },
+  "/reference/team": { title: "Team", subtitle: "Members & Roles" },
+  "/reference/settings": { title: "Settings", subtitle: "Operation Config" },
+  "/reference/breeds": { title: "Breeds", subtitle: "Breed Library" },
+  "/reference/templates": { title: "Templates", subtitle: "Work Templates" },
 };
 
 const navRouteMap: Record<string, string> = {
