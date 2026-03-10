@@ -1,28 +1,17 @@
 import React, { useState } from "react";
 import { useChuteSideToast } from "@/components/ToastContext";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
+import { PRODUCT_CATEGORIES, PRODUCT_CATEGORY_CONFIG, ROUTE_OPTIONS, type ProductCategory } from "@/lib/constants";
+import { LABEL_STYLE, INPUT_CLS } from "@/lib/styles";
 
 interface Product {
   id: string;
   name: string;
-  category: "vaccine" | "antibiotic" | "hormone" | "mineral" | "other";
+  category: ProductCategory;
   defaultDosage: string;
   defaultRoute: string;
   withdrawalDays: number;
 }
-
-const routeOptions = ["IM", "SQ", "IV", "Topical", "Oral", "Intranasal"];
-const categoryOptions: Product["category"][] = ["vaccine", "antibiotic", "hormone", "mineral", "other"];
-const categoryConfig: Record<string, { label: string; color: string; bg: string }> = {
-  vaccine:    { label: "Vaccine",    color: "#55BAAA", bg: "rgba(85,186,170,0.12)" },
-  antibiotic: { label: "Antibiotic", color: "#E87461", bg: "rgba(232,116,97,0.12)" },
-  hormone:    { label: "Hormone",    color: "#A8A8F0", bg: "rgba(168,168,240,0.12)" },
-  mineral:    { label: "Mineral",    color: "#F3D12A", bg: "rgba(243,209,42,0.12)" },
-  other:      { label: "Other",      color: "#A8A8A8", bg: "rgba(168,168,168,0.12)" },
-};
-
-const labelStyle: React.CSSProperties = { width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
-const inputClass = "flex-1 h-10 rounded-lg border border-[#D4D4D0] bg-white px-3 outline-none font-['Inter'] transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25";
 
 const ReferenceTreatmentsScreen: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([
@@ -43,7 +32,7 @@ const ReferenceTreatmentsScreen: React.FC = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sort, setSort] = useState("name");
-  const [newProduct, setNewProduct] = useState({ name: "", category: "vaccine" as Product["category"], defaultDosage: "", defaultRoute: "IM", withdrawalDays: "0" });
+  const [newProduct, setNewProduct] = useState({ name: "", category: "vaccine" as ProductCategory, defaultDosage: "", defaultRoute: "IM", withdrawalDays: "0" });
   const { showToast } = useChuteSideToast();
 
   const filtered = products
@@ -73,7 +62,7 @@ const ReferenceTreatmentsScreen: React.FC = () => {
   const isFiltering = search.length > 0 || categoryFilter !== "all";
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3">
       <ListScreenToolbar
         title="Products"
         addLabel="Add Product"
@@ -83,7 +72,7 @@ const ReferenceTreatmentsScreen: React.FC = () => {
         searchPlaceholder="Search products…"
         filterChips={[
           { value: "all", label: "All" },
-          ...categoryOptions.map(c => ({ value: c, label: categoryConfig[c].label })),
+          ...PRODUCT_CATEGORIES.map(c => ({ value: c, label: PRODUCT_CATEGORY_CONFIG[c].label })),
         ]}
         activeFilter={categoryFilter}
         onFilterChange={setCategoryFilter}
@@ -101,34 +90,34 @@ const ReferenceTreatmentsScreen: React.FC = () => {
 
       {/* Add form */}
       {addOpen && (
-        <div className="rounded-xl px-3 py-3.5 space-y-2 font-['Inter']" style={{ backgroundColor: "white", border: "2px solid #F3D12A" }}>
+        <div className="rounded-xl px-3 py-3.5 space-y-2" style={{ backgroundColor: "white", border: "2px solid #F3D12A" }}>
           <div className="flex items-center gap-2">
-            <span style={labelStyle}>Name</span>
-            <input type="text" value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))} placeholder="Product name" className={inputClass} style={{ fontSize: 16 }} />
+            <span style={LABEL_STYLE}>Name</span>
+            <input type="text" value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))} placeholder="Product name" className={INPUT_CLS} style={{ fontSize: 16 }} />
           </div>
           <div className="flex items-center gap-2">
-            <span style={labelStyle}>Category</span>
-            <select value={newProduct.category} onChange={e => setNewProduct(p => ({ ...p, category: e.target.value as Product["category"] }))} className={inputClass} style={{ fontSize: 16 }}>
-              {categoryOptions.map(c => <option key={c} value={c}>{categoryConfig[c].label}</option>)}
+            <span style={LABEL_STYLE}>Category</span>
+            <select value={newProduct.category} onChange={e => setNewProduct(p => ({ ...p, category: e.target.value as ProductCategory }))} className={INPUT_CLS} style={{ fontSize: 16 }}>
+              {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{PRODUCT_CATEGORY_CONFIG[c].label}</option>)}
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <span style={labelStyle}>Default Dose</span>
-            <input type="text" value={newProduct.defaultDosage} onChange={e => setNewProduct(p => ({ ...p, defaultDosage: e.target.value }))} placeholder="e.g. 2 mL" className={inputClass} style={{ fontSize: 16 }} />
+            <span style={LABEL_STYLE}>Default Dose</span>
+            <input type="text" value={newProduct.defaultDosage} onChange={e => setNewProduct(p => ({ ...p, defaultDosage: e.target.value }))} placeholder="e.g. 2 mL" className={INPUT_CLS} style={{ fontSize: 16 }} />
           </div>
           <div className="flex items-center gap-2">
-            <span style={labelStyle}>Route</span>
-            <select value={newProduct.defaultRoute} onChange={e => setNewProduct(p => ({ ...p, defaultRoute: e.target.value }))} className={inputClass} style={{ fontSize: 16 }}>
-              {routeOptions.map(r => <option key={r} value={r}>{r}</option>)}
+            <span style={LABEL_STYLE}>Route</span>
+            <select value={newProduct.defaultRoute} onChange={e => setNewProduct(p => ({ ...p, defaultRoute: e.target.value }))} className={INPUT_CLS} style={{ fontSize: 16 }}>
+              {ROUTE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <span style={labelStyle}>Withdrawal</span>
-            <input type="number" min="0" value={newProduct.withdrawalDays} onChange={e => setNewProduct(p => ({ ...p, withdrawalDays: e.target.value }))} placeholder="days (0 = none)" className={inputClass} style={{ fontSize: 16 }} />
+            <span style={LABEL_STYLE}>Withdrawal</span>
+            <input type="number" min="0" value={newProduct.withdrawalDays} onChange={e => setNewProduct(p => ({ ...p, withdrawalDays: e.target.value }))} placeholder="days (0 = none)" className={INPUT_CLS} style={{ fontSize: 16 }} />
           </div>
           <div className="flex gap-2 mt-1">
-            <button className="flex-1 rounded-full py-2.5 border font-['Inter'] cursor-pointer active:scale-[0.97]" style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }} onClick={() => { setAddOpen(false); setNewProduct({ name: "", category: "vaccine", defaultDosage: "", defaultRoute: "IM", withdrawalDays: "0" }); }}>Cancel</button>
-            <button className="flex-1 rounded-full py-2.5 font-['Inter'] cursor-pointer active:scale-[0.97]" style={{ backgroundColor: "#0E2646", fontSize: 13, fontWeight: 700, color: "white", border: "none" }} onClick={handleAdd}>Save</button>
+            <button className="flex-1 rounded-full py-2.5 border cursor-pointer active:scale-[0.97]" style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }} onClick={() => { setAddOpen(false); setNewProduct({ name: "", category: "vaccine", defaultDosage: "", defaultRoute: "IM", withdrawalDays: "0" }); }}>Cancel</button>
+            <button className="flex-1 rounded-full py-2.5 cursor-pointer active:scale-[0.97]" style={{ backgroundColor: "#0E2646", fontSize: 13, fontWeight: 700, color: "white", border: "none" }} onClick={handleAdd}>Save</button>
           </div>
         </div>
       )}
@@ -138,9 +127,9 @@ const ReferenceTreatmentsScreen: React.FC = () => {
         {filtered.length === 0 ? (
           <div className="py-8 text-center" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products found</div>
         ) : filtered.map(p => {
-          const cat = categoryConfig[p.category];
+          const cat = PRODUCT_CATEGORY_CONFIG[p.category];
           return (
-            <div key={p.id} className="flex items-start gap-3 py-3 border-b border-[rgba(26,26,26,0.06)] last:border-b-0 font-['Inter']">
+            <div key={p.id} className="flex items-start gap-3 py-3 border-b border-[rgba(26,26,26,0.06)] last:border-b-0">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>{p.name}</span>

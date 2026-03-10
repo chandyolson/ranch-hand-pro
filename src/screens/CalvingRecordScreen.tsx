@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import CollapsibleSection from "../components/CollapsibleSection";
 import FlagIcon from "../components/FlagIcon";
 import { useChuteSideToast } from "../components/ToastContext";
+import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX, CALF_SEX_OPTIONS, FLAG_OPTIONS, QUICK_NOTES, type FlagColor } from "@/lib/constants";
+import { LABEL_STYLE, INPUT_BASE, INPUT_READONLY, SUB_LABEL, focusGold, blurReset } from "@/lib/styles";
 
 /* ── Types ── */
 interface CalvingRecord {
@@ -15,7 +17,7 @@ interface CalvingRecord {
   damColorHex: string;
   damType: string;
   damYearBorn: string;
-  damFlag: "teal" | "gold" | "red" | null;
+  damFlag: FlagColor | null;
   calfTag: string;
   calfColor: string;
   calfColorHex: string;
@@ -85,40 +87,10 @@ const scoreLabels: Record<string, string[]> = {
   calfSize:    ["","1 — Small","2 — Mod. Small","3 — Average","4 — Mod. Large","5 — Large"],
 };
 
-const flagConfig: Record<string, { label: string; hex: string }> = {
-  teal: { label: "Management", hex: "#55BAAA" },
-  gold: { label: "Production", hex: "#F3D12A" },
-  red:  { label: "Cull", hex: "#9B2335" },
-};
-
-const tagColorOptions = ["Pink","Yellow","Orange","Green","Blue","White","Red","Purple","No Tag"];
-const tagColorHexMap: Record<string, string> = {
-  Pink: "#E8A0BF", Yellow: "#F3D12A", Orange: "#E8863A", Green: "#55BAAA",
-  Blue: "#5B8DEF", White: "#E0E0E0", Red: "#D4606E", Purple: "#A77BCA", "No Tag": "#999999",
-};
 const groupOptions = ["Spring Calvers","Fall Calvers","First Calf Heifers","Replacement Heifers","Mixed"];
 const locationOptions = ["Home Place","East Pasture","West Pasture","Calving Barn","Feedlot"];
-const sexOptions = ["Bull","Heifer","Unknown"];
-const quickNoteOptions = ["Hard keeper","Easy keeper","Good mother","Poor mother","Prolapse history","Foot rot","Lump jaw","Slow breeder","Heavy milker","Light milker"];
-
-/* ── Shared styles ── */
-const inputBase: React.CSSProperties = {
-  flex: 1, height: 40, borderRadius: 8, paddingLeft: 12, paddingRight: 12,
-  fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 400, color: "#1A1A1A", outline: "none",
-};
-const inputEditing: React.CSSProperties = { ...inputBase, border: "1px solid #D4D4D0", backgroundColor: "white" };
-const inputReadOnly: React.CSSProperties = { ...inputBase, border: "1px solid transparent", backgroundColor: "#F5F5F0", cursor: "default" };
-const labelStyle: React.CSSProperties = { width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A", fontFamily: "'Inter', sans-serif" };
-const sectionLabel: React.CSSProperties = { fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", fontFamily: "'Inter', sans-serif" };
-
-const focusGold = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-  e.currentTarget.style.borderColor = "#F3D12A";
-  e.currentTarget.style.boxShadow = "0 0 0 2px rgba(243,209,42,0.25)";
-};
-const blurReset = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-  e.currentTarget.style.borderColor = "#D4D4D0";
-  e.currentTarget.style.boxShadow = "none";
-};
+const calvingSexOptions = [...CALF_SEX_OPTIONS, "Unknown"] as const;
+const quickNoteLabels = QUICK_NOTES.map(n => n.label);
 
 const formatDate = (iso: string) => {
   const d = new Date(iso + "T00:00:00");
@@ -157,16 +129,18 @@ export default function CalvingRecordScreen() {
   const calfScoreLabelsMap: Record<string, string> = { calfVigor: "Vigor", calfSize: "Calf Size" };
   const calfScoreMax: Record<string, number> = { calfVigor: 5, calfSize: 5 };
 
-  const getStyle = (editing: boolean) => editing ? inputEditing : inputReadOnly;
+  const getStyle = (editing: boolean) => editing ? INPUT_BASE : INPUT_READONLY;
 
   const assistanceVal = parseInt(fields.assistance);
   const assistanceLabel = assistanceVal > 1 ? scoreLabels.assistance[assistanceVal] : null;
 
+  const flagInfo = fields.damFlag ? FLAG_OPTIONS.find(f => f.color === fields.damFlag) : null;
+
   return (
-    <div className="px-4 space-y-0 pb-10 font-['Inter']">
+    <div className="px-4 space-y-0 pb-10">
       {/* GRADIENT HEADER */}
       <div
-        className="rounded-2xl mt-3 font-['Inter']"
+        className="rounded-2xl mt-3"
         style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)", padding: "16px" }}
       >
         <div className="flex items-start justify-between gap-3">
@@ -215,11 +189,11 @@ export default function CalvingRecordScreen() {
             </div>
           </div>
           {/* Right — flag */}
-          {fields.damFlag && (
+          {fields.damFlag && flagInfo && (
             <div className="shrink-0 flex flex-col items-center gap-1 pt-1">
               <FlagIcon color={fields.damFlag} size="md" />
-              <span style={{ fontSize: 10, fontWeight: 600, color: flagConfig[fields.damFlag]?.hex, textAlign: "center" }}>
-                {flagConfig[fields.damFlag]?.label}
+              <span style={{ fontSize: 10, fontWeight: 600, color: flagInfo.hex, textAlign: "center" }}>
+                {flagInfo.label}
               </span>
             </div>
           )}
@@ -228,17 +202,17 @@ export default function CalvingRecordScreen() {
 
       {/* EDITING BAR */}
       {isEditing && (
-        <div className="mt-3 rounded-xl px-3 py-2.5 flex items-center justify-between font-['Inter']" style={{ backgroundColor: "#F3D12A" }}>
+        <div className="mt-3 rounded-xl px-3 py-2.5 flex items-center justify-between" style={{ backgroundColor: "#F3D12A" }}>
           <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.10em", color: "#1A1A1A" }}>EDITING</span>
           <div className="flex gap-2">
-            <button onClick={handleCancel} className="rounded-full px-4 py-1.5 cursor-pointer font-['Inter']" style={{ border: "1px solid rgba(26,26,26,0.20)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1A1A1A" }}>Cancel</button>
-            <button onClick={handleSave} className="rounded-full px-4 py-1.5 cursor-pointer font-['Inter']" style={{ backgroundColor: "#0E2646", border: "none", fontSize: 12, fontWeight: 700, color: "white" }}>Save</button>
+            <button onClick={handleCancel} className="rounded-full px-4 py-1.5 cursor-pointer" style={{ border: "1px solid rgba(26,26,26,0.20)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1A1A1A" }}>Cancel</button>
+            <button onClick={handleSave} className="rounded-full px-4 py-1.5 cursor-pointer" style={{ backgroundColor: "#0E2646", border: "none", fontSize: 12, fontWeight: 700, color: "white" }}>Save</button>
           </div>
         </div>
       )}
 
       {/* Tab bar */}
-      <div className="flex mt-3 gap-0 border-b font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)" }}>
+      <div className="flex mt-3 gap-0 border-b" style={{ borderColor: "rgba(212,212,208,0.60)" }}>
         {[
           { key: "record", label: "Record" },
           { key: "dam", label: "Dam History" },
@@ -267,119 +241,119 @@ export default function CalvingRecordScreen() {
       {/* CONTENT */}
       <div className="mt-3 space-y-3">
         {/* CALVING INFO */}
-        <div className="rounded-xl border font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)", backgroundColor: "white", padding: "14px 10px" }}>
+        <div className="rounded-xl border" style={{ borderColor: "rgba(212,212,208,0.60)", backgroundColor: "white", padding: "14px 10px" }}>
           <div className="flex items-center justify-between mb-2">
-            <span style={sectionLabel}>CALVING INFO</span>
+            <span style={SUB_LABEL}>CALVING INFO</span>
             {!isEditing && (
-              <button onClick={() => setIsEditing(true)} className="rounded-full px-3 py-1 cursor-pointer active:scale-[0.97] font-['Inter']" style={{ backgroundColor: "#F3D12A", border: "none", fontSize: 11, fontWeight: 700, color: "#1A1A1A" }}>Edit</button>
+              <button onClick={() => setIsEditing(true)} className="rounded-full px-3 py-1 cursor-pointer active:scale-[0.97]" style={{ backgroundColor: "#F3D12A", border: "none", fontSize: 11, fontWeight: 700, color: "#1A1A1A" }}>Edit</button>
             )}
           </div>
           <div className="space-y-2">
             {/* Date */}
             <div className="flex items-center gap-2">
-              <span style={labelStyle}>Date</span>
+              <span style={LABEL_STYLE}>Date</span>
               <input type="date" value={fields.date} onChange={e => set("date", e.target.value)} readOnly={!isEditing} style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
             </div>
             {/* Dam Tag */}
             <div>
               <div className="flex items-center gap-2">
-                <span style={labelStyle}>Dam Tag</span>
+                <span style={LABEL_STYLE}>Dam Tag</span>
                 <input type="text" value={fields.damTag} onChange={e => set("damTag", e.target.value)} readOnly={!isEditing} style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
               </div>
               <div className="flex items-center gap-1.5" style={{ marginLeft: 104, marginTop: 2 }}>
                 <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: fields.damColorHex, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", fontFamily: "'Inter', sans-serif" }}>{fields.damColor} · {fields.damType} · {fields.damYearBorn}</span>
+                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{fields.damColor} · {fields.damType} · {fields.damYearBorn}</span>
               </div>
             </div>
             {/* Group */}
             <div className="flex items-center gap-2">
-              <span style={labelStyle}>Group</span>
+              <span style={LABEL_STYLE}>Group</span>
               {isEditing ? (
-                <select value={fields.group} onChange={e => set("group", e.target.value)} style={{ ...inputEditing, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
+                <select value={fields.group} onChange={e => set("group", e.target.value)} style={{ ...INPUT_BASE, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
                   {groupOptions.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               ) : (
-                <div style={inputReadOnly}><span style={{ lineHeight: "40px" }}>{fields.group}</span></div>
+                <div style={INPUT_READONLY}><span style={{ lineHeight: "40px" }}>{fields.group}</span></div>
               )}
             </div>
             {/* Location */}
             <div className="flex items-center gap-2">
-              <span style={labelStyle}>Location</span>
+              <span style={LABEL_STYLE}>Location</span>
               {isEditing ? (
-                <select value={fields.location} onChange={e => set("location", e.target.value)} style={{ ...inputEditing, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
+                <select value={fields.location} onChange={e => set("location", e.target.value)} style={{ ...INPUT_BASE, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
                   {locationOptions.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               ) : (
-                <div style={inputReadOnly}><span style={{ lineHeight: "40px" }}>{fields.location}</span></div>
+                <div style={INPUT_READONLY}><span style={{ lineHeight: "40px" }}>{fields.location}</span></div>
               )}
             </div>
           </div>
         </div>
 
         {/* CALF INFO */}
-        <div className="rounded-xl border font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)", backgroundColor: "white", padding: "14px 10px" }}>
-          <div style={{ ...sectionLabel, marginBottom: 8 }}>CALF INFO</div>
+        <div className="rounded-xl border" style={{ borderColor: "rgba(212,212,208,0.60)", backgroundColor: "white", padding: "14px 10px" }}>
+          <div style={{ ...SUB_LABEL, marginBottom: 8 }}>CALF INFO</div>
           <div className="space-y-2">
             {/* Calf Tag */}
             <div className="flex items-center gap-2">
-              <span style={labelStyle}>Calf Tag</span>
+              <span style={LABEL_STYLE}>Calf Tag</span>
               <input type="text" value={fields.calfTag} onChange={e => set("calfTag", e.target.value)} readOnly={!isEditing} style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
             </div>
             {/* Tag Color */}
             <div className="flex items-center gap-2">
-              <span style={labelStyle}>Tag Color</span>
+              <span style={LABEL_STYLE}>Tag Color</span>
               {isEditing ? (
                 <div className="relative flex-1">
-                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 8, height: 8, borderRadius: 9999, backgroundColor: tagColorHexMap[fields.calfColor] || "#999", zIndex: 1 }} />
-                  <select value={fields.calfColor} onChange={e => set("calfColor", e.target.value)} style={{ ...inputEditing, flex: "unset", width: "100%", paddingLeft: 28, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
-                    {tagColorOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 8, height: 8, borderRadius: 9999, backgroundColor: TAG_COLOR_HEX[fields.calfColor] || "#999", zIndex: 1 }} />
+                  <select value={fields.calfColor} onChange={e => set("calfColor", e.target.value)} style={{ ...INPUT_BASE, flex: "unset", width: "100%", paddingLeft: 28, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
+                    {TAG_COLOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
               ) : (
-                <div style={inputReadOnly} className="flex items-center gap-2">
-                  <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: tagColorHexMap[fields.calfColor] || "#999", flexShrink: 0 }} />
+                <div style={INPUT_READONLY} className="flex items-center gap-2">
+                  <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: TAG_COLOR_HEX[fields.calfColor] || "#999", flexShrink: 0 }} />
                   <span>{fields.calfColor}</span>
                 </div>
               )}
             </div>
             {/* Calf EID */}
             <div className="flex items-center gap-2">
-              <span style={labelStyle}>Calf EID</span>
+              <span style={LABEL_STYLE}>Calf EID</span>
               <input type="text" value={fields.calfEid} onChange={e => set("calfEid", e.target.value)} readOnly={!isEditing} placeholder="None recorded" style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
             </div>
             {/* Sex */}
             <div className="flex items-center gap-2">
-              <span style={labelStyle}>Sex</span>
+              <span style={LABEL_STYLE}>Sex</span>
               {isEditing ? (
-                <select value={fields.calfSex} onChange={e => set("calfSex", e.target.value as CalvingRecord["calfSex"])} style={{ ...inputEditing, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
-                  {sexOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                <select value={fields.calfSex} onChange={e => set("calfSex", e.target.value as CalvingRecord["calfSex"])} style={{ ...INPUT_BASE, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
+                  {calvingSexOptions.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               ) : (
-                <div style={inputReadOnly}><span style={{ lineHeight: "40px" }}>{fields.calfSex}</span></div>
+                <div style={INPUT_READONLY}><span style={{ lineHeight: "40px" }}>{fields.calfSex}</span></div>
               )}
             </div>
             {/* Sire */}
             <div className="flex items-center gap-2">
-              <span style={labelStyle}>Sire</span>
+              <span style={LABEL_STYLE}>Sire</span>
               <input type="text" value={fields.sire} onChange={e => set("sire", e.target.value)} readOnly={!isEditing} style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
             </div>
             {/* Wt / Size */}
             <div>
               <div className="flex items-center gap-2">
-                <span style={labelStyle}>Wt / Size</span>
+                <span style={LABEL_STYLE}>Wt / Size</span>
                 <input type="number" value={fields.birthWeight} onChange={e => set("birthWeight", e.target.value)} readOnly={!isEditing} placeholder="lbs" style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
-                <span style={{ color: "rgba(26,26,26,0.25)", fontFamily: "'Inter', sans-serif", margin: "0 2px" }}>/</span>
+                <span style={{ color: "rgba(26,26,26,0.25)", margin: "0 2px" }}>/</span>
                 <input type="number" min={1} max={5} value={fields.calfSize} onChange={e => set("calfSize", e.target.value)} readOnly={!isEditing} placeholder="1–5" style={{ ...getStyle(isEditing), flex: "unset", width: 72 }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
               </div>
               {!isEditing && fields.calfSize && scoreLabels.calfSize[parseInt(fields.calfSize)] && (
-                <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
+                <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
                   {scoreLabels.calfSize[parseInt(fields.calfSize)]}
                 </div>
               )}
             </div>
             {/* Status */}
             <div className="flex items-center gap-2">
-              <span style={labelStyle}>Status</span>
+              <span style={LABEL_STYLE}>Status</span>
               <div className="flex gap-2 flex-1">
                 {(["Alive", "Dead"] as const).map(s => {
                   const active = fields.calfStatus === s;
@@ -390,7 +364,7 @@ export default function CalvingRecordScreen() {
                     <button
                       key={s}
                       onClick={() => isEditing && set("calfStatus", s)}
-                      className="rounded-full flex-1 font-['Inter']"
+                      className="rounded-full flex-1"
                       style={{ height: 40, border: `1px solid ${border}`, backgroundColor: bg, fontSize: 14, fontWeight: 700, color, cursor: isEditing ? "pointer" : "default" }}
                     >
                       {s}
@@ -409,7 +383,7 @@ export default function CalvingRecordScreen() {
           collapsedContent={
             <div className="flex flex-wrap gap-1.5 pt-2">
               {cowScoreKeys.filter(k => fields[k]).length === 0 ? (
-                <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>No scores recorded</span>
+                <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>No scores recorded</span>
               ) : (
                 cowScoreKeys.filter(k => fields[k]).map(k => {
                   const val = parseInt(fields[k] as string);
@@ -438,7 +412,7 @@ export default function CalvingRecordScreen() {
           collapsedContent={
             <div className="flex flex-wrap gap-1.5 pt-2">
               {calfScoreKeys.filter(k => fields[k]).length === 0 ? (
-                <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>No scores recorded</span>
+                <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>No scores recorded</span>
               ) : (
                 calfScoreKeys.filter(k => fields[k]).map(k => {
                   const val = parseInt(fields[k] as string);
@@ -461,18 +435,18 @@ export default function CalvingRecordScreen() {
         </CollapsibleSection>
 
         {/* NOTES */}
-        <div className="rounded-xl border font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)", backgroundColor: "white", padding: "14px 10px" }}>
-          <div style={{ ...sectionLabel, marginBottom: 8 }}>NOTES</div>
+        <div className="rounded-xl border" style={{ borderColor: "rgba(212,212,208,0.60)", backgroundColor: "white", padding: "14px 10px" }}>
+          <div style={{ ...SUB_LABEL, marginBottom: 8 }}>NOTES</div>
           {/* Quick notes */}
           <div className="flex flex-wrap gap-2 mb-3">
             {isEditing ? (
-              quickNoteOptions.map(n => {
+              quickNoteLabels.map(n => {
                 const active = fields.quickNotes.includes(n);
                 return (
                   <button
                     key={n}
                     onClick={() => set("quickNotes", active ? fields.quickNotes.filter(x => x !== n) : [...fields.quickNotes, n])}
-                    className="rounded-full cursor-pointer active:scale-[0.96] font-['Inter']"
+                    className="rounded-full cursor-pointer active:scale-[0.96]"
                     style={{
                       padding: "6px 12px", fontSize: 13, fontWeight: 600, border: "none",
                       backgroundColor: active ? "#0E2646" : "rgba(14,38,70,0.06)",
@@ -485,44 +459,43 @@ export default function CalvingRecordScreen() {
               })
             ) : (
               fields.quickNotes.length === 0 ? (
-                <span style={{ fontSize: 13, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>None</span>
+                <span style={{ fontSize: 13, color: "rgba(26,26,26,0.35)" }}>None</span>
               ) : (
                 fields.quickNotes.map(n => (
-                  <span key={n} className="rounded-full font-['Inter']" style={{ padding: "6px 12px", fontSize: 13, fontWeight: 600, backgroundColor: "#0E2646", color: "white" }}>{n}</span>
+                  <span key={n} className="rounded-full" style={{ padding: "6px 12px", fontSize: 13, fontWeight: 600, backgroundColor: "#0E2646", color: "white" }}>{n}</span>
                 ))
               )
             )}
           </div>
           {/* Memo */}
-          <div style={{ ...sectionLabel, marginBottom: 6 }}>MEMO</div>
+          <div style={{ ...SUB_LABEL, marginBottom: 6 }}>MEMO</div>
           {isEditing ? (
             <textarea
               value={fields.memo}
               onChange={e => set("memo", e.target.value)}
               placeholder="Notes about this record…"
-              className="font-['Inter']"
               style={{
                 width: "100%", minHeight: 64, resize: "none", borderRadius: 8, padding: "10px 12px",
                 backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16, fontWeight: 400,
-                color: "#1A1A1A", outline: "none", fontFamily: "'Inter', sans-serif",
+                color: "#1A1A1A", outline: "none",
               }}
               onFocus={focusGold}
               onBlur={blurReset}
             />
           ) : (
             fields.memo ? (
-              <p style={{ fontSize: 14, color: "#1A1A1A", lineHeight: 1.5, fontFamily: "'Inter', sans-serif", margin: 0 }}>{fields.memo}</p>
+              <p style={{ fontSize: 14, color: "#1A1A1A", lineHeight: 1.5, margin: 0 }}>{fields.memo}</p>
             ) : (
-              <span style={{ fontSize: 13, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>None</span>
+              <span style={{ fontSize: 13, color: "rgba(26,26,26,0.35)" }}>None</span>
             )
           )}
         </div>
 
         {/* Bottom actions */}
-        <div className="flex gap-3 pt-2 pb-6 font-['Inter']">
+        <div className="flex gap-3 pt-2 pb-6">
           <button
             onClick={handleCancel}
-            className="flex-1 rounded-full py-3.5 border border-[#D4D4D0] bg-white font-['Inter'] cursor-pointer active:scale-[0.97] transition-all"
+            className="flex-1 rounded-full py-3.5 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97] transition-all"
             style={{ fontSize: 14, fontWeight: 600, color: "#0E2646" }}
           >
             Reset
@@ -535,7 +508,7 @@ export default function CalvingRecordScreen() {
               }
               navigate("/calving/new");
             }}
-            className="flex-[2] rounded-full py-3.5 bg-[#F3D12A] font-['Inter'] cursor-pointer active:scale-[0.97] transition-all"
+            className="flex-[2] rounded-full py-3.5 bg-[#F3D12A] cursor-pointer active:scale-[0.97] transition-all"
             style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A", border: "none" }}
           >
             Save &amp; New
@@ -553,12 +526,12 @@ function ScoreField({ label, value, max, labels, isEditing, onChange }: {
   return (
     <div>
       <div className="flex items-start gap-2">
-        <span style={{ ...labelStyle, paddingTop: 8 }}>{label}</span>
+        <span style={{ ...LABEL_STYLE, paddingTop: 8 }}>{label}</span>
         {isEditing ? (
           <select
             value={value}
             onChange={e => onChange(e.target.value)}
-            style={{ ...inputEditing, appearance: "auto" as const }}
+            style={{ ...INPUT_BASE, appearance: "auto" as const }}
             onFocus={focusGold}
             onBlur={blurReset}
           >
@@ -568,13 +541,13 @@ function ScoreField({ label, value, max, labels, isEditing, onChange }: {
             ))}
           </select>
         ) : (
-          <div style={{ ...inputReadOnly, display: "flex", alignItems: "center" }}>
+          <div style={{ ...INPUT_READONLY, display: "flex", alignItems: "center" }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{(value && labels[parseInt(value)]) || value || "—"}</span>
           </div>
         )}
       </div>
       {isEditing && value && labels[parseInt(value)] && (
-        <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
           {labels[parseInt(value)]}
         </div>
       )}

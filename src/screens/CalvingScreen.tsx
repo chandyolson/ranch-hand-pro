@@ -68,7 +68,7 @@ export default function CalvingScreen() {
   const isFiltering = search.length > 0 || filter !== "All";
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3">
       <ListScreenToolbar
         title="Calving"
         addLabel="New Entry"
@@ -101,7 +101,7 @@ export default function CalvingScreen() {
 
       {/* Season stats bar */}
       <div
-        className="rounded-2xl px-4 py-3.5 flex items-center justify-between font-['Inter']"
+        className="rounded-2xl px-4 py-3.5 flex items-center justify-between"
         style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
       >
         {[
@@ -136,7 +136,7 @@ export default function CalvingScreen() {
         {filtered.map(r => (
           <div
             key={r.id}
-            className="bg-[#0E2646] rounded-xl px-4 py-3.5 font-['Inter'] cursor-pointer active:scale-[0.98] transition-all duration-150"
+            className="bg-[#0E2646] rounded-xl px-4 py-3.5 cursor-pointer active:scale-[0.98] transition-all duration-150"
             onClick={() => navigate("/calving/" + r.id)}
           >
             <div className="flex items-center justify-between gap-2">

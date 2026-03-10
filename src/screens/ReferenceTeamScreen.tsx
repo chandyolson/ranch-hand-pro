@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useChuteSideToast } from "@/components/ToastContext";
+import { LABEL_STYLE, INPUT_CLS } from "@/lib/styles";
 
 interface TeamMember {
   id: string;
@@ -27,8 +28,6 @@ const roleDescriptions: Record<string, string> = {
 };
 
 const roleOptions: TeamMember["role"][] = ["Admin", "Operator", "Veterinarian", "Operation Member", "Operation Guest"];
-const labelStyle: React.CSSProperties = { width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
-const inputClass = "flex-1 h-10 rounded-lg border border-[#D4D4D0] bg-white px-3 outline-none font-['Inter'] transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25";
 
 const ReferenceTeamScreen: React.FC = () => {
   const [members, setMembers] = useState<TeamMember[]>([
@@ -51,23 +50,23 @@ const ReferenceTeamScreen: React.FC = () => {
   };
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3">
       <div className="flex items-center justify-between">
         <span style={{ fontSize: 20, fontWeight: 800, color: "#0E2646" }}>Team</span>
-        <button className="rounded-full h-9 px-4 flex items-center gap-1.5 cursor-pointer active:scale-[0.97] font-['Inter']" style={{ backgroundColor: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A", border: "none" }} onClick={() => setInviteOpen(true)}>
+        <button className="rounded-full h-9 px-4 flex items-center gap-1.5 cursor-pointer active:scale-[0.97]" style={{ backgroundColor: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A", border: "none" }} onClick={() => setInviteOpen(true)}>
           <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>+</span> Invite
         </button>
       </div>
 
       {inviteOpen && (
-        <div className="rounded-xl px-3 py-3.5 space-y-2 font-['Inter']" style={{ backgroundColor: "white", border: "2px solid #F3D12A" }}>
+        <div className="rounded-xl px-3 py-3.5 space-y-2" style={{ backgroundColor: "white", border: "2px solid #F3D12A" }}>
           <div className="flex items-center gap-2">
-            <span style={labelStyle}>Email</span>
-            <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Email address" className={inputClass} style={{ fontSize: 16 }} />
+            <span style={LABEL_STYLE}>Email</span>
+            <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Email address" className={INPUT_CLS} style={{ fontSize: 16 }} />
           </div>
           <div className="flex items-center gap-2">
-            <span style={labelStyle}>Role</span>
-            <select value={inviteRole} onChange={e => setInviteRole(e.target.value as TeamMember["role"])} className={inputClass} style={{ fontSize: 16 }}>
+            <span style={LABEL_STYLE}>Role</span>
+            <select value={inviteRole} onChange={e => setInviteRole(e.target.value as TeamMember["role"])} className={INPUT_CLS} style={{ fontSize: 16 }}>
               {roleOptions.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
@@ -75,8 +74,8 @@ const ReferenceTeamScreen: React.FC = () => {
             {roleDescriptions[inviteRole]}
           </div>
           <div className="flex gap-2 mt-1">
-            <button className="flex-1 rounded-full py-2.5 border font-['Inter'] cursor-pointer active:scale-[0.97]" style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }} onClick={() => { setInviteOpen(false); setInviteEmail(""); }}>Cancel</button>
-            <button className="flex-1 rounded-full py-2.5 font-['Inter'] cursor-pointer active:scale-[0.97]" style={{ backgroundColor: "#0E2646", fontSize: 13, fontWeight: 700, color: "white", border: "none" }} onClick={handleInvite}>Send Invite</button>
+            <button className="flex-1 rounded-full py-2.5 border cursor-pointer active:scale-[0.97]" style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }} onClick={() => { setInviteOpen(false); setInviteEmail(""); }}>Cancel</button>
+            <button className="flex-1 rounded-full py-2.5 cursor-pointer active:scale-[0.97]" style={{ backgroundColor: "#0E2646", fontSize: 13, fontWeight: 700, color: "white", border: "none" }} onClick={handleInvite}>Send Invite</button>
           </div>
         </div>
       )}
@@ -85,7 +84,7 @@ const ReferenceTeamScreen: React.FC = () => {
         {members.map(m => {
           const rc = roleColors[m.role];
           return (
-            <div key={m.id} className="flex items-center gap-3 py-3 border-b border-[rgba(26,26,26,0.06)] last:border-b-0 font-['Inter']">
+            <div key={m.id} className="flex items-center gap-3 py-3 border-b border-[rgba(26,26,26,0.06)] last:border-b-0">
               <div className="rounded-full flex items-center justify-center shrink-0" style={{ width: 36, height: 36, backgroundColor: "rgba(14,38,70,0.08)", fontSize: 12, fontWeight: 700, color: "#0E2646" }}>
                 {m.initials}
               </div>

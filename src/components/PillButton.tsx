@@ -27,7 +27,6 @@ const PillButton: React.FC<PillButtonProps> = ({
     fontWeight: s.fontWeight,
     padding: s.padding,
     borderRadius: 9999,
-    fontFamily: "'Inter', sans-serif",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",

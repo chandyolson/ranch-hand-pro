@@ -56,12 +56,12 @@ const RedBookScreen: React.FC = () => {
   const isFiltering = search || categoryFilter !== "all";
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <span style={{ fontSize: 22, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>Red Book</span>
         <button
-          className="rounded-full h-9 px-4 flex items-center gap-1.5 cursor-pointer active:scale-[0.97] font-['Inter']"
+          className="rounded-full h-9 px-4 flex items-center gap-1.5 cursor-pointer active:scale-[0.97]"
           style={{ backgroundColor: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A", border: "none" }}
           onClick={() => navigate("/red-book/new")}
         >
@@ -104,7 +104,7 @@ const RedBookScreen: React.FC = () => {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search notes…"
-          className="flex-1 outline-none font-['Inter'] bg-transparent"
+          className="flex-1 outline-none bg-transparent"
           style={{ fontSize: 16, color: "#1A1A1A" }}
         />
         {search.length > 0 && (
@@ -125,7 +125,7 @@ const RedBookScreen: React.FC = () => {
           return (
             <button
               key={chip.value}
-              className="rounded-full px-3 py-1.5 font-['Inter'] cursor-pointer border transition-all active:scale-[0.96]"
+              className="rounded-full px-3 py-1.5 cursor-pointer border transition-all active:scale-[0.96]"
               style={{
                 backgroundColor: isActive ? "#0E2646" : "white",
                 borderColor: isActive ? "#0E2646" : "rgba(212,212,208,0.80)",
@@ -150,7 +150,7 @@ const RedBookScreen: React.FC = () => {
 
       {/* Entry list */}
       {filtered.length === 0 ? (
-        <div className="py-12 text-center space-y-1.5 font-['Inter']">
+        <div className="py-12 text-center space-y-1.5">
           <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No notes found</div>
           <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or category</div>
         </div>
