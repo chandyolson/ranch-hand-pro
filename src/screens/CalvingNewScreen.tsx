@@ -55,7 +55,7 @@ const inputStyle: React.CSSProperties = {
   color: "#1A1A1A", outline: "none",
 };
 const labelStyle: React.CSSProperties = {
-  width: 105, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A",
+  width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A",
   fontFamily: "'Inter', sans-serif",
 };
 const sectionLabel: React.CSSProperties = {
