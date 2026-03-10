@@ -387,7 +387,7 @@ export default function AnimalDetailScreen() {
                         <TextInput value={fields.tag} onChange={update("tag")} />
                       </FieldRow>
                       {isEditing && (
-                        <div style={{ marginLeft: 113, fontSize: 11, color: "rgba(26,26,26,0.35)", fontStyle: "italic", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
+                        <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.35)", fontStyle: "italic", marginTop: 2, fontFamily: "'Inter', sans-serif" }}>
                           Changing tag auto-archives previous identity
                         </div>
                       )}
