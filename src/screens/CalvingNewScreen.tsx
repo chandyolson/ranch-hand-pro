@@ -243,7 +243,7 @@ export default function CalvingNewScreen() {
               {isDamMatched && (
                 <div
                   className="flex items-center gap-1.5 mt-1 cursor-pointer"
-                  style={{ marginLeft: 117 }}
+                  style={{ marginLeft: 104 }}
                   onClick={() => setActiveTab("dam")}
                 >
                   <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: "#55BAAA", flexShrink: 0 }} />
