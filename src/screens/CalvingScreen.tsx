@@ -72,7 +72,7 @@ export default function CalvingScreen() {
         {recentRecords.map(r => (
           <div
             key={r.id}
-            className="rounded-xl px-4 py-3.5 font-['Inter'] cursor-pointer active:scale-[0.98] transition-all"
+            className="rounded-xl px-3 py-3.5 font-['Inter'] cursor-pointer active:scale-[0.98] transition-all"
             style={{ backgroundColor: "#0E2646" }}
           >
             {/* Row 1 */}
