@@ -120,7 +120,7 @@ export default function CowWorkProjectDetailScreen() {
     : 0;
 
   return (
-    <div className="space-y-0 pb-10 font-['Inter']">
+    <div className="px-3 space-y-0 pb-10 font-['Inter']">
       {/* COLLAPSIBLE HEADER */}
       <div
         className="rounded-xl overflow-hidden mb-3 cursor-pointer"

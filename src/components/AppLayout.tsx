@@ -148,7 +148,7 @@ const AppLayout: React.FC = () => {
         onSwitchOperation={() => setDrawerOpen(false)}
       />
 
-      <main className="px-5 py-5 md:px-8 lg:px-10">
+      <main className="py-5">
         <div className="max-w-[480px] mx-auto lg:max-w-none">
           <Outlet />
         </div>
