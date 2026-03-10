@@ -237,6 +237,33 @@ export default function CalvingRecordScreen() {
         </div>
       )}
 
+      {/* Tab bar */}
+      <div className="flex mx-3 mt-3 gap-0 border-b font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)" }}>
+        {[
+          { key: "record", label: "Record" },
+          { key: "dam", label: "Dam History" },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => {
+              if (tab.key === "dam") navigate("/animals/" + fields.damTag);
+              else setActiveTab("record");
+            }}
+            className="px-4 py-2.5 cursor-pointer transition-all active:scale-[0.97]"
+            style={{
+              fontSize: 13,
+              fontWeight: activeTab === tab.key ? 700 : 500,
+              color: activeTab === tab.key ? "#0E2646" : "rgba(26,26,26,0.40)",
+              background: "transparent",
+              border: "none",
+              borderBottom: activeTab === tab.key ? "2px solid #F3D12A" : "2px solid transparent",
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* CONTENT */}
       <div className="px-3 mt-3 space-y-3">
         {/* CALVING INFO */}
