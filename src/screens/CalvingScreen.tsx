@@ -131,12 +131,7 @@ export default function CalvingScreen() {
         ]}
         activeFilter={filter}
         onFilterChange={setFilter}
-        sortOptions={[
-          { value: "newest", label: "Newest" },
-          { value: "oldest", label: "Oldest" },
-          { value: "dam", label: "Dam Tag" },
-          { value: "calf", label: "Calf Tag" },
-        ]}
+        sortOptions={sortOptions}
         activeSort={sort}
         onSortChange={setSort}
         onImport={() => showToast("info", "Import — coming soon")}
