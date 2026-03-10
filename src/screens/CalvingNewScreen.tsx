@@ -218,7 +218,7 @@ export default function CalvingNewScreen() {
 
             {/* Dam Tag */}
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span style={labelStyle}>Dam Tag</span>
                 <div className="flex items-center gap-2 flex-1">
                   <input
