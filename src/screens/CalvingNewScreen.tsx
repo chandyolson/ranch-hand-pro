@@ -422,7 +422,7 @@ export default function CalvingNewScreen() {
             collapsedContent={
               calfScoresSet.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {calfVigor && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Vigor: {calfVigor}</span>}
+                  {calfVigor && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Vigor: {vigorLabels[parseInt(calfVigor)] || calfVigor}</span>}
                 </div>
               ) : (
                 <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>Tap to record scores</span>
