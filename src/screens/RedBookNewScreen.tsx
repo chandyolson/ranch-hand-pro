@@ -35,7 +35,7 @@ const RedBookNewScreen: React.FC = () => {
   const hasPhoto = attachments.some(a => a.type === "photo");
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3">
       {/* Main entry card */}
       <div className="rounded-xl px-3 py-3.5 space-y-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
         {/* Title */}
@@ -44,7 +44,7 @@ const RedBookNewScreen: React.FC = () => {
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder="Note title…"
-          className="w-full bg-transparent outline-none font-['Inter'] pb-2 focus:border-[#F3D12A]"
+          className="w-full bg-transparent outline-none pb-2 focus:border-[#F3D12A]"
           style={{
             fontSize: 18, fontWeight: 700, color: "#1A1A1A",
             borderBottom: "1px solid rgba(212,212,208,0.50)",
@@ -59,7 +59,7 @@ const RedBookNewScreen: React.FC = () => {
             value={body}
             onChange={e => setBody(e.target.value)}
             placeholder="Write your note here… or tap the mic to dictate"
-            className="flex-1 min-h-[120px] resize-none bg-transparent outline-none font-['Inter']"
+            className="flex-1 min-h-[120px] resize-none bg-transparent outline-none"
             style={{ fontSize: 16, fontWeight: 400, color: "#1A1A1A", lineHeight: 1.6 }}
           />
           <button
@@ -96,7 +96,7 @@ const RedBookNewScreen: React.FC = () => {
             return (
               <button
                 key={cat.value}
-                className="flex items-center gap-1.5 rounded-full px-3.5 py-2 border font-['Inter'] cursor-pointer transition-all active:scale-[0.96]"
+                className="flex items-center gap-1.5 rounded-full px-3.5 py-2 border cursor-pointer transition-all active:scale-[0.96]"
                 style={{
                   fontSize: 13, fontWeight: 600,
                   backgroundColor: isSelected ? cfg.bg : "white",
@@ -177,7 +177,7 @@ const RedBookNewScreen: React.FC = () => {
 
         <div className="flex gap-2">
           <button
-            className="flex-1 rounded-xl py-3 border flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97] font-['Inter']"
+            className="flex-1 rounded-xl py-3 border flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
             style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }}
             onClick={() => setAttachments(prev => [...prev, { name: "photo_" + Date.now() + ".jpg", type: "photo" }])}
           >
@@ -188,7 +188,7 @@ const RedBookNewScreen: React.FC = () => {
             Add Photo
           </button>
           <button
-            className="flex-1 rounded-xl py-3 border flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97] font-['Inter']"
+            className="flex-1 rounded-xl py-3 border flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
             style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }}
             onClick={() => setAttachments(prev => [...prev, { name: "document_" + Date.now() + ".pdf", type: "document" }])}
           >
@@ -203,7 +203,7 @@ const RedBookNewScreen: React.FC = () => {
         {hasPhoto && (
           <div className="mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: "rgba(85,186,170,0.08)", border: "1px solid rgba(85,186,170,0.20)" }}>
             <button
-              className="cursor-pointer font-['Inter']"
+              className="cursor-pointer"
               style={{ fontSize: 12, fontWeight: 600, color: "#55BAAA", background: "none", border: "none", padding: 0 }}
               onClick={() => showToast("info", "OCR text extraction: connect Google Cloud Vision API")}
             >
@@ -216,14 +216,14 @@ const RedBookNewScreen: React.FC = () => {
       {/* Action buttons */}
       <div className="flex gap-3 pt-1">
         <button
-          className="flex-1 rounded-full py-3.5 border font-['Inter'] cursor-pointer active:scale-[0.97]"
+          className="flex-1 rounded-full py-3.5 border cursor-pointer active:scale-[0.97]"
           style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 14, fontWeight: 600, color: "#0E2646" }}
           onClick={() => navigate(-1)}
         >
           Cancel
         </button>
         <button
-          className="rounded-full py-3.5 font-['Inter'] cursor-pointer active:scale-[0.97]"
+          className="rounded-full py-3.5 cursor-pointer active:scale-[0.97]"
           style={{ flex: 2, backgroundColor: "#0E2646", fontSize: 14, fontWeight: 700, color: "white", border: "none" }}
           onClick={handleSave}
         >

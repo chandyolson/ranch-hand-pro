@@ -26,7 +26,7 @@ const CowWorkProjectCard: React.FC<CowWorkProjectCardProps> = ({
 
   return (
     <div
-      className="bg-[#0E2646] rounded-xl px-3 py-3.5 font-['Inter'] cursor-pointer active:scale-[0.98] transition-all duration-150"
+      className="bg-[#0E2646] rounded-xl px-3 py-3.5 cursor-pointer active:scale-[0.98] transition-all duration-150"
       onClick={onClick}
     >
       {/* Row 1 */}

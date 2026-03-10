@@ -32,24 +32,9 @@ interface ListScreenToolbarProps {
 }
 
 const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
-  title,
-  addLabel,
-  onAdd,
-  searchValue,
-  onSearchChange,
-  searchPlaceholder = "Search…",
-  filterChips,
-  activeFilter,
-  onFilterChange,
-  sortOptions,
-  activeSort,
-  onSortChange,
-  onImport,
-  onExport,
-  onMassSelect,
-  onMassEdit,
-  resultCount,
-  isFiltering,
+  title, addLabel, onAdd, searchValue, onSearchChange, searchPlaceholder = "Search…",
+  filterChips, activeFilter, onFilterChange, sortOptions, activeSort, onSortChange,
+  onImport, onExport, onMassSelect, onMassEdit, resultCount, isFiltering,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -81,7 +66,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
     <div className="space-y-3">
       {/* Row 1: Title + menu + add */}
       <div className="flex items-center justify-between">
-        <span style={{ fontSize: 20, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em", fontFamily: "'Inter', sans-serif" }}>
+        <span style={{ fontSize: 20, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>
           {title}
         </span>
         <div className="flex items-center gap-2">
@@ -110,7 +95,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
                       )}
                       <button
                         className="flex items-center gap-3 w-full cursor-pointer active:bg-[rgba(0,0,0,0.04)]"
-                        style={{ height: 44, paddingLeft: 16, paddingRight: 16, border: "none", backgroundColor: "transparent", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 500, color: "#1A1A1A" }}
+                        style={{ height: 44, paddingLeft: 16, paddingRight: 16, border: "none", backgroundColor: "transparent", fontSize: 14, fontWeight: 500, color: "#1A1A1A" }}
                         onClick={item.onClick}
                       >
                         {item.icon}
@@ -124,7 +109,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
           )}
           <button
             className="rounded-full flex items-center gap-1.5 cursor-pointer active:scale-[0.97]"
-            style={{ height: 36, paddingLeft: 16, paddingRight: 16, backgroundColor: "#F3D12A", border: "none", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}
+            style={{ height: 36, paddingLeft: 16, paddingRight: 16, backgroundColor: "#F3D12A", border: "none", fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}
             onClick={onAdd}
           >
             <span style={{ fontSize: 16, fontWeight: 600, lineHeight: 1 }}>+</span> {addLabel}
@@ -147,7 +132,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
           onChange={e => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
           className="flex-1 outline-none bg-transparent"
-          style={{ fontSize: 16, fontFamily: "'Inter', sans-serif", color: "#1A1A1A" }}
+          style={{ fontSize: 16, color: "#1A1A1A" }}
         />
         {searchValue.length > 0 && (
           <button
@@ -171,7 +156,6 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
                 color: activeFilter === chip.value ? "white" : "rgba(26,26,26,0.50)",
                 fontSize: 12,
                 fontWeight: activeFilter === chip.value ? 700 : 500,
-                fontFamily: "'Inter', sans-serif",
               }}
               onClick={() => onFilterChange(chip.value)}
             >{chip.label}</button>
@@ -181,7 +165,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
           <div className="relative shrink-0" ref={sortRef}>
             <button
               className="flex items-center gap-1.5 rounded-full cursor-pointer active:scale-[0.96]"
-              style={{ height: 32, paddingLeft: 12, paddingRight: 12, backgroundColor: "white", border: "1px solid #D4D4D0", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600, color: "rgba(26,26,26,0.55)" }}
+              style={{ height: 32, paddingLeft: 12, paddingRight: 12, backgroundColor: "white", border: "1px solid #D4D4D0", fontSize: 11, fontWeight: 600, color: "rgba(26,26,26,0.55)" }}
               onClick={() => setSortOpen(!sortOpen)}
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -204,7 +188,6 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
                       paddingRight: 16,
                       border: "none",
                       backgroundColor: activeSort === opt.value ? "rgba(14,38,70,0.06)" : "transparent",
-                      fontFamily: "'Inter', sans-serif",
                       fontSize: 14,
                       fontWeight: activeSort === opt.value ? 700 : 500,
                       color: "#1A1A1A",
@@ -220,7 +203,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
 
       {/* Result count */}
       {isFiltering && resultCount !== undefined && (
-        <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.40)", fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>
           {resultCount} result{resultCount !== 1 ? "s" : ""}
         </div>
       )}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import CowWorkProjectCard from "../components/CowWorkProjectCard";
+import CowWorkProjectCard from "@/components/CowWorkProjectCard";
 
 interface Project {
   id: string;
@@ -38,7 +38,7 @@ export default function CowWorkScreen() {
   const activeHead = allProjects.filter(p => p.status === "pending" || p.status === "in-progress").reduce((s, p) => s + p.headCount, 0);
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div style={{ fontSize: 22, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>Cow Work</div>
@@ -69,7 +69,7 @@ export default function CowWorkScreen() {
           return (
             <button
               key={f.value}
-              className="rounded-full px-3.5 py-1.5 font-['Inter'] cursor-pointer border transition-all duration-150 active:scale-[0.96]"
+              className="rounded-full px-3.5 py-1.5 cursor-pointer border transition-all duration-150 active:scale-[0.96]"
               style={{
                 backgroundColor: active ? "#0E2646" : "white",
                 borderColor: active ? "#0E2646" : "rgba(212,212,208,0.80)",
@@ -93,7 +93,7 @@ export default function CowWorkScreen() {
         ].map(s => (
           <div
             key={s.label}
-            className="flex-1 rounded-xl px-4 py-3 font-['Inter']"
+            className="flex-1 rounded-xl px-4 py-3"
             style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
           >
             <div style={{ fontSize: 28, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>{s.value}</div>
@@ -113,7 +113,7 @@ export default function CowWorkScreen() {
             />
           ))
         ) : (
-          <div className="text-center py-12 font-['Inter']">
+          <div className="text-center py-12">
             <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No projects</div>
             <div style={{ fontSize: 13, fontWeight: 400, color: "rgba(26,26,26,0.30)", marginTop: 4 }}>Try a different filter</div>
           </div>

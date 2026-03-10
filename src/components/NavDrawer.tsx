@@ -59,13 +59,14 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, onItem
           boxShadow: open ? "6px 0 32px rgba(0,0,0,0.35)" : "none",
         }}
       >
-        {/* Brand */}
+        {/* Brand — intentional decorative font */}
         <div className="px-6 pt-10 pb-6">
           <div style={{
             color: "#F3D12A",
             fontSize: 20,
             fontWeight: 800,
             letterSpacing: "0.18em",
+            fontFamily: "'Inter', sans-serif",
             textShadow: "0 0 8px rgba(243,209,42,0.50), 0 0 20px rgba(243,209,42,0.30), 0 0 40px rgba(243,209,42,0.15)",
           }}>
             CHUTESIDE
@@ -93,7 +94,6 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, onItem
                   backgroundColor: isActive ? "rgba(243,209,42,0.06)" : "transparent",
                   border: "none",
                   cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif",
                 }}
                 onClick={() => onItemSelect?.(item)}
               >
@@ -120,14 +120,14 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, onItem
         {/* Bottom */}
         <button
           className="w-full text-left"
-          style={{ padding: "16px 24px", fontSize: 13, fontWeight: 500, color: "rgba(240,240,240,0.3)", border: "none", background: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}
+          style={{ padding: "16px 24px", fontSize: 13, fontWeight: 500, color: "rgba(240,240,240,0.3)", border: "none", background: "none", cursor: "pointer" }}
           onClick={onSwitchOperation}
         >
           Switch Operation
         </button>
         <button
           className="w-full text-left"
-          style={{ padding: "4px 24px 16px 24px", fontSize: 13, fontWeight: 500, color: "#E74C3C", opacity: 0.6, border: "none", background: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}
+          style={{ padding: "4px 24px 16px 24px", fontSize: 13, fontWeight: 500, color: "#E74C3C", opacity: 0.6, border: "none", background: "none", cursor: "pointer" }}
           onClick={onSignOut}
         >
           Sign Out

@@ -2,10 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useChuteSideToast } from "../components/ToastContext";
 import FlagIcon from "../components/FlagIcon";
-import { PREG_CALF_SEX_OPTIONS } from "@/lib/constants";
+import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, type FlagColor } from "@/lib/constants";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
-
-type FlagColor = "teal" | "gold" | "red";
 
 const project = {
   id: "spring-preg-2026",
@@ -61,8 +59,6 @@ const matchedAnimal = {
   ],
 };
 
-const flagColorMap: Record<FlagColor, string> = { teal: "#55BAAA", gold: "#F3D12A", red: "#9B2335" };
-
 const projectType = project.type;
 
 type Tab = "input" | "worked" | "stats" | "details";
@@ -91,17 +87,32 @@ export default function CowWorkProjectDetailScreen() {
   const tabLabels: Record<Tab, string> = { input: "Input", worked: "Animals", stats: "Stats", details: "Details" };
 
   const clearForm = () => {
-    setTagField(""); setIsMatched(false); setIsDuplicate(false); setHistoryOpen(false);
-    setPregResult(""); setPregDays(""); setCalfSex("");
-    setWeight(""); setQuickNote(""); setSampleId(""); setMemo("");
+    setTagField("");
+    setIsMatched(false);
+    setIsDuplicate(false);
+    setHistoryOpen(false);
+    setPregResult("");
+    setPregDays("");
+    setCalfSex("");
+    setWeight("");
+    setQuickNote("");
+    setSampleId("");
+    setMemo("");
   };
 
   const saveAndNext = () => {
-    if (!tagField.trim()) { showToast("error", "Tag required to save"); return; }
+    if (!tagField.trim()) {
+      showToast("error", "Tag required to save");
+      return;
+    }
     const newRecord: WorkedAnimal = {
-      tag: tagField, flag: isMatched ? matchedAnimal.flag : undefined,
-      weight, preg: pregResult || "—", pregDays,
-      note: memo || quickNote, treatments: project.products.map(p => p.name),
+      tag: tagField,
+      flag: isMatched ? matchedAnimal.flag : undefined,
+      weight,
+      preg: pregResult || "—",
+      pregDays,
+      note: memo || quickNote,
+      treatments: project.products.map(p => p.name),
     };
     setWorkedAnimals(prev => [newRecord, ...prev]);
     showToast("success", `Tag ${tagField} saved`);
@@ -113,9 +124,10 @@ export default function CowWorkProjectDetailScreen() {
   const openCount = workedAnimals.filter(a => a.preg === "Open").length;
   const suspectCount = workedAnimals.filter(a => a.preg === "Suspect").length;
   const weighedAnimals = workedAnimals.filter(a => a.weight);
-  const avgWeight = weighedAnimals.length > 0
-    ? Math.round(weighedAnimals.reduce((s, a) => s + parseFloat(a.weight.replace(",", "")), 0) / weighedAnimals.length)
-    : 0;
+  const avgWeight =
+    weighedAnimals.length > 0
+      ? Math.round(weighedAnimals.reduce((s, a) => s + parseFloat(a.weight.replace(",", "")), 0) / weighedAnimals.length)
+      : 0;
 
   return (
     <div className="px-4 space-y-0 pb-10">
@@ -138,7 +150,10 @@ export default function CowWorkProjectDetailScreen() {
             <span className="truncate" style={{ fontSize: 11, fontWeight: 600, color: "#A8E6DA" }}>{project.name}</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="rounded-full" style={{ fontSize: 10, fontWeight: 700, color: "#F3D12A", backgroundColor: "rgba(243,209,42,0.15)", padding: "3px 8px" }}>
+            <span
+              className="rounded-full"
+              style={{ fontSize: 10, fontWeight: 700, color: "#F3D12A", backgroundColor: "rgba(243,209,42,0.15)", padding: "3px 8px" }}
+            >
               {tabLabels[activeTab]}
             </span>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
@@ -181,7 +196,8 @@ export default function CowWorkProjectDetailScreen() {
                   key={tab}
                   className="flex-1 py-2.5 cursor-pointer relative"
                   style={{
-                    fontSize: 12, fontWeight: activeTab === tab ? 700 : 500,
+                    fontSize: 12,
+                    fontWeight: activeTab === tab ? 700 : 500,
                     color: activeTab === tab ? "white" : "rgba(255,255,255,0.40)",
                     background: "none", border: "none",
                   }}
@@ -278,7 +294,8 @@ export default function CowWorkProjectDetailScreen() {
                           key={t}
                           className="py-2 cursor-pointer relative mr-4"
                           style={{
-                            fontSize: 12, fontWeight: historyTab === t ? 700 : 500,
+                            fontSize: 12,
+                            fontWeight: historyTab === t ? 700 : 500,
                             color: historyTab === t ? "#0E2646" : "rgba(26,26,26,0.40)",
                             background: "none", border: "none",
                           }}
@@ -297,9 +314,12 @@ export default function CowWorkProjectDetailScreen() {
                       <div className="px-3 py-3">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                           {[
-                            ["TYPE", matchedAnimal.type], ["BREED", matchedAnimal.breed],
-                            ["YEAR", matchedAnimal.yearBorn], ["SEX", matchedAnimal.sex],
-                            ["WEIGHT", matchedAnimal.weight + " lbs"], ["FLAG", "Management"],
+                            ["TYPE", matchedAnimal.type],
+                            ["BREED", matchedAnimal.breed],
+                            ["YEAR", matchedAnimal.yearBorn],
+                            ["SEX", matchedAnimal.sex],
+                            ["WEIGHT", matchedAnimal.weight + " lbs"],
+                            ["FLAG", "Management"],
                           ].map(([l, v]) => (
                             <div key={l}>
                               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>{l}</div>
@@ -438,12 +458,16 @@ export default function CowWorkProjectDetailScreen() {
                 className="flex-1 rounded-full py-3.5 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
                 style={{ fontSize: 14, fontWeight: 600, color: "#0E2646" }}
                 onClick={clearForm}
-              >Reset</button>
+              >
+                Reset
+              </button>
               <button
                 className="rounded-full py-3.5 bg-[#F3D12A] cursor-pointer active:scale-[0.97]"
                 style={{ flex: 2, fontSize: 14, fontWeight: 700, color: "#1A1A1A", border: "none" }}
                 onClick={saveAndNext}
-              >Save & Next</button>
+              >
+                Save & Next
+              </button>
             </div>
           </>
         )}
@@ -458,8 +482,8 @@ export default function CowWorkProjectDetailScreen() {
               {workedAnimals.map((a, i) => {
                 const pregColor = a.preg === "Confirmed" ? { bg: "rgba(85,186,170,0.15)", color: "#55BAAA" }
                   : a.preg === "Open" ? { bg: "rgba(232,116,97,0.15)", color: "#E87461" }
-                  : { bg: "rgba(240,240,240,0.10)", color: "rgba(240,240,240,0.50)" };
-                const tagColor = a.flag ? flagColorMap[a.flag] : "rgba(240,240,240,0.90)";
+                    : { bg: "rgba(240,240,240,0.10)", color: "rgba(240,240,240,0.50)" };
+                const tagColor = a.flag ? FLAG_HEX_MAP[a.flag] : "rgba(240,240,240,0.90)";
                 return (
                   <div key={i} className="rounded-xl px-3 py-3.5 bg-[#0E2646] cursor-pointer active:scale-[0.98] transition-all" onClick={() => navigate("/animals/" + a.tag)}>
                     <div className="flex items-center justify-between">

@@ -11,7 +11,7 @@ interface ScoreSelectorProps {
 const PILL_THRESHOLD = 6;
 
 const ScoreSelector: React.FC<ScoreSelectorProps> = ({ label, value, onChange, labels }) => {
-  const optionCount = labels.length - 1; // index 0 is empty
+  const optionCount = labels.length - 1;
   const usePills = optionCount <= PILL_THRESHOLD;
 
   return (
@@ -28,7 +28,7 @@ const ScoreSelector: React.FC<ScoreSelectorProps> = ({ label, value, onChange, l
                   key={scoreVal}
                   type="button"
                   onClick={() => onChange(selected ? "" : scoreVal)}
-                  className="rounded-full px-3 py-1.5 font-['Inter'] cursor-pointer transition-all active:scale-[0.96]"
+                  className="rounded-full px-3 py-1.5 cursor-pointer transition-all active:scale-[0.96]"
                   style={{
                     fontSize: 12,
                     fontWeight: 600,

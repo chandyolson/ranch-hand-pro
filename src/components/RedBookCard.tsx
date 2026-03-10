@@ -27,7 +27,7 @@ const RedBookCard: React.FC<RedBookCardProps> = ({
 
   return (
     <div
-      className="bg-[#0E2646] rounded-xl px-4 py-4 font-['Inter'] cursor-pointer active:scale-[0.98] transition-all duration-150"
+      className="bg-[#0E2646] rounded-xl px-4 py-4 cursor-pointer active:scale-[0.98] transition-all duration-150"
       onClick={onClick}
     >
       {/* Row 1 */}

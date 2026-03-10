@@ -1,5 +1,4 @@
 import React from "react";
-import { useChuteSideToast } from "@/components/ToastContext";
 
 interface ReferenceItemRowProps {
   label: string;
@@ -11,7 +10,7 @@ interface ReferenceItemRowProps {
 }
 
 const ReferenceItemRow: React.FC<ReferenceItemRowProps> = ({ label, sublabel, badge, onEdit, onDelete }) => (
-  <div className="flex items-center gap-3 py-3 border-b border-[rgba(26,26,26,0.06)] font-['Inter'] last:border-b-0">
+  <div className="flex items-center gap-3 py-3 border-b border-[rgba(26,26,26,0.06)] last:border-b-0">
     <div className="flex-1 min-w-0">
       <div className="truncate" style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{label}</div>
       {sublabel && <div style={{ fontSize: 12, fontWeight: 400, color: "rgba(26,26,26,0.45)", marginTop: 2 }}>{sublabel}</div>}

@@ -111,7 +111,7 @@ const AppLayout: React.FC = () => {
           )}
         </div>
 
-        {/* Right — Herd Work */}
+        {/* Right — Herd Work (intentional decorative glow font) */}
         <button
           className="flex items-center justify-center active:scale-[0.97]"
           style={{

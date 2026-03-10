@@ -29,14 +29,14 @@ const ReferenceScreen: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3">
       <span style={{ fontSize: 22, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>Reference</span>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {sections.map(s => (
           <div
             key={s.id}
-            className="rounded-xl px-3 py-3.5 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-all font-['Inter']"
+            className="rounded-xl px-3 py-3.5 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-all"
             style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}
             onClick={() => navigate(s.route)}
           >
