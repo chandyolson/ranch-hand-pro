@@ -96,10 +96,10 @@ const quickNoteOptions = [
 
 /* ── Shared inline styles ── */
 const inputBase: React.CSSProperties = {
-  flex: 1, height: 40, borderRadius: 8, border: "1px solid #D4D4D0",
+  flex: 1, minWidth: 0, height: 40, borderRadius: 8, border: "1px solid #D4D4D0",
   paddingLeft: 12, paddingRight: 12, fontFamily: "'Inter', sans-serif",
   fontSize: 16, fontWeight: 400, color: "#1A1A1A", outline: "none",
-  backgroundColor: "white",
+  backgroundColor: "white", boxSizing: "border-box",
 };
 const inputReadOnly: React.CSSProperties = { ...inputBase, backgroundColor: "#F5F5F0", cursor: "default" };
 const labelStyle: React.CSSProperties = {
