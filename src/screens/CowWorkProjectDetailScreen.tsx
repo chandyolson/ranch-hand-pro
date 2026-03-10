@@ -406,7 +406,7 @@ export default function CowWorkProjectDetailScreen() {
                 <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label style={labelStyle}>Sample ID</label>
                 <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
