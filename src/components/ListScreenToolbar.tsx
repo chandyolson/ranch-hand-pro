@@ -29,12 +29,15 @@ interface ListScreenToolbarProps {
   onMassEdit?: () => void;
   resultCount?: number;
   isFiltering?: boolean;
+  hideTitle?: boolean;
+  compactAdd?: boolean;
 }
 
 const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
   title, addLabel, onAdd, searchValue, onSearchChange, searchPlaceholder = "Search…",
   filterChips, activeFilter, onFilterChange, sortOptions, activeSort, onSortChange,
   onImport, onExport, onMassSelect, onMassEdit, resultCount, isFiltering,
+  hideTitle, compactAdd,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -64,12 +67,40 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Row 1: Title + menu + add */}
-      <div className="flex items-center justify-between">
-        <span style={{ fontSize: 20, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>
-          {title}
-        </span>
-        <div className="flex items-center gap-2">
+      {/* Row 1: Title/Search + menu + add */}
+      <div className="flex items-center gap-2">
+        {!hideTitle && (
+          <span className="flex-shrink-0" style={{ fontSize: 20, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>
+            {title}
+          </span>
+        )}
+        {hideTitle ? (
+          <div
+            className="flex items-center gap-2 bg-white rounded-xl px-3 flex-1 min-w-0"
+            style={{ height: 40, border: "1px solid rgba(212,212,208,0.60)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="shrink-0">
+              <circle cx="8" cy="8" r="5.5" stroke="rgba(26,26,26,0.30)" strokeWidth="1.5" />
+              <path d="M12.5 12.5L16 16" stroke="rgba(26,26,26,0.30)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={searchValue}
+              onChange={e => onSearchChange(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="flex-1 outline-none bg-transparent min-w-0"
+              style={{ fontSize: 15, color: "#1A1A1A" }}
+            />
+            {searchValue.length > 0 && (
+              <button
+                className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 cursor-pointer"
+                style={{ backgroundColor: "rgba(26,26,26,0.08)", border: "none", fontSize: 12, color: "rgba(26,26,26,0.50)" }}
+                onClick={() => onSearchChange("")}
+              >×</button>
+            )}
+          </div>
+        ) : <div className="flex-1" />}
+        <div className="flex items-center gap-2 shrink-0">
           {hasMenu && (
             <div className="relative" ref={menuRef}>
               <button
@@ -107,41 +138,51 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
               )}
             </div>
           )}
-          <button
-            className="rounded-full flex items-center gap-1.5 cursor-pointer active:scale-[0.97]"
-            style={{ height: 36, paddingLeft: 16, paddingRight: 16, backgroundColor: "#F3D12A", border: "none", fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}
-            onClick={onAdd}
-          >
-            <span style={{ fontSize: 16, fontWeight: 600, lineHeight: 1 }}>+</span> {addLabel}
-          </button>
+          {compactAdd ? (
+            <button
+              className="flex items-center justify-center cursor-pointer active:scale-[0.95]"
+              style={{ width: 36, height: 36, borderRadius: 9999, backgroundColor: "#F3D12A", border: "none", fontSize: 20, fontWeight: 700, color: "#1A1A1A", lineHeight: 1 }}
+              onClick={onAdd}
+            >+</button>
+          ) : (
+            <button
+              className="rounded-full flex items-center gap-1.5 cursor-pointer active:scale-[0.97]"
+              style={{ height: 36, paddingLeft: 16, paddingRight: 16, backgroundColor: "#F3D12A", border: "none", fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}
+              onClick={onAdd}
+            >
+              <span style={{ fontSize: 16, fontWeight: 600, lineHeight: 1 }}>+</span> {addLabel}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Row 2: Search */}
-      <div
-        className="flex items-center gap-2 bg-white rounded-xl px-3"
-        style={{ height: 44, border: "1px solid rgba(212,212,208,0.60)" }}
-      >
-        <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="shrink-0">
-          <circle cx="8" cy="8" r="5.5" stroke="rgba(26,26,26,0.30)" strokeWidth="1.5" />
-          <path d="M12.5 12.5L16 16" stroke="rgba(26,26,26,0.30)" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-        <input
-          type="text"
-          value={searchValue}
-          onChange={e => onSearchChange(e.target.value)}
-          placeholder={searchPlaceholder}
-          className="flex-1 outline-none bg-transparent"
-          style={{ fontSize: 16, color: "#1A1A1A" }}
-        />
-        {searchValue.length > 0 && (
-          <button
-            className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 cursor-pointer"
-            style={{ backgroundColor: "rgba(26,26,26,0.08)", border: "none", fontSize: 12, color: "rgba(26,26,26,0.50)" }}
-            onClick={() => onSearchChange("")}
-          >×</button>
-        )}
-      </div>
+      {/* Row 2: Search (only when title is shown) */}
+      {!hideTitle && (
+        <div
+          className="flex items-center gap-2 bg-white rounded-xl px-3"
+          style={{ height: 44, border: "1px solid rgba(212,212,208,0.60)" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="shrink-0">
+            <circle cx="8" cy="8" r="5.5" stroke="rgba(26,26,26,0.30)" strokeWidth="1.5" />
+            <path d="M12.5 12.5L16 16" stroke="rgba(26,26,26,0.30)" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <input
+            type="text"
+            value={searchValue}
+            onChange={e => onSearchChange(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="flex-1 outline-none bg-transparent"
+            style={{ fontSize: 16, color: "#1A1A1A" }}
+          />
+          {searchValue.length > 0 && (
+            <button
+              className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 cursor-pointer"
+              style={{ backgroundColor: "rgba(26,26,26,0.08)", border: "none", fontSize: 12, color: "rgba(26,26,26,0.50)" }}
+              onClick={() => onSearchChange("")}
+            >×</button>
+          )}
+        </div>
+      )}
 
       {/* Row 3: Filters + Sort */}
       <div className="flex items-center gap-2">
