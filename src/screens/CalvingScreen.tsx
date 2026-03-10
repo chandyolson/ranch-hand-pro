@@ -74,6 +74,7 @@ export default function CalvingScreen() {
             key={r.id}
             className="rounded-xl px-3 py-3.5 font-['Inter'] cursor-pointer active:scale-[0.98] transition-all"
             style={{ backgroundColor: "#0E2646" }}
+            onClick={() => navigate("/calving/" + r.id)}
           >
             {/* Row 1 */}
             <div className="flex items-center justify-between gap-2">
