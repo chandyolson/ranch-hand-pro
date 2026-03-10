@@ -203,7 +203,7 @@ export default function AnimalDetailScreen() {
 
   /* ═══════ RENDER ═══════ */
   return (
-    <div className="space-y-0 pb-10">
+    <div className="px-3 space-y-0 pb-10">
       {/* 1 — GRADIENT HEADER CARD */}
       <div
         style={{
