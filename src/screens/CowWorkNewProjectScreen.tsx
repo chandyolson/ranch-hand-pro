@@ -144,7 +144,7 @@ export default function CowWorkNewProjectScreen() {
       {/* Load from Template collapsible */}
       <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         <button
-          className="flex items-center justify-between w-full px-4 py-3.5 cursor-pointer active:scale-[0.99]"
+          className="flex items-center justify-between w-full px-3 py-3.5 cursor-pointer active:scale-[0.99]"
           onClick={() => setTemplateOpen(!templateOpen)}
         >
           <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>Load from Template</span>
