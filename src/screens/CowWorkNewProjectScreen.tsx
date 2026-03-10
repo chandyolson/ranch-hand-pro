@@ -69,7 +69,7 @@ export default function CowWorkNewProjectScreen() {
         </div>
 
         {/* Cattle Type */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <label style={labelStyle}>Cattle Type</label>
           <select value={cattleType} onChange={e => setCattleType(e.target.value)} style={inputStyle}
             className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
