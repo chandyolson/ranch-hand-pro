@@ -265,7 +265,7 @@ export default function CalvingRecordScreen() {
       </div>
 
       {/* CONTENT */}
-      <div className="px-3 mt-3 space-y-3">
+      <div className="mt-3 space-y-3">
         {/* CALVING INFO */}
         <div className="rounded-xl border font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)", backgroundColor: "white", padding: "14px 10px" }}>
           <div className="flex items-center justify-between mb-2">
