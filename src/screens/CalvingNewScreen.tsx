@@ -170,17 +170,6 @@ export default function CalvingNewScreen() {
 
   return (
     <div style={{ maxWidth: 420, margin: '0 auto', backgroundColor: '#F5F5F0', minHeight: '100vh', overflow: 'hidden' }}>
-      {/* ═══ HEADER ═══ */}
-      <header style={{ background: 'linear-gradient(180deg, #153566 0%, #081020 100%)', padding: '12px 16px 14px', position: 'sticky', top: 0, zIndex: 30 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button onClick={() => navigate('/calving')} type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="#F0F0F0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </button>
-          <span style={{ color: '#fff', fontSize: 17, fontWeight: 700 }}>Calving</span>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#F3D12A' }}>HERD WORK</span>
-        </div>
-      </header>
-
       <div style={{ padding: '10px 16px 40px', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
         {/* ═══ 1. CONTEXT BAR ═══ */}
