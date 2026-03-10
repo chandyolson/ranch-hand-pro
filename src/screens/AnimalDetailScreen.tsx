@@ -103,7 +103,7 @@ const inputBase: React.CSSProperties = {
 };
 const inputReadOnly: React.CSSProperties = { ...inputBase, backgroundColor: "#F5F5F0", cursor: "default" };
 const labelStyle: React.CSSProperties = {
-  flexShrink: 0, width: 105, fontSize: 14, fontWeight: 600, color: "#1A1A1A",
+  flexShrink: 0, width: 96, fontSize: 14, fontWeight: 600, color: "#1A1A1A",
   fontFamily: "'Inter', sans-serif", paddingTop: 8,
 };
 const subLabel: React.CSSProperties = {
