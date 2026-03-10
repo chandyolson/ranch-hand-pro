@@ -146,7 +146,7 @@ const AnimalsScreen: React.FC = () => {
       )}
 
       {/* Animal list */}
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {filtered.map(animal => (
           <div
             key={animal.id}
