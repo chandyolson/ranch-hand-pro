@@ -88,6 +88,11 @@ const AppLayout: React.FC = () => {
             style={{ width: 36, height: 36, background: "none", border: "none", cursor: "pointer" }}
             onClick={() => {
               if (isAnimalDetail) { navigate("/animals"); }
+              else if (path === "/animals") { navigate("/"); }
+              else if (path === "/calving") { navigate("/"); }
+              else if (path === "/cow-work") { navigate("/"); }
+              else if (path === "/red-book") { navigate("/"); }
+              else if (path === "/reference") { navigate("/"); }
               else if (path.startsWith("/reference/")) { navigate("/reference"); }
               else if (path.startsWith("/red-book/")) { navigate("/red-book"); }
               else if (path.startsWith("/cow-work/")) { navigate("/cow-work"); }

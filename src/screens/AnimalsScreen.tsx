@@ -61,11 +61,47 @@ const AnimalsScreen: React.FC = () => {
 
   const isFiltering = search.length > 0 || statusFilter !== "All";
 
+  const stats = {
+    total: animals.length,
+    active: animals.filter(a => a.status === "Active").length,
+    cows: animals.filter(a => a.sex === "Cow").length,
+    bulls: animals.filter(a => a.sex === "Bull").length,
+  };
+
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3">
+    <div className="px-4 pt-2 pb-10 space-y-2">
+      {/* Totals bar */}
+      <div
+        className="rounded-xl px-3 py-2.5 flex items-center justify-between"
+        style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
+      >
+        {[
+          { label: "TOTAL",  value: stats.total },
+          { label: "ACTIVE", value: stats.active },
+          { label: "COWS",   value: stats.cows },
+          { label: "BULLS",  value: stats.bulls },
+        ].map((stat, i, arr) => (
+          <div key={stat.label} className="flex items-center gap-3">
+            <div className="flex flex-col items-center">
+              <span style={{ fontSize: 20, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>
+                {stat.value}
+              </span>
+              <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(168,230,218,0.70)", letterSpacing: "0.10em", marginTop: 2 }}>
+                {stat.label}
+              </span>
+            </div>
+            {i < arr.length - 1 && (
+              <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.12)" }} />
+            )}
+          </div>
+        ))}
+      </div>
+
       <ListScreenToolbar
         title="Animals"
         addLabel="New Animal"
+        hideTitle
+        compactAdd
         onAdd={() => navigate("/animals/new")}
         searchValue={search}
         onSearchChange={setSearch}
