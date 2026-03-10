@@ -30,7 +30,7 @@ const App = () => (
         <Route path="/" element={<AppLayout />}>
           <Route index element={<DashboardScreen />} />
           <Route path="animals" element={<AnimalsScreen />} />
-          <Route path="animals/new" element={<PlaceholderScreen title="Add Animal" />} />
+          <Route path="animals/new" element={<AddAnimalScreen />} />
           <Route path="animals/:id" element={<AnimalDetailScreen />} />
           <Route path="cow-work" element={<CowWorkScreen />} />
           <Route path="cow-work/new" element={<CowWorkNewProjectScreen />} />
