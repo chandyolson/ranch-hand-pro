@@ -61,7 +61,7 @@ const matchedAnimal = {
 
 const flagColorMap: Record<FlagColor, string> = { teal: "#55BAAA", gold: "#F3D12A", red: "#9B2335" };
 
-const labelStyle: React.CSSProperties = { width: 105, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
+const labelStyle: React.CSSProperties = { width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
 const inputStyle: React.CSSProperties = {
   flex: 1, height: 40, borderRadius: 8, border: "1px solid #D4D4D0", backgroundColor: "white",
   padding: "0 12px", fontFamily: "'Inter', sans-serif", outline: "none", fontSize: 16,
