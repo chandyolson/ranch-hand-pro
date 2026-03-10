@@ -5,6 +5,7 @@ import AppLayout from "@/components/AppLayout";
 import DashboardScreen from "@/screens/DashboardScreen";
 import AnimalsScreen from "@/screens/AnimalsScreen";
 import AnimalDetailScreen from "@/screens/AnimalDetailScreen";
+import AddAnimalScreen from "@/screens/AddAnimalScreen";
 import CowWorkScreen from "@/screens/CowWorkScreen";
 import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
 import CowWorkProjectDetailScreen from "@/screens/CowWorkProjectDetailScreen";
@@ -29,7 +30,7 @@ const App = () => (
         <Route path="/" element={<AppLayout />}>
           <Route index element={<DashboardScreen />} />
           <Route path="animals" element={<AnimalsScreen />} />
-          <Route path="animals/new" element={<PlaceholderScreen title="Add Animal" />} />
+          <Route path="animals/new" element={<AddAnimalScreen />} />
           <Route path="animals/:id" element={<AnimalDetailScreen />} />
           <Route path="cow-work" element={<CowWorkScreen />} />
           <Route path="cow-work/new" element={<CowWorkNewProjectScreen />} />
