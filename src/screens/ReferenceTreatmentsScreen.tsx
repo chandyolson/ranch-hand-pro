@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useChuteSideToast } from "@/components/ToastContext";
+import ListScreenToolbar from "@/components/ListScreenToolbar";
 
 interface Product {
   id: string;
@@ -41,12 +42,21 @@ const ReferenceTreatmentsScreen: React.FC = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sort, setSort] = useState("name");
   const [newProduct, setNewProduct] = useState({ name: "", category: "vaccine" as Product["category"], defaultDosage: "", defaultRoute: "IM", withdrawalDays: "0" });
   const { showToast } = useChuteSideToast();
 
   const filtered = products
     .filter(p => categoryFilter === "all" || p.category === categoryFilter)
-    .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()));
+    .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      switch (sort) {
+        case "name": return a.name.localeCompare(b.name);
+        case "category": return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
+        case "withdrawal": return b.withdrawalDays - a.withdrawalDays;
+        default: return 0;
+      }
+    });
 
   const handleAdd = () => {
     if (!newProduct.name.trim()) { showToast("error", "Product name is required"); return; }
@@ -60,42 +70,34 @@ const ReferenceTreatmentsScreen: React.FC = () => {
     setAddOpen(false);
   };
 
-  const filterChips = [
-    { value: "all", label: "All" },
-    ...categoryOptions.map(c => ({ value: c, label: categoryConfig[c].label })),
-  ];
+  const isFiltering = search.length > 0 || categoryFilter !== "all";
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
-      <div className="flex items-center justify-between">
-        <span style={{ fontSize: 20, fontWeight: 800, color: "#0E2646" }}>Products</span>
-        <button className="rounded-full h-9 px-4 flex items-center gap-1.5 cursor-pointer active:scale-[0.97] font-['Inter']" style={{ backgroundColor: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A", border: "none" }} onClick={() => setAddOpen(true)}>
-          <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>+</span> Add Product
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="flex items-center gap-2 bg-white rounded-xl px-3 h-11" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,26,0.30)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products…" className="flex-1 outline-none font-['Inter'] bg-transparent" style={{ fontSize: 16, color: "#1A1A1A" }} />
-        {search.length > 0 && (
-          <button className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 cursor-pointer" style={{ backgroundColor: "rgba(26,26,26,0.08)", fontSize: 12, color: "rgba(26,26,26,0.50)", border: "none" }} onClick={() => setSearch("")}>×</button>
-        )}
-      </div>
-
-      {/* Category chips */}
-      <div className="flex gap-2 flex-wrap">
-        {filterChips.map(chip => {
-          const isActive = categoryFilter === chip.value;
-          return (
-            <button key={chip.value} className="rounded-full px-3 py-1.5 font-['Inter'] cursor-pointer border transition-all active:scale-[0.96]" style={{ backgroundColor: isActive ? "#0E2646" : "white", borderColor: isActive ? "#0E2646" : "rgba(212,212,208,0.80)", color: isActive ? "white" : "rgba(26,26,26,0.50)", fontSize: 12, fontWeight: isActive ? 700 : 500 }} onClick={() => setCategoryFilter(chip.value)}>
-              {chip.label}
-            </button>
-          );
-        })}
-      </div>
+      <ListScreenToolbar
+        title="Products"
+        addLabel="Add Product"
+        onAdd={() => setAddOpen(true)}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search products…"
+        filterChips={[
+          { value: "all", label: "All" },
+          ...categoryOptions.map(c => ({ value: c, label: categoryConfig[c].label })),
+        ]}
+        activeFilter={categoryFilter}
+        onFilterChange={setCategoryFilter}
+        sortOptions={[
+          { value: "name", label: "Name" },
+          { value: "category", label: "Category" },
+          { value: "withdrawal", label: "Withdrawal" },
+        ]}
+        activeSort={sort}
+        onSortChange={setSort}
+        onExport={() => showToast("info", "Export — coming soon")}
+        resultCount={filtered.length}
+        isFiltering={isFiltering}
+      />
 
       {/* Add form */}
       {addOpen && (

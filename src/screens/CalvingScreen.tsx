@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ListScreenToolbar from "@/components/ListScreenToolbar";
+import { useChuteSideToast } from "@/components/ToastContext";
 
 interface CalvingRecord {
   id: string;
@@ -24,8 +26,37 @@ const recentRecords: CalvingRecord[] = [
   { id: "c6", damTag: "7801", damColor: "Pink",   damColorHex: "#E8A0BF", calfTag: "8846", calfSex: "Heifer", calfStatus: "Alive", date: "Mar 4, 2026",  birthWeight: "76 lbs",  assistance: "None",       note: "First calf heifer" },
 ];
 
+const parseDateForSort = (d: string) => new Date(d).getTime();
+
 export default function CalvingScreen() {
   const navigate = useNavigate();
+  const { showToast } = useChuteSideToast();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("All");
+  const [sort, setSort] = useState("newest");
+
+  const filtered = recentRecords
+    .filter(r => {
+      if (filter === "Alive") return r.calfStatus === "Alive";
+      if (filter === "Dead") return r.calfStatus === "Dead";
+      if (filter === "Assisted") return r.assistance !== "None";
+      return true;
+    })
+    .filter(r =>
+      !search ||
+      r.damTag.toLowerCase().includes(search.toLowerCase()) ||
+      r.calfTag.toLowerCase().includes(search.toLowerCase()) ||
+      (r.note && r.note.toLowerCase().includes(search.toLowerCase()))
+    )
+    .sort((a, b) => {
+      switch (sort) {
+        case "newest": return parseDateForSort(b.date) - parseDateForSort(a.date);
+        case "oldest": return parseDateForSort(a.date) - parseDateForSort(b.date);
+        case "dam": return a.damTag.localeCompare(b.damTag);
+        case "calf": return a.calfTag.localeCompare(b.calfTag);
+        default: return 0;
+      }
+    });
 
   const calvingStats = {
     total: recentRecords.length,
@@ -34,19 +65,39 @@ export default function CalvingScreen() {
     dead: recentRecords.filter(r => r.calfStatus === "Dead").length,
   };
 
+  const isFiltering = search.length > 0 || filter !== "All";
+
   return (
     <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <span style={{ fontSize: 22, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>Calving</span>
-        <button
-          onClick={() => navigate("/calving/new")}
-          className="rounded-full flex items-center gap-1.5 cursor-pointer active:scale-[0.97] transition-all"
-          style={{ height: 36, padding: "0 16px", backgroundColor: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A", border: "none" }}
-        >
-          + New Entry
-        </button>
-      </div>
+      <ListScreenToolbar
+        title="Calving"
+        addLabel="New Entry"
+        onAdd={() => navigate("/calving/new")}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search dam tag, calf tag, notes…"
+        filterChips={[
+          { value: "All", label: "All" },
+          { value: "Alive", label: "Alive" },
+          { value: "Dead", label: "Dead" },
+          { value: "Assisted", label: "Assisted" },
+        ]}
+        activeFilter={filter}
+        onFilterChange={setFilter}
+        sortOptions={[
+          { value: "newest", label: "Newest" },
+          { value: "oldest", label: "Oldest" },
+          { value: "dam", label: "Dam Tag" },
+          { value: "calf", label: "Calf Tag" },
+        ]}
+        activeSort={sort}
+        onSortChange={setSort}
+        onImport={() => showToast("info", "Import — coming soon")}
+        onExport={() => showToast("info", "Export — coming soon")}
+        onMassSelect={() => showToast("info", "Mass Select — coming soon")}
+        resultCount={filtered.length}
+        isFiltering={isFiltering}
+      />
 
       {/* Season stats bar */}
       <div
@@ -82,13 +133,12 @@ export default function CalvingScreen() {
 
       {/* Record list */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {recentRecords.map(r => (
+        {filtered.map(r => (
           <div
             key={r.id}
             className="bg-[#0E2646] rounded-xl px-4 py-3.5 font-['Inter'] cursor-pointer active:scale-[0.98] transition-all duration-150"
             onClick={() => navigate("/calving/" + r.id)}
           >
-            {/* Row 1 */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span style={{ fontSize: 15, fontWeight: 700, color: "white" }}>{r.damTag}</span>
@@ -117,8 +167,6 @@ export default function CalvingScreen() {
                 )}
               </div>
             </div>
-
-            {/* Row 2 */}
             <div className="flex items-center gap-2 mt-1.5">
               <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.35)" }}>{r.date}</span>
               {r.birthWeight && (
@@ -134,14 +182,19 @@ export default function CalvingScreen() {
                 </>
               )}
             </div>
-
-            {/* Note */}
             {r.note && (
               <div style={{ fontSize: 12, color: "rgba(240,240,240,0.40)", marginTop: 4, lineHeight: 1.4 }}>{r.note}</div>
             )}
           </div>
         ))}
       </div>
+
+      {filtered.length === 0 && (
+        <div className="py-12 text-center space-y-1.5">
+          <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No records found</div>
+          <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or filter</div>
+        </div>
+      )}
     </div>
   );
 }
