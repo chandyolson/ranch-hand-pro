@@ -564,7 +564,7 @@ export default function CalvingNewScreen() {
               <div style={sectionLabel}>UPDATE DAM</div>
 
               {/* Flag picker */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span style={labelStyle}>Flag</span>
                 <div className="flex flex-row gap-2">
                   {([
