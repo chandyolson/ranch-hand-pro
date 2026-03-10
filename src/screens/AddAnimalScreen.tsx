@@ -74,7 +74,7 @@ export default function AddAnimalScreen() {
   const pedigreePreview = [sire && `Sire: ${sire}`, dam && `Dam: ${dam}`, regName, regNumber].filter(Boolean).join(" · ");
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3">
+    <div className="px-3 pt-4 pb-10 space-y-3">
       {/* DUPLICATE WARNING */}
       {duplicate && (
         <div

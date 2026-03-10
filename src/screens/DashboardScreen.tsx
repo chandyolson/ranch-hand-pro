@@ -85,7 +85,7 @@ const DashboardScreen: React.FC = () => {
     : recentAnimals;
 
   return (
-    <div className="space-y-5">
+    <div className="px-3 space-y-5">
       {/* SECTION 1 — Search */}
       <div className="relative">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
