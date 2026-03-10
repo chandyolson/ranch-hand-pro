@@ -13,7 +13,7 @@ const templates = [
   { name: "Winter Vaccination", type: "TX" },
 ];
 
-const labelStyle: React.CSSProperties = { width: 105, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
+const labelStyle: React.CSSProperties = { width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
 const inputStyle: React.CSSProperties = {
   flex: 1, height: 40, borderRadius: 8, border: "1px solid #D4D4D0", backgroundColor: "white",
   padding: "0 12px", fontFamily: "'Inter', sans-serif", outline: "none", fontSize: 16,
