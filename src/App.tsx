@@ -11,6 +11,14 @@ import CalvingScreen from "@/screens/CalvingScreen";
 import CalvingNewScreen from "@/screens/CalvingNewScreen";
 import RedBookScreen from "@/screens/RedBookScreen";
 import RedBookNewScreen from "@/screens/RedBookNewScreen";
+import ReferenceScreen from "@/screens/ReferenceScreen";
+import ReferenceGroupsScreen from "@/screens/ReferenceGroupsScreen";
+import ReferenceLocationsScreen from "@/screens/ReferenceLocationsScreen";
+import ReferenceQuickNotesScreen from "@/screens/ReferenceQuickNotesScreen";
+import ReferencePregStagesScreen from "@/screens/ReferencePregStagesScreen";
+import ReferenceTreatmentsScreen from "@/screens/ReferenceTreatmentsScreen";
+import ReferenceTeamScreen from "@/screens/ReferenceTeamScreen";
+import ReferenceSettingsScreen from "@/screens/ReferenceSettingsScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
 
 const App = () => (
@@ -31,7 +39,16 @@ const App = () => (
           <Route path="red-book" element={<RedBookScreen />} />
           <Route path="red-book/new" element={<RedBookNewScreen />} />
           <Route path="red-book/:id" element={<PlaceholderScreen title="Note Detail" />} />
-          <Route path="reference" element={<PlaceholderScreen title="Reference" />} />
+          <Route path="reference" element={<ReferenceScreen />} />
+          <Route path="reference/groups" element={<ReferenceGroupsScreen />} />
+          <Route path="reference/locations" element={<ReferenceLocationsScreen />} />
+          <Route path="reference/quick-notes" element={<ReferenceQuickNotesScreen />} />
+          <Route path="reference/preg-stages" element={<ReferencePregStagesScreen />} />
+          <Route path="reference/treatments" element={<ReferenceTreatmentsScreen />} />
+          <Route path="reference/team" element={<ReferenceTeamScreen />} />
+          <Route path="reference/settings" element={<ReferenceSettingsScreen />} />
+          <Route path="reference/breeds" element={<PlaceholderScreen title="Breeds" />} />
+          <Route path="reference/templates" element={<PlaceholderScreen title="Work Templates" />} />
         </Route>
       </Routes>
     </BrowserRouter>
