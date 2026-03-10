@@ -103,8 +103,8 @@ const AppLayout: React.FC = () => {
           </button>
         )}
 
-        {/* Center */}
-        <div className="flex flex-col items-center text-center">
+        {/* Title */}
+        <div className="flex flex-col items-start text-left flex-1 ml-2">
           <span style={{ color: "#FFFFFF", fontSize: 17, fontWeight: 700 }}>{config.title}</span>
           {config.subtitle && (
             <span style={{ color: "#55BAAA", fontSize: 12, fontWeight: 500 }}>{config.subtitle}</span>
