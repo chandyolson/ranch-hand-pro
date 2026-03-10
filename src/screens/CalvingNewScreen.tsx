@@ -560,7 +560,7 @@ export default function CalvingNewScreen() {
             </div>
 
             {/* UPDATE DAM */}
-            <div className={`${cardStyle} border px-4 py-4 space-y-3`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
+            <div className={`${cardStyle} border px-3 py-3.5 space-y-3`} style={{ backgroundColor: "white", borderColor: "rgba(212,212,208,0.60)" }}>
               <div style={sectionLabel}>UPDATE DAM</div>
 
               {/* Flag picker */}
