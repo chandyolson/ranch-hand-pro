@@ -174,7 +174,7 @@ export default function CalvingNewScreen() {
   };
 
   return (
-    <div className="px-3 space-y-0 pb-10 font-['Inter']">
+    <div className="px-4 space-y-0 pb-10 font-['Inter']">
       {/* TAB BAR */}
       <div className="flex items-center border-b mb-4" style={{ borderColor: "rgba(212,212,208,0.50)" }}>
         {(["entry", "dam"] as const).map(tab => {
