@@ -391,13 +391,13 @@ export default function CalvingNewScreen() {
             collapsedContent={
               cowScoresSet.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {disposition && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Disp: {disposition}</span>}
-                  {assistance && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Assist: {assistance}</span>}
-                  {udder && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Udder: {udder}</span>}
-                  {teat && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Teat: {teat}</span>}
-                  {claw && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Claw: {claw}</span>}
-                  {foot && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Foot: {foot}</span>}
-                  {mothering && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Mother: {mothering}</span>}
+                  {disposition && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Disp: {dispositionLabels[parseInt(disposition)] || disposition}</span>}
+                  {assistance && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Assist: {assistanceLabels[parseInt(assistance)] || assistance}</span>}
+                  {udder && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Udder: {udderLabels[parseInt(udder)] || udder}</span>}
+                  {teat && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Teat: {teatLabels[parseInt(teat)] || teat}</span>}
+                  {claw && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Claw: {clawLabels[parseInt(claw)] || claw}</span>}
+                  {foot && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Foot: {footLabels[parseInt(foot)] || foot}</span>}
+                  {mothering && <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 11, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>Mother: {motheringLabels[parseInt(mothering)] || mothering}</span>}
                 </div>
               ) : (
                 <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif" }}>Tap to record scores</span>
