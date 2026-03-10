@@ -383,7 +383,7 @@ export default function CowWorkProjectDetailScreen() {
                 <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label style={labelStyle}>Calf Sex</label>
                 <select value={calfSex} onChange={e => setCalfSex(e.target.value)} style={inputStyle}
                   className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
