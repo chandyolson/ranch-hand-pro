@@ -1,23 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useChuteSideToast } from "../components/ToastContext";
+import { WORK_TYPES } from "@/lib/constants";
+import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 
-const typeOptions = ["", "PREG", "AI / BR", "BSE", "SALE / CULL", "TX", "WN", "GEN"];
 const groupOptions = ["", "Spring Calvers", "Cow Herd", "Yearlings", "Bulls", "Replacement Heifers", "Summer Pairs"];
 const cattleTypeOptions = ["", "Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
 const locationOptions = ["", "Home Place", "East Pasture", "West Pasture", "Feedlot", "Sale Barn"];
 
 const templates = [
   { name: "Spring Preg Check", type: "PREG" },
-  { name: "Fall Processing", type: "GEN" },
+  { name: "Fall Processing", type: "PROCESS" },
   { name: "Winter Vaccination", type: "TX" },
 ];
-
-const labelStyle: React.CSSProperties = { width: 96, flexShrink: 0, fontSize: 14, fontWeight: 600, color: "#1A1A1A" };
-const inputStyle: React.CSSProperties = {
-  flex: 1, height: 40, borderRadius: 8, border: "1px solid #D4D4D0", backgroundColor: "white",
-  padding: "0 12px", fontFamily: "'Inter', sans-serif", outline: "none", fontSize: 16,
-};
 
 export default function CowWorkNewProjectScreen() {
   const [date, setDate] = useState("2026-03-09");
@@ -33,36 +28,33 @@ export default function CowWorkNewProjectScreen() {
   const navigate = useNavigate();
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3">
       {/* Section label */}
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>
-        PROJECT SETUP
-      </div>
+      <div style={SUB_LABEL}>PROJECT SETUP</div>
 
       {/* Form card */}
       <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         {/* Date */}
         <div className="flex items-center gap-2">
-          <label style={labelStyle}>Date</label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} style={inputStyle}
-            className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25" />
+          <label style={LABEL_STYLE}>Date</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className={INPUT_CLS} />
         </div>
 
         {/* Type */}
         <div className="flex items-center gap-2">
-          <label style={labelStyle}>Type</label>
-          <select value={processingType} onChange={e => setProcessingType(e.target.value)} style={inputStyle}
-            className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
+          <label style={LABEL_STYLE}>Type</label>
+          <select value={processingType} onChange={e => setProcessingType(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select type</option>
-            {typeOptions.filter(Boolean).map(o => <option key={o} value={o}>{o}</option>)}
+            {WORK_TYPES.map(wt => (
+              <option key={wt.code} value={wt.code}>{wt.code} — {wt.name}</option>
+            ))}
           </select>
         </div>
 
         {/* Group */}
         <div className="flex items-center gap-2">
-          <label style={labelStyle}>Group</label>
-          <select value={group} onChange={e => setGroup(e.target.value)} style={inputStyle}
-            className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
+          <label style={LABEL_STYLE}>Group</label>
+          <select value={group} onChange={e => setGroup(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select group</option>
             {groupOptions.filter(Boolean).map(o => <option key={o} value={o}>{o}</option>)}
           </select>
@@ -70,9 +62,8 @@ export default function CowWorkNewProjectScreen() {
 
         {/* Cattle Type */}
         <div className="flex items-center gap-2">
-          <label style={labelStyle}>Cattle Type</label>
-          <select value={cattleType} onChange={e => setCattleType(e.target.value)} style={inputStyle}
-            className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
+          <label style={LABEL_STYLE}>Cattle Type</label>
+          <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Optional</option>
             {cattleTypeOptions.filter(Boolean).map(o => <option key={o} value={o}>{o}</option>)}
           </select>
@@ -80,9 +71,8 @@ export default function CowWorkNewProjectScreen() {
 
         {/* Location */}
         <div className="flex items-center gap-2">
-          <label style={labelStyle}>Location</label>
-          <select value={location} onChange={e => setLocation(e.target.value)} style={inputStyle}
-            className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
+          <label style={LABEL_STYLE}>Location</label>
+          <select value={location} onChange={e => setLocation(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Optional</option>
             {locationOptions.filter(Boolean).map(o => <option key={o} value={o}>{o}</option>)}
           </select>
@@ -90,11 +80,11 @@ export default function CowWorkNewProjectScreen() {
 
         {/* Memo */}
         <div className="pt-2">
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.40)", textTransform: "uppercase", marginBottom: 6 }}>MEMO</div>
+          <div style={{ ...SUB_LABEL, marginBottom: 6 }}>MEMO</div>
           <textarea
             value={memo}
             onChange={e => setMemo(e.target.value)}
-            className="w-full resize-none rounded-lg px-3 py-2.5 font-['Inter'] outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
+            className="w-full resize-none rounded-lg px-3 py-2.5 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
             style={{ minHeight: 56, backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16 }}
           />
         </div>
@@ -131,7 +121,7 @@ export default function CowWorkNewProjectScreen() {
               ))
             )}
             <button
-              className="mt-2 rounded-full px-4 py-2 border border-[#D4D4D0] bg-white font-['Inter'] cursor-pointer active:scale-[0.97]"
+              className="mt-2 rounded-full px-4 py-2 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
               style={{ fontSize: 13, fontWeight: 600, color: "#0E2646" }}
               onClick={() => setProducts(prev => [...prev, { name: "Multimin 90", dosage: "12 mL", route: "SQ" }])}
             >
@@ -183,15 +173,15 @@ export default function CowWorkNewProjectScreen() {
       {/* Action buttons */}
       <div className="flex gap-3">
         <button
-          className="flex-1 rounded-full py-3.5 border border-[#D4D4D0] bg-white font-['Inter'] cursor-pointer active:scale-[0.97]"
+          className="flex-1 rounded-full py-3.5 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
           style={{ fontSize: 14, fontWeight: 600, color: "#0E2646" }}
           onClick={() => navigate("/cow-work")}
         >
           Save
         </button>
         <button
-          className="flex-1 rounded-full py-3.5 bg-[#0E2646] font-['Inter'] cursor-pointer active:scale-[0.97]"
-          style={{ fontSize: 14, fontWeight: 700, color: "white", border: "none" }}
+          className="flex-1 rounded-full py-3.5 bg-[#F3D12A] cursor-pointer active:scale-[0.97]"
+          style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A", border: "none" }}
           onClick={() => navigate("/cow-work/spring-preg-2026")}
         >
           Save & Work Cows
