@@ -86,7 +86,15 @@ const AppLayout: React.FC = () => {
           <button
             className="flex items-center justify-center active:scale-[0.97]"
             style={{ width: 36, height: 36, background: "none", border: "none", cursor: "pointer" }}
-            onClick={() => { if (window.history.length > 1) { navigate(-1); } else { navigate("/"); } }}
+            onClick={() => {
+              if (isAnimalDetail) { navigate("/animals"); }
+              else if (path.startsWith("/reference/")) { navigate("/reference"); }
+              else if (path.startsWith("/red-book/")) { navigate("/red-book"); }
+              else if (path.startsWith("/cow-work/")) { navigate("/cow-work"); }
+              else if (path.startsWith("/calving/")) { navigate("/calving"); }
+              else if (window.history.length > 1) { navigate(-1); }
+              else { navigate("/"); }
+            }}
             aria-label="Go back"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
