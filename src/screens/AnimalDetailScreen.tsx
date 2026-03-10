@@ -360,7 +360,7 @@ export default function AnimalDetailScreen() {
                     {w.flag && (
                       <>
                         <span style={{ width: 1, height: 10, backgroundColor: "rgba(255,255,255,0.12)" }} />
-                        <FlagIcon color={w.flag} size={12} />
+                        <FlagIcon color={w.flag} size="sm" />
                       </>
                     )}
                   </div>
