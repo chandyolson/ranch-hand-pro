@@ -253,7 +253,7 @@ export default function CalvingNewScreen() {
                 </div>
               )}
               {!isDamMatched && damTag.length >= 3 && (
-                <div className="flex items-center gap-1.5 mt-1" style={{ marginLeft: 117 }}>
+                <div className="flex items-center gap-1.5 mt-1" style={{ marginLeft: 104 }}>
                   <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: "#E87461", flexShrink: 0 }} />
                   <span style={{ fontSize: 13, fontWeight: 500, color: "#E87461" }}>No match — </span>
                   <button
