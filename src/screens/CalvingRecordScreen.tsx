@@ -163,7 +163,7 @@ export default function CalvingRecordScreen() {
   const assistanceLabel = assistanceVal > 1 ? scoreLabels.assistance[assistanceVal] : null;
 
   return (
-    <div className="space-y-0 pb-10 font-['Inter']">
+    <div className="px-4 space-y-0 pb-10 font-['Inter']">
       {/* GRADIENT HEADER */}
       <div
         className="rounded-2xl mx-3 mt-3 font-['Inter']"
