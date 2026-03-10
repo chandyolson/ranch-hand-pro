@@ -228,7 +228,7 @@ export default function CalvingRecordScreen() {
 
       {/* EDITING BAR */}
       {isEditing && (
-        <div className="mx-3 mt-3 rounded-xl px-3 py-2.5 flex items-center justify-between font-['Inter']" style={{ backgroundColor: "#F3D12A" }}>
+        <div className="mt-3 rounded-xl px-3 py-2.5 flex items-center justify-between font-['Inter']" style={{ backgroundColor: "#F3D12A" }}>
           <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.10em", color: "#1A1A1A" }}>EDITING</span>
           <div className="flex gap-2">
             <button onClick={handleCancel} className="rounded-full px-4 py-1.5 cursor-pointer font-['Inter']" style={{ border: "1px solid rgba(26,26,26,0.20)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1A1A1A" }}>Cancel</button>
