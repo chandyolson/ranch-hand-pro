@@ -185,19 +185,20 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
         </div>
       )}
 
-      {/* Row 3: Filters + Sort */}
-      <div className="flex items-center gap-2">
-        <div className="flex gap-2 overflow-x-auto flex-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+      {/* Row 3: Filters + Sort — compact */}
+      <div className="flex items-center gap-1.5">
+        <div className="flex gap-1.5 overflow-x-auto flex-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
           {filterChips.map(chip => (
             <button
               key={chip.value}
-              className="rounded-full px-3 py-1.5 cursor-pointer border transition-all active:scale-[0.96] shrink-0"
+              className="rounded-full px-2.5 py-1 cursor-pointer border transition-all active:scale-[0.96] shrink-0"
               style={{
                 backgroundColor: activeFilter === chip.value ? "#0E2646" : "white",
                 borderColor: activeFilter === chip.value ? "#0E2646" : "rgba(212,212,208,0.80)",
                 color: activeFilter === chip.value ? "white" : "rgba(26,26,26,0.50)",
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: activeFilter === chip.value ? 700 : 500,
+                lineHeight: 1.2,
               }}
               onClick={() => onFilterChange(chip.value)}
             >{chip.label}</button>
@@ -206,11 +207,11 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
         {!hideSort && sortOptions && sortOptions.length > 0 && onSortChange && (
           <div className="relative shrink-0" ref={sortRef}>
             <button
-              className="flex items-center gap-1.5 rounded-full cursor-pointer active:scale-[0.96]"
-              style={{ height: 32, paddingLeft: 12, paddingRight: 12, backgroundColor: "white", border: "1px solid #D4D4D0", fontSize: 11, fontWeight: 600, color: "rgba(26,26,26,0.55)" }}
+              className="flex items-center gap-1 rounded-full cursor-pointer active:scale-[0.96]"
+              style={{ height: 26, paddingLeft: 8, paddingRight: 8, backgroundColor: "white", border: "1px solid #D4D4D0", fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.50)" }}
               onClick={() => setSortOpen(!sortOpen)}
             >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                 <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               {activeSortLabel}
@@ -218,19 +219,19 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
             {sortOpen && (
               <div
                 className="absolute right-0 mt-1 z-50 rounded-xl py-1"
-                style={{ backgroundColor: "white", border: "1px solid #D4D4D0", boxShadow: "0 10px 25px rgba(0,0,0,0.12)", minWidth: 160 }}
+                style={{ backgroundColor: "white", border: "1px solid #D4D4D0", boxShadow: "0 10px 25px rgba(0,0,0,0.12)", minWidth: 140 }}
               >
                 {sortOptions.map(opt => (
                   <button
                     key={opt.value}
                     className="flex items-center w-full cursor-pointer"
                     style={{
-                      height: 44,
-                      paddingLeft: 16,
-                      paddingRight: 16,
+                      height: 36,
+                      paddingLeft: 14,
+                      paddingRight: 14,
                       border: "none",
                       backgroundColor: activeSort === opt.value ? "rgba(14,38,70,0.06)" : "transparent",
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: activeSort === opt.value ? 700 : 500,
                       color: "#1A1A1A",
                     }}
