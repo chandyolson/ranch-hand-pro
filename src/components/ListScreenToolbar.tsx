@@ -31,13 +31,14 @@ interface ListScreenToolbarProps {
   isFiltering?: boolean;
   hideTitle?: boolean;
   compactAdd?: boolean;
+  hideSort?: boolean;
 }
 
 const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
   title, addLabel, onAdd, searchValue, onSearchChange, searchPlaceholder = "Search…",
   filterChips, activeFilter, onFilterChange, sortOptions, activeSort, onSortChange,
   onImport, onExport, onMassSelect, onMassEdit, resultCount, isFiltering,
-  hideTitle, compactAdd,
+  hideTitle, compactAdd, hideSort,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -202,7 +203,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
             >{chip.label}</button>
           ))}
         </div>
-        {sortOptions && sortOptions.length > 0 && onSortChange && (
+        {!hideSort && sortOptions && sortOptions.length > 0 && onSortChange && (
           <div className="relative shrink-0" ref={sortRef}>
             <button
               className="flex items-center gap-1.5 rounded-full cursor-pointer active:scale-[0.96]"
