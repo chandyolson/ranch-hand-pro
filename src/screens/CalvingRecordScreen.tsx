@@ -163,10 +163,10 @@ export default function CalvingRecordScreen() {
   const assistanceLabel = assistanceVal > 1 ? scoreLabels.assistance[assistanceVal] : null;
 
   return (
-    <div className="space-y-0 pb-10 font-['Inter']">
+    <div className="px-4 space-y-0 pb-10 font-['Inter']">
       {/* GRADIENT HEADER */}
       <div
-        className="rounded-2xl mx-3 mt-3 font-['Inter']"
+        className="rounded-2xl mt-3 font-['Inter']"
         style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)", padding: "16px" }}
       >
         <div className="flex items-start justify-between gap-3">
@@ -228,7 +228,7 @@ export default function CalvingRecordScreen() {
 
       {/* EDITING BAR */}
       {isEditing && (
-        <div className="mx-3 mt-3 rounded-xl px-3 py-2.5 flex items-center justify-between font-['Inter']" style={{ backgroundColor: "#F3D12A" }}>
+        <div className="mt-3 rounded-xl px-3 py-2.5 flex items-center justify-between font-['Inter']" style={{ backgroundColor: "#F3D12A" }}>
           <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.10em", color: "#1A1A1A" }}>EDITING</span>
           <div className="flex gap-2">
             <button onClick={handleCancel} className="rounded-full px-4 py-1.5 cursor-pointer font-['Inter']" style={{ border: "1px solid rgba(26,26,26,0.20)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1A1A1A" }}>Cancel</button>
@@ -238,7 +238,7 @@ export default function CalvingRecordScreen() {
       )}
 
       {/* Tab bar */}
-      <div className="flex mx-3 mt-3 gap-0 border-b font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)" }}>
+      <div className="flex mt-3 gap-0 border-b font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)" }}>
         {[
           { key: "record", label: "Record" },
           { key: "dam", label: "Dam History" },
@@ -265,7 +265,7 @@ export default function CalvingRecordScreen() {
       </div>
 
       {/* CONTENT */}
-      <div className="px-3 mt-3 space-y-3">
+      <div className="mt-3 space-y-3">
         {/* CALVING INFO */}
         <div className="rounded-xl border font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)", backgroundColor: "white", padding: "14px 10px" }}>
           <div className="flex items-center justify-between mb-2">

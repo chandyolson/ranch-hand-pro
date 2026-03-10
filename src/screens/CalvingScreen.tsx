@@ -35,7 +35,7 @@ export default function CalvingScreen() {
   };
 
   return (
-    <div className="px-3 pt-4 pb-10 space-y-3 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
       {/* Header */}
       <div className="flex items-center justify-between">
         <span style={{ fontSize: 22, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>Calving</span>

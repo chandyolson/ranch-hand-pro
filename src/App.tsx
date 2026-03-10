@@ -23,6 +23,7 @@ import ReferenceTreatmentsScreen from "@/screens/ReferenceTreatmentsScreen";
 import ReferenceTeamScreen from "@/screens/ReferenceTeamScreen";
 import ReferenceSettingsScreen from "@/screens/ReferenceSettingsScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
+import NotFound from "@/pages/NotFound";
 
 const App = () => (
   <ToastProvider>
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="reference/settings" element={<ReferenceSettingsScreen />} />
           <Route path="reference/breeds" element={<PlaceholderScreen title="Breeds" />} />
           <Route path="reference/templates" element={<PlaceholderScreen title="Work Templates" />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>

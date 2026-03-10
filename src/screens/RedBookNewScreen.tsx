@@ -35,7 +35,7 @@ const RedBookNewScreen: React.FC = () => {
   const hasPhoto = attachments.some(a => a.type === "photo");
 
   return (
-    <div className="px-3 pt-4 pb-10 space-y-3 font-['Inter']">
+    <div className="px-4 pt-4 pb-10 space-y-3 font-['Inter']">
       {/* Main entry card */}
       <div className="rounded-xl px-3 py-3.5 space-y-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
         {/* Title */}
