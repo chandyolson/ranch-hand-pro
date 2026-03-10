@@ -134,6 +134,7 @@ export default function CalvingRecordScreen() {
   const record = calvingRecords[id || "c1"] || calvingRecords["c1"];
 
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState("record");
   const [fields, setFields] = useState<CalvingRecord>({ ...record });
 
   const set = <K extends keyof CalvingRecord>(key: K, val: CalvingRecord[K]) =>
