@@ -296,7 +296,7 @@ export default function CowWorkProjectDetailScreen() {
 
                     {/* Info sub-tab */}
                     {historyTab === "info" && (
-                      <div className="px-4 py-3">
+                      <div className="px-3 py-3">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                           {[
                             ["TYPE", matchedAnimal.type], ["BREED", matchedAnimal.breed],
