@@ -319,9 +319,9 @@ export default function CowWorkProjectDetailScreen() {
 
                     {/* Calving sub-tab */}
                     {historyTab === "calving" && (
-                      <div className="px-4 py-3 space-y-2">
+                      <div className="px-3 py-3 space-y-2">
                         {matchedAnimal.calvingHistory.map(c => (
-                          <div key={c.calfTag} className="rounded-xl px-4 py-3 bg-[#0E2646]">
+                          <div key={c.calfTag} className="rounded-xl px-3 py-3 bg-[#0E2646]">
                             <div className="flex items-center gap-2">
                               <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>Calf {c.calfTag}</span>
                               <span className="rounded-full" style={{
