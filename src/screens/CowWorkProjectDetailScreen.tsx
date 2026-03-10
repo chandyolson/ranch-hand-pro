@@ -465,7 +465,7 @@ export default function CowWorkProjectDetailScreen() {
                   : { bg: "rgba(240,240,240,0.10)", color: "rgba(240,240,240,0.50)" };
                 const tagColor = a.flag ? flagColorMap[a.flag] : "rgba(240,240,240,0.90)";
                 return (
-                  <div key={i} className="rounded-xl px-4 py-3.5 bg-[#0E2646]">
+                  <div key={i} className="rounded-xl px-3 py-3.5 bg-[#0E2646]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span style={{ fontSize: 15, fontWeight: 700, color: tagColor }}>{a.tag}</span>
