@@ -220,7 +220,7 @@ export default function CalvingNewScreen() {
             <div>
               <div className="flex items-center gap-2">
                 <span style={labelStyle}>Dam Tag</span>
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <input
                     type="text"
                     value={damTag}
