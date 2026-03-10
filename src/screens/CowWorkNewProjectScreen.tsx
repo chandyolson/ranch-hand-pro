@@ -40,7 +40,7 @@ export default function CowWorkNewProjectScreen() {
       </div>
 
       {/* Form card */}
-      <div className="rounded-xl bg-white px-4 py-4 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+      <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         {/* Date */}
         <div className="flex items-center gap-3">
           <label style={labelStyle}>Date</label>
