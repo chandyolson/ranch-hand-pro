@@ -73,7 +73,7 @@ const FieldRow = ({ label, children }: { label: string; children: React.ReactNod
 
 const ScoreRow = ({ label, value, onChange, max, labels }: { label: string; value: string; onChange: (v: string) => void; max: number; labels: string[] }) => (
   <div>
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       <span style={labelStyle}>{label}</span>
       <select
         value={value}
