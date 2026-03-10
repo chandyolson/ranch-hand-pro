@@ -155,7 +155,7 @@ export default function CowWorkNewProjectScreen() {
         </button>
 
         {templateOpen && (
-          <div className="px-4 pb-2" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
+          <div className="px-3 pb-2" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
             {templates.map(t => (
               <button
                 key={t.name}
