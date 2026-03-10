@@ -350,23 +350,25 @@ export default function CalvingNewScreen() {
       </div>
 
       {/* ═══ DAM + HISTORY BUTTON ═══ */}
-      <div className="flex gap-2 items-stretch">
-        <div className="flex-1 rounded-[10px] border-2 border-[#F3D12A] bg-[#FFFEF5] flex items-center px-3">
-          <span className="text-xs font-bold text-foreground/30 mr-2 shrink-0">DAM</span>
+      <div className="flex gap-2 items-center">
+        <span style={LS}>Dam *</span>
+        <div className="flex-1 min-w-0 flex gap-2">
           <input type="text" value={damTag} onChange={e => setDamTag(e.target.value)} placeholder="Tag…"
-            className="flex-1 border-none outline-none bg-transparent text-xl font-extrabold text-[#0E2646] h-[46px] min-w-0" />
+            style={{ ...IS, borderWidth: 2, borderColor: '#F3D12A', fontWeight: 700 }} />
+          <button onClick={() => setShowDam(!showDam)} type="button"
+            className="w-[46px] shrink-0 rounded-lg flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+            style={{
+              border: showDam ? '2px solid #55BAAA' : '1px solid #D4D4D0',
+              backgroundColor: showDam ? 'rgba(85,186,170,0.10)' : 'white',
+              height: 40,
+            }}>
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="8" r="3" stroke={showDam ? '#55BAAA' : 'rgba(26,26,26,0.35)'} strokeWidth="1.5" fill="none" />
+              <path d="M4 17c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke={showDam ? '#55BAAA' : 'rgba(26,26,26,0.35)'} strokeWidth="1.5" strokeLinecap="round" fill="none" />
+            </svg>
+            <span className="text-[7px] font-bold leading-none" style={{ color: showDam ? '#55BAAA' : 'rgba(26,26,26,0.35)' }}>History</span>
+          </button>
         </div>
-        <button onClick={() => setShowDam(!showDam)} type="button"
-          className="w-[46px] h-[46px] rounded-[10px] flex items-center justify-center shrink-0 cursor-pointer"
-          style={{
-            border: showDam ? '2px solid #55BAAA' : '1px solid #D4D4D0',
-            backgroundColor: showDam ? 'rgba(85,186,170,0.10)' : 'white',
-          }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="8" r="3" stroke={showDam ? '#55BAAA' : 'rgba(26,26,26,0.35)'} strokeWidth="1.5" fill="none" />
-            <path d="M4 17c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke={showDam ? '#55BAAA' : 'rgba(26,26,26,0.35)'} strokeWidth="1.5" strokeLinecap="round" fill="none" />
-          </svg>
-        </button>
       </div>
 
       {/* ═══ DAM HISTORY CARD ═══ */}
