@@ -11,6 +11,7 @@ import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
 import CowWorkProjectDetailScreen from "@/screens/CowWorkProjectDetailScreen";
 import CalvingScreen from "@/screens/CalvingScreen";
 import CalvingNewScreen from "@/screens/CalvingNewScreen";
+import CalvingRecordScreen from "@/screens/CalvingRecordScreen";
 import RedBookScreen from "@/screens/RedBookScreen";
 import RedBookNewScreen from "@/screens/RedBookNewScreen";
 import ReferenceScreen from "@/screens/ReferenceScreen";
