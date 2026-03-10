@@ -49,7 +49,7 @@ export default function CowWorkNewProjectScreen() {
         </div>
 
         {/* Type */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <label style={labelStyle}>Type</label>
           <select value={processingType} onChange={e => setProcessingType(e.target.value)} style={inputStyle}
             className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
