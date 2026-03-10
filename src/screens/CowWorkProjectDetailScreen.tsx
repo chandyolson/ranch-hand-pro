@@ -344,7 +344,7 @@ export default function CowWorkProjectDetailScreen() {
 
                     {/* History sub-tab */}
                     {historyTab === "history" && (
-                      <div className="px-4 py-3 space-y-0">
+                      <div className="px-3 py-3 space-y-0">
                         {matchedAnimal.workHistory.map(w => (
                           <div key={w.project} className="py-2" style={{ borderBottom: "1px solid rgba(26,26,26,0.06)" }}>
                             <div className="flex items-center justify-between">
