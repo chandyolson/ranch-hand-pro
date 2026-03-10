@@ -134,6 +134,7 @@ export default function CalvingRecordScreen() {
   const record = calvingRecords[id || "c1"] || calvingRecords["c1"];
 
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState("record");
   const [fields, setFields] = useState<CalvingRecord>({ ...record });
 
   const set = <K extends keyof CalvingRecord>(key: K, val: CalvingRecord[K]) =>
@@ -235,6 +236,33 @@ export default function CalvingRecordScreen() {
           </div>
         </div>
       )}
+
+      {/* Tab bar */}
+      <div className="flex mx-3 mt-3 gap-0 border-b font-['Inter']" style={{ borderColor: "rgba(212,212,208,0.60)" }}>
+        {[
+          { key: "record", label: "Record" },
+          { key: "dam", label: "Dam History" },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => {
+              if (tab.key === "dam") navigate("/animals/" + fields.damTag);
+              else setActiveTab("record");
+            }}
+            className="px-4 py-2.5 cursor-pointer transition-all active:scale-[0.97]"
+            style={{
+              fontSize: 13,
+              fontWeight: activeTab === tab.key ? 700 : 500,
+              color: activeTab === tab.key ? "#0E2646" : "rgba(26,26,26,0.40)",
+              background: "transparent",
+              border: "none",
+              borderBottom: activeTab === tab.key ? "2px solid #F3D12A" : "2px solid transparent",
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {/* CONTENT */}
       <div className="px-3 mt-3 space-y-3">
@@ -490,21 +518,27 @@ export default function CalvingRecordScreen() {
           )}
         </div>
 
-        {/* ACTIONS */}
-        <div className="flex gap-2 flex-wrap">
-          {!isEditing && (
-            <button onClick={() => setIsEditing(true)} className="rounded-full px-4 py-2.5 cursor-pointer active:scale-[0.97] font-['Inter']" style={{ backgroundColor: "#F3D12A", border: "none", fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}>Edit Record</button>
-          )}
-          <button onClick={() => navigate("/animals/" + fields.damTag)} className="rounded-full px-4 py-2.5 cursor-pointer active:scale-[0.97] font-['Inter']" style={{ border: "1px solid #D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }}>View Dam Record</button>
-          {fields.calfStatus === "Alive" && (
-            <button onClick={() => navigate("/animals/" + fields.calfTag)} className="rounded-full px-4 py-2.5 cursor-pointer active:scale-[0.97] font-['Inter']" style={{ border: "1px solid #D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }}>View Calf Record</button>
-          )}
+        {/* Bottom actions */}
+        <div className="flex gap-3 pt-2 pb-6 font-['Inter']">
           <button
-            onClick={() => { showToast("success", "Record deleted"); navigate("/calving"); }}
-            className="rounded-full px-4 py-2.5 cursor-pointer active:scale-[0.97] font-['Inter']"
-            style={{ border: "1px solid rgba(212,24,61,0.20)", backgroundColor: "transparent", fontSize: 13, fontWeight: 600, color: "rgba(212,24,61,0.60)" }}
+            onClick={handleCancel}
+            className="flex-1 rounded-full py-3.5 border border-[#D4D4D0] bg-white font-['Inter'] cursor-pointer active:scale-[0.97] transition-all"
+            style={{ fontSize: 14, fontWeight: 600, color: "#0E2646" }}
           >
-            Delete Record
+            Reset
+          </button>
+          <button
+            onClick={() => {
+              if (isEditing) {
+                showToast("success", "Record saved");
+                setIsEditing(false);
+              }
+              navigate("/calving/new");
+            }}
+            className="flex-[2] rounded-full py-3.5 bg-[#F3D12A] font-['Inter'] cursor-pointer active:scale-[0.97] transition-all"
+            style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A", border: "none" }}
+          >
+            Save &amp; New
           </button>
         </div>
       </div>
