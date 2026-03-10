@@ -34,6 +34,23 @@ export default function CalvingScreen() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [sort, setSort] = useState("newest");
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
+
+  const sortOptions = [
+    { value: "newest", label: "Newest" },
+    { value: "oldest", label: "Oldest" },
+    { value: "dam", label: "Dam Tag" },
+    { value: "calf", label: "Calf Tag" },
+  ];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const filtered = recentRecords
     .filter(r => {
