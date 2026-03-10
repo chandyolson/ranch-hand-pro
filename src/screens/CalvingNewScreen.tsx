@@ -312,11 +312,11 @@ export default function CalvingNewScreen() {
           <button onClick={() => setCtxOpen(true)} type="button"
             className="flex items-center justify-between w-full px-3 py-2.5 cursor-pointer bg-white border-none">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[13px] font-bold text-[#0E2646]">{fd}</span>
+              <span className="text-[13px] font-semibold text-[#0E2646]">{fd}</span>
               <span className="text-foreground/[0.18]">·</span>
-              <span className="text-xs text-foreground/50">{group}</span>
+              <span className="text-[13px] font-semibold text-[#0E2646]">{group}</span>
               <span className="text-foreground/[0.18]">·</span>
-              <span className="text-xs text-foreground/50">{loc}</span>
+              <span className="text-[13px] font-semibold text-[#0E2646]">{loc}</span>
             </div>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M11 4H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" stroke="rgba(26,26,26,0.25)" strokeWidth="1.2" fill="none" />
