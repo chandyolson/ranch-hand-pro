@@ -59,7 +59,7 @@ export default function CowWorkNewProjectScreen() {
         </div>
 
         {/* Group */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <label style={labelStyle}>Group</label>
           <select value={group} onChange={e => setGroup(e.target.value)} style={inputStyle}
             className="focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25">
