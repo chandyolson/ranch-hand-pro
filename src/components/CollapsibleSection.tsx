@@ -38,7 +38,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       </button>
 
       {!open && collapsedContent && (
-        <div className="px-4 pb-3" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
+        <div className="px-3 pb-3" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
           {collapsedContent}
         </div>
       )}
