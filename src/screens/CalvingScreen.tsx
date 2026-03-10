@@ -99,6 +99,8 @@ export default function CalvingScreen() {
       <ListScreenToolbar
         title="Calving"
         addLabel="New Entry"
+        hideTitle
+        compactAdd
         onAdd={() => navigate("/calving/new")}
         searchValue={search}
         onSearchChange={setSearch}
