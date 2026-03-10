@@ -68,10 +68,10 @@ export default function CalvingScreen() {
   const isFiltering = search.length > 0 || filter !== "All";
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3">
+    <div className="px-4 pt-2 pb-10 space-y-2">
       {/* Season stats bar */}
       <div
-        className="rounded-2xl px-4 py-3.5 flex items-center justify-between"
+        className="rounded-xl px-3 py-2.5 flex items-center justify-between"
         style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
       >
         {[
@@ -80,17 +80,17 @@ export default function CalvingScreen() {
           { label: "BULLS",   value: calvingStats.bulls },
           { label: "DEAD",    value: calvingStats.dead },
         ].map((stat, i, arr) => (
-          <div key={stat.label} className="flex items-center gap-4">
+          <div key={stat.label} className="flex items-center gap-3">
             <div className="flex flex-col items-center">
-              <span style={{ fontSize: 24, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>
+              <span style={{ fontSize: 20, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>
                 {stat.value}
               </span>
-              <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(168,230,218,0.70)", letterSpacing: "0.10em", marginTop: 3 }}>
+              <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(168,230,218,0.70)", letterSpacing: "0.10em", marginTop: 2 }}>
                 {stat.label}
               </span>
             </div>
             {i < arr.length - 1 && (
-              <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.12)" }} />
+              <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.12)" }} />
             )}
           </div>
         ))}
