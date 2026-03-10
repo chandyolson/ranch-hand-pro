@@ -6,7 +6,7 @@ import ToastContainer from "./ToastContainer";
 const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "Saddle Butte Ranch", subtitle: "Ranch · 847 Head · Active" },
   "/animals": { title: "Animals", subtitle: "847 Total · 798 Active" },
-  "/calving": { title: "Calving", subtitle: "2026 Season · 23 Calves" },
+  "/calving": { title: "Calving", subtitle: "" },
   "/calving/new": { title: "Calving", subtitle: "" },
   "/cow-work": { title: "Cow Work", subtitle: "5 Active Projects" },
   "/cow-work/new": { title: "New Project", subtitle: "Create Work Project" },
