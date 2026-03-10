@@ -230,3 +230,38 @@ export const TRAIT_LABELS = {
     'Very Large',      // 5
   ],
 } as const;
+
+// ── Nine-scale optgroup config for Udder & Teat selectors ──
+
+export interface NineScaleGroup {
+  range: string;
+  label: string;
+  start: number;
+  end: number;
+}
+
+export const NINE_SCALE_GROUPS: Record<string, NineScaleGroup[]> = {
+  udder: [
+    { range: '1-2', label: 'Poor',       start: 1, end: 2 },
+    { range: '3-4', label: 'Marginal',   start: 3, end: 4 },
+    { range: '5-6', label: 'Acceptable', start: 5, end: 6 },
+    { range: '7-8', label: 'Desirable',  start: 7, end: 8 },
+    { range: '9',   label: 'Excellent',  start: 9, end: 9 },
+  ],
+  teat: [
+    { range: '1-2', label: 'Poor',       start: 1, end: 2 },
+    { range: '3-4', label: 'Marginal',   start: 3, end: 4 },
+    { range: '5-6', label: 'Acceptable', start: 5, end: 6 },
+    { range: '7-8', label: 'Desirable',  start: 7, end: 8 },
+    { range: '9',   label: 'Excellent',  start: 9, end: 9 },
+  ],
+};
+
+// ── Graft & Death Reasons (Calving) ──
+
+export const GRAFT_REASONS = ['Dam Died', 'Rejected Calf', 'No Milk', 'Twin', 'Other'] as const;
+
+export const DEATH_REASONS = [
+  'Stillborn', 'Dystocia', 'Scours', 'Pneumonia', 'Exposure/Weather',
+  'Predator', 'Birth Defect', 'Crushed by Dam', 'Unknown', 'Other',
+] as const;
