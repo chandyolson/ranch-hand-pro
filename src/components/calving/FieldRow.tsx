@@ -7,10 +7,10 @@ interface FieldRowProps {
 }
 
 const FieldRow: React.FC<FieldRowProps> = ({ label, req, children }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
     <span
       style={{
-        width: 96,
+        width: 105,
         flexShrink: 0,
         fontSize: 14,
         fontWeight: 600,
@@ -23,9 +23,7 @@ const FieldRow: React.FC<FieldRowProps> = ({ label, req, children }) => (
       {label}
       {req && <span style={{ color: "#9B2335", marginLeft: 2 }}>*</span>}
     </span>
-    <div style={{ flex: 1, minWidth: 0, overflow: "hidden", display: "flex" }}>
-      {children}
-    </div>
+    <div style={{ flex: 1, minWidth: 0, overflow: "hidden", display: "flex" }}>{children}</div>
   </div>
 );
 
