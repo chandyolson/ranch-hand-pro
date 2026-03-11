@@ -1,0 +1,56 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useOperation } from '@/contexts/OperationContext';
+
+export function useCalvingRecords() {
+  const { operationId } = useOperation();
+  return useQuery({
+    queryKey: ['calving-records', operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('calving_records')
+        .select('*, dam:animals!calving_records_dam_id_fkey(tag, tag_color, sex, type)')
+        .eq('operation_id', operationId)
+        .order('calving_date', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCalvingCounts() {
+  const { operationId } = useOperation();
+  const currentYear = new Date().getFullYear();
+  const yearStart = `${currentYear}-01-01`;
+  const yearEnd = `${currentYear}-12-31`;
+
+  return useQuery({
+    queryKey: ['calving-counts', operationId, currentYear],
+    queryFn: async () => {
+      const { count: total } = await supabase
+        .from('calving_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('operation_id', operationId)
+        .gte('calving_date', yearStart)
+        .lte('calving_date', yearEnd);
+
+      const { count: alive } = await supabase
+        .from('calving_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('operation_id', operationId)
+        .gte('calving_date', yearStart)
+        .lte('calving_date', yearEnd)
+        .eq('calf_status', 'Alive');
+
+      const { count: dead } = await supabase
+        .from('calving_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('operation_id', operationId)
+        .gte('calving_date', yearStart)
+        .lte('calving_date', yearEnd)
+        .eq('calf_status', 'Dead');
+
+      return { total: total || 0, alive: alive || 0, dead: dead || 0 };
+    },
+  });
+}
