@@ -7,7 +7,7 @@ import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
 import { useChuteSideToast } from "../components/ToastContext";
 import FormFieldRow from "../components/FormFieldRow";
-import { FIELD_INPUT_CLS, SUB_LABEL } from "@/lib/styles";
+import { INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 
 const cattleTypeOptions = ["Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
 
@@ -129,11 +129,11 @@ export default function CowWorkNewProjectScreen() {
       {/* Form card */}
       <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         <FormFieldRow label="Date">
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className={FIELD_INPUT_CLS} />
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className={INPUT_CLS} />
         </FormFieldRow>
 
         <FormFieldRow label="Type" required>
-          <select value={processingType} onChange={e => setProcessingType(e.target.value)} className={FIELD_INPUT_CLS}>
+          <select value={processingType} onChange={e => setProcessingType(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select type</option>
             {(workTypes || []).map(wt => (
               <option key={wt.id} value={wt.id}>{wt.code} — {wt.name}</option>
@@ -142,7 +142,7 @@ export default function CowWorkNewProjectScreen() {
         </FormFieldRow>
 
         <FormFieldRow label="Group">
-          <select value={group} onChange={e => setGroup(e.target.value)} className={FIELD_INPUT_CLS}>
+          <select value={group} onChange={e => setGroup(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select group</option>
             {(groups || []).map(g => (
               <option key={g.id} value={g.id}>{g.name}</option>
@@ -151,14 +151,14 @@ export default function CowWorkNewProjectScreen() {
         </FormFieldRow>
 
         <FormFieldRow label="Cattle Type">
-          <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={FIELD_INPUT_CLS}>
+          <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Optional</option>
             {cattleTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         </FormFieldRow>
 
         <FormFieldRow label="Location">
-          <select value={location} onChange={e => setLocation(e.target.value)} className={FIELD_INPUT_CLS}>
+          <select value={location} onChange={e => setLocation(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Optional</option>
             {(locations || []).map(l => (
               <option key={l.id} value={l.id}>{l.name}</option>
