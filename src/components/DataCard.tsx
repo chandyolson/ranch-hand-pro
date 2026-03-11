@@ -15,7 +15,7 @@ const DataCard: React.FC<DataCardProps> = ({ title, values, trailing, subtitle, 
       style={{ backgroundColor: "#0E2646", padding: "14px 16px" }}
     >
       <div className="min-w-0 flex-1 space-y-1">
-        <div className="truncate" style={{ color: "#F0F0F0", fontSize: 16, fontWeight: 700, lineHeight: 1.3 }}>
+        <div className="truncate" style={{ color: "#F0F0F0", fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>
           {title}
         </div>
         <div className="truncate" style={{ color: "rgba(240,240,240,0.65)", fontSize: 13, fontWeight: 400 }}>
