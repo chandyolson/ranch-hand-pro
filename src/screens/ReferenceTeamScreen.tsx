@@ -1,53 +1,109 @@
 import React, { useState } from "react";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { LABEL_STYLE, INPUT_CLS } from "@/lib/styles";
-
-interface TeamMember {
-  id: string;
-  name: string;
-  initials: string;
-  role: "Admin" | "Operator" | "Veterinarian" | "Operation Member" | "Operation Guest";
-  email: string;
-  status: "active" | "pending";
-}
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useOperation } from '@/contexts/OperationContext';
 
 const roleColors: Record<string, { color: string; bg: string }> = {
-  "Admin":            { color: "#0E2646", bg: "rgba(14,38,70,0.10)" },
-  "Operator":         { color: "#55BAAA", bg: "rgba(85,186,170,0.12)" },
-  "Veterinarian":     { color: "#A8A8F0", bg: "rgba(168,168,240,0.12)" },
-  "Operation Member": { color: "#F3D12A", bg: "rgba(243,209,42,0.12)" },
-  "Operation Guest":  { color: "#A8A8A8", bg: "rgba(168,168,168,0.12)" },
+  "admin":            { color: "#0E2646", bg: "rgba(14,38,70,0.10)" },
+  "operator":         { color: "#55BAAA", bg: "rgba(85,186,170,0.12)" },
+  "veterinarian":     { color: "#A8A8F0", bg: "rgba(168,168,240,0.12)" },
+  "member":           { color: "#F3D12A", bg: "rgba(243,209,42,0.12)" },
+  "guest":            { color: "#A8A8A8", bg: "rgba(168,168,168,0.12)" },
+};
+
+const roleLabels: Record<string, string> = {
+  "admin": "Admin",
+  "operator": "Operator",
+  "veterinarian": "Veterinarian",
+  "member": "Operation Member",
+  "guest": "Operation Guest",
 };
 
 const roleDescriptions: Record<string, string> = {
-  "Admin": "Full access — all data, settings, team management",
-  "Operator": "Same as Admin, different label",
-  "Veterinarian": "View + edit animal data, cannot edit calving or settings",
-  "Operation Member": "Full entry, no delete, no settings",
-  "Operation Guest": "Read-only",
+  "admin": "Full access — all data, settings, team management",
+  "operator": "Same as Admin, different label",
+  "veterinarian": "View + edit animal data, cannot edit calving or settings",
+  "member": "Full entry, no delete, no settings",
+  "guest": "Read-only",
 };
 
-const roleOptions: TeamMember["role"][] = ["Admin", "Operator", "Veterinarian", "Operation Member", "Operation Guest"];
+const roleOptions = ["admin", "operator", "veterinarian", "member", "guest"];
 
 const ReferenceTeamScreen: React.FC = () => {
-  const [members, setMembers] = useState<TeamMember[]>([
-    { id: "m1", name: "J. Olson",      initials: "JO", role: "Admin",            email: "jolson@email.com",    status: "active" },
-    { id: "m2", name: "T. Williams",   initials: "TW", role: "Operator",         email: "twilliams@email.com", status: "active" },
-    { id: "m3", name: "Dr. Hendricks", initials: "DH", role: "Veterinarian",     email: "drhendricks@vet.com", status: "active" },
-    { id: "m4", name: "R. Olson",      initials: "RO", role: "Operation Member", email: "rolson@email.com",    status: "pending" },
-  ]);
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<TeamMember["role"]>("Operation Member");
+  const [inviteRole, setInviteRole] = useState("member");
   const { showToast } = useChuteSideToast();
 
-  const handleInvite = () => {
-    if (!inviteEmail.trim()) { showToast("error", "Email is required"); return; }
-    const initials = inviteEmail.slice(0, 2).toUpperCase();
-    setMembers(prev => [...prev, { id: "m" + Date.now(), name: inviteEmail.split("@")[0], initials, role: inviteRole, email: inviteEmail.trim(), status: "pending" }]);
-    showToast("success", "Invitation sent to " + inviteEmail.trim());
-    setInviteEmail(""); setInviteRole("Operation Member"); setInviteOpen(false);
+  const { data: teamMembers, isLoading } = useQuery({
+    queryKey: ['team', operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('operation_teams')
+        .select('*, profile:user_profiles(display_name, avatar_url, phone)')
+        .eq('operation_id', operationId);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: pendingInvites } = useQuery({
+    queryKey: ['invitations', operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pending_invitations')
+        .select('*')
+        .eq('operation_id', operationId)
+        .eq('status', 'pending');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleInvite = async () => {
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email) { showToast("error", "Email is required"); return; }
+    const { error } = await supabase.from('pending_invitations').insert({
+      operation_id: operationId,
+      invited_email: email,
+      user_type: inviteRole,
+      invited_by: '00000000-0000-0000-0000-000000000000',
+    });
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ['invitations'] });
+    showToast("success", "Invitation sent to " + email);
+    setInviteEmail(""); setInviteRole("member"); setInviteOpen(false);
   };
+
+  const handleRemoveMember = async (id: string, name: string) => {
+    const { error } = await supabase.from('operation_teams').delete().eq('id', id);
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ['team'] });
+    showToast("success", name + " removed");
+  };
+
+  const handleCancelInvite = async (id: string, email: string) => {
+    const { error } = await supabase.from('pending_invitations').delete().eq('id', id);
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ['invitations'] });
+    showToast("success", "Invitation to " + email + " cancelled");
+  };
+
+  const getInitials = (name: string) => name.replace(/[^a-zA-Z ]/g, '').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() || '??';
+
+  const members = (teamMembers || []).map(m => {
+    const name = m.display_name || (m.profile as any)?.display_name || 'Unknown';
+    return {
+      id: m.id,
+      name,
+      initials: getInitials(name),
+      role: m.user_type || 'member',
+    };
+  });
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
@@ -66,8 +122,8 @@ const ReferenceTeamScreen: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <span style={LABEL_STYLE}>Role</span>
-            <select value={inviteRole} onChange={e => setInviteRole(e.target.value as TeamMember["role"])} className={INPUT_CLS} style={{ fontSize: 16 }}>
-              {roleOptions.map(r => <option key={r} value={r}>{r}</option>)}
+            <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }}>
+              {roleOptions.map(r => <option key={r} value={r}>{roleLabels[r]}</option>)}
             </select>
           </div>
           <div style={{ marginLeft: 104, fontSize: 12, color: "rgba(26,26,26,0.40)", fontStyle: "italic", marginTop: 4 }}>
@@ -81,37 +137,73 @@ const ReferenceTeamScreen: React.FC = () => {
       )}
 
       <div className="rounded-xl px-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-        {members.map(m => {
-          const rc = roleColors[m.role];
-          return (
-            <div key={m.id} className="flex items-center gap-3 py-3 border-b border-[rgba(26,26,26,0.06)] last:border-b-0">
-              <div className="rounded-full flex items-center justify-center shrink-0" style={{ width: 36, height: 36, backgroundColor: "rgba(14,38,70,0.08)", fontSize: 12, fontWeight: 700, color: "#0E2646" }}>
-                {m.initials}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>{m.name}</div>
-                <div className="truncate" style={{ fontSize: 12, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>{m.email}</div>
-              </div>
-              <div className="flex flex-col items-end gap-1.5 shrink-0">
-                <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: rc.bg, color: rc.color }}>{m.role.toUpperCase()}</span>
-                {m.status === "pending" && (
-                  <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.12)", color: "#B8960F" }}>PENDING</span>
-                )}
-                {m.role !== "Admin" && (
-                  <button
-                    className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer active:scale-[0.95]"
-                    style={{ backgroundColor: "rgba(212,24,61,0.06)", border: "none" }}
-                    onClick={() => { setMembers(prev => prev.filter(x => x.id !== m.id)); showToast("success", m.name + " removed"); }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d4183d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {isLoading ? (
+          <div className="py-6 text-center" style={{ fontSize: 13, color: "rgba(26,26,26,0.4)" }}>Loading…</div>
+        ) : members.length === 0 && !(pendingInvites || []).length ? (
+          <div className="py-6 text-center" style={{ fontSize: 13, color: "rgba(26,26,26,0.4)" }}>No team members yet</div>
+        ) : (
+          <>
+            {members.map(m => {
+              const rc = roleColors[m.role] || roleColors.member;
+              return (
+                <div key={m.id} className="flex items-center gap-3 py-3 border-b border-[rgba(26,26,26,0.06)] last:border-b-0">
+                  <div className="rounded-full flex items-center justify-center shrink-0" style={{ width: 36, height: 36, backgroundColor: "rgba(14,38,70,0.08)", fontSize: 12, fontWeight: 700, color: "#0E2646" }}>
+                    {m.initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>{m.name}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: rc.bg, color: rc.color }}>{(roleLabels[m.role] || m.role).toUpperCase()}</span>
+                    {m.role !== "admin" && (
+                      <button
+                        className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer active:scale-[0.95]"
+                        style={{ backgroundColor: "rgba(212,24,61,0.06)", border: "none" }}
+                        onClick={() => handleRemoveMember(m.id, m.name)}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d4183d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {(pendingInvites || []).length > 0 && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(26,26,26,0.35)", letterSpacing: "0.08em", paddingTop: 12, paddingBottom: 4 }}>PENDING INVITATIONS</div>
+                {(pendingInvites || []).map(inv => {
+                  const rc = roleColors[inv.user_type] || roleColors.member;
+                  return (
+                    <div key={inv.id} className="flex items-center gap-3 py-3 border-b border-[rgba(26,26,26,0.06)] last:border-b-0">
+                      <div className="rounded-full flex items-center justify-center shrink-0" style={{ width: 36, height: 36, backgroundColor: "rgba(243,209,42,0.10)", fontSize: 12, fontWeight: 700, color: "#B8960F" }}>
+                        ✉
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate" style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{inv.invited_email}</div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: rc.bg, color: rc.color }}>{(roleLabels[inv.user_type] || inv.user_type).toUpperCase()}</span>
+                        <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.12)", color: "#B8960F" }}>PENDING</span>
+                        <button
+                          className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer active:scale-[0.95]"
+                          style={{ backgroundColor: "rgba(212,24,61,0.06)", border: "none" }}
+                          onClick={() => handleCancelInvite(inv.id, inv.invited_email)}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d4183d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
