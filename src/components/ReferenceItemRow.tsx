@@ -22,23 +22,21 @@ const ReferenceItemRow: React.FC<ReferenceItemRowProps> = ({ label, sublabel, ba
     )}
     <div className="flex items-center gap-1.5 shrink-0">
       <button
-        className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer active:scale-[0.95] transition-all"
+        className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer active:scale-[0.95] transition-all"
         style={{ backgroundColor: "rgba(14,38,70,0.06)", border: "none" }}
         onClick={onEdit}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0E2646" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+          <path d="M13.5 1.5l3 3L6 15l-4 1 1-4L13.5 1.5z" stroke="#0E2646" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
       <button
-        className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer active:scale-[0.95] transition-all"
+        className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer active:scale-[0.95] transition-all"
         style={{ backgroundColor: "rgba(212,24,61,0.06)", border: "none" }}
         onClick={onDelete}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4183d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+          <path d="M3 5h12M6 5V3.5a1 1 0 011-1h4a1 1 0 011 1V5m1.5 0v9.5a1.5 1.5 0 01-1.5 1.5H6a1.5 1.5 0 01-1.5-1.5V5" stroke="#D4183D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
     </div>
