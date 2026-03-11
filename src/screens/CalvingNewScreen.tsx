@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useGroups } from "@/hooks/useGroups";
+import { useLocations } from "@/hooks/useLocations";
 import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
 import FieldRow from "@/components/calving/FieldRow";
@@ -109,8 +111,13 @@ export default function CalvingNewScreen() {
   // Context
   const [contextOpen, setContextOpen] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [group, setGroup] = useState("Spring Calvers");
-  const [location, setLocation] = useState("Calving Barn");
+  const [groupId, setGroupId] = useState("");
+  const [locationId, setLocationId] = useState("");
+  const { data: groups } = useGroups();
+  const { data: locations } = useLocations();
+
+  const groupName = groups?.find(g => g.id === groupId)?.name || "No Group";
+  const locationName = locations?.find(l => l.id === locationId)?.name || "No Location";
 
   // Dam
   const [damTag, setDamTag] = useState("");
@@ -394,8 +401,8 @@ export default function CalvingNewScreen() {
         teat: cowTraits.teat ? parseInt(cowTraits.teat) : null,
         claw: cowTraits.claw ? parseInt(cowTraits.claw) : null,
         foot: cowTraits.foot ? parseInt(cowTraits.foot) : null,
-        group_id: null,
-        location_id: null,
+        group_id: groupId || null,
+        location_id: locationId || null,
         memo: notes.trim() || null,
       });
       if (calvErr) throw calvErr;
@@ -460,9 +467,9 @@ export default function CalvingNewScreen() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{fmtDate}</span>
               <span style={{ width: 1, height: 14, backgroundColor: "rgba(255,255,255,0.15)" }} />
-              <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(240,240,240,0.60)" }}>{group}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(240,240,240,0.60)" }}>{groupName}</span>
               <span style={{ width: 1, height: 14, backgroundColor: "rgba(255,255,255,0.15)" }} />
-              <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(240,240,240,0.60)" }}>{location}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(240,240,240,0.60)" }}>{locationName}</span>
             </div>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path
@@ -516,24 +523,26 @@ export default function CalvingNewScreen() {
               </FieldRow>
               <FieldRow label="Group">
                 <select
-                  value={group}
-                  onChange={(e) => setGroup(e.target.value)}
+                  value={groupId}
+                  onChange={(e) => setGroupId(e.target.value)}
                   style={{ ...IS, appearance: "auto" as const }}
                 >
-                  <option>Spring Calvers</option>
-                  <option>Fall Calvers</option>
-                  <option>First Calf Heifers</option>
+                  <option value="">— None —</option>
+                  {(groups || []).map(g => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
                 </select>
               </FieldRow>
               <FieldRow label="Location">
                 <select
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  value={locationId}
+                  onChange={(e) => setLocationId(e.target.value)}
                   style={{ ...IS, appearance: "auto" as const }}
                 >
-                  <option>Calving Barn</option>
-                  <option>Home Place</option>
-                  <option>East Pasture</option>
+                  <option value="">— None —</option>
+                  {(locations || []).map(l => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
                 </select>
               </FieldRow>
             </div>
