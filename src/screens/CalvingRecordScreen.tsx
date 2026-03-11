@@ -195,8 +195,20 @@ export default function CalvingRecordScreen() {
 
   const flagInfo = fields.damFlag ? FLAG_OPTIONS.find(f => f.color === fields.damFlag) : null;
 
-  if (isLoading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading record…</div>;
-  if (!record) return <div className="flex items-center justify-center h-64 text-muted-foreground">Record not found</div>;
+  if (isLoading || !record) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+        <div style={{
+          width: 40, height: 40,
+          border: "4px solid #D4D4D0",
+          borderTopColor: "#F3D12A",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 space-y-0 pb-10">
