@@ -7,6 +7,7 @@ import { useChuteSideToast } from "@/components/ToastContext";
 import FieldRow from "@/components/calving/FieldRow";
 import SegmentedToggle from "@/components/calving/SegmentedToggle";
 import PillScore from "@/components/calving/PillScore";
+import AnimalLookup from "@/components/AnimalLookup";
 import TraitPair from "@/components/calving/TraitPair";
 import { TRAIT_LABELS, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, DEATH_REASONS, GRAFT_REASONS } from "@/lib/constants";
 import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX } from "@/lib/constants";
@@ -116,6 +117,7 @@ export default function CalvingNewScreen() {
 
   // Dam
   const [damTag, setDamTag] = useState("");
+  const [selectedDamId, setSelectedDamId] = useState<string | null>(null);
   const [showDam, setShowDam] = useState(false);
   const [damFullHistory, setDamFullHistory] = useState(false);
   const [damHistoryTab, setDamHistoryTab] = useState("calving");
@@ -161,18 +163,18 @@ export default function CalvingNewScreen() {
 
   // ── Dam lookup queries ──
   const { data: damLookup } = useQuery({
-    queryKey: ["dam-lookup", damTag, operationId],
+    queryKey: ["dam-lookup", selectedDamId, operationId],
     queryFn: async () => {
-      if (!damTag.trim()) return null;
+      if (!selectedDamId) return null;
       const { data } = await supabase
         .from("animals")
         .select("*")
         .eq("operation_id", operationId)
-        .eq("tag", damTag.trim())
+        .eq("id", selectedDamId)
         .maybeSingle();
       return data;
     },
-    enabled: showDam && !!damTag.trim(),
+    enabled: showDam && !!selectedDamId,
   });
 
   const { data: damCalvings } = useQuery({
@@ -310,6 +312,7 @@ export default function CalvingNewScreen() {
 
   const handleReset = () => {
     setDamTag("");
+    setSelectedDamId(null);
     setCalfStatus("Alive");
     setCalfSex("");
     setCalfTag("");
@@ -331,8 +334,8 @@ export default function CalvingNewScreen() {
   };
 
   const handleSave = async () => {
-    if (!damTag.trim()) {
-      showToast("error", "Dam tag required");
+    if (!damTag.trim() || !selectedDamId) {
+      showToast("error", "Select a dam from the search results");
       return;
     }
     if (!calfSex && calfStatus !== "Dead") {
@@ -341,20 +344,9 @@ export default function CalvingNewScreen() {
     }
     setSaving(true);
     try {
-      // Step 1: Look up dam by tag
-      const { data: damAnimal } = await supabase
-        .from("animals")
-        .select("id")
-        .eq("operation_id", operationId)
-        .eq("tag", damTag.trim())
-        .single();
-      if (!damAnimal) {
-        showToast("error", `Dam '${damTag.trim()}' not found`);
-        setSaving(false);
-        return;
-      }
+      // Dam already selected via AnimalLookup — use selectedDamId directly
 
-      // Step 2: If calf is alive and tagged, create calf animal record
+      // Step 1: If calf is alive and tagged, create calf animal record
       let calfId: string | null = null;
       if (calfStatus === "Alive" && calfTag.trim()) {
         const { data: calfAnimal, error: calfErr } = await supabase
@@ -368,7 +360,7 @@ export default function CalvingNewScreen() {
             status: "Active",
             year_born: new Date().getFullYear(),
             birth_date: date || new Date().toISOString().split("T")[0],
-            dam_id: damAnimal.id,
+            dam_id: selectedDamId,
             breed: null,
           })
           .select("id")
@@ -377,10 +369,10 @@ export default function CalvingNewScreen() {
         calfId = calfAnimal.id;
       }
 
-      // Step 3: Insert calving record
+      // Step 2: Insert calving record
       const { error: calvErr } = await supabase.from("calving_records").insert({
         operation_id: operationId,
-        dam_id: damAnimal.id,
+        dam_id: selectedDamId,
         calf_id: calfId,
         calving_date: date || new Date().toISOString().split("T")[0],
         calf_sex: calfSex || null,
@@ -416,6 +408,7 @@ export default function CalvingNewScreen() {
       }
 
       setDamTag("");
+      setSelectedDamId(null);
       setCalfTag("");
       setCalfStatus("Alive");
       setCalfSex("");
@@ -554,12 +547,14 @@ export default function CalvingNewScreen() {
         >
           <FieldRow label="Dam Tag">
             <div style={{ display: "flex", gap: 8, minWidth: 0, flex: 1 }}>
-              <input
-                type="text"
+              <AnimalLookup
                 value={damTag}
-                onChange={(e) => setDamTag(e.target.value)}
+                onChange={(v) => { setDamTag(v); if (!v) setSelectedDamId(null); }}
+                onSelect={(animal) => { setSelectedDamId(animal.id); setShowDam(true); }}
+                onNoMatch={(search) => { showToast("info", `Quick-Add Dam for "${search}" — coming soon`); }}
                 placeholder="Type dam tag…"
-                style={IS}
+                inputStyle={IS}
+                sexFilter={["Cow", "Spayed Heifer"]}
               />
               <button
                 onClick={() => setShowDam(!showDam)}
