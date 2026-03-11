@@ -465,27 +465,19 @@ export default function CalvingNewScreen() {
                     {/* Work tab */}
                     {damHistoryTab === 'work' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {[
-                          { project: 'Spring Preg Check', date: 'Feb 24, 2026', wt: '1,187', preg: 'Confirmed', treatments: ['Multimin 90'] },
-                          { project: 'Winter Vaccination', date: 'Jan 14, 2026', wt: '1,165', preg: 'Confirmed', treatments: ['Bovi-Shield Gold 5', 'Ivermectin'] },
-                          { project: 'Fall Processing', date: 'Oct 15, 2025', wt: '1,152', preg: 'Confirmed', treatments: ['Dectomax Pour-On'] },
-                        ].map(w => (
-                          <div key={w.date} style={{ borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.15)', padding: '10px 12px' }}>
+                        {(!damWork || damWork.length === 0) && (
+                          <div style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)', padding: 8 }}>No work records</div>
+                        )}
+                        {(damWork || []).map(w => (
+                          <div key={w.id} style={{ borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.15)', padding: '10px 12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{w.project}</span>
-                              <span style={{ fontSize: 10, color: 'rgba(240,240,240,0.30)' }}>{w.date}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{(w.project as any)?.name || 'Work Record'}</span>
+                              <span style={{ fontSize: 10, color: 'rgba(240,240,240,0.30)' }}>{fmtHistDate(w.date)}</span>
                             </div>
                             <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{w.wt} lbs</span>
-                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(85,186,170,0.15)', color: '#55BAAA' }}>{w.preg}</span>
+                              {w.weight && <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{w.weight} lbs</span>}
+                              {w.preg_stage && <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(85,186,170,0.15)', color: '#55BAAA' }}>{w.preg_stage}</span>}
                             </div>
-                            {w.treatments.length > 0 && (
-                              <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
-                                {w.treatments.map(t => (
-                                  <span key={t} style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(85,186,170,0.12)', color: '#55BAAA' }}>{t}</span>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         ))}
                       </div>
