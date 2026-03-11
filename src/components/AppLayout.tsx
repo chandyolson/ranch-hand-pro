@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import NavDrawer from "./NavDrawer";
 import ToastContainer from "./ToastContainer";
+import { useOperation } from "@/contexts/OperationContext";
 
 const routeConfig: Record<string, { title: string; subtitle: string }> = {
-  "/": { title: "Saddle Butte Ranch", subtitle: "Ranch · 847 Head · Active" },
+  "/": { title: "", subtitle: "" },
   "/animals": { title: "Animals", subtitle: "" },
   "/calving": { title: "Calving", subtitle: "" },
   "/calving/new": { title: "Calving", subtitle: "" },
@@ -41,13 +42,16 @@ const AppLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { operationName } = useOperation();
   const path = location.pathname;
 
   const isHome = path === "/";
   const isAnimalDetail = /^\/animals\/[^/]+$/.test(path) && path !== "/animals/new";
 
   let config = routeConfig[path];
-  if (!config) {
+  if (isHome) {
+    config = { title: operationName, subtitle: "" };
+  } else if (!config) {
     if (isAnimalDetail) {
       config = { title: "Animal Record", subtitle: "Animal Detail" };
     } else if (path === "/animals/new") {
