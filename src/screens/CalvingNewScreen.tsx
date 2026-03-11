@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
 import FieldRow from "@/components/calving/FieldRow";
 import SegmentedToggle from "@/components/calving/SegmentedToggle";
@@ -54,6 +57,9 @@ function Collapsible({ title, badge, defaultOpen, collapsedContent, children }: 
 export default function CalvingNewScreen() {
   const navigate = useNavigate();
   const { showToast } = useChuteSideToast();
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
 
   // Context
   const [contextOpen, setContextOpen] = useState(false);
@@ -97,6 +103,61 @@ export default function CalvingNewScreen() {
   const [cowTraits, setCowTraits] = useState({ assistance: '1', disposition: '', udder: '', teat: '', claw: '', foot: '', mothering: '' });
   const [showUdderTeat] = useState(true);
   const [showClawFoot] = useState(true);
+
+  // ── Dam lookup queries ──
+  const { data: damLookup } = useQuery({
+    queryKey: ['dam-lookup', damTag, operationId],
+    queryFn: async () => {
+      if (!damTag.trim()) return null;
+      const { data } = await supabase
+        .from('animals')
+        .select('*')
+        .eq('operation_id', operationId)
+        .eq('tag', damTag.trim())
+        .maybeSingle();
+      return data;
+    },
+    enabled: showDam && !!damTag.trim(),
+  });
+
+  const { data: damCalvings } = useQuery({
+    queryKey: ['dam-calvings', damLookup?.id],
+    queryFn: async () => {
+      if (!damLookup?.id) return [];
+      const { data } = await supabase
+        .from('calving_records')
+        .select('*')
+        .eq('dam_id', damLookup.id)
+        .order('calving_date', { ascending: false })
+        .limit(10);
+      return data || [];
+    },
+    enabled: !!damLookup?.id,
+  });
+
+  const { data: damWork } = useQuery({
+    queryKey: ['dam-work', damLookup?.id],
+    queryFn: async () => {
+      if (!damLookup?.id) return [];
+      const { data } = await supabase
+        .from('cow_work')
+        .select('*, project:projects(name)')
+        .eq('animal_id', damLookup.id)
+        .order('date', { ascending: false })
+        .limit(10);
+      return data || [];
+    },
+    enabled: !!damLookup?.id && damFullHistory,
+  });
+
+  const TAG_HEX: Record<string, string> = {
+    Red: '#D4606E', Yellow: '#F3D12A', Green: '#55BAAA', White: '#E0E0E0',
+    Orange: '#E8863A', Blue: '#5B8DEF', Purple: '#A77BCA', Pink: '#E8A0BF', None: '#999',
+  };
+
+  const fmtHistDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const fmtShortDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+  const assistLabel = (v: number | null) => !v || v === 1 ? '' : v === 2 ? 'Pull' : v === 3 ? 'Hard Pull' : 'C-Sec';
 
   // ── Helpers ──
   const toggleNote = (label: string) => {
@@ -158,14 +219,97 @@ export default function CalvingNewScreen() {
     setNotes(''); setShowDam(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!damTag.trim()) { showToast("error", "Dam tag required"); return; }
-    if (!calfSex) { showToast("error", "Calf sex required"); return; }
-    const msg = calfStatus === 'Dead'
-      ? `Calving record saved — calf ${calfTag || 'untagged'} marked Dead`
-      : `Calving record saved — calf ${calfTag || 'untagged'} added to herd`;
-    showToast("success", msg);
-    handleReset();
+    if (!calfSex && calfStatus !== 'Dead') { showToast("error", "Calf sex required"); return; }
+    setSaving(true);
+    try {
+      // Step 1: Look up dam by tag
+      const { data: damAnimal } = await supabase
+        .from('animals')
+        .select('id')
+        .eq('operation_id', operationId)
+        .eq('tag', damTag.trim())
+        .single();
+      if (!damAnimal) {
+        showToast('error', `Dam '${damTag.trim()}' not found`);
+        setSaving(false);
+        return;
+      }
+
+      // Step 2: If calf is alive and tagged, create calf animal record
+      let calfId: string | null = null;
+      if (calfStatus === 'Alive' && calfTag.trim()) {
+        const { data: calfAnimal, error: calfErr } = await supabase
+          .from('animals')
+          .insert({
+            operation_id: operationId,
+            tag: calfTag.trim(),
+            tag_color: calfColor === 'None' ? null : calfColor,
+            sex: calfSex === 'Bull' ? 'Bull' : 'Cow',
+            type: 'Calf',
+            status: 'Active',
+            year_born: new Date().getFullYear(),
+            birth_date: date || new Date().toISOString().split('T')[0],
+            dam_id: damAnimal.id,
+            breed: null,
+          })
+          .select('id')
+          .single();
+        if (calfErr) throw calfErr;
+        calfId = calfAnimal.id;
+      }
+
+      // Step 3: Insert calving record
+      const { error: calvErr } = await supabase
+        .from('calving_records')
+        .insert({
+          operation_id: operationId,
+          dam_id: damAnimal.id,
+          calf_id: calfId,
+          calving_date: date || new Date().toISOString().split('T')[0],
+          calf_sex: calfSex || null,
+          birth_weight: birthWeight ? parseFloat(birthWeight) : null,
+          calf_status: calfStatus,
+          death_explanation: calfStatus === 'Dead' ? (deathReason || null) : null,
+          calf_size: calfSize ? parseInt(calfSize) : 3,
+          calf_vigor: vigor ? parseInt(vigor) : null,
+          assistance: cowTraits.assistance ? parseInt(cowTraits.assistance) : 1,
+          disposition: cowTraits.disposition ? parseInt(cowTraits.disposition) : null,
+          mothering: cowTraits.mothering ? parseInt(cowTraits.mothering) : null,
+          udder: cowTraits.udder ? parseInt(cowTraits.udder) : null,
+          teat: cowTraits.teat ? parseInt(cowTraits.teat) : null,
+          claw: cowTraits.claw ? parseInt(cowTraits.claw) : null,
+          foot: cowTraits.foot ? parseInt(cowTraits.foot) : null,
+          group_id: null,
+          location_id: null,
+          memo: notes.trim() || null,
+        });
+      if (calvErr) throw calvErr;
+
+      // Step 4: Invalidate caches
+      queryClient.invalidateQueries({ queryKey: ['calving-list'] });
+      queryClient.invalidateQueries({ queryKey: ['calving-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['animals'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-counts'] });
+
+      // Step 5: Toast + reset (keep date/group/location)
+      if (calfStatus === 'Dead') {
+        showToast('success', `Calving recorded — calf marked Dead`);
+      } else {
+        showToast('success', `Calving recorded — calf ${calfTag.trim() || 'untagged'} added`);
+      }
+
+      setDamTag(''); setCalfTag(''); setCalfStatus('Alive'); setCalfSex('');
+      setCalfColor('Yellow'); setBirthWeight(''); setCalfSize('3'); setVigor('');
+      setSelectedNotes([]); setNotes(''); setIsTwin(false); setIsGraft(false);
+      setCowTraits({ assistance: '1', disposition: '', udder: '', teat: '', claw: '', foot: '', mothering: '' });
+      setShowDam(false); setDamFullHistory(false);
+    } catch (err: any) {
+      showToast('error', err.message || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -229,38 +373,36 @@ export default function CalvingNewScreen() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ color: 'white', fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{damTag}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: '#E8A0BF' }} />
-                      <span style={{ fontSize: 12, color: 'rgba(240,240,240,0.45)' }}>Pink · Cow · 2020 · 1,187 lbs</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                      {['Hard keeper', 'Good mother'].map(n => (
-                        <span key={n} style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(255,255,255,0.10)', color: 'rgba(240,240,240,0.75)' }}>{n}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                    <svg width="18" height="16" viewBox="0 0 32 28" fill="none"><line x1="3" y1="2" x2="3" y2="26" stroke="#55BAAA" strokeWidth="2" strokeLinecap="round" /><path d="M3 3H27L23 9.5L27 16H3V3Z" fill="#55BAAA" /></svg>
-                    <span style={{ fontSize: 9, fontWeight: 600, color: '#55BAAA' }}>Mgmt</span>
+                    {damLookup ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: TAG_HEX[damLookup.tag_color || 'None'] || '#999' }} />
+                        <span style={{ fontSize: 12, color: 'rgba(240,240,240,0.45)' }}>{damLookup.tag_color || 'None'} · {damLookup.sex} · {damLookup.year_born || '—'}</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: 'rgba(240,240,240,0.35)', marginTop: 4 }}>Looking up…</div>
+                    )}
                   </div>
                 </div>
 
                 {/* Recent calvings — compact */}
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 10, paddingTop: 8 }}>
                   <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(240,240,240,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Last 3 Calvings</div>
-                  {[
-                    { tag: '8841', sex: 'B', date: 'Mar 25', wt: '85', assist: '' },
-                    { tag: '7503', sex: 'H', date: 'Apr 24', wt: '72', assist: '' },
-                    { tag: '6218', sex: 'B', date: 'Mar 23', wt: '90', assist: 'Pull' },
-                  ].map(c => (
-                    <div key={c.tag} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: 'white', width: 40 }}>{c.tag}</span>
-                      <span style={{ fontSize: 9, fontWeight: 700, width: 14, color: c.sex === 'B' ? '#55BAAA' : '#E8A0BF' }}>{c.sex}</span>
-                      <span style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)' }}>{c.date}</span>
-                      <span style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)' }}>{c.wt}lb</span>
-                      {c.assist && <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '1px 5px', backgroundColor: 'rgba(243,209,42,0.15)', color: 'rgba(243,209,42,0.70)' }}>{c.assist}</span>}
-                    </div>
-                  ))}
+                  {(!damCalvings || damCalvings.length === 0) && (
+                    <div style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)', padding: '4px 0' }}>No calving records</div>
+                  )}
+                  {(damCalvings || []).slice(0, 3).map((c, i) => {
+                    const sexChar = c.calf_sex === 'Bull' ? 'B' : c.calf_sex === 'Heifer' ? 'H' : '?';
+                    const assist = assistLabel(c.assistance);
+                    return (
+                      <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'white', width: 40 }}>{c.calf_sex === 'Bull' ? 'B' : 'H'}</span>
+                        <span style={{ fontSize: 9, fontWeight: 700, width: 14, color: sexChar === 'B' ? '#55BAAA' : '#E8A0BF' }}>{sexChar}</span>
+                        <span style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)' }}>{fmtShortDate(c.calving_date)}</span>
+                        <span style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)' }}>{c.birth_weight || '—'}lb</span>
+                        {assist && <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '1px 5px', backgroundColor: 'rgba(243,209,42,0.15)', color: 'rgba(243,209,42,0.70)' }}>{assist}</span>}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -296,27 +438,25 @@ export default function CalvingNewScreen() {
                     {/* Calving tab */}
                     {damHistoryTab === 'calving' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {[
-                          { tag: '8841', sex: 'Bull', date: 'Mar 22, 2025', wt: '85 lbs', assist: 'No Assistance', vigor: 'Excellent', notes: 'Normal birth — strong calf' },
-                          { tag: '7503', sex: 'Heifer', date: 'Apr 8, 2024', wt: '72 lbs', assist: 'No Assistance', vigor: 'Excellent', notes: 'Normal birth' },
-                          { tag: '6218', sex: 'Bull', date: 'Mar 30, 2023', wt: '90 lbs', assist: 'Easy Pull', vigor: 'Good', notes: 'Large calf, slight assistance' },
-                        ].map(c => (
-                          <div key={c.tag} style={{ borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.15)', padding: '10px 12px' }}>
+                        {(!damCalvings || damCalvings.length === 0) && (
+                          <div style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)', padding: 8 }}>No calving records</div>
+                        )}
+                        {(damCalvings || []).map(c => (
+                          <div key={c.id} style={{ borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.15)', padding: '10px 12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{c.tag}</span>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{c.calf_sex || 'Unknown'}</span>
                                 <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '1px 6px',
-                                  backgroundColor: c.sex === 'Bull' ? 'rgba(85,186,170,0.15)' : 'rgba(232,160,191,0.20)',
-                                  color: c.sex === 'Bull' ? '#55BAAA' : '#E8A0BF' }}>{c.sex}</span>
+                                  backgroundColor: c.calf_sex === 'Bull' ? 'rgba(85,186,170,0.15)' : 'rgba(232,160,191,0.20)',
+                                  color: c.calf_sex === 'Bull' ? '#55BAAA' : '#E8A0BF' }}>{c.calf_sex || '?'}</span>
                               </div>
-                              <span style={{ fontSize: 10, color: 'rgba(240,240,240,0.30)' }}>{c.date}</span>
+                              <span style={{ fontSize: 10, color: 'rgba(240,240,240,0.30)' }}>{fmtHistDate(c.calving_date)}</span>
                             </div>
                             <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{c.wt}</span>
-                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{c.assist}</span>
-                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{c.vigor}</span>
+                              {c.birth_weight && <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{c.birth_weight} lbs</span>}
+                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{!c.assistance || c.assistance === 1 ? 'No Assistance' : c.assistance === 2 ? 'Easy Pull' : 'Hard Pull'}</span>
                             </div>
-                            {c.notes && <div style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)', marginTop: 4 }}>{c.notes}</div>}
+                            {c.memo && <div style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)', marginTop: 4 }}>{c.memo}</div>}
                           </div>
                         ))}
                       </div>
@@ -325,27 +465,19 @@ export default function CalvingNewScreen() {
                     {/* Work tab */}
                     {damHistoryTab === 'work' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {[
-                          { project: 'Spring Preg Check', date: 'Feb 24, 2026', wt: '1,187', preg: 'Confirmed', treatments: ['Multimin 90'] },
-                          { project: 'Winter Vaccination', date: 'Jan 14, 2026', wt: '1,165', preg: 'Confirmed', treatments: ['Bovi-Shield Gold 5', 'Ivermectin'] },
-                          { project: 'Fall Processing', date: 'Oct 15, 2025', wt: '1,152', preg: 'Confirmed', treatments: ['Dectomax Pour-On'] },
-                        ].map(w => (
-                          <div key={w.date} style={{ borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.15)', padding: '10px 12px' }}>
+                        {(!damWork || damWork.length === 0) && (
+                          <div style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)', padding: 8 }}>No work records</div>
+                        )}
+                        {(damWork || []).map(w => (
+                          <div key={w.id} style={{ borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.15)', padding: '10px 12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{w.project}</span>
-                              <span style={{ fontSize: 10, color: 'rgba(240,240,240,0.30)' }}>{w.date}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{(w.project as any)?.name || 'Work Record'}</span>
+                              <span style={{ fontSize: 10, color: 'rgba(240,240,240,0.30)' }}>{fmtHistDate(w.date)}</span>
                             </div>
                             <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{w.wt} lbs</span>
-                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(85,186,170,0.15)', color: '#55BAAA' }}>{w.preg}</span>
+                              {w.weight && <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{w.weight} lbs</span>}
+                              {w.preg_stage && <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(85,186,170,0.15)', color: '#55BAAA' }}>{w.preg_stage}</span>}
                             </div>
-                            {w.treatments.length > 0 && (
-                              <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
-                                {w.treatments.map(t => (
-                                  <span key={t} style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(85,186,170,0.12)', color: '#55BAAA' }}>{t}</span>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         ))}
                       </div>
@@ -563,7 +695,7 @@ export default function CalvingNewScreen() {
         {/* ═══ 6. ACTIONS ═══ */}
         <div style={{ display: 'flex', gap: 12, paddingTop: 2 }}>
           <button onClick={handleReset} type="button" style={{ flex: 1, padding: '10px 24px', borderRadius: 9999, border: '2px solid #F3D12A', backgroundColor: 'transparent', fontSize: 14, fontWeight: 700, color: '#1A1A1A', cursor: 'pointer', transition: 'all 150ms' }}>Reset</button>
-          <button onClick={handleSave} type="button" style={{ flex: 2, padding: '10px 24px', borderRadius: 9999, border: 'none', backgroundColor: '#F3D12A', fontSize: 14, fontWeight: 700, color: '#1A1A1A', cursor: 'pointer', boxShadow: '0 2px 10px rgba(243,209,42,0.35)', transition: 'all 150ms' }}>Save & Next</button>
+          <button onClick={handleSave} disabled={saving} type="button" style={{ flex: 2, padding: '10px 24px', borderRadius: 9999, border: 'none', backgroundColor: saving ? 'rgba(243,209,42,0.60)' : '#F3D12A', fontSize: 14, fontWeight: 700, color: '#1A1A1A', cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 2px 10px rgba(243,209,42,0.35)', transition: 'all 150ms' }}>{saving ? 'Saving…' : 'Save & Next'}</button>
         </div>
       </div>
     </div>
