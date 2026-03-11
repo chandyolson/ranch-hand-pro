@@ -161,7 +161,7 @@ export default function CalvingRecordScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("record");
-  const [fields, setFields] = useState<CalvingRecord>({ ...(record || {} as CalvingRecord) });
+  const [fields, setFields] = useState<CalvingRecord>({ ...(record || { quickNotes: [], memo: "", damTag: "", damColor: "None", damColorHex: "#999", damType: "", damYearBorn: "", damFlag: null, calfTag: "", calfColor: "Yellow", calfColorHex: "#F3D12A", calfEid: "", calfSex: "Unknown", calfStatus: "Alive", birthWeight: "", calfSize: "", sire: "", disposition: "", assistance: "", udder: "", teat: "", claw: "", foot: "", mothering: "", calfVigor: "", calfSize2: "", date: "", group: "", location: "", id: "" } as CalvingRecord) });
 
   // Sync fields when record loads from DB
   useEffect(() => {
