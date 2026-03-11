@@ -1040,7 +1040,7 @@ export default function CalvingNewScreen() {
                       style={{
                         ...IS,
                         appearance: "auto" as const,
-                        fontSize: 14,
+                        fontSize: 16,
                         color: deathReason ? "#1A1A1A" : "rgba(26,26,26,0.35)",
                       }}
                     >
