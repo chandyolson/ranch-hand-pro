@@ -1,31 +1,45 @@
 import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useChuteSideToast } from "@/components/ToastContext";
 import ReferenceItemRow from "@/components/ReferenceItemRow";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LABEL_STYLE, INPUT_CLS } from "@/lib/styles";
+import { useLocations } from "@/hooks/useLocations";
+import { useOperation } from "@/contexts/OperationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const ReferenceLocationsScreen: React.FC = () => {
-  const [locations, setLocations] = useState([
-    { id: "l1", name: "Home Place", parent: null as string | null, memo: "Main headquarters" },
-    { id: "l2", name: "East Pasture", parent: "Home Place", memo: "320 acres, east of road" },
-    { id: "l3", name: "West Pasture", parent: "Home Place", memo: "180 acres" },
-    { id: "l4", name: "Calving Barn", parent: "Home Place", memo: "12 stalls" },
-    { id: "l5", name: "North Place", parent: null, memo: "Summer grass lease" },
-    { id: "l6", name: "South Pasture", parent: "North Place", memo: "" },
-    { id: "l7", name: "Feedlot", parent: null, memo: "" },
-    { id: "l8", name: "Sale Barn", parent: null, memo: "Sioux Falls Livestock" },
-  ]);
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
+  const { data: locations, isLoading } = useLocations();
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newParent, setNewParent] = useState("");
   const { showToast } = useChuteSideToast();
 
-  const topLevel = locations.filter(l => !l.parent);
+  const allLocations = locations || [];
+  const topLevel = allLocations.filter(l => !l.parent_location_id);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newName.trim()) { showToast("error", "Name is required"); return; }
-    setLocations(prev => [...prev, { id: "l" + Date.now(), name: newName.trim(), parent: newParent || null, memo: "" }]);
+    const { error } = await supabase.from("locations").insert({
+      operation_id: operationId,
+      name: newName.trim(),
+      location_type: "Pasture",
+      is_active: true,
+      parent_location_id: newParent || null,
+    });
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ["locations"] });
     showToast("success", newName.trim() + " added");
     setNewName(""); setNewParent(""); setAddOpen(false);
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    const { error } = await supabase.from("locations").delete().eq("id", id);
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ["locations"] });
+    showToast("success", name + " deleted");
   };
 
   return (
@@ -51,7 +65,7 @@ const ReferenceLocationsScreen: React.FC = () => {
             <span style={LABEL_STYLE}>Parent</span>
             <select value={newParent} onChange={e => setNewParent(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }}>
               <option value="">None (top level)</option>
-              {topLevel.map(l => <option key={l.id} value={l.name}>{l.name}</option>)}
+              {topLevel.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
           </div>
           <div className="flex gap-2 mt-1">
@@ -61,35 +75,45 @@ const ReferenceLocationsScreen: React.FC = () => {
         </div>
       )}
 
-      <div className="rounded-xl px-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-        {topLevel.map(tl => {
-          const children = locations.filter(l => l.parent === tl.name);
-          return (
-            <React.Fragment key={tl.id}>
-              <ReferenceItemRow
-                label={tl.name}
-                sublabel={tl.memo || undefined}
-                onEdit={() => showToast("info", "Edit " + tl.name)}
-                onDelete={() => { setLocations(prev => prev.filter(x => x.id !== tl.id && x.parent !== tl.name)); showToast("success", tl.name + " deleted"); }}
-              />
-              {children.length > 0 && (
-                <div className="pl-4 ml-3" style={{ borderLeft: "1px solid rgba(26,26,26,0.08)" }}>
-                  {children.map(ch => (
-                    <ReferenceItemRow
-                      key={ch.id}
-                      label={ch.name}
-                      sublabel={ch.memo || "Sub-location"}
-                      badge={{ text: tl.name, bg: "rgba(14,38,70,0.06)", color: "#0E2646" }}
-                      onEdit={() => showToast("info", "Edit " + ch.name)}
-                      onDelete={() => { setLocations(prev => prev.filter(x => x.id !== ch.id)); showToast("success", ch.name + " deleted"); }}
-                    />
-                  ))}
-                </div>
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
+      {isLoading && (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[52px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.15)" }} />
+          ))}
+        </div>
+      )}
+
+      {!isLoading && (
+        <div className="rounded-xl px-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
+          {topLevel.map(tl => {
+            const children = allLocations.filter(l => l.parent_location_id === tl.id);
+            return (
+              <React.Fragment key={tl.id}>
+                <ReferenceItemRow
+                  label={tl.name}
+                  sublabel={tl.description || tl.location_type}
+                  onEdit={() => showToast("info", "Edit " + tl.name)}
+                  onDelete={() => handleDelete(tl.id, tl.name)}
+                />
+                {children.length > 0 && (
+                  <div className="pl-4 ml-3" style={{ borderLeft: "1px solid rgba(26,26,26,0.08)" }}>
+                    {children.map(ch => (
+                      <ReferenceItemRow
+                        key={ch.id}
+                        label={ch.name}
+                        sublabel={ch.description || "Sub-location"}
+                        badge={{ text: tl.name, bg: "rgba(14,38,70,0.06)", color: "#0E2646" }}
+                        onEdit={() => showToast("info", "Edit " + ch.name)}
+                        onDelete={() => handleDelete(ch.id, ch.name)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
