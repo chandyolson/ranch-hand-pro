@@ -164,14 +164,97 @@ export default function CalvingNewScreen() {
     setNotes(''); setShowDam(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!damTag.trim()) { showToast("error", "Dam tag required"); return; }
-    if (!calfSex) { showToast("error", "Calf sex required"); return; }
-    const msg = calfStatus === 'Dead'
-      ? `Calving record saved — calf ${calfTag || 'untagged'} marked Dead`
-      : `Calving record saved — calf ${calfTag || 'untagged'} added to herd`;
-    showToast("success", msg);
-    handleReset();
+    if (!calfSex && calfStatus !== 'Dead') { showToast("error", "Calf sex required"); return; }
+    setSaving(true);
+    try {
+      // Step 1: Look up dam by tag
+      const { data: damAnimal } = await supabase
+        .from('animals')
+        .select('id')
+        .eq('operation_id', operationId)
+        .eq('tag', damTag.trim())
+        .single();
+      if (!damAnimal) {
+        showToast('error', `Dam '${damTag.trim()}' not found`);
+        setSaving(false);
+        return;
+      }
+
+      // Step 2: If calf is alive and tagged, create calf animal record
+      let calfId: string | null = null;
+      if (calfStatus === 'Alive' && calfTag.trim()) {
+        const { data: calfAnimal, error: calfErr } = await supabase
+          .from('animals')
+          .insert({
+            operation_id: operationId,
+            tag: calfTag.trim(),
+            tag_color: calfColor === 'None' ? null : calfColor,
+            sex: calfSex === 'Bull' ? 'Bull' : 'Cow',
+            type: 'Calf',
+            status: 'Active',
+            year_born: new Date().getFullYear(),
+            birth_date: date || new Date().toISOString().split('T')[0],
+            dam_id: damAnimal.id,
+            breed: null,
+          })
+          .select('id')
+          .single();
+        if (calfErr) throw calfErr;
+        calfId = calfAnimal.id;
+      }
+
+      // Step 3: Insert calving record
+      const { error: calvErr } = await supabase
+        .from('calving_records')
+        .insert({
+          operation_id: operationId,
+          dam_id: damAnimal.id,
+          calf_id: calfId,
+          calving_date: date || new Date().toISOString().split('T')[0],
+          calf_sex: calfSex || null,
+          birth_weight: birthWeight ? parseFloat(birthWeight) : null,
+          calf_status: calfStatus,
+          death_explanation: calfStatus === 'Dead' ? (deathReason || null) : null,
+          calf_size: calfSize ? parseInt(calfSize) : 3,
+          calf_vigor: vigor ? parseInt(vigor) : null,
+          assistance: cowTraits.assistance ? parseInt(cowTraits.assistance) : 1,
+          disposition: cowTraits.disposition ? parseInt(cowTraits.disposition) : null,
+          mothering: cowTraits.mothering ? parseInt(cowTraits.mothering) : null,
+          udder: cowTraits.udder ? parseInt(cowTraits.udder) : null,
+          teat: cowTraits.teat ? parseInt(cowTraits.teat) : null,
+          claw: cowTraits.claw ? parseInt(cowTraits.claw) : null,
+          foot: cowTraits.foot ? parseInt(cowTraits.foot) : null,
+          group_id: null,
+          location_id: null,
+          memo: notes.trim() || null,
+        });
+      if (calvErr) throw calvErr;
+
+      // Step 4: Invalidate caches
+      queryClient.invalidateQueries({ queryKey: ['calving-list'] });
+      queryClient.invalidateQueries({ queryKey: ['calving-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['animals'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-counts'] });
+
+      // Step 5: Toast + reset (keep date/group/location)
+      if (calfStatus === 'Dead') {
+        showToast('success', `Calving recorded — calf marked Dead`);
+      } else {
+        showToast('success', `Calving recorded — calf ${calfTag.trim() || 'untagged'} added`);
+      }
+
+      setDamTag(''); setCalfTag(''); setCalfStatus('Alive'); setCalfSex('');
+      setCalfColor('Yellow'); setBirthWeight(''); setCalfSize('3'); setVigor('');
+      setSelectedNotes([]); setNotes(''); setIsTwin(false); setIsGraft(false);
+      setCowTraits({ assistance: '1', disposition: '', udder: '', teat: '', claw: '', foot: '', mothering: '' });
+      setShowDam(false); setDamFullHistory(false);
+    } catch (err: any) {
+      showToast('error', err.message || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
