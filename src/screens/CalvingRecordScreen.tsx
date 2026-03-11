@@ -245,7 +245,7 @@ export default function CalvingRecordScreen() {
                   color: fields.calfSex === "Bull" ? "#55BAAA" : "#E8A0BF",
                 }}
               >
-                {fields.calfSex.toUpperCase()}
+                {(fields.calfSex || "").toUpperCase()}
               </span>
               {fields.calfStatus === "Dead" && (
                 <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(155,35,53,0.20)", color: "#D4606E" }}>DEAD</span>
