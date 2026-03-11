@@ -27,30 +27,17 @@ export function useCalvingCounts() {
   return useQuery({
     queryKey: ['calving-counts', operationId, currentYear],
     queryFn: async () => {
-      const { count: total } = await supabase
+      const { data, error } = await supabase
         .from('calving_records')
-        .select('*', { count: 'exact', head: true })
+        .select('calf_status')
         .eq('operation_id', operationId)
         .gte('calving_date', yearStart)
         .lte('calving_date', yearEnd);
-
-      const { count: alive } = await supabase
-        .from('calving_records')
-        .select('*', { count: 'exact', head: true })
-        .eq('operation_id', operationId)
-        .gte('calving_date', yearStart)
-        .lte('calving_date', yearEnd)
-        .eq('calf_status', 'Alive');
-
-      const { count: dead } = await supabase
-        .from('calving_records')
-        .select('*', { count: 'exact', head: true })
-        .eq('operation_id', operationId)
-        .gte('calving_date', yearStart)
-        .lte('calving_date', yearEnd)
-        .eq('calf_status', 'Dead');
-
-      return { total: total || 0, alive: alive || 0, dead: dead || 0 };
+      if (error) throw error;
+      const rows = data || [];
+      const alive = rows.filter(r => r.calf_status === 'Alive').length;
+      const dead = rows.filter(r => r.calf_status === 'Dead').length;
+      return { total: rows.length, alive, dead };
     },
   });
 }
