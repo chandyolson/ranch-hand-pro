@@ -330,7 +330,7 @@ export default function CalvingRecordScreen() {
             </div>
             {/* Dam Tag */}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 min-w-0">
                 <span style={LABEL_STYLE}>Dam Tag</span>
                 <input type="text" value={fields.damTag} onChange={e => set("damTag", e.target.value)} readOnly={!isEditing} style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
               </div>
