@@ -128,13 +128,13 @@ const DashboardScreen: React.FC = () => {
         <div
           className="rounded-2xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors duration-150 active:scale-[0.98] hover:border-gold/40 hover:bg-gold/5"
           style={{ border: "2px dashed rgba(14,38,70,0.12)", minHeight: 72 }}
-          onClick={() => navigate("/animals/new")}
+          onClick={() => navigate("/red-book/new")}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate("/animals/new"); }}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate("/red-book/new"); }}
         >
           <span style={{ fontSize: 28, fontWeight: 300, color: "rgba(14,38,70,0.20)" }}>+</span>
-          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(14,38,70,0.30)" }}>NEW RECORD</span>
+          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(14,38,70,0.30)" }}>NEW NOTE</span>
         </div>
       </div>
 
