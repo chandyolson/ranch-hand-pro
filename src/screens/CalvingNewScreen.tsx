@@ -550,7 +550,7 @@ export default function CalvingNewScreen() {
               <AnimalLookup
                 value={damTag}
                 onChange={(v) => { setDamTag(v); if (!v) setSelectedDamId(null); }}
-                onSelect={(animal) => { setSelectedDamId(animal.id); setShowDam(true); }}
+                onSelect={(animal) => { setSelectedDamId(animal.id); }}
                 onNoMatch={(search) => { showToast("info", `Quick-Add Dam for "${search}" — coming soon`); }}
                 placeholder="Type dam tag…"
                 inputStyle={IS}
