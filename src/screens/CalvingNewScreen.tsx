@@ -695,7 +695,7 @@ export default function CalvingNewScreen() {
         {/* ═══ 6. ACTIONS ═══ */}
         <div style={{ display: 'flex', gap: 12, paddingTop: 2 }}>
           <button onClick={handleReset} type="button" style={{ flex: 1, padding: '10px 24px', borderRadius: 9999, border: '2px solid #F3D12A', backgroundColor: 'transparent', fontSize: 14, fontWeight: 700, color: '#1A1A1A', cursor: 'pointer', transition: 'all 150ms' }}>Reset</button>
-          <button onClick={handleSave} type="button" style={{ flex: 2, padding: '10px 24px', borderRadius: 9999, border: 'none', backgroundColor: '#F3D12A', fontSize: 14, fontWeight: 700, color: '#1A1A1A', cursor: 'pointer', boxShadow: '0 2px 10px rgba(243,209,42,0.35)', transition: 'all 150ms' }}>Save & Next</button>
+          <button onClick={handleSave} disabled={saving} type="button" style={{ flex: 2, padding: '10px 24px', borderRadius: 9999, border: 'none', backgroundColor: saving ? 'rgba(243,209,42,0.60)' : '#F3D12A', fontSize: 14, fontWeight: 700, color: '#1A1A1A', cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 2px 10px rgba(243,209,42,0.35)', transition: 'all 150ms' }}>{saving ? 'Saving…' : 'Save & Next'}</button>
         </div>
       </div>
     </div>
