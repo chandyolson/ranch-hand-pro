@@ -438,9 +438,7 @@ export default function CalvingNewScreen() {
   };
 
   return (
-    <div
-      style={{ maxWidth: 420, margin: "0 auto", backgroundColor: "#F5F5F0", minHeight: "100vh", overflow: "hidden" }}
-    >
+    <div>
       <div style={{ padding: "10px 16px 40px", display: "flex", flexDirection: "column", gap: 10 }}>
         {/* ═══ 1. CONTEXT BAR ═══ */}
         {!contextOpen ? (

@@ -162,7 +162,7 @@ const AppLayout: React.FC = () => {
       />
 
       <main className="py-5">
-        <div className="max-w-xl mx-auto w-full">
+        <div className="max-w-xl mx-auto w-full overflow-hidden">
           <Outlet />
         </div>
       </main>
