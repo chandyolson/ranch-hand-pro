@@ -175,20 +175,24 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
         </div>
       )}
 
-      {/* Row 3: Filters + Sort — compact */}
+      {/* Row 3: Filters + Sort — horizontal scroll */}
       <div className="flex items-center gap-1.5">
-        <div className="flex gap-1.5 overflow-x-auto flex-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        <div
+          className="flex gap-1.5 flex-1 overflow-x-auto"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch", paddingBottom: 2 }}
+        >
+          <style>{`.filter-scroll::-webkit-scrollbar { display: none; }`}</style>
           {filterChips.map(chip => (
             <button
               key={chip.value}
-              className="rounded-full px-2.5 py-1 cursor-pointer border transition-all active:scale-[0.96] shrink-0"
+              className="rounded-full px-3 py-1.5 cursor-pointer border transition-all active:scale-[0.96] whitespace-nowrap"
               style={{
                 backgroundColor: activeFilter === chip.value ? "#0E2646" : "white",
                 borderColor: activeFilter === chip.value ? "#0E2646" : "rgba(212,212,208,0.80)",
                 color: activeFilter === chip.value ? "white" : "rgba(26,26,26,0.50)",
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: activeFilter === chip.value ? 700 : 500,
-                lineHeight: 1.2,
+                flexShrink: 0,
               }}
               onClick={() => onFilterChange(chip.value)}
             >{chip.label}</button>
