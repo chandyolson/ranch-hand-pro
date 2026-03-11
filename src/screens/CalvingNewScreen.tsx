@@ -15,7 +15,7 @@ import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX } from "@/lib/constants";
 const IS: React.CSSProperties = {
   flex: 1,
   minWidth: 0,
-  height: 40,
+  height: 36,
   borderRadius: 8,
   border: "1px solid #D4D4D0",
   paddingLeft: 12,
