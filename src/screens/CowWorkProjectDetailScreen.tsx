@@ -5,8 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "../components/ToastContext";
 import FlagIcon from "../components/FlagIcon";
+import FormFieldRow from "../components/FormFieldRow";
 import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, type FlagColor } from "@/lib/constants";
-import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
+import { INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Tab = "input" | "worked" | "stats" | "details";
