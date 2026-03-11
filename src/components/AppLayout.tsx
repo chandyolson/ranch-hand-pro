@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import NavDrawer from "./NavDrawer";
 import ToastContainer from "./ToastContainer";
+import { useOperation } from "@/contexts/OperationContext";
 
 const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "Saddle Butte Ranch", subtitle: "Ranch · 847 Head · Active" },
