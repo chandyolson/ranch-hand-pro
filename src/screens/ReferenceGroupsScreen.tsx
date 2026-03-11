@@ -1,27 +1,41 @@
 import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useChuteSideToast } from "@/components/ToastContext";
 import ReferenceItemRow from "@/components/ReferenceItemRow";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LABEL_STYLE, INPUT_CLS } from "@/lib/styles";
+import { useGroups } from "@/hooks/useGroups";
+import { useOperation } from "@/contexts/OperationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const ReferenceGroupsScreen: React.FC = () => {
-  const [groups, setGroups] = useState([
-    { id: "g1", name: "Spring Calvers", count: 45, memo: "Main spring calving group" },
-    { id: "g2", name: "Fall Calvers", count: 12, memo: "" },
-    { id: "g3", name: "Replacement Heifers", count: 24, memo: "2024 and 2025 year classes" },
-    { id: "g4", name: "Bulls", count: 8, memo: "Working bulls only" },
-    { id: "g5", name: "Yearlings", count: 38, memo: "" },
-    { id: "g6", name: "Summer Pairs", count: 31, memo: "Cow-calf pairs on summer grass" },
-  ]);
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
+  const { data: groups, isLoading } = useGroups();
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newMemo, setNewMemo] = useState("");
   const { showToast } = useChuteSideToast();
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newName.trim()) { showToast("error", "Name is required"); return; }
-    setGroups(prev => [...prev, { id: "g" + Date.now(), name: newName.trim(), count: 0, memo: newMemo.trim() }]);
+    const { error } = await supabase.from("groups").insert({
+      operation_id: operationId,
+      name: newName.trim(),
+      description: newMemo.trim() || null,
+      cattle_type: "Cows",
+    });
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ["groups"] });
     showToast("success", newName.trim() + " added");
     setNewName(""); setNewMemo(""); setAddOpen(false);
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    const { error } = await supabase.from("groups").delete().eq("id", id);
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ["groups"] });
+    showToast("success", name + " deleted");
   };
 
   return (
@@ -54,17 +68,27 @@ const ReferenceGroupsScreen: React.FC = () => {
         </div>
       )}
 
-      <div className="rounded-xl px-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-        {groups.map(g => (
-          <ReferenceItemRow
-            key={g.id}
-            label={g.name}
-            sublabel={g.count + " animals" + (g.memo ? " · " + g.memo : "")}
-            onEdit={() => showToast("info", "Edit " + g.name)}
-            onDelete={() => { setGroups(prev => prev.filter(x => x.id !== g.id)); showToast("success", g.name + " deleted"); }}
-          />
-        ))}
-      </div>
+      {isLoading && (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[52px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.15)" }} />
+          ))}
+        </div>
+      )}
+
+      {!isLoading && (
+        <div className="rounded-xl px-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
+          {(groups || []).map(g => (
+            <ReferenceItemRow
+              key={g.id}
+              label={g.name}
+              sublabel={g.description || ""}
+              onEdit={() => showToast("info", "Edit " + g.name)}
+              onDelete={() => handleDelete(g.id, g.name)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

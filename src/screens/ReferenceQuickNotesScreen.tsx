@@ -1,8 +1,12 @@
 import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useChuteSideToast } from "@/components/ToastContext";
 import ReferenceItemRow from "@/components/ReferenceItemRow";
-import { QUICK_NOTES, QUICK_NOTE_PILL_COLORS } from "@/lib/constants";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LABEL_STYLE, INPUT_CLS } from "@/lib/styles";
+import { useQuickNotes } from "@/hooks/useQuickNotes";
+import { useOperation } from "@/contexts/OperationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const categoryConfig: Record<string, { label: string; color: string; bg: string }> = {
   management: { label: "Management", color: "#55BAAA", bg: "rgba(85,186,170,0.12)" },
@@ -11,24 +15,36 @@ const categoryConfig: Record<string, { label: string; color: string; bg: string 
 };
 
 const ReferenceQuickNotesScreen: React.FC = () => {
-  const [notes, setNotes] = useState(
-    QUICK_NOTES.map((q, i) => ({
-      id: `qn${i + 1}`,
-      text: q.label,
-      category: q.flag === "red" ? "cull" : q.flag === "gold" ? "health" : "management",
-    }))
-  );
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
+  const { data: notes, isLoading } = useQuickNotes();
   const [addOpen, setAddOpen] = useState(false);
   const [newText, setNewText] = useState("");
   const [newCategory, setNewCategory] = useState("management");
   const { showToast } = useChuteSideToast();
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newText.trim()) { showToast("error", "Note text is required"); return; }
-    setNotes(prev => [...prev, { id: "qn" + Date.now(), text: newText.trim(), category: newCategory }]);
+    const { error } = await supabase.from("quick_notes").insert({
+      operation_id: operationId,
+      note: newText.trim(),
+      note_type: newCategory,
+      is_active: true,
+    });
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ["quick-notes"] });
     showToast("success", newText.trim() + " added");
     setNewText(""); setNewCategory("management"); setAddOpen(false);
   };
+
+  const handleDelete = async (id: string, name: string) => {
+    const { error } = await supabase.from("quick_notes").delete().eq("id", id);
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ["quick-notes"] });
+    showToast("success", name + " deleted");
+  };
+
+  const allNotes = notes || [];
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
@@ -64,37 +80,49 @@ const ReferenceQuickNotesScreen: React.FC = () => {
         </div>
       )}
 
-      <div className="rounded-xl px-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-        {notes.map(n => {
-          const cat = categoryConfig[n.category];
-          return (
-            <ReferenceItemRow
-              key={n.id}
-              label={n.text}
-              badge={cat ? { text: cat.label, bg: cat.bg, color: cat.color } : undefined}
-              onEdit={() => showToast("info", "Edit " + n.text)}
-              onDelete={() => { setNotes(prev => prev.filter(x => x.id !== n.id)); showToast("success", n.text + " deleted"); }}
-            />
-          );
-        })}
-      </div>
-
-      <div className="rounded-xl px-3 py-3.5" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 8 }}>
-          PREVIEW — how these appear in entry screens
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {notes.map(n => (
-            <span
-              key={n.id}
-              className="rounded-full px-3 py-1.5 border"
-              style={{ fontSize: 13, fontWeight: 600, backgroundColor: "white", borderColor: "#D4D4D0", color: "#1A1A1A" }}
-            >
-              {n.text}
-            </span>
+      {isLoading && (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[52px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.15)" }} />
           ))}
         </div>
-      </div>
+      )}
+
+      {!isLoading && (
+        <>
+          <div className="rounded-xl px-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
+            {allNotes.map(n => {
+              const cat = categoryConfig[n.note_type];
+              return (
+                <ReferenceItemRow
+                  key={n.id}
+                  label={n.note}
+                  badge={cat ? { text: cat.label, bg: cat.bg, color: cat.color } : undefined}
+                  onEdit={() => showToast("info", "Edit " + n.note)}
+                  onDelete={() => handleDelete(n.id, n.note)}
+                />
+              );
+            })}
+          </div>
+
+          <div className="rounded-xl px-3 py-3.5" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 8 }}>
+              PREVIEW — how these appear in entry screens
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {allNotes.map(n => (
+                <span
+                  key={n.id}
+                  className="rounded-full px-3 py-1.5 border"
+                  style={{ fontSize: 13, fontWeight: 600, backgroundColor: "white", borderColor: "#D4D4D0", color: "#1A1A1A" }}
+                >
+                  {n.note}
+                </span>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
