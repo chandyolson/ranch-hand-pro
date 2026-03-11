@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
 
 const categoryConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -22,14 +25,39 @@ const RedBookNewScreen: React.FC = () => {
   const [category, setCategory] = useState<string>("");
   const [hasAction, setHasAction] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [attachments, setAttachments] = useState<{ name: string; type: "photo" | "document" }[]>([]);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim()) { showToast("error", "Title is required"); return; }
-    showToast("success", "Note saved");
-    navigate("/red-book");
+    if (!category) { showToast("error", "Select a category"); return; }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("red_book_notes")
+        .insert({
+          operation_id: operationId,
+          title: title.trim(),
+          body: body.trim() || null,
+          category,
+          has_action: hasAction,
+          is_pinned: false,
+          attachment_count: attachments.length,
+          author_initials: "ME",
+        });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["red-book-notes"] });
+      showToast("success", "Note saved");
+      navigate("/red-book");
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to save note");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const hasPhoto = attachments.some(a => a.type === "photo");
@@ -224,10 +252,11 @@ const RedBookNewScreen: React.FC = () => {
         </button>
         <button
           className="rounded-full py-3.5 cursor-pointer active:scale-[0.97]"
-          style={{ flex: 2, backgroundColor: "#0E2646", fontSize: 14, fontWeight: 700, color: "white", border: "none" }}
+          style={{ flex: 2, backgroundColor: "#0E2646", fontSize: 14, fontWeight: 700, color: "white", border: "none", opacity: saving ? 0.5 : 1 }}
+          disabled={saving}
           onClick={handleSave}
         >
-          Save Note
+          {saving ? "Saving…" : "Save Note"}
         </button>
       </div>
     </div>
