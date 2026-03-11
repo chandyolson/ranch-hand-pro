@@ -523,24 +523,26 @@ export default function CalvingNewScreen() {
               </FieldRow>
               <FieldRow label="Group">
                 <select
-                  value={group}
-                  onChange={(e) => setGroup(e.target.value)}
+                  value={groupId}
+                  onChange={(e) => setGroupId(e.target.value)}
                   style={{ ...IS, appearance: "auto" as const }}
                 >
-                  <option>Spring Calvers</option>
-                  <option>Fall Calvers</option>
-                  <option>First Calf Heifers</option>
+                  <option value="">— None —</option>
+                  {(groups || []).map(g => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
                 </select>
               </FieldRow>
               <FieldRow label="Location">
                 <select
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  value={locationId}
+                  onChange={(e) => setLocationId(e.target.value)}
                   style={{ ...IS, appearance: "auto" as const }}
                 >
-                  <option>Calving Barn</option>
-                  <option>Home Place</option>
-                  <option>East Pasture</option>
+                  <option value="">— None —</option>
+                  {(locations || []).map(l => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
                 </select>
               </FieldRow>
             </div>
