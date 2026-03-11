@@ -133,7 +133,7 @@ const AnimalsScreen: React.FC = () => {
             >
               <DataCard
                 title={`Tag ${animal.tag}`}
-                values={[animal.breed || "Unknown", animal.sex, animal.type || ""].filter(Boolean)}
+                values={[animal.breed || "Unknown", animal.sex, animal.type || "", animal.year_born ? String(animal.year_born) : ""].filter(Boolean)}
               />
             </div>
           ))}
