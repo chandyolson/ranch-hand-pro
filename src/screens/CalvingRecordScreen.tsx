@@ -351,7 +351,7 @@ export default function CalvingRecordScreen() {
               )}
             </div>
             {/* Location */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Location</span>
               {isEditing ? (
                 <select value={fields.location} onChange={e => set("location", e.target.value)} style={{ ...INPUT_BASE, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
