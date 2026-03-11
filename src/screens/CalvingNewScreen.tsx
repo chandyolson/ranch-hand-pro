@@ -1056,7 +1056,7 @@ export default function CalvingNewScreen() {
                       value={deathNotes}
                       onChange={(e) => setDeathNotes(e.target.value)}
                       placeholder="Optional…"
-                      style={{ ...IS, fontSize: 14 }}
+                      style={{ ...IS, fontSize: 16 }}
                     />
                   </FieldRow>
                 </div>
