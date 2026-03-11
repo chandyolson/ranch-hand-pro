@@ -40,7 +40,7 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, onItem
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 z-40 transition-all duration-300 lg:hidden"
+        className="fixed inset-0 z-40 transition-all duration-300"
         style={{
           backgroundColor: open ? "rgba(0,0,0,0.52)" : "transparent",
           pointerEvents: open ? "auto" : "none",
@@ -50,7 +50,7 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, onItem
 
       {/* Drawer */}
       <div
-        className="fixed top-0 left-0 bottom-0 z-50 flex flex-col font-inter lg:hidden"
+        className="fixed top-0 left-0 bottom-0 z-50 flex flex-col font-inter"
         style={{
           width: 280,
           background: "linear-gradient(180deg, #153566 0%, #081020 100%)",
