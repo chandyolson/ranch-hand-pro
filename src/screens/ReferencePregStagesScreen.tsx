@@ -2,25 +2,51 @@ import React, { useState } from "react";
 import { useChuteSideToast } from "@/components/ToastContext";
 import ReferenceItemRow from "@/components/ReferenceItemRow";
 import { LABEL_STYLE, INPUT_CLS } from "@/lib/styles";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useOperation } from '@/contexts/OperationContext';
 
 const ReferencePregStagesScreen: React.FC = () => {
-  const [stages, setStages] = useState([
-    { id: "ps1", label: "Open", sortOrder: 1, isCull: true },
-    { id: "ps2", label: "Early", sortOrder: 2, isCull: false },
-    { id: "ps3", label: "Mid", sortOrder: 3, isCull: false },
-    { id: "ps4", label: "Late", sortOrder: 4, isCull: false },
-    { id: "ps5", label: "First Calf", sortOrder: 5, isCull: false },
-  ]);
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newIsCull, setNewIsCull] = useState(false);
   const { showToast } = useChuteSideToast();
 
-  const handleAdd = () => {
+  const { data: stages, isLoading } = useQuery({
+    queryKey: ['preg-stages', operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('preg_stages')
+        .select('*')
+        .eq('operation_id', operationId)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleAdd = async () => {
     if (!newLabel.trim()) { showToast("error", "Stage name is required"); return; }
-    setStages(prev => [...prev, { id: "ps" + Date.now(), label: newLabel.trim(), sortOrder: prev.length + 1, isCull: newIsCull }]);
+    const nextOrder = (stages || []).length + 1;
+    const { error } = await supabase.from('preg_stages').insert({
+      operation_id: operationId,
+      stage_name: newLabel.trim(),
+      sort_order: nextOrder,
+      is_active: true,
+    });
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ['preg-stages'] });
     showToast("success", newLabel.trim() + " added");
     setNewLabel(""); setNewIsCull(false); setAddOpen(false);
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    const { error } = await supabase.from('preg_stages').delete().eq('id', id);
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ['preg-stages'] });
+    showToast("success", name + " deleted");
   };
 
   return (
@@ -56,16 +82,21 @@ const ReferencePregStagesScreen: React.FC = () => {
       )}
 
       <div className="rounded-xl px-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-        {stages.map(s => (
-          <ReferenceItemRow
-            key={s.id}
-            label={s.label}
-            sublabel={"Order: " + s.sortOrder}
-            badge={s.isCull ? { text: "CULL", color: "#9B2335", bg: "rgba(155,35,53,0.12)" } : undefined}
-            onEdit={() => showToast("info", "Edit " + s.label)}
-            onDelete={() => { setStages(prev => prev.filter(x => x.id !== s.id)); showToast("success", s.label + " deleted"); }}
-          />
-        ))}
+        {isLoading ? (
+          <div className="py-6 text-center" style={{ fontSize: 13, color: "rgba(26,26,26,0.4)" }}>Loading…</div>
+        ) : (stages || []).length === 0 ? (
+          <div className="py-6 text-center" style={{ fontSize: 13, color: "rgba(26,26,26,0.4)" }}>No preg stages yet</div>
+        ) : (
+          (stages || []).map(s => (
+            <ReferenceItemRow
+              key={s.id}
+              label={s.stage_name}
+              sublabel={"Order: " + (s.sort_order ?? '—')}
+              onEdit={() => showToast("info", "Edit " + s.stage_name)}
+              onDelete={() => handleDelete(s.id, s.stage_name)}
+            />
+          ))
+        )}
         <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", fontStyle: "italic", paddingTop: 8, paddingBottom: 4 }}>
           These labels populate the Preg Stage dropdown in PREG projects.
         </div>
