@@ -27,7 +27,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, subtitle, gradientAng
       <span style={{ textTransform: "uppercase", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "rgba(255,255,255,0.35)" }}>
         {label}
       </span>
-      <span style={{ color: "#FFFFFF", fontSize: 24, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.02em" }}>
+      <span style={{ color: "#FFFFFF", fontSize: 24, fontWeight: 600, lineHeight: 1, letterSpacing: "-0.02em" }}>
         {value}
       </span>
       <span style={{ color: "#A8E6DA", fontSize: 11, fontWeight: 500, lineHeight: 1.3 }}>
