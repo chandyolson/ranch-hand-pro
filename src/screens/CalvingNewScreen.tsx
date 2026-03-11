@@ -14,8 +14,9 @@ import {
   QUICK_NOTE_PILL_COLORS,
   DEATH_REASONS,
   GRAFT_REASONS,
-} from "@/lib/calving-constants";
-import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX } from "@/lib/constants";
+  TAG_COLOR_OPTIONS,
+  TAG_COLOR_HEX,
+} from "@/lib/constants";
 
 // ── Input style constant ──
 const IS: React.CSSProperties = {
@@ -189,7 +190,7 @@ export default function CalvingNewScreen() {
           return (
             <button key={n.label} onClick={collapsed ? undefined : () => toggleNote(n.label)} type="button" style={{
               borderRadius: 9999, padding: '4px 10px', fontSize: 11, fontWeight: 600,
-              backgroundColor: active ? c.bgSel : c.bg, border: `${active ? 2 : 1}px solid ${active ? c.borderSel : c.border}`,
+              backgroundColor: active ? c.bg : c.bg, border: `${active ? 2 : 1}px solid ${active ? c.border : c.border}`,
               color: c.text, cursor: collapsed ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 3, transition: 'all 100ms',
             }}>
               {active && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4 7L8 3" stroke={c.text} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
