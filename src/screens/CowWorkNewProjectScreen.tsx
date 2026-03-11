@@ -115,13 +115,13 @@ export default function CowWorkNewProjectScreen() {
       {/* Form card */}
       <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         {/* Date */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <label style={LABEL_STYLE}>Date</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className={INPUT_CLS} />
         </div>
 
         {/* Type */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <label style={LABEL_STYLE}>Type</label>
           <select value={processingType} onChange={e => setProcessingType(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select type</option>
@@ -132,7 +132,7 @@ export default function CowWorkNewProjectScreen() {
         </div>
 
         {/* Group */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <label style={LABEL_STYLE}>Group</label>
           <select value={group} onChange={e => setGroup(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select group</option>
@@ -143,7 +143,7 @@ export default function CowWorkNewProjectScreen() {
         </div>
 
         {/* Cattle Type */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <label style={LABEL_STYLE}>Cattle Type</label>
           <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Optional</option>
@@ -152,7 +152,7 @@ export default function CowWorkNewProjectScreen() {
         </div>
 
         {/* Location */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <label style={LABEL_STYLE}>Location</label>
           <select value={location} onChange={e => setLocation(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Optional</option>

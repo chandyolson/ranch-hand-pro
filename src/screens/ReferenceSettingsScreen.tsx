@@ -77,16 +77,16 @@ const ReferenceSettingsScreen: React.FC = () => {
       {/* Operation Info */}
       <div className="rounded-xl px-3 py-3.5 space-y-2" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 4 }}>OPERATION INFO</div>
-        <div className="flex items-center gap-2"><span style={LABEL_STYLE}>Op Name</span><input type="text" value={operationName} onChange={e => setOperationName(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }} /></div>
-        <div className="flex items-center gap-2"><span style={LABEL_STYLE}>Address</span><input type="text" value={address} onChange={e => setAddress(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }} /></div>
-        <div className="flex items-center gap-2"><span style={LABEL_STYLE}>City</span><input type="text" value={city} onChange={e => setCity(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }} /></div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0"><span style={LABEL_STYLE}>Op Name</span><input type="text" value={operationName} onChange={e => setOperationName(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }} /></div>
+        <div className="flex items-center gap-3 min-w-0"><span style={LABEL_STYLE}>Address</span><input type="text" value={address} onChange={e => setAddress(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }} /></div>
+        <div className="flex items-center gap-3 min-w-0"><span style={LABEL_STYLE}>City</span><input type="text" value={city} onChange={e => setCity(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }} /></div>
+        <div className="flex items-center gap-3 min-w-0">
           <span style={LABEL_STYLE}>State</span>
           <select value={state_} onChange={e => setState_(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }}>
             {usStates.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <span style={LABEL_STYLE}>Type</span>
           <select value={operationType} onChange={e => setOperationType(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }}>
             {["Commercial", "Cow-Calf", "Stocker", "Feedlot", "Dairy", "Mixed"].map(t => <option key={t} value={t}>{t}</option>)}
@@ -112,11 +112,11 @@ const ReferenceSettingsScreen: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <span style={LABEL_STYLE}>ID Prefix</span>
           <input type="text" value={lifetimePrefix} onChange={e => setLifetimePrefix(e.target.value)} placeholder="e.g. SBR" className={INPUT_CLS} style={{ fontSize: 16 }} />
         </div>
-        <div style={{ marginLeft: 104, fontSize: 12, color: "rgba(26,26,26,0.40)", fontStyle: "italic", marginTop: 2 }}>
+        <div style={{ marginLeft: 117, fontSize: 12, color: "rgba(26,26,26,0.40)", fontStyle: "italic", marginTop: 2 }}>
           Lifetime IDs generate as {lifetimePrefix || "___"}25-3309 (e.g. {lifetimePrefix || "SBR"}25-3309)
         </div>
       </div>

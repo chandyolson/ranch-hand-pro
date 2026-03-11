@@ -21,7 +21,8 @@ import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX } from "@/lib/constants";
 const IS: React.CSSProperties = {
   flex: 1, minWidth: 0, height: 40, borderRadius: 8,
   border: '1px solid #D4D4D0', paddingLeft: 12, paddingRight: 12,
-  fontSize: 16, color: '#1A1A1A', outline: 'none',
+  fontFamily: "'Inter', sans-serif",
+  fontSize: 16, fontWeight: 400, color: '#1A1A1A', outline: 'none',
   backgroundColor: '#FFFFFF', boxSizing: 'border-box' as const,
 };
 
@@ -532,12 +533,12 @@ export default function CalvingNewScreen() {
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#9B2335', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Death Details</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <FieldRow label="Cause">
-                    <select value={deathReason} onChange={e => setDeathReason(e.target.value)} style={{ ...IS, appearance: 'auto' as const, fontSize: 14, color: deathReason ? '#1A1A1A' : 'rgba(26,26,26,0.35)' }}>
+                    <select value={deathReason} onChange={e => setDeathReason(e.target.value)} style={{ ...IS, appearance: 'auto' as const, fontSize: 16, color: deathReason ? '#1A1A1A' : 'rgba(26,26,26,0.35)' }}>
                       <option value="">Select cause…</option>
                       {DEATH_REASONS.map(r => <option key={r}>{r}</option>)}
                     </select>
                   </FieldRow>
-                  <FieldRow label="Notes"><input type="text" value={deathNotes} onChange={e => setDeathNotes(e.target.value)} placeholder="Optional…" style={{ ...IS, fontSize: 14 }} /></FieldRow>
+                  <FieldRow label="Notes"><input type="text" value={deathNotes} onChange={e => setDeathNotes(e.target.value)} placeholder="Optional…" style={{ ...IS, fontSize: 16 }} /></FieldRow>
                 </div>
               </div>
             )}

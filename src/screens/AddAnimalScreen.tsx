@@ -84,12 +84,14 @@ export default function AddAnimalScreen() {
   };
 
   const Row = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3 min-w-0">
       <span style={LABEL_STYLE}>
         {label}
         {required && !children && <span style={{ color: "#9B2335" }}> *</span>}
       </span>
-      {children}
+      <div style={{ flex: 1, minWidth: 0, display: "flex" }}>
+        {children}
+      </div>
     </div>
   );
 
@@ -133,7 +135,7 @@ export default function AddAnimalScreen() {
             <input type="text" value={tag} onChange={e => setTag(e.target.value)} placeholder="Tag number" className={INPUT_CLS} style={{ fontSize: 16 }} />
           </Row>
           {tag.length > 0 && (
-            <div style={{ marginLeft: 104, marginTop: 2, fontSize: 11, color: "rgba(26,26,26,0.35)", fontStyle: "italic" }}>
+            <div style={{ marginLeft: 117, marginTop: 2, fontSize: 11, color: "rgba(26,26,26,0.35)", fontStyle: "italic" }}>
               Tag + color + year must be unique within your operation
             </div>
           )}
@@ -195,7 +197,7 @@ export default function AddAnimalScreen() {
       <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         <div style={SUB_LABEL}>FLAG</div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <span style={LABEL_STYLE}>Flag</span>
           <div className="flex gap-2 flex-wrap flex-1">
             {FLAG_OPTIONS.map(f => {
