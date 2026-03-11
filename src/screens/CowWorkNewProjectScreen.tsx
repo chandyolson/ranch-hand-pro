@@ -7,7 +7,7 @@ import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
 import { useChuteSideToast } from "../components/ToastContext";
 import FormFieldRow from "../components/FormFieldRow";
-import { INPUT_CLS, SUB_LABEL } from "@/lib/styles";
+import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 
 const cattleTypeOptions = ["Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
 
@@ -132,7 +132,7 @@ export default function CowWorkNewProjectScreen() {
         <div className="flex items-center gap-3 min-w-0">
           <label style={LABEL_STYLE}>Date</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className={INPUT_CLS} />
-        </FormFieldRow>
+        </div>
 
         {/* Type */}
         <div className="flex items-center gap-3 min-w-0">
@@ -143,7 +143,7 @@ export default function CowWorkNewProjectScreen() {
               <option key={wt.id} value={wt.id}>{wt.code} — {wt.name}</option>
             ))}
           </select>
-        </FormFieldRow>
+        </div>
 
         {/* Group */}
         <div className="flex items-center gap-3 min-w-0">
@@ -154,7 +154,7 @@ export default function CowWorkNewProjectScreen() {
               <option key={g.id} value={g.id}>{g.name}</option>
             ))}
           </select>
-        </FormFieldRow>
+        </div>
 
         {/* Cattle Type */}
         <div className="flex items-center gap-3 min-w-0">
@@ -163,7 +163,7 @@ export default function CowWorkNewProjectScreen() {
             <option value="" disabled>Optional</option>
             {cattleTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
-        </FormFieldRow>
+        </div>
 
         {/* Location */}
         <div className="flex items-center gap-3 min-w-0">
@@ -174,7 +174,7 @@ export default function CowWorkNewProjectScreen() {
               <option key={l.id} value={l.id}>{l.name}</option>
             ))}
           </select>
-        </FormFieldRow>
+        </div>
 
         {/* Memo */}
         <div className="pt-2">

@@ -488,7 +488,7 @@ export default function CowWorkProjectDetailScreen() {
                       <option key={o} value={o}>{o}</option>
                     ))}
                   </select>
-                </FormFieldRow>
+                </div>
               </div>
             )}
 
@@ -506,7 +506,7 @@ export default function CowWorkProjectDetailScreen() {
               <div className="flex items-center gap-3 min-w-0">
                 <label style={LABEL_STYLE}>Sample ID</label>
                 <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={INPUT_CLS} />
-              </FormFieldRow>
+              </div>
               <div className="pt-2">
                 <div style={{ ...SUB_LABEL, marginBottom: 6 }}>MEMO</div>
                 <textarea
