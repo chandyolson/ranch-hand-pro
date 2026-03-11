@@ -42,6 +42,18 @@ export default function CowWorkNewProjectScreen() {
     },
   });
 
+  const { data: opProducts } = useQuery({
+    queryKey: ["operation-products", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("operation_products")
+        .select("*, product:products(id, name, dosage, route)")
+        .eq("operation_id", operationId);
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: templates } = useQuery({
     queryKey: ["project-templates", operationId],
     queryFn: async () => {
