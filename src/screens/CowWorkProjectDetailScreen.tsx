@@ -492,18 +492,15 @@ export default function CowWorkProjectDetailScreen() {
             {/* Optional fields */}
             <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div style={SUB_LABEL}>ADDITIONAL</div>
-              <div className="flex items-center gap-2">
-                <label style={LABEL_STYLE}>Weight</label>
+              <FormFieldRow label="Weight">
                 <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
-              </div>
-              <div className="flex items-center gap-2">
-                <label style={LABEL_STYLE}>Quick Note</label>
+              </FormFieldRow>
+              <FormFieldRow label="Quick Note">
                 <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" className={INPUT_CLS} />
-              </div>
-              <div className="flex items-center gap-2">
-                <label style={LABEL_STYLE}>Sample ID</label>
+              </FormFieldRow>
+              <FormFieldRow label="Sample ID">
                 <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={INPUT_CLS} />
-              </div>
+              </FormFieldRow>
               <div className="pt-2">
                 <div style={{ ...SUB_LABEL, marginBottom: 6 }}>MEMO</div>
                 <textarea
