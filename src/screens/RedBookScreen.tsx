@@ -4,21 +4,26 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import RedBookCard from "@/components/RedBookCard";
+import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilters";
+import { applyFilters } from "@/lib/filter-utils";
+import type { FilterFieldConfig } from "@/lib/filter-types";
 
-const filterChips = [
-  { value: "all", label: "All" },
-  { value: "invoice", label: "Invoice / Receipt" },
-  { value: "cattle-note", label: "Cattle Note" },
-  { value: "document", label: "Document" },
-  { value: "repairs", label: "Repairs" },
+const REDBOOK_FILTER_FIELDS: FilterFieldConfig[] = [
+  { key: "title", label: "Title", type: "text", group: "Content" },
+  { key: "body", label: "Body", type: "text", group: "Content" },
+  { key: "category", label: "Category", type: "select", options: ["invoice", "cattle-note", "document", "repairs"], group: "Content" },
+  { key: "has_action", label: "Has Action", type: "boolean", group: "Status" },
+  { key: "is_pinned", label: "Is Pinned", type: "boolean", group: "Status" },
 ];
 
 const RedBookScreen: React.FC = () => {
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const navigate = useNavigate();
   const { operationId } = useOperation();
+  const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_redbook");
+  const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_redbook");
 
   const { data: entries, isLoading } = useQuery({
     queryKey: ["red-book-notes", operationId],
@@ -36,17 +41,18 @@ const RedBookScreen: React.FC = () => {
 
   const notes = entries || [];
 
-  const filtered = notes
-    .filter(e => categoryFilter === "all" || e.category === categoryFilter)
-    .filter(e =>
+  const filtered = applyFilters(
+    notes.filter(e =>
       !search ||
       e.title.toLowerCase().includes(search.toLowerCase()) ||
       (e.body || "").toLowerCase().includes(search.toLowerCase())
-    );
+    ),
+    filters
+  );
 
   const actionCount = notes.filter(e => e.has_action).length;
   const firstPinnedIdx = filtered.findIndex(e => e.is_pinned);
-  const isFiltering = search || categoryFilter !== "all";
+  const isFiltering = search.length > 0 || filters.length > 0;
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
@@ -65,7 +71,7 @@ const RedBookScreen: React.FC = () => {
         <div
           className="rounded-xl px-3 py-3 flex items-center gap-3 cursor-pointer active:scale-[0.98]"
           style={{ background: "linear-gradient(135deg, #9B2335 0%, #7A1C2A 100%)" }}
-          onClick={() => setCategoryFilter("all")}
+          onClick={() => clearFilters()}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="shrink-0">
             <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" />
@@ -109,28 +115,16 @@ const RedBookScreen: React.FC = () => {
         )}
       </div>
 
-      {/* Category chips */}
-      <div className="flex gap-2 flex-wrap">
-        {filterChips.map(chip => {
-          const isActive = categoryFilter === chip.value;
-          return (
-            <button
-              key={chip.value}
-              className="rounded-full px-3 py-1.5 cursor-pointer border transition-all active:scale-[0.96]"
-              style={{
-                backgroundColor: isActive ? "#0E2646" : "white",
-                borderColor: isActive ? "#0E2646" : "rgba(212,212,208,0.80)",
-                color: isActive ? "white" : "rgba(26,26,26,0.50)",
-                fontSize: 12,
-                fontWeight: isActive ? 700 : 500,
-              }}
-              onClick={() => setCategoryFilter(chip.value)}
-            >
-              {chip.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* Advanced Filter */}
+      <AdvancedSearchPanel
+        fields={REDBOOK_FILTER_FIELDS}
+        filters={filters}
+        onFiltersChange={setFilters}
+        presets={presets}
+        onAddPreset={addPreset}
+        onDeletePreset={deletePreset}
+        onClearAll={clearFilters}
+      />
 
       {/* Results label */}
       {isFiltering && (

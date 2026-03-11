@@ -4,7 +4,21 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
+import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { useChuteSideToast } from "@/components/ToastContext";
+import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilters";
+import { applyFilters } from "@/lib/filter-utils";
+import type { FilterFieldConfig } from "@/lib/filter-types";
+
+const CALVING_FILTER_FIELDS: FilterFieldConfig[] = [
+  { key: "damTag", label: "Dam Tag", type: "text", group: "Identity" },
+  { key: "calfTag", label: "Calf Tag", type: "text", group: "Identity" },
+  { key: "calfSex", label: "Calf Sex", type: "select", options: ["Bull", "Heifer", "Unknown"], group: "Calf" },
+  { key: "calfStatus", label: "Calf Status", type: "select", options: ["Alive", "Dead"], group: "Calf" },
+  { key: "rawDate", label: "Calving Date", type: "date-range", group: "Event" },
+  { key: "assistance", label: "Assistance", type: "select", options: ["None", "Easy Pull", "Hard Pull", "C-Section"], group: "Cow Traits" },
+  { key: "note", label: "Memo", type: "text", group: "Notes" },
+];
 
 const TAG_HEX: Record<string, string> = {
   Red: "#D4606E", Yellow: "#F3D12A", Green: "#55BAAA", White: "#E0E0E0",
@@ -29,10 +43,11 @@ export default function CalvingScreen() {
   const { showToast } = useChuteSideToast();
   const { operationId } = useOperation();
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("All");
   const [sort, setSort] = useState("newest");
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+  const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_calving");
+  const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_calving");
 
   const { data: rawRecords, isLoading } = useQuery({
     queryKey: ["calving-list", operationId],
@@ -78,19 +93,15 @@ export default function CalvingScreen() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const filtered = records
-    .filter(r => {
-      if (filter === "Alive") return r.calfStatus === "Alive";
-      if (filter === "Dead") return r.calfStatus === "Dead";
-      if (filter === "Assisted") return r.assistance !== "None";
-      return true;
-    })
-    .filter(r =>
+  const filtered = applyFilters(
+    records.filter(r =>
       !search ||
       r.damTag.toLowerCase().includes(search.toLowerCase()) ||
       r.calfTag.toLowerCase().includes(search.toLowerCase()) ||
       (r.note && r.note.toLowerCase().includes(search.toLowerCase()))
-    )
+    ),
+    filters
+  )
     .sort((a, b) => {
       switch (sort) {
         case "newest": return parseDateForSort(b.rawDate) - parseDateForSort(a.rawDate);
@@ -108,7 +119,7 @@ export default function CalvingScreen() {
     dead: records.filter(r => r.calfStatus === "Dead").length,
   };
 
-  const isFiltering = search.length > 0 || filter !== "All";
+  const isFiltering = search.length > 0 || filters.length > 0;
 
   return (
     <div className="px-4 pt-1 pb-10 space-y-2">
@@ -149,14 +160,9 @@ export default function CalvingScreen() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search dam tag, calf tag, notes…"
-        filterChips={[
-          { value: "All", label: "All" },
-          { value: "Alive", label: "Alive" },
-          { value: "Dead", label: "Dead" },
-          { value: "Assisted", label: "Assisted" },
-        ]}
-        activeFilter={filter}
-        onFilterChange={setFilter}
+        filterChips={[]}
+        activeFilter=""
+        onFilterChange={() => {}}
         sortOptions={sortOptions}
         activeSort={sort}
         onSortChange={setSort}
@@ -165,6 +171,17 @@ export default function CalvingScreen() {
         onMassSelect={() => showToast("info", "Mass Select — coming soon")}
         resultCount={filtered.length}
         isFiltering={isFiltering}
+        advancedFilter={
+          <AdvancedSearchPanel
+            fields={CALVING_FILTER_FIELDS}
+            filters={filters}
+            onFiltersChange={setFilters}
+            presets={presets}
+            onAddPreset={addPreset}
+            onDeletePreset={deletePreset}
+            onClearAll={clearFilters}
+          />
+        }
       />
 
       {/* Section label + sort */}

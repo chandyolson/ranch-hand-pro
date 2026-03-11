@@ -5,16 +5,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import CowWorkProjectCard from "@/components/CowWorkProjectCard";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
+import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChuteSideToast } from "@/components/ToastContext";
+import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilters";
+import { applyFilters } from "@/lib/filter-utils";
+import type { FilterFieldConfig } from "@/lib/filter-types";
+
+const COWWORK_FILTER_FIELDS: FilterFieldConfig[] = [
+  { key: "name", label: "Project Name", type: "text", group: "Project" },
+  { key: "type", label: "Work Type", type: "text", group: "Project" },
+  { key: "status", label: "Status", type: "select", options: ["pending", "in-progress", "completed"], group: "Project" },
+  { key: "group", label: "Group", type: "text", group: "Project" },
+];
 
 export default function CowWorkScreen() {
-  const [statusFilter, setStatusFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
   const navigate = useNavigate();
   const { operationId } = useOperation();
   const { showToast } = useChuteSideToast();
+  const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_cowwork");
+  const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_cowwork");
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ["projects", operationId],
@@ -60,33 +72,25 @@ export default function CowWorkScreen() {
     };
   });
 
-  const statusFilterMap: Record<string, string> = {
-    All: "all",
-    Pending: "pending",
-    "In Progress": "in-progress",
-    Completed: "completed",
-  };
-
-  const filterVal = statusFilterMap[statusFilter] || "all";
-
-  const filtered = mapped
-    .filter((p) => filterVal === "all" || p.status === filterVal)
-    .filter((p) =>
+  const filtered = applyFilters(
+    mapped.filter((p) =>
       !search ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.type.toLowerCase().includes(search.toLowerCase()) ||
       p.group.toLowerCase().includes(search.toLowerCase())
-    )
+    ),
+    filters
+  )
     .sort((a, b) => {
       switch (sort) {
-        case "newest": return 0; // already sorted by date desc from DB
-        case "oldest": return -1; // reverse
+        case "newest": return 0;
+        case "oldest": return -1;
         case "name": return a.name.localeCompare(b.name);
         default: return 0;
       }
     });
 
-  const isFiltering = search.length > 0 || statusFilter !== "All";
+  const isFiltering = search.length > 0 || filters.length > 0;
 
   const allProjects = mapped;
   const stats = {
@@ -136,14 +140,9 @@ export default function CowWorkScreen() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search projects, types, groups…"
-        filterChips={[
-          { value: "All", label: "All" },
-          { value: "Pending", label: "Pending" },
-          { value: "In Progress", label: "In Progress" },
-          { value: "Completed", label: "Completed" },
-        ]}
-        activeFilter={statusFilter}
-        onFilterChange={setStatusFilter}
+        filterChips={[]}
+        activeFilter=""
+        onFilterChange={() => {}}
         sortOptions={[
           { value: "newest", label: "Newest" },
           { value: "oldest", label: "Oldest" },
@@ -157,6 +156,17 @@ export default function CowWorkScreen() {
         onMassEdit={() => showToast("info", "Mass Edit — coming soon")}
         resultCount={filtered.length}
         isFiltering={isFiltering}
+        advancedFilter={
+          <AdvancedSearchPanel
+            fields={COWWORK_FILTER_FIELDS}
+            filters={filters}
+            onFiltersChange={setFilters}
+            presets={presets}
+            onAddPreset={addPreset}
+            onDeletePreset={deletePreset}
+            onClearAll={clearFilters}
+          />
+        }
       />
 
       {/* Project list */}
