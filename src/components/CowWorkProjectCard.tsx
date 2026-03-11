@@ -32,7 +32,8 @@ const CowWorkProjectCard: React.FC<CowWorkProjectCardProps> = ({
       {/* Row 1 */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="truncate" style={{ fontSize: 15, fontWeight: 700, color: "white" }}>{name}</div>
+          <div className="truncate" style={{ fontSize: 15, fontWeight: 700, color: "white" }}>{type}</div>
+          <div className="truncate" style={{ fontSize: 12, fontWeight: 500, color: "rgba(240,240,240,0.50)", marginTop: 1 }}>{name}</div>
         </div>
         <div className="shrink-0 flex items-center gap-2">
           <span
@@ -45,15 +46,9 @@ const CowWorkProjectCard: React.FC<CowWorkProjectCardProps> = ({
       </div>
 
       {/* Row 2 */}
-      <div className="flex items-center gap-2 mt-1">
+      <div className="flex items-center gap-2 mt-1.5">
         <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.35)" }}>{date}</span>
         <span className="shrink-0" style={{ width: 1, height: 12, backgroundColor: "rgba(255,255,255,0.12)" }} />
-        <span
-          className="rounded-full"
-          style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.15)", color: "#F3D12A" }}
-        >
-          {type}
-        </span>
         <span className="truncate" style={{ fontSize: 11, fontWeight: 500, color: "rgba(168,230,218,0.70)" }}>{group}</span>
       </div>
 
