@@ -1,24 +1,74 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { LABEL_STYLE, INPUT_CLS } from "@/lib/styles";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useOperation } from '@/contexts/OperationContext';
 
 const usStates = ["SD", "ND", "NE", "MN", "WY", "MT", "CO", "KS", "IA", "MO", "TX", "OK", "AR", "ID", "OR", "WA", "CA", "NV", "UT", "AZ", "NM"];
 
 const ReferenceSettingsScreen: React.FC = () => {
-  const [operationName, setOperationName] = useState("Olson Cattle Co.");
-  const [address, setAddress] = useState("Rural Route 2, Box 44");
-  const [city, setCity] = useState("Sioux Falls");
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
+  const [operationName, setOperationName] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
   const [state_, setState_] = useState("SD");
-  const [operationType, setOperationType] = useState("Cow-Calf");
+  const [operationType, setOperationType] = useState("Commercial");
   const [useYearTag, setUseYearTag] = useState(true);
-  const [lifetimePrefix, setLifetimePrefix] = useState("SBR");
+  const [lifetimePrefix, setLifetimePrefix] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { showToast } = useChuteSideToast();
 
-  const handleSave = () => {
+  const { data: operation, isLoading } = useQuery({
+    queryKey: ['operation', operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('operations')
+        .select('*')
+        .eq('id', operationId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (operation) {
+      setOperationName(operation.name || '');
+      const addr = operation.address as any || {};
+      setAddress(addr.street || '');
+      setCity(addr.city || '');
+      setState_(addr.state || 'SD');
+      setOperationType(operation.operation_type || 'Commercial');
+      setLifetimePrefix(addr.lifetime_prefix || '');
+    }
+  }, [operation]);
+
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => { setIsSaving(false); showToast("success", "Settings saved"); }, 600);
+    try {
+      const { error } = await supabase
+        .from('operations')
+        .update({
+          name: operationName.trim(),
+          operation_type: operationType,
+          address: { street: address.trim(), city: city.trim(), state: state_, lifetime_prefix: lifetimePrefix.trim() },
+        })
+        .eq('id', operationId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['operation'] });
+      showToast("success", "Settings saved");
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to save");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return <div className="px-4 pt-4"><span style={{ fontSize: 13, color: "rgba(26,26,26,0.4)" }}>Loading…</span></div>;
+  }
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
@@ -39,7 +89,7 @@ const ReferenceSettingsScreen: React.FC = () => {
         <div className="flex items-center gap-2">
           <span style={LABEL_STYLE}>Type</span>
           <select value={operationType} onChange={e => setOperationType(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }}>
-            {["Cow-Calf", "Stocker", "Feedlot", "Dairy", "Mixed"].map(t => <option key={t} value={t}>{t}</option>)}
+            {["Commercial", "Cow-Calf", "Stocker", "Feedlot", "Dairy", "Mixed"].map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
       </div>
