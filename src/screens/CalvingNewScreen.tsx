@@ -104,6 +104,61 @@ export default function CalvingNewScreen() {
   const [showUdderTeat] = useState(true);
   const [showClawFoot] = useState(true);
 
+  // ── Dam lookup queries ──
+  const { data: damLookup } = useQuery({
+    queryKey: ['dam-lookup', damTag, operationId],
+    queryFn: async () => {
+      if (!damTag.trim()) return null;
+      const { data } = await supabase
+        .from('animals')
+        .select('*')
+        .eq('operation_id', operationId)
+        .eq('tag', damTag.trim())
+        .maybeSingle();
+      return data;
+    },
+    enabled: showDam && !!damTag.trim(),
+  });
+
+  const { data: damCalvings } = useQuery({
+    queryKey: ['dam-calvings', damLookup?.id],
+    queryFn: async () => {
+      if (!damLookup?.id) return [];
+      const { data } = await supabase
+        .from('calving_records')
+        .select('*')
+        .eq('dam_id', damLookup.id)
+        .order('calving_date', { ascending: false })
+        .limit(10);
+      return data || [];
+    },
+    enabled: !!damLookup?.id,
+  });
+
+  const { data: damWork } = useQuery({
+    queryKey: ['dam-work', damLookup?.id],
+    queryFn: async () => {
+      if (!damLookup?.id) return [];
+      const { data } = await supabase
+        .from('cow_work')
+        .select('*, project:projects(name)')
+        .eq('animal_id', damLookup.id)
+        .order('date', { ascending: false })
+        .limit(10);
+      return data || [];
+    },
+    enabled: !!damLookup?.id && damFullHistory,
+  });
+
+  const TAG_HEX: Record<string, string> = {
+    Red: '#D4606E', Yellow: '#F3D12A', Green: '#55BAAA', White: '#E0E0E0',
+    Orange: '#E8863A', Blue: '#5B8DEF', Purple: '#A77BCA', Pink: '#E8A0BF', None: '#999',
+  };
+
+  const fmtHistDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const fmtShortDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+  const assistLabel = (v: number | null) => !v || v === 1 ? '' : v === 2 ? 'Pull' : v === 3 ? 'Hard Pull' : 'C-Sec';
+
   // ── Helpers ──
   const toggleNote = (label: string) => {
     const note = QUICK_NOTES.find(n => n.label === label);
