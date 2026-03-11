@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import NavDrawer from "./NavDrawer";
 import ToastContainer from "./ToastContainer";
 import { useOperation } from "@/contexts/OperationContext";
+import { useAnimalCounts } from "@/hooks/useAnimals";
 
 const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "", subtitle: "" },
