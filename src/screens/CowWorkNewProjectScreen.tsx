@@ -6,7 +6,8 @@ import { useOperation } from "@/contexts/OperationContext";
 import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
 import { useChuteSideToast } from "../components/ToastContext";
-import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
+import FormFieldRow from "../components/FormFieldRow";
+import { INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 
 const cattleTypeOptions = ["Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
 
