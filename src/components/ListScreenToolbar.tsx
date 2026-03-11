@@ -42,15 +42,19 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const sortRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   const hasMenu = !!(onImport || onExport || onMassSelect || onMassEdit);
+  const activeFilterLabel = filterChips.find(c => c.value === activeFilter)?.label || "Filter";
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -175,28 +179,62 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
         </div>
       )}
 
-      {/* Row 3: Filters + Sort — horizontal scroll */}
+      {/* Row 3: Filter dropdown + Sort */}
       <div className="flex items-center gap-1.5">
-        <div
-          className="flex gap-1.5 flex-1 overflow-x-auto"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch", paddingBottom: 2 }}
-        >
-          <style>{`.filter-scroll::-webkit-scrollbar { display: none; }`}</style>
-          {filterChips.map(chip => (
-            <button
-              key={chip.value}
-              className="rounded-full px-3 py-1.5 cursor-pointer border transition-all active:scale-[0.96] whitespace-nowrap"
-              style={{
-                backgroundColor: activeFilter === chip.value ? "#0E2646" : "white",
-                borderColor: activeFilter === chip.value ? "#0E2646" : "rgba(212,212,208,0.80)",
-                color: activeFilter === chip.value ? "white" : "rgba(26,26,26,0.50)",
-                fontSize: 12,
-                fontWeight: activeFilter === chip.value ? 700 : 500,
-                flexShrink: 0,
-              }}
-              onClick={() => onFilterChange(chip.value)}
-            >{chip.label}</button>
-          ))}
+        <div className="relative flex-1" ref={filterRef}>
+          <button
+            className="flex items-center gap-1.5 rounded-full cursor-pointer active:scale-[0.97]"
+            style={{
+              height: 30,
+              paddingLeft: 10,
+              paddingRight: 10,
+              backgroundColor: activeFilter === filterChips[0]?.value ? "white" : "#0E2646",
+              border: "1px solid " + (activeFilter === filterChips[0]?.value ? "#D4D4D0" : "#0E2646"),
+              fontSize: 12,
+              fontWeight: 600,
+              color: activeFilter === filterChips[0]?.value ? "rgba(26,26,26,0.50)" : "white",
+            }}
+            onClick={() => setFilterOpen(!filterOpen)}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <path d="M2 3h12L9 8.5V13l-2-1V8.5L2 3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {activeFilterLabel}
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: filterOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 150ms" }}>
+              <path d="M2.5 3.75L5 6.25L7.5 3.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {filterOpen && (
+            <div
+              className="absolute left-0 mt-1 z-50 rounded-xl py-1"
+              style={{ backgroundColor: "white", border: "1px solid #D4D4D0", boxShadow: "0 10px 25px rgba(0,0,0,0.12)", minWidth: 160 }}
+            >
+              {filterChips.map(chip => (
+                <button
+                  key={chip.value}
+                  className="flex items-center justify-between w-full cursor-pointer"
+                  style={{
+                    height: 36,
+                    paddingLeft: 14,
+                    paddingRight: 14,
+                    border: "none",
+                    backgroundColor: activeFilter === chip.value ? "rgba(14,38,70,0.06)" : "transparent",
+                    fontSize: 13,
+                    fontWeight: activeFilter === chip.value ? 700 : 400,
+                    color: "#1A1A1A",
+                  }}
+                  onClick={() => { onFilterChange(chip.value); setFilterOpen(false); }}
+                >
+                  {chip.label}
+                  {activeFilter === chip.value && (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M3 7l3 3 5-5" stroke="#0E2646" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {!hideSort && sortOptions && sortOptions.length > 0 && onSortChange && (
           <div className="relative shrink-0" ref={sortRef}>
