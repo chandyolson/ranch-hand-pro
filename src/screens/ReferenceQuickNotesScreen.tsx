@@ -51,12 +51,10 @@ const ReferenceQuickNotesScreen: React.FC = () => {
       <div className="flex items-center justify-between">
         <span style={{ fontSize: 20, fontWeight: 800, color: "#0E2646" }}>Quick Notes</span>
         <button
-          className="rounded-full h-9 px-4 flex items-center gap-1.5 cursor-pointer active:scale-[0.97]"
-          style={{ backgroundColor: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A", border: "none" }}
+          className="flex items-center justify-center cursor-pointer active:scale-[0.95]"
+          style={{ width: 36, height: 36, borderRadius: 9999, backgroundColor: "#F3D12A", border: "none", fontSize: 20, fontWeight: 700, color: "#1A1A1A", lineHeight: 1 }}
           onClick={() => setAddOpen(true)}
-        >
-          <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>+</span> Add Note
-        </button>
+        >+</button>
       </div>
 
       {addOpen && (
