@@ -146,7 +146,8 @@ const getTypeBadge = (type?: string | null) => {
             >
               <DataCard
                 title={`Tag ${animal.tag}`}
-                values={[animal.breed || "Unknown", animal.sex, animal.type || "", animal.year_born ? String(animal.year_born) : ""].filter(Boolean)}
+                values={[animal.breed || "Unknown", animal.sex, animal.year_born ? String(animal.year_born) : ""].filter(Boolean)}
+                badge={getTypeBadge(animal.type)}
               />
             </div>
           ))}
