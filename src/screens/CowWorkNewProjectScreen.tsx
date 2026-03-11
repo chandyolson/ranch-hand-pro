@@ -151,7 +151,7 @@ export default function CowWorkNewProjectScreen() {
         </FormFieldRow>
 
         <FormFieldRow label="Cattle Type">
-          <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={FIELD_INPUT_CLS}>
+          <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Optional</option>
             {cattleTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
