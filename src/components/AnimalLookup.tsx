@@ -66,6 +66,7 @@ export default function AnimalLookup({
   const { operationId } = useOperation();
   const [focused, setFocused] = useState(false);
   const [selected, setSelected] = useState(false);
+  const [selectedAnimal, setSelectedAnimal] = useState<AnimalResult | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const search = value.trim();
@@ -103,15 +104,7 @@ export default function AnimalLookup({
   const showDropdown = focused && shouldSearch && ranked.length > 0;
   const showNoMatch = focused && shouldSearch && search.length >= 2 && ranked.length === 0 && !isFetching;
 
-  // Auto-select on exact single match
-  useEffect(() => {
-    if (ranked.length === 1 && !selected) {
-      const match = ranked[0];
-      if (match.tag.toLowerCase() === search.toLowerCase() || match.eid?.toLowerCase() === search.toLowerCase()) {
-        handleSelect(match);
-      }
-    }
-  }, [ranked, search, selected]);
+  // No auto-select — user must always tap a result to confirm
 
   // Click outside to close
   useEffect(() => {
@@ -126,6 +119,7 @@ export default function AnimalLookup({
 
   const handleSelect = (animal: AnimalResult) => {
     setSelected(true);
+    setSelectedAnimal(animal);
     setFocused(false);
     onChange(animal.tag);
     onSelect(animal);
@@ -133,12 +127,22 @@ export default function AnimalLookup({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelected(false);
+    setSelectedAnimal(null);
     onChange(e.target.value);
   };
 
   const handleFocus = () => {
     setFocused(true);
-    if (selected) setSelected(false);
+    if (selected) {
+      setSelected(false);
+      setSelectedAnimal(null);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelected(false);
+    setSelectedAnimal(null);
+    onChange("");
   };
 
   const defaultInputStyle: React.CSSProperties = {
@@ -160,16 +164,45 @@ export default function AnimalLookup({
         style={inputStyle || defaultInputStyle}
       />
 
-      {/* Selected indicator */}
-      {selected && (
+      {/* Selected confirmation chip */}
+      {selected && selectedAnimal && (
         <div style={{
-          position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-          width: 18, height: 18, borderRadius: 9999, backgroundColor: "#55BAAA",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          display: "flex", alignItems: "center", gap: 8, marginTop: 6,
+          padding: "6px 10px", borderRadius: 10,
+          backgroundColor: "rgba(85,186,170,0.08)", border: "1px solid rgba(85,186,170,0.25)",
         }}>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          {/* Checkmark */}
+          <div style={{
+            width: 18, height: 18, borderRadius: 9999, backgroundColor: "#55BAAA", flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          {/* Tag color dot */}
+          <span style={{
+            width: 8, height: 8, borderRadius: 9999, flexShrink: 0,
+            backgroundColor: TAG_COLOR_HEX[selectedAnimal.tag_color || "None"] || "#999",
+          }} />
+          {/* Tag */}
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}>
+            {selectedAnimal.tag}
+          </span>
+          {/* Details */}
+          <span style={{ fontSize: 11, fontWeight: 400, color: "rgba(26,26,26,0.45)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+            {[selectedAnimal.type, selectedAnimal.breed, selectedAnimal.year_born].filter(Boolean).join(" · ")}
+          </span>
+          {/* Clear button */}
+          <button
+            type="button"
+            onClick={handleClearSelection}
+            style={{
+              width: 18, height: 18, borderRadius: 9999, border: "none", cursor: "pointer", flexShrink: 0,
+              backgroundColor: "rgba(26,26,26,0.08)", color: "rgba(26,26,26,0.40)",
+              fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >×</button>
         </div>
       )}
 
