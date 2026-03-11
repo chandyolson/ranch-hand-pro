@@ -44,6 +44,7 @@ const AppLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { operationName } = useOperation();
+  const { data: counts } = useAnimalCounts();
   const path = location.pathname;
 
   const isHome = path === "/";
