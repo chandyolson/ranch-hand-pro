@@ -1,41 +1,67 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
 import { useChuteSideToast } from "@/components/ToastContext";
 
-interface CalvingRecord {
-  id: string;
-  damTag: string;
-  damColor: string;
-  damColorHex: string;
-  calfTag: string;
-  calfSex: "Bull" | "Heifer";
-  calfStatus: "Alive" | "Dead";
-  date: string;
-  birthWeight?: string;
-  assistance: string;
-  note?: string;
-}
+const TAG_HEX: Record<string, string> = {
+  Red: "#D4606E", Yellow: "#F3D12A", Green: "#55BAAA", White: "#E0E0E0",
+  Orange: "#E8863A", Blue: "#5B8DEF", Purple: "#A77BCA", Pink: "#E8A0BF", None: "#999",
+};
 
-const recentRecords: CalvingRecord[] = [
-  { id: "c1", damTag: "3309", damColor: "Pink",   damColorHex: "#E8A0BF", calfTag: "8841", calfSex: "Bull",   calfStatus: "Alive", date: "Mar 8, 2026",  birthWeight: "85 lbs",  assistance: "None",       note: "Normal birth — strong calf" },
-  { id: "c2", damTag: "4782", damColor: "Yellow", damColorHex: "#F3D12A", calfTag: "8842", calfSex: "Heifer", calfStatus: "Alive", date: "Mar 7, 2026",  birthWeight: "72 lbs",  assistance: "None",       note: "" },
-  { id: "c3", damTag: "5520", damColor: "Green",  damColorHex: "#55BAAA", calfTag: "8843", calfSex: "Bull",   calfStatus: "Alive", date: "Mar 7, 2026",  birthWeight: "90 lbs",  assistance: "Easy pull",  note: "Large calf" },
-  { id: "c4", damTag: "2218", damColor: "Orange", damColorHex: "#E8863A", calfTag: "8844", calfSex: "Heifer", calfStatus: "Dead",  date: "Mar 6, 2026",  birthWeight: "68 lbs",  assistance: "Hard pull",  note: "Stillborn" },
-  { id: "c5", damTag: "6610", damColor: "Blue",   damColorHex: "#5B8DEF", calfTag: "8845", calfSex: "Bull",   calfStatus: "Alive", date: "Mar 5, 2026",  birthWeight: "88 lbs",  assistance: "None",       note: "" },
-  { id: "c6", damTag: "7801", damColor: "Pink",   damColorHex: "#E8A0BF", calfTag: "8846", calfSex: "Heifer", calfStatus: "Alive", date: "Mar 4, 2026",  birthWeight: "76 lbs",  assistance: "None",       note: "First calf heifer" },
-];
+const assistanceLabel = (v: number | null) => {
+  if (!v || v === 1) return "None";
+  if (v === 2) return "Easy Pull";
+  if (v === 3) return "Hard Pull";
+  if (v === 4) return "C-Section";
+  return "";
+};
 
 const parseDateForSort = (d: string) => new Date(d).getTime();
+
+const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export default function CalvingScreen() {
   const navigate = useNavigate();
   const { showToast } = useChuteSideToast();
+  const { operationId } = useOperation();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [sort, setSort] = useState("newest");
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+
+  const { data: rawRecords, isLoading } = useQuery({
+    queryKey: ["calving-list", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("calving_records")
+        .select("*, dam:animals!dam_id(tag, tag_color)")
+        .eq("operation_id", operationId)
+        .order("calving_date", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const records = (rawRecords || []).map(r => ({
+    id: r.id,
+    damTag: (r.dam as any)?.tag || "Unknown",
+    damColor: (r.dam as any)?.tag_color || "None",
+    damColorHex: TAG_HEX[(r.dam as any)?.tag_color || "None"] || "#999",
+    calfTag: "",
+    calfSex: (r.calf_sex || "Unknown") as string,
+    calfStatus: (r.calf_status || "Alive") as string,
+    date: fmtDate(r.calving_date),
+    rawDate: r.calving_date,
+    birthWeight: r.birth_weight ? `${r.birth_weight} lbs` : "",
+    assistance: assistanceLabel(r.assistance),
+    note: r.memo || "",
+  }));
 
   const sortOptions = [
     { value: "newest", label: "Newest" },
@@ -52,7 +78,7 @@ export default function CalvingScreen() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const filtered = recentRecords
+  const filtered = records
     .filter(r => {
       if (filter === "Alive") return r.calfStatus === "Alive";
       if (filter === "Dead") return r.calfStatus === "Dead";
@@ -67,8 +93,8 @@ export default function CalvingScreen() {
     )
     .sort((a, b) => {
       switch (sort) {
-        case "newest": return parseDateForSort(b.date) - parseDateForSort(a.date);
-        case "oldest": return parseDateForSort(a.date) - parseDateForSort(b.date);
+        case "newest": return parseDateForSort(b.rawDate) - parseDateForSort(a.rawDate);
+        case "oldest": return parseDateForSort(a.rawDate) - parseDateForSort(b.rawDate);
         case "dam": return a.damTag.localeCompare(b.damTag);
         case "calf": return a.calfTag.localeCompare(b.calfTag);
         default: return 0;
@@ -76,10 +102,10 @@ export default function CalvingScreen() {
     });
 
   const calvingStats = {
-    total: recentRecords.length,
-    heifers: recentRecords.filter(r => r.calfSex === "Heifer").length,
-    bulls: recentRecords.filter(r => r.calfSex === "Bull").length,
-    dead: recentRecords.filter(r => r.calfStatus === "Dead").length,
+    total: records.length,
+    heifers: records.filter(r => r.calfSex === "Heifer").length,
+    bulls: records.filter(r => r.calfSex === "Bull").length,
+    dead: records.filter(r => r.calfStatus === "Dead").length,
   };
 
   const isFiltering = search.length > 0 || filter !== "All";
@@ -92,10 +118,10 @@ export default function CalvingScreen() {
         style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
       >
         {[
-          { label: "TOTAL",   value: calvingStats.total },
-          { label: "HEIFERS", value: calvingStats.heifers },
-          { label: "BULLS",   value: calvingStats.bulls },
-          { label: "DEAD",    value: calvingStats.dead },
+          { label: "TOTAL",   value: isLoading ? "…" : calvingStats.total },
+          { label: "HEIFERS", value: isLoading ? "…" : calvingStats.heifers },
+          { label: "BULLS",   value: isLoading ? "…" : calvingStats.bulls },
+          { label: "DEAD",    value: isLoading ? "…" : calvingStats.dead },
         ].map((stat, i, arr) => (
           <div key={stat.label} className="flex items-center gap-3">
             <div className="flex flex-col items-center">
@@ -167,14 +193,9 @@ export default function CalvingScreen() {
                   key={opt.value}
                   className="flex items-center w-full cursor-pointer"
                   style={{
-                    height: 36,
-                    paddingLeft: 12,
-                    paddingRight: 12,
-                    border: "none",
+                    height: 36, paddingLeft: 12, paddingRight: 12, border: "none",
                     backgroundColor: sort === opt.value ? "rgba(14,38,70,0.06)" : "transparent",
-                    fontSize: 12,
-                    fontWeight: sort === opt.value ? 700 : 500,
-                    color: "#1A1A1A",
+                    fontSize: 12, fontWeight: sort === opt.value ? 700 : 500, color: "#1A1A1A",
                   }}
                   onClick={() => { setSort(opt.value); setSortOpen(false); }}
                 >{opt.label}</button>
@@ -184,65 +205,76 @@ export default function CalvingScreen() {
         </div>
       </div>
 
+      {/* Loading skeletons */}
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-[#0E2646] rounded-xl px-4 py-3.5 animate-pulse" style={{ height: 72 }} />
+          ))}
+        </div>
+      )}
+
       {/* Record list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {filtered.map(r => (
-          <div
-            key={r.id}
-            className="bg-[#0E2646] rounded-xl px-4 py-3.5 cursor-pointer active:scale-[0.98] transition-all duration-150"
-            onClick={() => navigate("/calving/" + r.id)}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span style={{ fontSize: 15, fontWeight: 700, color: "white" }}>{r.damTag}</span>
-                <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: r.damColorHex, flexShrink: 0 }} />
-                <span style={{ fontSize: 13, color: "rgba(240,240,240,0.30)" }}>→</span>
-                <span style={{ fontSize: 15, fontWeight: 700, color: "#55BAAA" }}>{r.calfTag}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className="rounded-full"
-                  style={{
-                    fontSize: 9, fontWeight: 700, padding: "2px 8px", letterSpacing: "0.06em",
-                    backgroundColor: r.calfSex === "Bull" ? "rgba(85,186,170,0.15)" : "rgba(232,160,191,0.20)",
-                    color: r.calfSex === "Bull" ? "#55BAAA" : "#E8A0BF",
-                  }}
-                >
-                  {r.calfSex.toUpperCase()}
-                </span>
-                {r.calfStatus === "Dead" && (
+      {!isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {filtered.map(r => (
+            <div
+              key={r.id}
+              className="bg-[#0E2646] rounded-xl px-4 py-3.5 cursor-pointer active:scale-[0.98] transition-all duration-150"
+              onClick={() => navigate("/calving/" + r.id)}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "white" }}>{r.damTag}</span>
+                  <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: r.damColorHex, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, color: "rgba(240,240,240,0.30)" }}>→</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#55BAAA" }}>{r.calfTag || "—"}</span>
+                </div>
+                <div className="flex items-center gap-2">
                   <span
                     className="rounded-full"
-                    style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(155,35,53,0.20)", color: "#D4606E" }}
+                    style={{
+                      fontSize: 9, fontWeight: 700, padding: "2px 8px", letterSpacing: "0.06em",
+                      backgroundColor: r.calfSex === "Bull" ? "rgba(85,186,170,0.15)" : "rgba(232,160,191,0.20)",
+                      color: r.calfSex === "Bull" ? "#55BAAA" : "#E8A0BF",
+                    }}
                   >
-                    DEAD
+                    {r.calfSex.toUpperCase()}
                   </span>
+                  {r.calfStatus === "Dead" && (
+                    <span
+                      className="rounded-full"
+                      style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(155,35,53,0.20)", color: "#D4606E" }}
+                    >
+                      DEAD
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.35)" }}>{r.date}</span>
+                {r.birthWeight && (
+                  <>
+                    <span style={{ width: 1, height: 10, backgroundColor: "rgba(255,255,255,0.12)", flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(240,240,240,0.50)" }}>{r.birthWeight}</span>
+                  </>
+                )}
+                {r.assistance !== "None" && (
+                  <>
+                    <span style={{ width: 1, height: 10, backgroundColor: "rgba(255,255,255,0.12)", flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(243,209,42,0.70)" }}>{r.assistance}</span>
+                  </>
                 )}
               </div>
-            </div>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.35)" }}>{r.date}</span>
-              {r.birthWeight && (
-                <>
-                  <span style={{ width: 1, height: 10, backgroundColor: "rgba(255,255,255,0.12)", flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(240,240,240,0.50)" }}>{r.birthWeight}</span>
-                </>
-              )}
-              {r.assistance !== "None" && (
-                <>
-                  <span style={{ width: 1, height: 10, backgroundColor: "rgba(255,255,255,0.12)", flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(243,209,42,0.70)" }}>{r.assistance}</span>
-                </>
+              {r.note && (
+                <div style={{ fontSize: 12, color: "rgba(240,240,240,0.40)", marginTop: 4, lineHeight: 1.4 }}>{r.note}</div>
               )}
             </div>
-            {r.note && (
-              <div style={{ fontSize: 12, color: "rgba(240,240,240,0.40)", marginTop: 4, lineHeight: 1.4 }}>{r.note}</div>
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {filtered.length === 0 && (
+      {!isLoading && filtered.length === 0 && (
         <div className="py-12 text-center space-y-1.5">
           <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No records found</div>
           <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or filter</div>
