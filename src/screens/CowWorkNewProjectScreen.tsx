@@ -142,7 +142,7 @@ export default function CowWorkNewProjectScreen() {
         </FormFieldRow>
 
         <FormFieldRow label="Group">
-          <select value={group} onChange={e => setGroup(e.target.value)} className={FIELD_INPUT_CLS}>
+          <select value={group} onChange={e => setGroup(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select group</option>
             {(groups || []).map(g => (
               <option key={g.id} value={g.id}>{g.name}</option>
