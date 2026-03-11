@@ -20,7 +20,8 @@ export default function CowWorkNewProjectScreen() {
   const [memo, setMemo] = useState("");
   const [productsOpen, setProductsOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
-  const [products, setProducts] = useState<{ name: string; dosage: string; route: string }[]>([]);
+  const [products, setProducts] = useState<{ id: string; name: string; dosage: string; route: string }[]>([]);
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
