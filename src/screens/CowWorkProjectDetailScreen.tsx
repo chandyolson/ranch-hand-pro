@@ -499,7 +499,7 @@ export default function CowWorkProjectDetailScreen() {
                 <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" className={INPUT_CLS} />
               </FormFieldRow>
               <FormFieldRow label="Sample ID">
-                <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={FIELD_INPUT_CLS} />
+                <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={INPUT_CLS} />
               </FormFieldRow>
               <div className="pt-2">
                 <div style={{ ...SUB_LABEL, marginBottom: 6 }}>MEMO</div>

@@ -158,7 +158,7 @@ export default function CowWorkNewProjectScreen() {
         </FormFieldRow>
 
         <FormFieldRow label="Location">
-          <select value={location} onChange={e => setLocation(e.target.value)} className={FIELD_INPUT_CLS}>
+          <select value={location} onChange={e => setLocation(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Optional</option>
             {(locations || []).map(l => (
               <option key={l.id} value={l.id}>{l.name}</option>
