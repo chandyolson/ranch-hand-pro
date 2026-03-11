@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import { useChuteSideToast } from "@/components/ToastContext";
 import {
@@ -35,6 +38,8 @@ export default function AddAnimalScreen() {
 
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     setDuplicate(tag === "3309" && tagColor === "Pink" && yearBorn === "2020");
@@ -45,10 +50,37 @@ export default function AddAnimalScreen() {
     if (!sex) { showToast("error", "Sex is required"); return; }
     if (!animalType) { showToast("error", "Type is required"); return; }
     setIsSaving(true);
-    await new Promise(r => setTimeout(r, 500));
-    setIsSaving(false);
-    showToast("success", "Tag " + tag + " added to herd");
-    navigate("/animals");
+    try {
+      const { data, error } = await supabase
+        .from("animals")
+        .insert({
+          operation_id: operationId,
+          tag: tag.trim(),
+          tag_color: tagColor === "No Tag" ? null : tagColor,
+          eid: eid.trim() || null,
+          sex,
+          type: animalType || null,
+          year_born: yearBorn ? parseInt(yearBorn) : null,
+          status,
+          breed: breed || null,
+          registered: !!regName || !!regNumber,
+          reg_name: regName.trim() || null,
+          reg_number: regNumber.trim() || null,
+          memo: memo.trim() || null,
+          lifetime_id: null,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["animals"] });
+      queryClient.invalidateQueries({ queryKey: ["animal-counts"] });
+      showToast("success", `${tag.trim()} added to herd`);
+      navigate("/animals/" + data.id);
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to save");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const Row = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
