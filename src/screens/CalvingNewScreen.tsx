@@ -57,6 +57,9 @@ function Collapsible({ title, badge, defaultOpen, collapsedContent, children }: 
 export default function CalvingNewScreen() {
   const navigate = useNavigate();
   const { showToast } = useChuteSideToast();
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
 
   // Context
   const [contextOpen, setContextOpen] = useState(false);
