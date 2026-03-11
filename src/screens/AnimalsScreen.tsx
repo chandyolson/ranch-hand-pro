@@ -19,7 +19,7 @@ const getTypeBadge = (type?: string | null) => {
   return { label: type, ...colors };
 };
 
-
+const AnimalsScreen: React.FC = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sort, setSort] = useState("tag-asc");
