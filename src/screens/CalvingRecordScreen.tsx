@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
 import CollapsibleSection from "../components/CollapsibleSection";
 import FlagIcon from "../components/FlagIcon";
 import { useChuteSideToast } from "../components/ToastContext";
