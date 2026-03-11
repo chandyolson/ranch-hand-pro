@@ -413,7 +413,7 @@ export default function CalvingRecordScreen() {
             </div>
             {/* Wt / Size */}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 min-w-0">
                 <span style={LABEL_STYLE}>Wt / Size</span>
                 <input type="number" value={fields.birthWeight} onChange={e => set("birthWeight", e.target.value)} readOnly={!isEditing} placeholder="lbs" style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
                 <span style={{ color: "rgba(26,26,26,0.25)", margin: "0 2px" }}>/</span>
