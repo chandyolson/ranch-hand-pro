@@ -40,6 +40,7 @@ export default function AnimalDetailScreen() {
   const { data: animal, isLoading } = useAnimal(id);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // ── Queries ──
   const { data: calvingRecords } = useQuery({
