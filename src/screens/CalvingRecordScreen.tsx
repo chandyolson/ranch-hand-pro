@@ -195,6 +195,9 @@ export default function CalvingRecordScreen() {
 
   const flagInfo = fields.damFlag ? FLAG_OPTIONS.find(f => f.color === fields.damFlag) : null;
 
+  if (isLoading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading record…</div>;
+  if (!record) return <div className="flex items-center justify-center h-64 text-muted-foreground">Record not found</div>;
+
   return (
     <div className="px-4 space-y-0 pb-10">
       {/* GRADIENT HEADER */}
