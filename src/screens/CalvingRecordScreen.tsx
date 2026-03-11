@@ -396,7 +396,7 @@ export default function CalvingRecordScreen() {
               <input type="text" value={fields.calfEid} onChange={e => set("calfEid", e.target.value)} readOnly={!isEditing} placeholder="None recorded" style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
             </div>
             {/* Sex */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Sex</span>
               {isEditing ? (
                 <select value={fields.calfSex} onChange={e => set("calfSex", e.target.value as CalvingRecord["calfSex"])} style={{ ...INPUT_BASE, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
