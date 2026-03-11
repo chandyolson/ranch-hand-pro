@@ -1,11 +1,23 @@
 import React, { useState, useMemo } from "react";
 import { useChuteSideToast } from "@/components/ToastContext";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
+import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { PRODUCT_CATEGORIES, PRODUCT_CATEGORY_CONFIG, type ProductCategory } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOperation } from '@/contexts/OperationContext';
+import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilters";
+import { applyFilters } from "@/lib/filter-utils";
+import type { FilterFieldConfig } from "@/lib/filter-types";
+
+const TREATMENT_FILTER_FIELDS: FilterFieldConfig[] = [
+  { key: "name", label: "Product Name", type: "text", group: "Product" },
+  { key: "category", label: "Category", type: "select", options: [...PRODUCT_CATEGORIES], group: "Product" },
+  { key: "manufacturer", label: "Manufacturer", type: "text", group: "Product" },
+  { key: "defaultRoute", label: "Route", type: "text", group: "Product" },
+  { key: "withdrawalDays", label: "Withdrawal Days", type: "range", group: "Product" },
+];
 
 const ReferenceTreatmentsScreen: React.FC = () => {
   const { operationId } = useOperation();
@@ -13,9 +25,10 @@ const ReferenceTreatmentsScreen: React.FC = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [addSearch, setAddSearch] = useState("");
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
   const [sort, setSort] = useState("name");
   const { showToast } = useChuteSideToast();
+  const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_treatments");
+  const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_treatments");
 
   const { data: opProducts, isLoading } = useQuery({
     queryKey: ['operation-products', operationId],
@@ -56,9 +69,10 @@ const ReferenceTreatmentsScreen: React.FC = () => {
     manufacturer: (op.product as any)?.manufacturer?.name || '',
   })), [opProducts]);
 
-  const filtered = mapped
-    .filter(p => categoryFilter === "all" || p.category === categoryFilter)
-    .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
+  const filtered = applyFilters(
+    mapped.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase())),
+    filters
+  )
     .sort((a, b) => {
       switch (sort) {
         case "name": return a.name.localeCompare(b.name);
@@ -67,6 +81,17 @@ const ReferenceTreatmentsScreen: React.FC = () => {
         default: return 0;
       }
     });
+
+
+
+
+
+
+
+
+
+
+
 
   const handleAddProduct = async (productId: string, productName: string) => {
     const { error } = await supabase.from('operation_products').insert({
@@ -94,7 +119,7 @@ const ReferenceTreatmentsScreen: React.FC = () => {
     ).slice(0, 50),
   [allProducts, linkedProductIds, addSearch]);
 
-  const isFiltering = search.length > 0 || categoryFilter !== "all";
+  const isFiltering = search.length > 0 || filters.length > 0;
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
@@ -105,12 +130,9 @@ const ReferenceTreatmentsScreen: React.FC = () => {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search products…"
-        filterChips={[
-          { value: "all", label: "All" },
-          ...PRODUCT_CATEGORIES.map(c => ({ value: c, label: PRODUCT_CATEGORY_CONFIG[c].label })),
-        ]}
-        activeFilter={categoryFilter}
-        onFilterChange={setCategoryFilter}
+        filterChips={[]}
+        activeFilter=""
+        onFilterChange={() => {}}
         sortOptions={[
           { value: "name", label: "Name" },
           { value: "category", label: "Category" },
@@ -121,6 +143,17 @@ const ReferenceTreatmentsScreen: React.FC = () => {
         onExport={() => showToast("info", "Export — coming soon")}
         resultCount={filtered.length}
         isFiltering={isFiltering}
+        advancedFilter={
+          <AdvancedSearchPanel
+            fields={TREATMENT_FILTER_FIELDS}
+            filters={filters}
+            onFiltersChange={setFilters}
+            presets={presets}
+            onAddPreset={addPreset}
+            onDeletePreset={deletePreset}
+            onClearAll={clearFilters}
+          />
+        }
       />
 
       {/* Add product picker */}
