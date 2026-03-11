@@ -340,7 +340,7 @@ export default function CalvingRecordScreen() {
               </div>
             </div>
             {/* Group */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Group</span>
               {isEditing ? (
                 <select value={fields.group} onChange={e => set("group", e.target.value)} style={{ ...INPUT_BASE, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
