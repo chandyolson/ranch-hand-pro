@@ -324,13 +324,13 @@ export default function CalvingRecordScreen() {
           </div>
           <div className="space-y-2">
             {/* Date */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Date</span>
               <input type="date" value={fields.date} onChange={e => set("date", e.target.value)} readOnly={!isEditing} style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
             </div>
             {/* Dam Tag */}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 min-w-0">
                 <span style={LABEL_STYLE}>Dam Tag</span>
                 <input type="text" value={fields.damTag} onChange={e => set("damTag", e.target.value)} readOnly={!isEditing} style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
               </div>
@@ -340,7 +340,7 @@ export default function CalvingRecordScreen() {
               </div>
             </div>
             {/* Group */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Group</span>
               {isEditing ? (
                 <select value={fields.group} onChange={e => set("group", e.target.value)} style={{ ...INPUT_BASE, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
@@ -351,7 +351,7 @@ export default function CalvingRecordScreen() {
               )}
             </div>
             {/* Location */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Location</span>
               {isEditing ? (
                 <select value={fields.location} onChange={e => set("location", e.target.value)} style={{ ...INPUT_BASE, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
@@ -369,12 +369,12 @@ export default function CalvingRecordScreen() {
           <div style={{ ...SUB_LABEL, marginBottom: 8 }}>CALF INFO</div>
           <div className="space-y-2">
             {/* Calf Tag */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Calf Tag</span>
               <input type="text" value={fields.calfTag} onChange={e => set("calfTag", e.target.value)} readOnly={!isEditing} style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
             </div>
             {/* Tag Color */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Tag Color</span>
               {isEditing ? (
                 <div className="relative flex-1">
@@ -391,12 +391,12 @@ export default function CalvingRecordScreen() {
               )}
             </div>
             {/* Calf EID */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Calf EID</span>
               <input type="text" value={fields.calfEid} onChange={e => set("calfEid", e.target.value)} readOnly={!isEditing} placeholder="None recorded" style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
             </div>
             {/* Sex */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Sex</span>
               {isEditing ? (
                 <select value={fields.calfSex} onChange={e => set("calfSex", e.target.value as CalvingRecord["calfSex"])} style={{ ...INPUT_BASE, appearance: "auto" as const }} onFocus={focusGold} onBlur={blurReset}>
@@ -407,13 +407,13 @@ export default function CalvingRecordScreen() {
               )}
             </div>
             {/* Sire */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Sire</span>
               <input type="text" value={fields.sire} onChange={e => set("sire", e.target.value)} readOnly={!isEditing} style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
             </div>
             {/* Wt / Size */}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 min-w-0">
                 <span style={LABEL_STYLE}>Wt / Size</span>
                 <input type="number" value={fields.birthWeight} onChange={e => set("birthWeight", e.target.value)} readOnly={!isEditing} placeholder="lbs" style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
                 <span style={{ color: "rgba(26,26,26,0.25)", margin: "0 2px" }}>/</span>
@@ -426,7 +426,7 @@ export default function CalvingRecordScreen() {
               )}
             </div>
             {/* Status */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Status</span>
               <div className="flex gap-2 flex-1">
                 {(["Alive", "Dead"] as const).map(s => {

@@ -287,7 +287,7 @@ export default function CowWorkProjectDetailScreen() {
           <>
             {/* Tag / EID field */}
             <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 min-w-0">
                 <input
                   className="flex-1 h-12 rounded-lg px-3 outline-none transition-all"
                   style={{ fontSize: 16, fontWeight: 600, color: "#0E2646", border: "2px solid #F3D12A", backgroundColor: "white" }}
@@ -635,7 +635,7 @@ export default function CowWorkProjectDetailScreen() {
               ["Status", projectStatus],
               ["Head Count", String(headCount)],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-center gap-2">
+              <div key={label} className="flex items-center gap-3 min-w-0">
                 <span style={LABEL_STYLE}>{label}</span>
                 <span style={{ fontSize: 14, color: "rgba(26,26,26,0.70)" }}>{value || "—"}</span>
               </div>

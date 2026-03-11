@@ -59,11 +59,11 @@ const ReferenceQuickNotesScreen: React.FC = () => {
 
       {addOpen && (
         <div className="rounded-xl px-3 py-3.5 space-y-2" style={{ backgroundColor: "white", border: "2px solid #F3D12A" }}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <span style={LABEL_STYLE}>Note</span>
             <input type="text" value={newText} onChange={e => setNewText(e.target.value)} placeholder="Note text" className={INPUT_CLS} style={{ fontSize: 16 }} />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <span style={LABEL_STYLE}>Category</span>
             <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }}>
               <option value="management">Management</option>

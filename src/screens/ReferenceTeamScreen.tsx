@@ -114,11 +114,11 @@ const ReferenceTeamScreen: React.FC = () => {
 
       {inviteOpen && (
         <div className="rounded-xl px-3 py-3.5 space-y-2" style={{ backgroundColor: "white", border: "2px solid #F3D12A" }}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <span style={LABEL_STYLE}>Email</span>
             <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Email address" className={INPUT_CLS} style={{ fontSize: 16 }} />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <span style={LABEL_STYLE}>Role</span>
             <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }}>
               {roleOptions.map(r => <option key={r} value={r}>{roleLabels[r]}</option>)}
