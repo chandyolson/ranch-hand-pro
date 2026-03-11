@@ -14,6 +14,8 @@ import {
   STATUS_OPTIONS,
   BREED_OPTIONS,
   FLAG_OPTIONS,
+  QUICK_NOTES,
+  QUICK_NOTE_PILL_COLORS,
 } from "@/lib/constants";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 
@@ -28,6 +30,7 @@ export default function AddAnimalScreen() {
   const [breed, setBreed] = useState("");
   const [flag, setFlag] = useState<string | null>(null);
   const [flagReason, setFlagReason] = useState("");
+  const [selectedQuickNotes, setSelectedQuickNotes] = useState<string[]>([]);
   const [sire, setSire] = useState("");
   const [dam, setDam] = useState("");
   const [regName, setRegName] = useState("");
@@ -224,6 +227,47 @@ export default function AddAnimalScreen() {
             <input type="text" value={flagReason} onChange={e => setFlagReason(e.target.value)} placeholder="Reason for flag" className={INPUT_CLS} style={{ fontSize: 16 }} />
           </Row>
         )}
+      </div>
+
+      {/* QUICK NOTES CARD */}
+      <div className="rounded-xl bg-white px-3 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+        <div style={SUB_LABEL}>QUICK NOTES</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingTop: 4 }}>
+          {QUICK_NOTES.filter(n => n.context === "all").map(n => {
+            const active = selectedQuickNotes.includes(n.label);
+            const c = QUICK_NOTE_PILL_COLORS[n.flag || "none"];
+            return (
+              <button
+                key={n.label}
+                type="button"
+                onClick={() => {
+                  setSelectedQuickNotes(prev =>
+                    prev.includes(n.label) ? prev.filter(x => x !== n.label) : [...prev, n.label]
+                  );
+                }}
+                className="rounded-full cursor-pointer transition-all active:scale-[0.96]"
+                style={{
+                  padding: "4px 10px",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  backgroundColor: active ? c.bgSel : c.bg,
+                  border: `${active ? 2 : 1}px solid ${active ? c.borderSel : c.border}`,
+                  color: c.text,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 3,
+                }}
+              >
+                {active && (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5L4 7L8 3" stroke={c.text} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+                {n.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* PEDIGREE CARD */}
