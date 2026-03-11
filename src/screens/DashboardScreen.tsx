@@ -1,18 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import StatCard from "@/components/StatCard";
 import DataCard from "@/components/DataCard";
 import FlagIcon from "@/components/FlagIcon";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import PillButton from "@/components/PillButton";
 import { useChuteSideToast } from "@/components/ToastContext";
-
-// ── Data ──────────────────────────────────────────────
-const stats = [
-  { label: "Total Head", value: "847", subtitle: "↑ 34 this quarter", angle: 140, route: "/animals" },
-  { label: "Active Calving", value: "23", subtitle: "6 expected this week", angle: 155, route: "/calving" },
-  { label: "Open Projects", value: "5", subtitle: "2 due before Friday", angle: 165, route: "/cow-work" },
-];
+import { useAnimalCounts } from "@/hooks/useAnimals";
+import { useCalvingCounts } from "@/hooks/useCalvingRecords";
+import { useOperation } from "@/contexts/OperationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const recentAnimals = [
   { title: "Tag 4782", values: ["Black Angus", "1,247 lbs", "Pen 2A"], flag: "teal" as const },
@@ -75,6 +73,26 @@ const DashboardScreen: React.FC = () => {
   const [actionItems, setActionItems] = useState(initialActionItems);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
+  const { operationId } = useOperation();
+  const { data: animalCounts } = useAnimalCounts();
+  const { data: calvingCounts } = useCalvingCounts();
+  const { data: projectCounts } = useQuery({
+    queryKey: ["project-counts", operationId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("operation_id", operationId)
+        .neq("project_status", "Completed");
+      return count || 0;
+    },
+  });
+
+  const stats = [
+    { label: "Total Head", value: String(animalCounts?.total ?? "—"), subtitle: `${animalCounts?.active ?? 0} active`, angle: 140, route: "/animals" },
+    { label: "Calving", value: String(calvingCounts?.total ?? "—"), subtitle: `${calvingCounts?.alive ?? 0} alive`, angle: 155, route: "/calving" },
+    { label: "Open Projects", value: String(projectCounts ?? "—"), subtitle: "active projects", angle: 165, route: "/cow-work" },
+  ];
 
   const openActions = actionItems.filter((a) => !a.completed);
   const sortOrder: Record<string, number> = { red: 0, gold: 1 };

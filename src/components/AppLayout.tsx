@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import NavDrawer from "./NavDrawer";
 import ToastContainer from "./ToastContainer";
 import { useOperation } from "@/contexts/OperationContext";
+import { useAnimalCounts } from "@/hooks/useAnimals";
 
 const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "", subtitle: "" },
@@ -43,6 +44,7 @@ const AppLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { operationName } = useOperation();
+  const { data: counts } = useAnimalCounts();
   const path = location.pathname;
 
   const isHome = path === "/";
@@ -50,7 +52,9 @@ const AppLayout: React.FC = () => {
 
   let config = routeConfig[path];
   if (isHome) {
-    config = { title: operationName, subtitle: "" };
+    config = { title: operationName, subtitle: `Ranch · ${counts?.total ?? '...'} Head · Active` };
+  } else if (path === "/animals") {
+    config = { title: "Animals", subtitle: `${counts?.total ?? '...'} Total · ${counts?.active ?? '...'} Active` };
   } else if (!config) {
     if (isAnimalDetail) {
       config = { title: "Animal Record", subtitle: "Animal Detail" };
