@@ -401,8 +401,8 @@ export default function CalvingNewScreen() {
         teat: cowTraits.teat ? parseInt(cowTraits.teat) : null,
         claw: cowTraits.claw ? parseInt(cowTraits.claw) : null,
         foot: cowTraits.foot ? parseInt(cowTraits.foot) : null,
-        group_id: null,
-        location_id: null,
+        group_id: groupId || null,
+        location_id: locationId || null,
         memo: notes.trim() || null,
       });
       if (calvErr) throw calvErr;
