@@ -106,11 +106,62 @@ export default function CalvingRecordScreen() {
   const navigate = useNavigate();
   const { showToast } = useChuteSideToast();
 
-  const record = calvingRecords[id || "c1"] || calvingRecords["c1"];
+  const { operationId } = useOperation();
+
+  const { data: dbRecord, isLoading } = useQuery({
+    queryKey: ["calving-record", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("calving_records")
+        .select("*, dam:animals!calving_records_dam_id_fkey(tag, tag_color, sex, type, year_born)")
+        .eq("id", id)
+        .eq("operation_id", operationId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  // Map database fields to screen display fields
+  const dam = dbRecord?.dam as any;
+  const record = dbRecord ? {
+    id: dbRecord.id,
+    date: dbRecord.calving_date,
+    group: "",
+    location: "",
+    damTag: dam?.tag || "Unknown",
+    damColor: dam?.tag_color || "None",
+    damColorHex: TAG_COLOR_HEX[dam?.tag_color] || "#999",
+    damType: dam?.type || dam?.sex || "",
+    damYearBorn: dam?.year_born ? String(dam.year_born) : "",
+    damFlag: null as FlagColor | null,
+    calfTag: "",
+    calfColor: "Yellow",
+    calfColorHex: "#F3D12A",
+    calfEid: "",
+    calfSex: (dbRecord.calf_sex || "Unknown") as "Bull" | "Heifer" | "Unknown",
+    calfStatus: (dbRecord.calf_status || "Alive") as "Alive" | "Dead",
+    birthWeight: dbRecord.birth_weight ? String(dbRecord.birth_weight) : "",
+    calfSize: dbRecord.calf_size ? String(dbRecord.calf_size) : "",
+    sire: "",
+    disposition: dbRecord.disposition ? String(dbRecord.disposition) : "",
+    assistance: dbRecord.assistance ? String(dbRecord.assistance) : "",
+    udder: dbRecord.udder ? String(dbRecord.udder) : "",
+    teat: dbRecord.teat ? String(dbRecord.teat) : "",
+    claw: dbRecord.claw ? String(dbRecord.claw) : "",
+    foot: dbRecord.foot ? String(dbRecord.foot) : "",
+    mothering: dbRecord.mothering ? String(dbRecord.mothering) : "",
+    calfVigor: dbRecord.calf_vigor ? String(dbRecord.calf_vigor) : "",
+    calfSize2: dbRecord.calf_size ? String(dbRecord.calf_size) : "",
+    quickNotes: [] as string[],
+    memo: dbRecord.memo || "",
+  } : null;
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("record");
-  const [fields, setFields] = useState<CalvingRecord>({ ...record });
+  const [fields, setFields] = useState<CalvingRecord>({ ...(record || {} as CalvingRecord) });
 
   const set = <K extends keyof CalvingRecord>(key: K, val: CalvingRecord[K]) =>
     setFields(prev => ({ ...prev, [key]: val }));
