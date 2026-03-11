@@ -111,8 +111,13 @@ export default function CalvingNewScreen() {
   // Context
   const [contextOpen, setContextOpen] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [group, setGroup] = useState("Spring Calvers");
-  const [location, setLocation] = useState("Calving Barn");
+  const [groupId, setGroupId] = useState("");
+  const [locationId, setLocationId] = useState("");
+  const { data: groups } = useGroups();
+  const { data: locations } = useLocations();
+
+  const groupName = groups?.find(g => g.id === groupId)?.name || "No Group";
+  const locationName = locations?.find(l => l.id === locationId)?.name || "No Location";
 
   // Dam
   const [damTag, setDamTag] = useState("");
