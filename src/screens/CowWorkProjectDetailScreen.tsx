@@ -479,7 +479,7 @@ export default function CowWorkProjectDetailScreen() {
                   <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" className={INPUT_CLS} />
                 </FormFieldRow>
                 <FormFieldRow label="Calf Sex">
-                  <select value={calfSex} onChange={e => setCalfSex(e.target.value)} className={FIELD_INPUT_CLS}>
+                  <select value={calfSex} onChange={e => setCalfSex(e.target.value)} className={INPUT_CLS}>
                     <option value="" disabled>Select…</option>
                     {PREG_CALF_SEX_OPTIONS.filter(o => o !== "None").map(o => (
                       <option key={o} value={o}>{o}</option>
