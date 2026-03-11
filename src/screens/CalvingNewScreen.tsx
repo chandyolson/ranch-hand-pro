@@ -438,27 +438,25 @@ export default function CalvingNewScreen() {
                     {/* Calving tab */}
                     {damHistoryTab === 'calving' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {[
-                          { tag: '8841', sex: 'Bull', date: 'Mar 22, 2025', wt: '85 lbs', assist: 'No Assistance', vigor: 'Excellent', notes: 'Normal birth — strong calf' },
-                          { tag: '7503', sex: 'Heifer', date: 'Apr 8, 2024', wt: '72 lbs', assist: 'No Assistance', vigor: 'Excellent', notes: 'Normal birth' },
-                          { tag: '6218', sex: 'Bull', date: 'Mar 30, 2023', wt: '90 lbs', assist: 'Easy Pull', vigor: 'Good', notes: 'Large calf, slight assistance' },
-                        ].map(c => (
-                          <div key={c.tag} style={{ borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.15)', padding: '10px 12px' }}>
+                        {(!damCalvings || damCalvings.length === 0) && (
+                          <div style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)', padding: 8 }}>No calving records</div>
+                        )}
+                        {(damCalvings || []).map(c => (
+                          <div key={c.id} style={{ borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.15)', padding: '10px 12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{c.tag}</span>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{c.calf_sex || 'Unknown'}</span>
                                 <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '1px 6px',
-                                  backgroundColor: c.sex === 'Bull' ? 'rgba(85,186,170,0.15)' : 'rgba(232,160,191,0.20)',
-                                  color: c.sex === 'Bull' ? '#55BAAA' : '#E8A0BF' }}>{c.sex}</span>
+                                  backgroundColor: c.calf_sex === 'Bull' ? 'rgba(85,186,170,0.15)' : 'rgba(232,160,191,0.20)',
+                                  color: c.calf_sex === 'Bull' ? '#55BAAA' : '#E8A0BF' }}>{c.calf_sex || '?'}</span>
                               </div>
-                              <span style={{ fontSize: 10, color: 'rgba(240,240,240,0.30)' }}>{c.date}</span>
+                              <span style={{ fontSize: 10, color: 'rgba(240,240,240,0.30)' }}>{fmtHistDate(c.calving_date)}</span>
                             </div>
                             <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{c.wt}</span>
-                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{c.assist}</span>
-                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{c.vigor}</span>
+                              {c.birth_weight && <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{c.birth_weight} lbs</span>}
+                              <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(240,240,240,0.08)', color: 'rgba(240,240,240,0.50)' }}>{!c.assistance || c.assistance === 1 ? 'No Assistance' : c.assistance === 2 ? 'Easy Pull' : 'Hard Pull'}</span>
                             </div>
-                            {c.notes && <div style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)', marginTop: 4 }}>{c.notes}</div>}
+                            {c.memo && <div style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)', marginTop: 4 }}>{c.memo}</div>}
                           </div>
                         ))}
                       </div>
