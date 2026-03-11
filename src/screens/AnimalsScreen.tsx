@@ -5,6 +5,19 @@ import ListScreenToolbar from "@/components/ListScreenToolbar";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnimals } from "@/hooks/useAnimals";
+const TYPE_BADGE_COLORS: Record<string, { bg: string; text: string }> = {
+  Calf:        { bg: "rgba(85,186,170,0.25)", text: "#55BAAA" },
+  Feeder:      { bg: "rgba(243,209,42,0.20)", text: "#F3D12A" },
+  Replacement: { bg: "rgba(91,141,239,0.25)", text: "#5B8DEF" },
+  Cow:         { bg: "rgba(240,240,240,0.15)", text: "rgba(240,240,240,0.75)" },
+  Bull:        { bg: "rgba(232,138,58,0.25)", text: "#E88A3A" },
+};
+
+const getTypeBadge = (type?: string | null) => {
+  if (!type) return undefined;
+  const colors = TYPE_BADGE_COLORS[type] || { bg: "rgba(240,240,240,0.12)", text: "rgba(240,240,240,0.6)" };
+  return { label: type, ...colors };
+};
 
 const AnimalsScreen: React.FC = () => {
   const [search, setSearch] = useState("");
@@ -133,7 +146,8 @@ const AnimalsScreen: React.FC = () => {
             >
               <DataCard
                 title={`Tag ${animal.tag}`}
-                values={[animal.breed || "Unknown", animal.sex, animal.type || "", animal.year_born ? String(animal.year_born) : ""].filter(Boolean)}
+                values={[animal.breed || "Unknown", animal.sex, animal.year_born ? String(animal.year_born) : ""].filter(Boolean)}
+                badge={getTypeBadge(animal.type)}
               />
             </div>
           ))}
