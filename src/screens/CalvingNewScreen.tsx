@@ -373,38 +373,36 @@ export default function CalvingNewScreen() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ color: 'white', fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{damTag}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: '#E8A0BF' }} />
-                      <span style={{ fontSize: 12, color: 'rgba(240,240,240,0.45)' }}>Pink · Cow · 2020 · 1,187 lbs</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                      {['Hard keeper', 'Good mother'].map(n => (
-                        <span key={n} style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '2px 6px', backgroundColor: 'rgba(255,255,255,0.10)', color: 'rgba(240,240,240,0.75)' }}>{n}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                    <svg width="18" height="16" viewBox="0 0 32 28" fill="none"><line x1="3" y1="2" x2="3" y2="26" stroke="#55BAAA" strokeWidth="2" strokeLinecap="round" /><path d="M3 3H27L23 9.5L27 16H3V3Z" fill="#55BAAA" /></svg>
-                    <span style={{ fontSize: 9, fontWeight: 600, color: '#55BAAA' }}>Mgmt</span>
+                    {damLookup ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: TAG_HEX[damLookup.tag_color || 'None'] || '#999' }} />
+                        <span style={{ fontSize: 12, color: 'rgba(240,240,240,0.45)' }}>{damLookup.tag_color || 'None'} · {damLookup.sex} · {damLookup.year_born || '—'}</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: 'rgba(240,240,240,0.35)', marginTop: 4 }}>Looking up…</div>
+                    )}
                   </div>
                 </div>
 
                 {/* Recent calvings — compact */}
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 10, paddingTop: 8 }}>
                   <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(240,240,240,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Last 3 Calvings</div>
-                  {[
-                    { tag: '8841', sex: 'B', date: 'Mar 25', wt: '85', assist: '' },
-                    { tag: '7503', sex: 'H', date: 'Apr 24', wt: '72', assist: '' },
-                    { tag: '6218', sex: 'B', date: 'Mar 23', wt: '90', assist: 'Pull' },
-                  ].map(c => (
-                    <div key={c.tag} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: 'white', width: 40 }}>{c.tag}</span>
-                      <span style={{ fontSize: 9, fontWeight: 700, width: 14, color: c.sex === 'B' ? '#55BAAA' : '#E8A0BF' }}>{c.sex}</span>
-                      <span style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)' }}>{c.date}</span>
-                      <span style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)' }}>{c.wt}lb</span>
-                      {c.assist && <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '1px 5px', backgroundColor: 'rgba(243,209,42,0.15)', color: 'rgba(243,209,42,0.70)' }}>{c.assist}</span>}
-                    </div>
-                  ))}
+                  {(!damCalvings || damCalvings.length === 0) && (
+                    <div style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)', padding: '4px 0' }}>No calving records</div>
+                  )}
+                  {(damCalvings || []).slice(0, 3).map((c, i) => {
+                    const sexChar = c.calf_sex === 'Bull' ? 'B' : c.calf_sex === 'Heifer' ? 'H' : '?';
+                    const assist = assistLabel(c.assistance);
+                    return (
+                      <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'white', width: 40 }}>{c.calf_sex === 'Bull' ? 'B' : 'H'}</span>
+                        <span style={{ fontSize: 9, fontWeight: 700, width: 14, color: sexChar === 'B' ? '#55BAAA' : '#E8A0BF' }}>{sexChar}</span>
+                        <span style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)' }}>{fmtShortDate(c.calving_date)}</span>
+                        <span style={{ fontSize: 11, color: 'rgba(240,240,240,0.30)' }}>{c.birth_weight || '—'}lb</span>
+                        {assist && <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: '1px 5px', backgroundColor: 'rgba(243,209,42,0.15)', color: 'rgba(243,209,42,0.70)' }}>{assist}</span>}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
