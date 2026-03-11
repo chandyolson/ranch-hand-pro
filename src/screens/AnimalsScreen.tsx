@@ -21,14 +21,15 @@ const getTypeBadge = (type?: string | null) => {
 
 const AnimalsScreen: React.FC = () => {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [typeFilter, setTypeFilter] = useState("All");
   const [sort, setSort] = useState("tag-asc");
   const navigate = useNavigate();
   const { showToast } = useChuteSideToast();
 
-  const { data: animals, isLoading, error, refetch } = useAnimals(statusFilter === "All" ? undefined : statusFilter);
+  const { data: animals, isLoading, error, refetch } = useAnimals();
 
   const filtered = (animals || [])
+    .filter(a => typeFilter === "All" || a.type === typeFilter)
     .filter(a =>
       !search ||
       a.tag.toLowerCase().includes(search.toLowerCase()) ||
@@ -44,7 +45,7 @@ const AnimalsScreen: React.FC = () => {
       }
     });
 
-  const isFiltering = search.length > 0 || statusFilter !== "All";
+  const isFiltering = search.length > 0 || typeFilter !== "All";
 
   const allAnimals = animals || [];
   const stats = {
@@ -94,12 +95,14 @@ const AnimalsScreen: React.FC = () => {
         searchPlaceholder="Search tags, breeds, EIDs…"
         filterChips={[
           { value: "All", label: "All" },
-          { value: "Active", label: "Active" },
-          { value: "Sold", label: "Sold" },
-          { value: "Dead", label: "Dead" },
+          { value: "Cow", label: "Cow" },
+          { value: "Bull", label: "Bull" },
+          { value: "Calf", label: "Calf" },
+          { value: "Replacement", label: "Replacement" },
+          { value: "Feeder", label: "Feeder" },
         ]}
-        activeFilter={statusFilter}
-        onFilterChange={setStatusFilter}
+        activeFilter={typeFilter}
+        onFilterChange={setTypeFilter}
         sortOptions={[
           { value: "tag-asc", label: "Tag ↑" },
           { value: "tag-desc", label: "Tag ↓" },
