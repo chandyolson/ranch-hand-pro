@@ -49,7 +49,7 @@ export const INPUT_CLS =
   "flex-1 min-w-0 h-10 rounded-lg border border-[#D4D4D0] bg-white px-3 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25";
 
 export const FIELD_INPUT_CLS =
-  "w-full h-10 rounded-lg border border-[#D4D4D0] bg-white px-3 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25";
+  "w-full h-10 rounded-lg border border-[#D4D4D0] bg-white px-3 text-base outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25";
 
 // Focus ring handler (use ONLY when Tailwind focus: classes aren't available)
 export const focusGold = (e: React.FocusEvent<HTMLElement>) => {
