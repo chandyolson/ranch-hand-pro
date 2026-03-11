@@ -635,7 +635,7 @@ export default function CowWorkProjectDetailScreen() {
               ["Status", projectStatus],
               ["Head Count", String(headCount)],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-center gap-2">
+              <div key={label} className="flex items-center gap-3 min-w-0">
                 <span style={LABEL_STYLE}>{label}</span>
                 <span style={{ fontSize: 14, color: "rgba(26,26,26,0.70)" }}>{value || "—"}</span>
               </div>

@@ -426,7 +426,7 @@ export default function CalvingRecordScreen() {
               )}
             </div>
             {/* Status */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <span style={LABEL_STYLE}>Status</span>
               <div className="flex gap-2 flex-1">
                 {(["Alive", "Dead"] as const).map(s => {

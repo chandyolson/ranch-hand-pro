@@ -112,7 +112,7 @@ const ReferenceSettingsScreen: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <span style={LABEL_STYLE}>ID Prefix</span>
           <input type="text" value={lifetimePrefix} onChange={e => setLifetimePrefix(e.target.value)} placeholder="e.g. SBR" className={INPUT_CLS} style={{ fontSize: 16 }} />
         </div>

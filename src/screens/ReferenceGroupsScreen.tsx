@@ -55,7 +55,7 @@ const ReferenceGroupsScreen: React.FC = () => {
             <span style={LABEL_STYLE}>Name</span>
             <input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Group name" className={INPUT_CLS} style={{ fontSize: 16 }} />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <span style={LABEL_STYLE}>Memo</span>
             <input type="text" value={newMemo} onChange={e => setNewMemo(e.target.value)} placeholder="Optional note" className={INPUT_CLS} style={{ fontSize: 16 }} />
           </div>
