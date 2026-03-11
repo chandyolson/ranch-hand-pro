@@ -8,10 +8,10 @@ interface PillScoreProps {
 }
 
 const PillScore: React.FC<PillScoreProps> = ({ label, value, onChange, labels }) => (
-  <div style={{ display: "flex", alignItems: "flex-start", gap: 12, minWidth: 0 }}>
+  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
     <span
       style={{
-        width: 105,
+        width: 85,
         flexShrink: 0,
         fontSize: 14,
         fontWeight: 600,

@@ -1,7 +1,7 @@
 import { COLORS } from "./constants";
 
 export const LABEL_STYLE: React.CSSProperties = {
-  width: 105,
+  width: 85,
   flexShrink: 0,
   fontSize: 14,
   fontWeight: 600,

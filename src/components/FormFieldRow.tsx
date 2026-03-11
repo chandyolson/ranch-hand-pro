@@ -8,7 +8,7 @@ interface FormFieldRowProps {
 }
 
 const FormFieldRow: React.FC<FormFieldRowProps> = ({ label, required, children }) => (
-  <div className="flex items-center gap-3 min-w-0">
+  <div className="flex items-center gap-2 min-w-0">
     <span style={LABEL_STYLE}>
       {label}
       {required && <span style={{ color: "#9B2335", marginLeft: 2 }}>*</span>}

@@ -246,7 +246,7 @@ export default function AnimalDetailScreen() {
 
   /* ── Field row helper ── */
   const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, minWidth: 0 }}>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
       <span style={{ ...LABEL_STYLE, paddingTop: 8 }}>{label}</span>
       <div style={{ flex: 1, minWidth: 0, display: "flex" }}>
         {children}
