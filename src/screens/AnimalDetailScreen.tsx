@@ -159,9 +159,39 @@ export default function AnimalDetailScreen() {
     setIsEditing(false);
   };
 
-  const handleSave = () => {
-    showToast("success", `Animal ${fields.tag} saved`);
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (!fields.tag.trim()) {
+      showToast("error", "Tag is required");
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("animals")
+        .update({
+          tag: fields.tag.trim(),
+          tag_color: fields.tagColor === "None" ? null : fields.tagColor,
+          sex: fields.sex,
+          type: fields.animalType || null,
+          year_born: fields.yearBorn ? parseInt(fields.yearBorn) : null,
+          status: fields.status,
+          eid: fields.eid.trim() || null,
+          eid2: fields.eid2.trim() || null,
+          breed: fields.breed.trim() || null,
+          memo: memo.trim() || null,
+        })
+        .eq("id", id)
+        .eq("operation_id", operationId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["animal", id] });
+      queryClient.invalidateQueries({ queryKey: ["animals"] });
+      queryClient.invalidateQueries({ queryKey: ["animal-counts"] });
+      setOriginalFields({ ...fields });
+      setOriginalMemo(memo);
+      showToast("success", `Animal ${fields.tag.trim()} saved`);
+      setIsEditing(false);
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to save");
+    }
   };
 
   const toggleQuickNote = (note: string) => {
