@@ -42,6 +42,7 @@ const AppLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { operationName } = useOperation();
   const path = location.pathname;
 
   const isHome = path === "/";
