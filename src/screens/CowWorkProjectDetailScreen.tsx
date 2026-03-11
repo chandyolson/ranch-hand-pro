@@ -476,7 +476,7 @@ export default function CowWorkProjectDetailScreen() {
                   </select>
                 </FormFieldRow>
                 <FormFieldRow label="Days Gest.">
-                  <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" className={FIELD_INPUT_CLS} />
+                  <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" className={INPUT_CLS} />
                 </FormFieldRow>
                 <FormFieldRow label="Calf Sex">
                   <select value={calfSex} onChange={e => setCalfSex(e.target.value)} className={FIELD_INPUT_CLS}>
