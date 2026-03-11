@@ -469,26 +469,23 @@ export default function CowWorkProjectDetailScreen() {
             {projectType === "PREG" && (
               <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
                 <div style={SUB_LABEL}>PREG CHECK</div>
-                <div className="flex items-center gap-2">
-                  <label style={LABEL_STYLE}>Preg</label>
+                <FormFieldRow label="Preg">
                   <select value={pregResult} onChange={e => setPregResult(e.target.value)} className={INPUT_CLS}>
                     <option value="" disabled>Select…</option>
                     <option>Confirmed</option><option>Open</option><option>Suspect</option><option>First Calf Heifer</option>
                   </select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label style={LABEL_STYLE}>Days Gest.</label>
+                </FormFieldRow>
+                <FormFieldRow label="Days Gest.">
                   <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" className={INPUT_CLS} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <label style={LABEL_STYLE}>Calf Sex</label>
+                </FormFieldRow>
+                <FormFieldRow label="Calf Sex">
                   <select value={calfSex} onChange={e => setCalfSex(e.target.value)} className={INPUT_CLS}>
                     <option value="" disabled>Select…</option>
                     {PREG_CALF_SEX_OPTIONS.filter(o => o !== "None").map(o => (
                       <option key={o} value={o}>{o}</option>
                     ))}
                   </select>
-                </div>
+                </FormFieldRow>
               </div>
             )}
 
