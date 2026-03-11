@@ -125,10 +125,10 @@ export default function CalvingScreen() {
         ].map((stat, i, arr) => (
           <div key={stat.label} className="flex items-center gap-3">
             <div className="flex flex-col items-center">
-              <span style={{ fontSize: 20, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>
+              <span style={{ fontSize: 18, fontWeight: 600, color: "white", lineHeight: 1 }}>
                 {stat.value}
               </span>
-              <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(168,230,218,0.70)", letterSpacing: "0.10em", marginTop: 2 }}>
+              <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(168,230,218,0.60)", letterSpacing: "0.08em", marginTop: 2 }}>
                 {stat.label}
               </span>
             </div>
