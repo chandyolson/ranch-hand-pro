@@ -1,21 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
+import { useGroups } from "@/hooks/useGroups";
+import { useLocations } from "@/hooks/useLocations";
 import { useChuteSideToast } from "../components/ToastContext";
-import { WORK_TYPES } from "@/lib/constants";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 
-const groupOptions = ["", "Spring Calvers", "Cow Herd", "Yearlings", "Bulls", "Replacement Heifers", "Summer Pairs"];
-const cattleTypeOptions = ["", "Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
-const locationOptions = ["", "Home Place", "East Pasture", "West Pasture", "Feedlot", "Sale Barn"];
-
-const templates = [
-  { name: "Spring Preg Check", type: "PREG" },
-  { name: "Fall Processing", type: "PROCESS" },
-  { name: "Winter Vaccination", type: "TX" },
-];
+const cattleTypeOptions = ["Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
 
 export default function CowWorkNewProjectScreen() {
-  const [date, setDate] = useState("2026-03-09");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [processingType, setProcessingType] = useState("");
   const [group, setGroup] = useState("");
   const [cattleType, setCattleType] = useState("");
@@ -24,8 +20,92 @@ export default function CowWorkNewProjectScreen() {
   const [productsOpen, setProductsOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [products, setProducts] = useState<{ name: string; dosage: string; route: string }[]>([]);
+  const [saving, setSaving] = useState(false);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
+  const { operationId } = useOperation();
+  const queryClient = useQueryClient();
+
+  const { data: groups } = useGroups();
+  const { data: locations } = useLocations();
+  const { data: workTypes } = useQuery({
+    queryKey: ["work-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("work_types")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: templates } = useQuery({
+    queryKey: ["project-templates", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_templates")
+        .select("*, work_type:work_types(code, name)")
+        .eq("operation_id", operationId);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleSave = async (startWorking: boolean) => {
+    if (!processingType) { showToast("error", "Processing type is required"); return; }
+    setSaving(true);
+    try {
+      const wt = (workTypes || []).find(w => w.id === processingType);
+      const grp = (groups || []).find(g => g.id === group);
+      const projectName = [wt?.name, grp?.name].filter(Boolean).join(" - ") || "New Project";
+      const displayId = [
+        new Date(date).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ""),
+        grp?.name?.substring(0, 20) || "",
+        wt?.code || "",
+      ].filter(Boolean).join("-");
+
+      const { data: project, error } = await supabase
+        .from("projects")
+        .insert({
+          operation_id: operationId,
+          name: projectName,
+          project_id_display: displayId,
+          date,
+          project_status: "Pending",
+          head_count: null,
+          group_id: group || null,
+          location_id: location || null,
+          description: memo.trim() || null,
+          record_individual_animals: true,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+
+      if (processingType) {
+        await supabase.from("project_work_types").insert({
+          project_id: project.id,
+          work_type_id: processingType,
+          is_primary: true,
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project-counts"] });
+      showToast("success", projectName + " created");
+
+      if (startWorking) {
+        navigate("/cow-work/" + project.id);
+      } else {
+        navigate("/cow-work");
+      }
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to create project");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
@@ -45,8 +125,8 @@ export default function CowWorkNewProjectScreen() {
           <label style={LABEL_STYLE}>Type</label>
           <select value={processingType} onChange={e => setProcessingType(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select type</option>
-            {WORK_TYPES.map(wt => (
-              <option key={wt.code} value={wt.code}>{wt.code} — {wt.name}</option>
+            {(workTypes || []).map(wt => (
+              <option key={wt.id} value={wt.id}>{wt.code} — {wt.name}</option>
             ))}
           </select>
         </div>
@@ -56,7 +136,9 @@ export default function CowWorkNewProjectScreen() {
           <label style={LABEL_STYLE}>Group</label>
           <select value={group} onChange={e => setGroup(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select group</option>
-            {groupOptions.filter(Boolean).map(o => <option key={o} value={o}>{o}</option>)}
+            {(groups || []).map(g => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
           </select>
         </div>
 
@@ -65,7 +147,7 @@ export default function CowWorkNewProjectScreen() {
           <label style={LABEL_STYLE}>Cattle Type</label>
           <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Optional</option>
-            {cattleTypeOptions.filter(Boolean).map(o => <option key={o} value={o}>{o}</option>)}
+            {cattleTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
 
@@ -74,7 +156,9 @@ export default function CowWorkNewProjectScreen() {
           <label style={LABEL_STYLE}>Location</label>
           <select value={location} onChange={e => setLocation(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Optional</option>
-            {locationOptions.filter(Boolean).map(o => <option key={o} value={o}>{o}</option>)}
+            {(locations || []).map(l => (
+              <option key={l.id} value={l.id}>{l.name}</option>
+            ))}
           </select>
         </div>
 
@@ -146,26 +230,30 @@ export default function CowWorkNewProjectScreen() {
 
         {templateOpen && (
           <div className="px-3 pb-2" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
-            {templates.map(t => (
-              <button
-                key={t.name}
-                className="flex items-center justify-between w-full py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.02)]"
-                style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", background: "none", border: "none", borderBottomStyle: "solid", borderBottomWidth: 1, borderBottomColor: "rgba(26,26,26,0.06)" }}
-                onClick={() => {
-                  setProcessingType(t.type);
-                  setTemplateOpen(false);
-                  showToast("success", "Template loaded");
-                }}
-              >
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{t.name}</span>
-                <span
-                  className="rounded-full"
-                  style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.15)", color: "#F3D12A" }}
+            {(templates || []).length === 0 ? (
+              <div className="text-center py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No templates</div>
+            ) : (
+              (templates || []).map(t => (
+                <button
+                  key={t.id}
+                  className="flex items-center justify-between w-full py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.02)]"
+                  style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", background: "none", border: "none", borderBottomStyle: "solid", borderBottomWidth: 1, borderBottomColor: "rgba(26,26,26,0.06)" }}
+                  onClick={() => {
+                    if (t.work_type_id) setProcessingType(t.work_type_id);
+                    setTemplateOpen(false);
+                    showToast("success", "Template loaded");
+                  }}
                 >
-                  {t.type}
-                </span>
-              </button>
-            ))}
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{t.name}</span>
+                  <span
+                    className="rounded-full"
+                    style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.15)", color: "#F3D12A" }}
+                  >
+                    {(t.work_type as any)?.code || ""}
+                  </span>
+                </button>
+              ))
+            )}
           </div>
         )}
       </div>
@@ -174,17 +262,19 @@ export default function CowWorkNewProjectScreen() {
       <div className="flex gap-3">
         <button
           className="flex-1 rounded-full py-3.5 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
-          style={{ fontSize: 14, fontWeight: 600, color: "#0E2646" }}
-          onClick={() => navigate("/cow-work")}
+          style={{ fontSize: 14, fontWeight: 600, color: "#0E2646", opacity: saving ? 0.5 : 1 }}
+          disabled={saving}
+          onClick={() => handleSave(false)}
         >
-          Save
+          {saving ? "Saving..." : "Save"}
         </button>
         <button
           className="flex-1 rounded-full py-3.5 bg-[#F3D12A] cursor-pointer active:scale-[0.97]"
-          style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A", border: "none" }}
-          onClick={() => navigate("/cow-work/spring-preg-2026")}
+          style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A", border: "none", opacity: saving ? 0.5 : 1 }}
+          disabled={saving}
+          onClick={() => handleSave(true)}
         >
-          Save & Work Cows
+          {saving ? "Saving..." : "Save & Work Cows"}
         </button>
       </div>
     </div>
