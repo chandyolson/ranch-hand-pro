@@ -197,29 +197,26 @@ export default function AddAnimalScreen() {
       <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         <div style={SUB_LABEL}>FLAG</div>
 
-        <div className="flex items-center gap-2 min-w-0">
-          <span style={LABEL_STYLE}>Flag</span>
-          <div className="flex gap-2 flex-wrap flex-1">
-            {FLAG_OPTIONS.map(f => {
-              const active = flag === f.color;
-              return (
-                <button
-                  key={f.color}
-                  className="rounded-full px-3 py-1.5 border cursor-pointer transition-all active:scale-[0.96]"
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    backgroundColor: active ? f.hex : "transparent",
-                    color: active ? (f.color === "gold" ? "#1A1A1A" : "white") : f.hex,
-                    borderColor: active ? f.hex : `${f.hex}40`,
-                  }}
-                  onClick={() => setFlag(active ? null : f.color)}
-                >
-                  {f.label}
-                </button>
-              );
-            })}
-          </div>
+        <div className="flex gap-2">
+          {FLAG_OPTIONS.map(f => {
+            const active = flag === f.color;
+            return (
+              <button
+                key={f.color}
+                className="flex-1 rounded-full py-2 border cursor-pointer transition-all active:scale-[0.96]"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  backgroundColor: active ? f.hex : "transparent",
+                  color: active ? (f.color === "gold" ? "#1A1A1A" : "white") : f.hex,
+                  borderColor: active ? f.hex : `${f.hex}40`,
+                }}
+                onClick={() => setFlag(active ? null : f.color)}
+              >
+                {f.label}
+              </button>
+            );
+          })}
         </div>
 
         {flag !== null && (
