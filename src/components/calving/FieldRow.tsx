@@ -23,7 +23,7 @@ const FieldRow: React.FC<FieldRowProps> = ({ label, req, children }) => (
       {label}
       {req && <span style={{ color: "#9B2335", marginLeft: 2 }}>*</span>}
     </span>
-    <div style={{ flex: 1, minWidth: 0, overflow: "hidden", display: "flex" }}>{children}</div>
+    <div style={{ flex: 1, minWidth: 0, display: "flex" }}>{children}</div>
   </div>
 );
 
