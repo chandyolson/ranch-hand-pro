@@ -1270,6 +1270,59 @@ export type Database = {
           },
         ]
       }
+      red_book_notes: {
+        Row: {
+          attachment_count: number
+          author_initials: string | null
+          body: string | null
+          category: string
+          created_at: string
+          created_by: string | null
+          has_action: boolean
+          id: string
+          is_pinned: boolean
+          operation_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_count?: number
+          author_initials?: string | null
+          body?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          has_action?: boolean
+          id?: string
+          is_pinned?: boolean
+          operation_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_count?: number
+          author_initials?: string | null
+          body?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          has_action?: boolean
+          id?: string
+          is_pinned?: boolean
+          operation_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "red_book_notes_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sire_details: {
         Row: {
           animal_id: string
