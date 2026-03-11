@@ -80,7 +80,7 @@ const ReferenceSettingsScreen: React.FC = () => {
         <div className="flex items-center gap-3 min-w-0"><span style={LABEL_STYLE}>Op Name</span><input type="text" value={operationName} onChange={e => setOperationName(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }} /></div>
         <div className="flex items-center gap-3 min-w-0"><span style={LABEL_STYLE}>Address</span><input type="text" value={address} onChange={e => setAddress(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }} /></div>
         <div className="flex items-center gap-3 min-w-0"><span style={LABEL_STYLE}>City</span><input type="text" value={city} onChange={e => setCity(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }} /></div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <span style={LABEL_STYLE}>State</span>
           <select value={state_} onChange={e => setState_(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }}>
             {usStates.map(s => <option key={s} value={s}>{s}</option>)}
