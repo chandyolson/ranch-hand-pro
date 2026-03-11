@@ -32,13 +32,15 @@ interface ListScreenToolbarProps {
   hideTitle?: boolean;
   compactAdd?: boolean;
   hideSort?: boolean;
+  hideFilter?: boolean;
+  advancedFilter?: React.ReactNode;
 }
 
 const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
   title, addLabel, onAdd, searchValue, onSearchChange, searchPlaceholder = "Search…",
   filterChips, activeFilter, onFilterChange, sortOptions, activeSort, onSortChange,
   onImport, onExport, onMassSelect, onMassEdit, resultCount, isFiltering,
-  hideTitle, compactAdd, hideSort,
+  hideTitle, compactAdd, hideSort, hideFilter, advancedFilter,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -106,6 +108,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
           </div>
         ) : <div className="flex-1" />}
         <div className="flex items-center gap-2 shrink-0">
+          {advancedFilter}
           {hasMenu && (
             <div className="relative" ref={menuRef}>
               <button
@@ -180,6 +183,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
       )}
 
       {/* Row 3: Filter dropdown + Sort */}
+      {!hideFilter && (
       <div className="flex items-center gap-1.5">
         <div className="relative flex-1" ref={filterRef}>
           <button
@@ -275,6 +279,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
           </div>
         )}
       </div>
+      )}
 
       {/* Result count */}
       {isFiltering && resultCount !== undefined && (

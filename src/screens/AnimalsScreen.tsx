@@ -2,9 +2,31 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DataCard from "@/components/DataCard";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
+import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnimals } from "@/hooks/useAnimals";
+import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilters";
+import { applyFilters } from "@/lib/filter-utils";
+import type { FilterFieldConfig } from "@/lib/filter-types";
+import {
+  SEX_OPTIONS, ANIMAL_TYPE_OPTIONS, STATUS_OPTIONS, BREED_OPTIONS, TAG_COLOR_OPTIONS,
+} from "@/lib/constants";
+
+const ANIMAL_FILTER_FIELDS: FilterFieldConfig[] = [
+  { key: "tag", label: "Tag", type: "text", group: "Identity" },
+  { key: "tag_color", label: "Tag Color", type: "select", options: [...TAG_COLOR_OPTIONS], group: "Identity" },
+  { key: "eid", label: "EID", type: "text", group: "Identity" },
+  { key: "sex", label: "Sex", type: "select", options: [...SEX_OPTIONS], group: "Identity" },
+  { key: "type", label: "Type", type: "select", options: [...ANIMAL_TYPE_OPTIONS], group: "Identity" },
+  { key: "breed", label: "Breed", type: "select", options: [...BREED_OPTIONS], group: "Identity" },
+  { key: "year_born", label: "Year Born", type: "range", group: "Identity" },
+  { key: "status", label: "Status", type: "select", options: [...STATUS_OPTIONS], group: "Identity" },
+  { key: "lifetime_id", label: "Lifetime ID", type: "text", group: "IDs" },
+  { key: "reg_name", label: "Reg Name", type: "text", group: "IDs" },
+  { key: "reg_number", label: "Reg Number", type: "text", group: "IDs" },
+  { key: "memo", label: "Memo", type: "text", group: "Notes" },
+];
 const TYPE_BADGE_COLORS: Record<string, { bg: string; text: string }> = {
   Calf:        { bg: "rgba(85,186,170,0.25)", text: "#55BAAA" },
   Feeder:      { bg: "rgba(243,209,42,0.20)", text: "#F3D12A" },
@@ -21,21 +43,24 @@ const getTypeBadge = (type?: string | null) => {
 
 const AnimalsScreen: React.FC = () => {
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("All");
   const [sort, setSort] = useState("tag-asc");
   const navigate = useNavigate();
   const { showToast } = useChuteSideToast();
 
   const { data: animals, isLoading, error, refetch } = useAnimals();
+  const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_animals");
+  const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_animals");
 
-  const filtered = (animals || [])
-    .filter(a => typeFilter === "All" || a.type === typeFilter)
-    .filter(a =>
-      !search ||
-      a.tag.toLowerCase().includes(search.toLowerCase()) ||
-      (a.breed || "").toLowerCase().includes(search.toLowerCase()) ||
-      (a.eid || "").toLowerCase().includes(search.toLowerCase())
-    )
+  const filtered = applyFilters(
+    (animals || [])
+      .filter(a =>
+        !search ||
+        a.tag.toLowerCase().includes(search.toLowerCase()) ||
+        (a.breed || "").toLowerCase().includes(search.toLowerCase()) ||
+        (a.eid || "").toLowerCase().includes(search.toLowerCase())
+      ),
+    filters
+  )
     .sort((a, b) => {
       switch (sort) {
         case "tag-asc": return a.tag.localeCompare(b.tag);
@@ -45,7 +70,7 @@ const AnimalsScreen: React.FC = () => {
       }
     });
 
-  const isFiltering = search.length > 0 || typeFilter !== "All";
+  const isFiltering = search.length > 0 || filters.length > 0;
 
   const allAnimals = animals || [];
   const stats = {
@@ -93,16 +118,9 @@ const AnimalsScreen: React.FC = () => {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search tags, breeds, EIDs…"
-        filterChips={[
-          { value: "All", label: "All" },
-          { value: "Cow", label: "Cow" },
-          { value: "Bull", label: "Bull" },
-          { value: "Calf", label: "Calf" },
-          { value: "Replacement", label: "Replacement" },
-          { value: "Feeder", label: "Feeder" },
-        ]}
-        activeFilter={typeFilter}
-        onFilterChange={setTypeFilter}
+        filterChips={[]}
+        activeFilter=""
+        onFilterChange={() => {}}
         sortOptions={[
           { value: "tag-asc", label: "Tag ↑" },
           { value: "tag-desc", label: "Tag ↓" },
@@ -116,6 +134,18 @@ const AnimalsScreen: React.FC = () => {
         onMassEdit={() => showToast("info", "Mass Edit — coming soon")}
         resultCount={filtered.length}
         isFiltering={isFiltering}
+        hideFilter
+        advancedFilter={
+          <AdvancedSearchPanel
+            fields={ANIMAL_FILTER_FIELDS}
+            filters={filters}
+            onFiltersChange={setFilters}
+            presets={presets}
+            onAddPreset={addPreset}
+            onDeletePreset={deletePreset}
+            onClearAll={clearFilters}
+          />
+        }
       />
 
       {isLoading && (
