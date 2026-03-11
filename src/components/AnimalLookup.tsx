@@ -10,7 +10,7 @@ interface AnimalResult {
   tag_color: string | null;
   eid: string | null;
   sex: string;
-  animal_type: string;
+  type: string | null;
   year_born: number | null;
   breed: string | null;
   status: string;
@@ -71,13 +71,13 @@ export default function AnimalLookup({
   const search = value.trim();
   const shouldSearch = search.length >= 1 && !selected;
 
-  const { data: results } = useQuery({
+  const { data: results, isFetching } = useQuery({
     queryKey: ["animal-lookup", search, operationId, sexFilter?.join(",")],
     queryFn: async () => {
       if (!search) return [];
       let query = supabase
         .from("animals")
-        .select("id, tag, tag_color, eid, sex, animal_type, year_born, breed, status")
+        .select("id, tag, tag_color, eid, sex, type, year_born, breed, status")
         .eq("operation_id", operationId)
         .eq("status", "Active");
 
@@ -94,11 +94,14 @@ export default function AnimalLookup({
       return rankResults(data || [], search);
     },
     enabled: shouldSearch,
+    staleTime: 0,
+    gcTime: 30_000,
+    refetchOnWindowFocus: false,
   });
 
   const ranked = results || [];
   const showDropdown = focused && shouldSearch && ranked.length > 0;
-  const showNoMatch = focused && shouldSearch && search.length >= 2 && ranked.length === 0;
+  const showNoMatch = focused && shouldSearch && search.length >= 2 && ranked.length === 0 && !isFetching;
 
   // Auto-select on exact single match
   useEffect(() => {
@@ -201,7 +204,7 @@ export default function AnimalLookup({
               </span>
               {/* Details */}
               <span style={{ fontSize: 12, fontWeight: 400, color: "rgba(26,26,26,0.45)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
-                {[a.animal_type, a.breed, a.year_born].filter(Boolean).join(" · ")}
+                {[a.type, a.breed, a.year_born].filter(Boolean).join(" · ")}
               </span>
               {/* Sex badge */}
               <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.04em", padding: "2px 6px", borderRadius: 9999, backgroundColor: "rgba(14,38,70,0.06)", color: "rgba(14,38,70,0.50)", flexShrink: 0 }}>
@@ -209,6 +212,18 @@ export default function AnimalLookup({
               </span>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Loading indicator */}
+      {focused && shouldSearch && isFetching && ranked.length === 0 && (
+        <div style={{
+          position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, marginTop: 4,
+          backgroundColor: "white", borderRadius: 12,
+          border: "1px solid #D4D4D0", boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
+          padding: 12, textAlign: "center" as const,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.35)" }}>Searching...</div>
         </div>
       )}
 
