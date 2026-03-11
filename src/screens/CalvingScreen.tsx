@@ -111,7 +111,7 @@ export default function CalvingScreen() {
   const isFiltering = search.length > 0 || filter !== "All";
 
   return (
-    <div className="px-4 pt-2 pb-10 space-y-2">
+    <div className="px-4 pt-1 pb-10 space-y-2">
       {/* Season stats bar */}
       <div
         className="rounded-xl px-3 py-2.5 flex items-center justify-between"
@@ -128,7 +128,7 @@ export default function CalvingScreen() {
               <span style={{ fontSize: 18, fontWeight: 600, color: "white", lineHeight: 1 }}>
                 {stat.value}
               </span>
-              <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(168,230,218,0.60)", letterSpacing: "0.08em", marginTop: 2 }}>
+              <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(168,230,218,0.60)", letterSpacing: "0.08em", marginTop: 4 }}>
                 {stat.label}
               </span>
             </div>
