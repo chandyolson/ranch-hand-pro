@@ -493,7 +493,7 @@ export default function CowWorkProjectDetailScreen() {
             <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div style={SUB_LABEL}>ADDITIONAL</div>
               <FormFieldRow label="Weight">
-                <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={FIELD_INPUT_CLS} />
+                <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
               </FormFieldRow>
               <FormFieldRow label="Quick Note">
                 <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" className={FIELD_INPUT_CLS} />
