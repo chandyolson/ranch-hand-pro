@@ -5,9 +5,10 @@ interface DataCardProps {
   values: string[];
   trailing?: ReactNode;
   subtitle?: string[];
+  badge?: { label: string; bg: string; text: string };
 }
 
-const DataCard: React.FC<DataCardProps> = ({ title, values, trailing, subtitle }) => {
+const DataCard: React.FC<DataCardProps> = ({ title, values, trailing, subtitle, badge }) => {
   return (
     <div
       className="rounded-xl px-4 font-inter flex items-start justify-between gap-3"
@@ -26,6 +27,14 @@ const DataCard: React.FC<DataCardProps> = ({ title, values, trailing, subtitle }
           </div>
         )}
       </div>
+      {badge && (
+        <div
+          className="shrink-0 rounded-md px-2 py-0.5"
+          style={{ backgroundColor: badge.bg, color: badge.text, fontSize: 10, fontWeight: 700, letterSpacing: "0.04em" }}
+        >
+          {badge.label}
+        </div>
+      )}
       {trailing && <div className="shrink-0 pt-0.5">{trailing}</div>}
     </div>
   );
