@@ -163,6 +163,11 @@ export default function CalvingRecordScreen() {
   const [activeTab, setActiveTab] = useState("record");
   const [fields, setFields] = useState<CalvingRecord>({ ...(record || {} as CalvingRecord) });
 
+  // Sync fields when record loads from DB
+  useEffect(() => {
+    if (record) setFields({ ...record });
+  }, [dbRecord]);
+
   const set = <K extends keyof CalvingRecord>(key: K, val: CalvingRecord[K]) =>
     setFields(prev => ({ ...prev, [key]: val }));
 
@@ -171,7 +176,7 @@ export default function CalvingRecordScreen() {
     setIsEditing(false);
   };
   const handleCancel = () => {
-    setFields({ ...record });
+    if (record) setFields({ ...record });
     setIsEditing(false);
   };
 
