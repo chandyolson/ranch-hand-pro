@@ -52,7 +52,9 @@ const AppLayout: React.FC = () => {
 
   let config = routeConfig[path];
   if (isHome) {
-    config = { title: operationName, subtitle: "" };
+    config = { title: operationName, subtitle: `Ranch · ${counts?.total ?? '...'} Head · Active` };
+  } else if (path === "/animals") {
+    config = { title: "Animals", subtitle: `${counts?.total ?? '...'} Total · ${counts?.active ?? '...'} Active` };
   } else if (!config) {
     if (isAnimalDetail) {
       config = { title: "Animal Record", subtitle: "Animal Detail" };
