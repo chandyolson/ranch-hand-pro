@@ -4,25 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import CowWorkProjectCard from "@/components/CowWorkProjectCard";
+import ListScreenToolbar from "@/components/ListScreenToolbar";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const filterOptions: { value: "all" | "pending" | "in-progress" | "completed"; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "pending", label: "Pending" },
-  { value: "in-progress", label: "In Progress" },
-  { value: "completed", label: "Completed" },
-];
-
-const statusMap: Record<string, string> = {
-  "pending": "Pending",
-  "in-progress": "In Progress",
-  "completed": "Completed",
-};
+import { useChuteSideToast } from "@/components/ToastContext";
 
 export default function CowWorkScreen() {
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "in-progress" | "completed">("all");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("newest");
   const navigate = useNavigate();
   const { operationId } = useOperation();
+  const { showToast } = useChuteSideToast();
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ["projects", operationId],
@@ -53,107 +45,147 @@ export default function CowWorkScreen() {
     },
   });
 
-  const mapped = (projects || []).map((p) => ({
-    id: p.id,
-    name: p.name,
-    date: new Date(p.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-    status: p.project_status.toLowerCase().replace(" ", "-") as "pending" | "in-progress" | "completed",
-    type: (p.work_types as any)?.[0]?.work_type?.code || "",
-    group: (p.group as any)?.name || "",
-    headCount: p.head_count || 0,
-    workedCount: workCounts?.[p.id] || 0,
-  }));
+  const mapped = (projects || []).map((p) => {
+    const workType = (p.work_types as any)?.[0]?.work_type;
+    return {
+      id: p.id,
+      name: p.name,
+      date: new Date(p.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      status: p.project_status.toLowerCase().replace(" ", "-") as "pending" | "in-progress" | "completed",
+      type: workType?.name || workType?.code || "",
+      typeCode: workType?.code || "",
+      group: (p.group as any)?.name || "",
+      headCount: p.head_count || 0,
+      workedCount: workCounts?.[p.id] || 0,
+    };
+  });
 
-  const filtered = statusFilter === "all" ? mapped : mapped.filter((p) => p.status === statusFilter);
-  const inProgressCount = mapped.filter((p) => p.status === "in-progress").length;
-  const activeHead = mapped.filter((p) => p.status === "pending" || p.status === "in-progress").reduce((s, p) => s + p.headCount, 0);
+  const statusFilterMap: Record<string, string> = {
+    All: "all",
+    Pending: "pending",
+    "In Progress": "in-progress",
+    Completed: "completed",
+  };
+
+  const filterVal = statusFilterMap[statusFilter] || "all";
+
+  const filtered = mapped
+    .filter((p) => filterVal === "all" || p.status === filterVal)
+    .filter((p) =>
+      !search ||
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.type.toLowerCase().includes(search.toLowerCase()) ||
+      p.group.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
+      switch (sort) {
+        case "newest": return 0; // already sorted by date desc from DB
+        case "oldest": return -1; // reverse
+        case "name": return a.name.localeCompare(b.name);
+        default: return 0;
+      }
+    });
+
+  const isFiltering = search.length > 0 || statusFilter !== "All";
+
+  const allProjects = mapped;
+  const stats = {
+    total: allProjects.length,
+    open: allProjects.filter((p) => p.status !== "completed").length,
+    inProgress: allProjects.filter((p) => p.status === "in-progress").length,
+    headActive: allProjects
+      .filter((p) => p.status === "pending" || p.status === "in-progress")
+      .reduce((s, p) => s + p.headCount, 0),
+  };
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div style={{ fontSize: 22, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>Cow Work</div>
-        <div className="flex items-center gap-2">
-          <button
-            className="rounded-full w-9 h-9 flex items-center justify-center border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16">
-              <rect x="2" y="3" width="12" height="2" rx="1" fill="#0E2646" />
-              <rect x="2" y="7" width="8" height="2" rx="1" fill="#0E2646" />
-              <rect x="2" y="11" width="10" height="2" rx="1" fill="#0E2646" />
-            </svg>
-          </button>
-          <button
-            className="rounded-full h-9 px-4 bg-[#F3D12A] flex items-center gap-1.5 cursor-pointer active:scale-[0.97]"
-            style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", border: "none" }}
-            onClick={() => navigate("/cow-work/new")}
-          >
-            + New
-          </button>
-        </div>
-      </div>
-
-      {/* Filter chips */}
-      <div className="flex gap-2 flex-wrap">
-        {filterOptions.map((f) => {
-          const active = statusFilter === f.value;
-          return (
-            <button
-              key={f.value}
-              className="rounded-full px-3.5 py-1.5 cursor-pointer border transition-all duration-150 active:scale-[0.96]"
-              style={{
-                backgroundColor: active ? "#0E2646" : "white",
-                borderColor: active ? "#0E2646" : "rgba(212,212,208,0.80)",
-                color: active ? "white" : "rgba(26,26,26,0.50)",
-                fontSize: 12,
-                fontWeight: active ? 700 : 500,
-              }}
-              onClick={() => setStatusFilter(f.value)}
-            >
-              {f.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Stats summary */}
-      <div className="flex gap-3">
+    <div className="px-4 pt-2 pb-10 space-y-2">
+      {/* Stats bar */}
+      <div
+        className="rounded-xl px-3 py-2.5 flex items-center justify-between"
+        style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
+      >
         {[
-          { value: inProgressCount, label: "IN PROGRESS" },
-          { value: activeHead, label: "HEAD ACTIVE" },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="flex-1 rounded-xl px-4 py-3"
-            style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
-          >
-            <div style={{ fontSize: 28, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>{s.value}</div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(168,230,218,0.70)", textTransform: "uppercase", marginTop: 4 }}>{s.label}</div>
+          { label: "TOTAL", value: isLoading ? "—" : stats.total },
+          { label: "OPEN", value: isLoading ? "—" : stats.open },
+          { label: "ACTIVE", value: isLoading ? "—" : stats.inProgress },
+          { label: "HEAD", value: isLoading ? "—" : stats.headActive },
+        ].map((stat, i, arr) => (
+          <div key={stat.label} className="flex items-center gap-3">
+            <div className="flex flex-col items-center">
+              <span style={{ fontSize: 20, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>
+                {stat.value}
+              </span>
+              <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(168,230,218,0.70)", letterSpacing: "0.10em", marginTop: 2 }}>
+                {stat.label}
+              </span>
+            </div>
+            {i < arr.length - 1 && (
+              <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.12)" }} />
+            )}
           </div>
         ))}
       </div>
 
+      <ListScreenToolbar
+        title="Cow Work"
+        addLabel="New Project"
+        hideTitle
+        compactAdd
+        onAdd={() => navigate("/cow-work/new")}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search projects, types, groups…"
+        filterChips={[
+          { value: "All", label: "All" },
+          { value: "Pending", label: "Pending" },
+          { value: "In Progress", label: "In Progress" },
+          { value: "Completed", label: "Completed" },
+        ]}
+        activeFilter={statusFilter}
+        onFilterChange={setStatusFilter}
+        sortOptions={[
+          { value: "newest", label: "Newest" },
+          { value: "oldest", label: "Oldest" },
+          { value: "name", label: "Name" },
+        ]}
+        activeSort={sort}
+        onSortChange={setSort}
+        onImport={() => showToast("info", "Import — coming soon")}
+        onExport={() => showToast("info", "Export — coming soon")}
+        onMassSelect={() => showToast("info", "Mass Select — coming soon")}
+        onMassEdit={() => showToast("info", "Mass Edit — coming soon")}
+        resultCount={filtered.length}
+        isFiltering={isFiltering}
+      />
+
       {/* Project list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-        {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
-          ))
-        ) : filtered.length > 0 ? (
-          filtered.map((p) => (
-            <CowWorkProjectCard
-              key={p.id}
-              {...p}
-              onClick={() => navigate("/cow-work/" + p.id)}
-            />
-          ))
-        ) : (
-          <div className="text-center py-12">
-            <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No projects</div>
-            <div style={{ fontSize: 13, fontWeight: 400, color: "rgba(26,26,26,0.30)", marginTop: 4 }}>Try a different filter</div>
-          </div>
-        )}
-      </div>
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[100px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.15)" }} />
+          ))}
+        </div>
+      )}
+
+      {!isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {filtered.length > 0 ? (
+            filtered.map((p) => (
+              <CowWorkProjectCard
+                key={p.id}
+                {...p}
+                onClick={() => navigate("/cow-work/" + p.id)}
+              />
+            ))
+          ) : (
+            <div className="py-12 text-center space-y-1.5">
+              <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No projects found</div>
+              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or filter</div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "../components/ToastContext";
 import FlagIcon from "../components/FlagIcon";
+import FormFieldRow from "../components/FormFieldRow";
 import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, type FlagColor } from "@/lib/constants";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -487,7 +488,7 @@ export default function CowWorkProjectDetailScreen() {
                       <option key={o} value={o}>{o}</option>
                     ))}
                   </select>
-                </div>
+                </FormFieldRow>
               </div>
             )}
 
@@ -505,7 +506,7 @@ export default function CowWorkProjectDetailScreen() {
               <div className="flex items-center gap-3 min-w-0">
                 <label style={LABEL_STYLE}>Sample ID</label>
                 <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={INPUT_CLS} />
-              </div>
+              </FormFieldRow>
               <div className="pt-2">
                 <div style={{ ...SUB_LABEL, marginBottom: 6 }}>MEMO</div>
                 <textarea

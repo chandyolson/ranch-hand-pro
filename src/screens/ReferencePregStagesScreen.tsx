@@ -53,9 +53,7 @@ const ReferencePregStagesScreen: React.FC = () => {
     <div className="px-4 pt-4 pb-10 space-y-3">
       <div className="flex items-center justify-between">
         <span style={{ fontSize: 20, fontWeight: 800, color: "#0E2646" }}>Preg Stages</span>
-        <button className="rounded-full h-9 px-4 flex items-center gap-1.5 cursor-pointer active:scale-[0.97]" style={{ backgroundColor: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A", border: "none" }} onClick={() => setAddOpen(true)}>
-          <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>+</span> Add Stage
-        </button>
+        <button className="flex items-center justify-center cursor-pointer active:scale-[0.95]" style={{ width: 36, height: 36, borderRadius: 9999, backgroundColor: "#F3D12A", border: "none", fontSize: 20, fontWeight: 700, color: "#1A1A1A", lineHeight: 1 }} onClick={() => setAddOpen(true)}>+</button>
       </div>
 
       {addOpen && (

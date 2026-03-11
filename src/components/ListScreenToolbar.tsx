@@ -139,21 +139,11 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
               )}
             </div>
           )}
-          {compactAdd ? (
-            <button
-              className="flex items-center justify-center cursor-pointer active:scale-[0.95]"
-              style={{ width: 36, height: 36, borderRadius: 9999, backgroundColor: "#F3D12A", border: "none", fontSize: 20, fontWeight: 700, color: "#1A1A1A", lineHeight: 1 }}
-              onClick={onAdd}
-            >+</button>
-          ) : (
-            <button
-              className="rounded-full flex items-center gap-1.5 cursor-pointer active:scale-[0.97]"
-              style={{ height: 36, paddingLeft: 16, paddingRight: 16, backgroundColor: "#F3D12A", border: "none", fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}
-              onClick={onAdd}
-            >
-              <span style={{ fontSize: 16, fontWeight: 600, lineHeight: 1 }}>+</span> {addLabel}
-            </button>
-          )}
+          <button
+            className="flex items-center justify-center cursor-pointer active:scale-[0.95]"
+            style={{ width: 36, height: 36, borderRadius: 9999, backgroundColor: "#F3D12A", border: "none", fontSize: 20, fontWeight: 700, color: "#1A1A1A", lineHeight: 1 }}
+            onClick={onAdd}
+          >+</button>
         </div>
       </div>
 

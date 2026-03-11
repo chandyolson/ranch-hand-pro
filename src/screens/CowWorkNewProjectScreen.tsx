@@ -6,7 +6,8 @@ import { useOperation } from "@/contexts/OperationContext";
 import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
 import { useChuteSideToast } from "../components/ToastContext";
-import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
+import FormFieldRow from "../components/FormFieldRow";
+import { INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 
 const cattleTypeOptions = ["Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
 
@@ -19,7 +20,8 @@ export default function CowWorkNewProjectScreen() {
   const [memo, setMemo] = useState("");
   const [productsOpen, setProductsOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
-  const [products, setProducts] = useState<{ name: string; dosage: string; route: string }[]>([]);
+  const [products, setProducts] = useState<{ id: string; name: string; dosage: string; route: string }[]>([]);
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
@@ -35,6 +37,18 @@ export default function CowWorkNewProjectScreen() {
         .from("work_types")
         .select("*")
         .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: opProducts } = useQuery({
+    queryKey: ["operation-products", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("operation_products")
+        .select("*, product:products(id, name, dosage, route)")
+        .eq("operation_id", operationId);
       if (error) throw error;
       return data;
     },
@@ -118,7 +132,7 @@ export default function CowWorkNewProjectScreen() {
         <div className="flex items-center gap-3 min-w-0">
           <label style={LABEL_STYLE}>Date</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className={INPUT_CLS} />
-        </div>
+        </FormFieldRow>
 
         {/* Type */}
         <div className="flex items-center gap-3 min-w-0">
@@ -129,7 +143,7 @@ export default function CowWorkNewProjectScreen() {
               <option key={wt.id} value={wt.id}>{wt.code} — {wt.name}</option>
             ))}
           </select>
-        </div>
+        </FormFieldRow>
 
         {/* Group */}
         <div className="flex items-center gap-3 min-w-0">
@@ -140,7 +154,7 @@ export default function CowWorkNewProjectScreen() {
               <option key={g.id} value={g.id}>{g.name}</option>
             ))}
           </select>
-        </div>
+        </FormFieldRow>
 
         {/* Cattle Type */}
         <div className="flex items-center gap-3 min-w-0">
@@ -149,7 +163,7 @@ export default function CowWorkNewProjectScreen() {
             <option value="" disabled>Optional</option>
             {cattleTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
-        </div>
+        </FormFieldRow>
 
         {/* Location */}
         <div className="flex items-center gap-3 min-w-0">
@@ -160,7 +174,7 @@ export default function CowWorkNewProjectScreen() {
               <option key={l.id} value={l.id}>{l.name}</option>
             ))}
           </select>
-        </div>
+        </FormFieldRow>
 
         {/* Memo */}
         <div className="pt-2">
@@ -193,24 +207,78 @@ export default function CowWorkNewProjectScreen() {
               <div className="text-center py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products added</div>
             ) : (
               products.map((p, i) => (
-                <div key={i} className="flex items-center gap-2 py-2" style={{ borderBottom: "1px solid rgba(26,26,26,0.06)" }}>
-                  <span className="flex-1" style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{p.name}</span>
-                  <span style={{ fontSize: 13, color: "rgba(26,26,26,0.50)" }}>{p.dosage} · {p.route}</span>
+                <div key={p.id} className="flex items-center gap-2 py-2" style={{ borderBottom: "1px solid rgba(26,26,26,0.06)" }}>
+                  <span className="flex-1 min-w-0 truncate" style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{p.name}</span>
+                  <span className="shrink-0" style={{ fontSize: 13, color: "rgba(26,26,26,0.50)" }}>{[p.dosage, p.route].filter(Boolean).join(" · ")}</span>
                   <button
-                    className="cursor-pointer active:scale-[0.97]"
+                    className="cursor-pointer active:scale-[0.97] shrink-0"
                     style={{ fontSize: 16, color: "rgba(26,26,26,0.30)", background: "none", border: "none", padding: "0 4px" }}
                     onClick={() => setProducts(prev => prev.filter((_, idx) => idx !== i))}
                   >×</button>
                 </div>
               ))
             )}
-            <button
-              className="mt-2 rounded-full px-4 py-2 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
-              style={{ fontSize: 13, fontWeight: 600, color: "#0E2646" }}
-              onClick={() => setProducts(prev => [...prev, { name: "Multimin 90", dosage: "12 mL", route: "SQ" }])}
-            >
-              + Add Product
-            </button>
+
+            {/* Product picker toggle */}
+            {!productPickerOpen ? (
+              <button
+                className="mt-2 rounded-full px-4 py-2 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
+                style={{ fontSize: 13, fontWeight: 600, color: "#0E2646" }}
+                onClick={() => setProductPickerOpen(true)}
+              >
+                + Add Product
+              </button>
+            ) : (
+              <div className="mt-2 space-y-1.5">
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>SELECT PRODUCT</div>
+                {(opProducts || []).length === 0 ? (
+                  <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)", padding: "8px 0" }}>
+                    No products configured. Add products in Reference &gt; Treatments.
+                  </div>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto space-y-0 rounded-lg" style={{ border: "1px solid #D4D4D0" }}>
+                    {(opProducts || []).map(op => {
+                      const prod = op.product as any;
+                      if (!prod) return null;
+                      const alreadyAdded = products.some(p => p.id === prod.id);
+                      return (
+                        <button
+                          key={op.id}
+                          className="flex items-center justify-between w-full px-3 py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.03)]"
+                          style={{
+                            background: alreadyAdded ? "rgba(85,186,170,0.06)" : "white",
+                            border: "none",
+                            borderBottom: "1px solid rgba(26,26,26,0.06)",
+                            opacity: alreadyAdded ? 0.5 : 1,
+                          }}
+                          disabled={alreadyAdded}
+                          onClick={() => {
+                            setProducts(prev => [...prev, {
+                              id: prod.id,
+                              name: prod.name,
+                              dosage: op.custom_dosage || prod.dosage || "",
+                              route: prod.route || "",
+                            }]);
+                          }}
+                        >
+                          <span className="truncate" style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{prod.name}</span>
+                          <span className="shrink-0 ml-2" style={{ fontSize: 12, color: "rgba(26,26,26,0.40)" }}>
+                            {alreadyAdded ? "Added" : [op.custom_dosage || prod.dosage, prod.route].filter(Boolean).join(" · ")}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <button
+                  className="rounded-full px-4 py-1.5 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
+                  style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.50)" }}
+                  onClick={() => setProductPickerOpen(false)}
+                >
+                  Done
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

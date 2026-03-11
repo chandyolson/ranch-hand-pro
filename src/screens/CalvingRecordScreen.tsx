@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
 import CollapsibleSection from "../components/CollapsibleSection";
 import FlagIcon from "../components/FlagIcon";
 import { useChuteSideToast } from "../components/ToastContext";
@@ -103,11 +106,67 @@ export default function CalvingRecordScreen() {
   const navigate = useNavigate();
   const { showToast } = useChuteSideToast();
 
-  const record = calvingRecords[id || "c1"] || calvingRecords["c1"];
+  const { operationId } = useOperation();
+
+  const { data: dbRecord, isLoading } = useQuery({
+    queryKey: ["calving-record", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("calving_records")
+        .select("*, dam:animals!calving_records_dam_id_fkey(tag, tag_color, sex, type, year_born)")
+        .eq("id", id)
+        .eq("operation_id", operationId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  // Map database fields to screen display fields
+  const dam = dbRecord?.dam as any;
+  const record = dbRecord ? {
+    id: dbRecord.id,
+    date: dbRecord.calving_date,
+    group: "",
+    location: "",
+    damTag: dam?.tag || "Unknown",
+    damColor: dam?.tag_color || "None",
+    damColorHex: TAG_COLOR_HEX[dam?.tag_color] || "#999",
+    damType: dam?.type || dam?.sex || "",
+    damYearBorn: dam?.year_born ? String(dam.year_born) : "",
+    damFlag: null as FlagColor | null,
+    calfTag: "",
+    calfColor: "Yellow",
+    calfColorHex: "#F3D12A",
+    calfEid: "",
+    calfSex: (dbRecord.calf_sex || "Unknown") as "Bull" | "Heifer" | "Unknown",
+    calfStatus: (dbRecord.calf_status || "Alive") as "Alive" | "Dead",
+    birthWeight: dbRecord.birth_weight ? String(dbRecord.birth_weight) : "",
+    calfSize: dbRecord.calf_size ? String(dbRecord.calf_size) : "",
+    sire: "",
+    disposition: dbRecord.disposition ? String(dbRecord.disposition) : "",
+    assistance: dbRecord.assistance ? String(dbRecord.assistance) : "",
+    udder: dbRecord.udder ? String(dbRecord.udder) : "",
+    teat: dbRecord.teat ? String(dbRecord.teat) : "",
+    claw: dbRecord.claw ? String(dbRecord.claw) : "",
+    foot: dbRecord.foot ? String(dbRecord.foot) : "",
+    mothering: dbRecord.mothering ? String(dbRecord.mothering) : "",
+    calfVigor: dbRecord.calf_vigor ? String(dbRecord.calf_vigor) : "",
+    calfSize2: dbRecord.calf_size ? String(dbRecord.calf_size) : "",
+    quickNotes: [] as string[],
+    memo: dbRecord.memo || "",
+  } : null;
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("record");
-  const [fields, setFields] = useState<CalvingRecord>({ ...record });
+  const [fields, setFields] = useState<CalvingRecord>({ ...(record || { quickNotes: [], memo: "", damTag: "", damColor: "None", damColorHex: "#999", damType: "", damYearBorn: "", damFlag: null, calfTag: "", calfColor: "Yellow", calfColorHex: "#F3D12A", calfEid: "", calfSex: "Unknown", calfStatus: "Alive", birthWeight: "", calfSize: "", sire: "", disposition: "", assistance: "", udder: "", teat: "", claw: "", foot: "", mothering: "", calfVigor: "", calfSize2: "", date: "", group: "", location: "", id: "" } as CalvingRecord) });
+
+  // Sync fields when record loads from DB
+  useEffect(() => {
+    if (record) setFields({ ...record });
+  }, [dbRecord]);
 
   const set = <K extends keyof CalvingRecord>(key: K, val: CalvingRecord[K]) =>
     setFields(prev => ({ ...prev, [key]: val }));
@@ -117,7 +176,7 @@ export default function CalvingRecordScreen() {
     setIsEditing(false);
   };
   const handleCancel = () => {
-    setFields({ ...record });
+    if (record) setFields({ ...record });
     setIsEditing(false);
   };
 
@@ -135,6 +194,21 @@ export default function CalvingRecordScreen() {
   const assistanceLabel = assistanceVal > 1 ? scoreLabels.assistance[assistanceVal] : null;
 
   const flagInfo = fields.damFlag ? FLAG_OPTIONS.find(f => f.color === fields.damFlag) : null;
+
+  if (isLoading || !record) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+        <div style={{
+          width: 40, height: 40,
+          border: "4px solid #D4D4D0",
+          borderTopColor: "#F3D12A",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 space-y-0 pb-10">
@@ -171,7 +245,7 @@ export default function CalvingRecordScreen() {
                   color: fields.calfSex === "Bull" ? "#55BAAA" : "#E8A0BF",
                 }}
               >
-                {fields.calfSex.toUpperCase()}
+                {(fields.calfSex || "").toUpperCase()}
               </span>
               {fields.calfStatus === "Dead" && (
                 <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(155,35,53,0.20)", color: "#D4606E" }}>DEAD</span>

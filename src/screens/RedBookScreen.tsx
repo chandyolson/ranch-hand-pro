@@ -1,29 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
 import RedBookCard from "@/components/RedBookCard";
-
-interface RedBookEntry {
-  id: string;
-  title: string;
-  body?: string;
-  category: "invoice" | "cattle-note" | "document" | "repairs";
-  date: string;
-  authorInitials: string;
-  isPinned: boolean;
-  hasAction: boolean;
-  attachmentCount: number;
-}
-
-const entries: RedBookEntry[] = [
-  { id: "rb1", title: "Vet bill — spring preg check", body: "Total $842. Paid by check #1041. Dr. Hendricks — Prairie Vet Clinic. Breakdown: 45 head preg check at $14/head, 3 treatments billed separately.", category: "invoice", date: "Feb 24, 2026", authorInitials: "JO", isPinned: true, hasAction: false, attachmentCount: 2 },
-  { id: "rb2", title: "Cow 3309 — watch rear hooves", body: "Noticed slight limp on left rear leaving chute. Not bad enough to treat yet. Check again at weaning.", category: "cattle-note", date: "Feb 24, 2026", authorInitials: "JO", isPinned: false, hasAction: true, attachmentCount: 0 },
-  { id: "rb3", title: "Tractor hydraulic line repair", body: "Line blew on the 4440. Temp fix with tape. Get proper fitting from O'Reilly — 3/8 JIC 37 degree fitting.", category: "repairs", date: "Feb 20, 2026", authorInitials: "TW", isPinned: false, hasAction: true, attachmentCount: 1 },
-  { id: "rb4", title: "Hay inventory — Feb 2026", body: "East shed: 140 small squares, 22 rounds. West shed: 8 rounds. Should carry through April at current feeding rate.", category: "cattle-note", date: "Feb 18, 2026", authorInitials: "JO", isPinned: false, hasAction: false, attachmentCount: 0 },
-  { id: "rb5", title: "Brand inspection cert — spring 2026", body: "", category: "document", date: "Feb 10, 2026", authorInitials: "JO", isPinned: false, hasAction: false, attachmentCount: 1 },
-  { id: "rb6", title: "Feed bill — January", body: "Larson Feed: $2,140 for 4 tons range cubes + mineral. Net 30 terms. Due Feb 28.", category: "invoice", date: "Feb 1, 2026", authorInitials: "JO", isPinned: false, hasAction: true, attachmentCount: 1 },
-  { id: "rb7", title: "Bull 101 — pasture rotation note", body: "Moved Bull 101 to south pasture with spring calvers. Pull by June 1.", category: "cattle-note", date: "Jan 28, 2026", authorInitials: "TW", isPinned: false, hasAction: false, attachmentCount: 0 },
-  { id: "rb8", title: "Fence repair — north section", body: "Three posts down on the north line near the windmill. Need 10 T-posts and staples. Snow melts first.", category: "repairs", date: "Jan 15, 2026", authorInitials: "JO", isPinned: false, hasAction: true, attachmentCount: 0 },
-];
+import { Skeleton } from "@/components/ui/skeleton";
 
 const filterChips = [
   { value: "all", label: "All" },
@@ -37,22 +18,34 @@ const RedBookScreen: React.FC = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const navigate = useNavigate();
+  const { operationId } = useOperation();
 
-  const filtered = entries
+  const { data: entries, isLoading } = useQuery({
+    queryKey: ["red-book-notes", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("red_book_notes")
+        .select("*")
+        .eq("operation_id", operationId)
+        .order("is_pinned", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const notes = entries || [];
+
+  const filtered = notes
     .filter(e => categoryFilter === "all" || e.category === categoryFilter)
     .filter(e =>
       !search ||
       e.title.toLowerCase().includes(search.toLowerCase()) ||
       (e.body || "").toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      return 0;
-    });
+    );
 
-  const actionCount = entries.filter(e => e.hasAction).length;
-  const firstPinnedIdx = filtered.findIndex(e => e.isPinned);
+  const actionCount = notes.filter(e => e.has_action).length;
+  const firstPinnedIdx = filtered.findIndex(e => e.is_pinned);
   const isFiltering = search || categoryFilter !== "all";
 
   return (
@@ -61,12 +54,10 @@ const RedBookScreen: React.FC = () => {
       <div className="flex items-center justify-between">
         <span style={{ fontSize: 22, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>Red Book</span>
         <button
-          className="rounded-full h-9 px-4 flex items-center gap-1.5 cursor-pointer active:scale-[0.97]"
-          style={{ backgroundColor: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A", border: "none" }}
+          className="flex items-center justify-center cursor-pointer active:scale-[0.95]"
+          style={{ width: 36, height: 36, borderRadius: 9999, backgroundColor: "#F3D12A", border: "none", fontSize: 20, fontWeight: 700, color: "#1A1A1A", lineHeight: 1 }}
           onClick={() => navigate("/red-book/new")}
-        >
-          <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>+</span> New
-        </button>
+        >+</button>
       </div>
 
       {/* Action banner */}
@@ -148,25 +139,49 @@ const RedBookScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Entry list */}
-      {filtered.length === 0 ? (
-        <div className="py-12 text-center space-y-1.5">
-          <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No notes found</div>
-          <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or category</div>
-        </div>
-      ) : (
+      {/* Loading */}
+      {isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {filtered.map((e, idx) => (
-            <React.Fragment key={e.id}>
-              {idx === firstPinnedIdx && e.isPinned && (
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.30)", textTransform: "uppercase", marginBottom: 4 }}>
-                  PINNED
-                </div>
-              )}
-              <RedBookCard {...e} onClick={() => navigate("/red-book/" + e.id)} />
-            </React.Fragment>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[100px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.15)" }} />
           ))}
         </div>
+      )}
+
+      {/* Entry list */}
+      {!isLoading && (
+        filtered.length === 0 ? (
+          <div className="py-12 text-center space-y-1.5">
+            <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No notes found</div>
+            <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>
+              {notes.length === 0 ? "Tap + New to create your first note" : "Try a different search or category"}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {filtered.map((e, idx) => (
+              <React.Fragment key={e.id}>
+                {idx === firstPinnedIdx && e.is_pinned && (
+                  <div className="md:col-span-2" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.30)", textTransform: "uppercase", marginBottom: 4 }}>
+                    PINNED
+                  </div>
+                )}
+                <RedBookCard
+                  id={e.id}
+                  title={e.title}
+                  body={e.body || undefined}
+                  category={e.category as any}
+                  date={new Date(e.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  authorInitials={e.author_initials || "—"}
+                  isPinned={e.is_pinned}
+                  hasAction={e.has_action}
+                  attachmentCount={e.attachment_count}
+                  onClick={() => navigate("/red-book/" + e.id)}
+                />
+              </React.Fragment>
+            ))}
+          </div>
+        )
       )}
     </div>
   );
