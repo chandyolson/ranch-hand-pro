@@ -496,7 +496,7 @@ export default function CowWorkProjectDetailScreen() {
                 <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
               </FormFieldRow>
               <FormFieldRow label="Quick Note">
-                <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" className={FIELD_INPUT_CLS} />
+                <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" className={INPUT_CLS} />
               </FormFieldRow>
               <FormFieldRow label="Sample ID">
                 <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={FIELD_INPUT_CLS} />
