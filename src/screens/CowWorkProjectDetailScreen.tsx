@@ -470,16 +470,16 @@ export default function CowWorkProjectDetailScreen() {
               <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
                 <div style={SUB_LABEL}>PREG CHECK</div>
                 <FormFieldRow label="Preg">
-                  <select value={pregResult} onChange={e => setPregResult(e.target.value)} className={INPUT_CLS}>
+                  <select value={pregResult} onChange={e => setPregResult(e.target.value)} className={FIELD_INPUT_CLS}>
                     <option value="" disabled>Select…</option>
                     <option>Confirmed</option><option>Open</option><option>Suspect</option><option>First Calf Heifer</option>
                   </select>
                 </FormFieldRow>
                 <FormFieldRow label="Days Gest.">
-                  <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" className={INPUT_CLS} />
+                  <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" className={FIELD_INPUT_CLS} />
                 </FormFieldRow>
                 <FormFieldRow label="Calf Sex">
-                  <select value={calfSex} onChange={e => setCalfSex(e.target.value)} className={INPUT_CLS}>
+                  <select value={calfSex} onChange={e => setCalfSex(e.target.value)} className={FIELD_INPUT_CLS}>
                     <option value="" disabled>Select…</option>
                     {PREG_CALF_SEX_OPTIONS.filter(o => o !== "None").map(o => (
                       <option key={o} value={o}>{o}</option>
@@ -493,13 +493,13 @@ export default function CowWorkProjectDetailScreen() {
             <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div style={SUB_LABEL}>ADDITIONAL</div>
               <FormFieldRow label="Weight">
-                <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
+                <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={FIELD_INPUT_CLS} />
               </FormFieldRow>
               <FormFieldRow label="Quick Note">
-                <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" className={INPUT_CLS} />
+                <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" className={FIELD_INPUT_CLS} />
               </FormFieldRow>
               <FormFieldRow label="Sample ID">
-                <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={INPUT_CLS} />
+                <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={FIELD_INPUT_CLS} />
               </FormFieldRow>
               <div className="pt-2">
                 <div style={{ ...SUB_LABEL, marginBottom: 6 }}>MEMO</div>
