@@ -1,26 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
 import CowWorkProjectCard from "@/components/CowWorkProjectCard";
-
-interface Project {
-  id: string;
-  name: string;
-  date: string;
-  status: "pending" | "in-progress" | "completed";
-  type: string;
-  group: string;
-  headCount: number;
-  workedCount: number;
-}
-
-const allProjects: Project[] = [
-  { id: "spring-preg-2026", name: "Spring Preg Check 2026", date: "Feb 24, 2026", status: "in-progress", type: "PREG", group: "Spring Calvers", headCount: 45, workedCount: 28 },
-  { id: "winter-vax-2026", name: "Winter Vaccination 2026", date: "Jan 14, 2026", status: "completed", type: "TX", group: "Cow Herd", headCount: 62, workedCount: 62 },
-  { id: "fall-processing-2025", name: "Fall Processing 2025", date: "Oct 15, 2025", status: "completed", type: "GEN", group: "Yearlings", headCount: 38, workedCount: 38 },
-  { id: "bse-bulls-2025", name: "BSE — Working Bulls 2025", date: "Apr 3, 2025", status: "completed", type: "BSE", group: "Bulls", headCount: 12, workedCount: 12 },
-  { id: "weaning-2025", name: "Spring Weaning 2025", date: "Sep 22, 2025", status: "completed", type: "WN", group: "Spring Calves", headCount: 41, workedCount: 41 },
-  { id: "new-project-pending", name: "Summer AI Program", date: "Mar 15, 2026", status: "pending", type: "AI", group: "Replacement Heifers", headCount: 24, workedCount: 0 },
-];
+import { Skeleton } from "@/components/ui/skeleton";
 
 const filterOptions: { value: "all" | "pending" | "in-progress" | "completed"; label: string }[] = [
   { value: "all", label: "All" },
@@ -29,13 +13,60 @@ const filterOptions: { value: "all" | "pending" | "in-progress" | "completed"; l
   { value: "completed", label: "Completed" },
 ];
 
+const statusMap: Record<string, string> = {
+  "pending": "Pending",
+  "in-progress": "In Progress",
+  "completed": "Completed",
+};
+
 export default function CowWorkScreen() {
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "in-progress" | "completed">("all");
   const navigate = useNavigate();
+  const { operationId } = useOperation();
 
-  const filtered = statusFilter === "all" ? allProjects : allProjects.filter(p => p.status === statusFilter);
-  const inProgressCount = allProjects.filter(p => p.status === "in-progress").length;
-  const activeHead = allProjects.filter(p => p.status === "pending" || p.status === "in-progress").reduce((s, p) => s + p.headCount, 0);
+  const { data: projects, isLoading } = useQuery({
+    queryKey: ["projects", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*, group:groups(name), work_types:project_work_types(work_type:work_types(code, name))")
+        .eq("operation_id", operationId)
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: workCounts } = useQuery({
+    queryKey: ["project-work-counts", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cow_work")
+        .select("project_id")
+        .eq("operation_id", operationId);
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      (data || []).forEach((r) => {
+        if (r.project_id) counts[r.project_id] = (counts[r.project_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
+  const mapped = (projects || []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    date: new Date(p.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    status: p.project_status.toLowerCase().replace(" ", "-") as "pending" | "in-progress" | "completed",
+    type: (p.work_types as any)?.[0]?.work_type?.code || "",
+    group: (p.group as any)?.name || "",
+    headCount: p.head_count || 0,
+    workedCount: workCounts?.[p.id] || 0,
+  }));
+
+  const filtered = statusFilter === "all" ? mapped : mapped.filter((p) => p.status === statusFilter);
+  const inProgressCount = mapped.filter((p) => p.status === "in-progress").length;
+  const activeHead = mapped.filter((p) => p.status === "pending" || p.status === "in-progress").reduce((s, p) => s + p.headCount, 0);
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
@@ -64,7 +95,7 @@ export default function CowWorkScreen() {
 
       {/* Filter chips */}
       <div className="flex gap-2 flex-wrap">
-        {filterOptions.map(f => {
+        {filterOptions.map((f) => {
           const active = statusFilter === f.value;
           return (
             <button
@@ -90,7 +121,7 @@ export default function CowWorkScreen() {
         {[
           { value: inProgressCount, label: "IN PROGRESS" },
           { value: activeHead, label: "HEAD ACTIVE" },
-        ].map(s => (
+        ].map((s) => (
           <div
             key={s.label}
             className="flex-1 rounded-xl px-4 py-3"
@@ -104,8 +135,12 @@ export default function CowWorkScreen() {
 
       {/* Project list */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-        {filtered.length > 0 ? (
-          filtered.map(p => (
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-xl" />
+          ))
+        ) : filtered.length > 0 ? (
+          filtered.map((p) => (
             <CowWorkProjectCard
               key={p.id}
               {...p}
