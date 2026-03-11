@@ -5,7 +5,7 @@ import ToastContainer from "./ToastContainer";
 import { useOperation } from "@/contexts/OperationContext";
 
 const routeConfig: Record<string, { title: string; subtitle: string }> = {
-  "/": { title: operationName, subtitle: "" },
+  "/": { title: "", subtitle: "" },
   "/animals": { title: "Animals", subtitle: "" },
   "/calving": { title: "Calving", subtitle: "" },
   "/calving/new": { title: "Calving", subtitle: "" },
