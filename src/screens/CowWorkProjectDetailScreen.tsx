@@ -470,7 +470,7 @@ export default function CowWorkProjectDetailScreen() {
               <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
                 <div style={SUB_LABEL}>PREG CHECK</div>
                 <FormFieldRow label="Preg">
-                  <select value={pregResult} onChange={e => setPregResult(e.target.value)} className={FIELD_INPUT_CLS}>
+                  <select value={pregResult} onChange={e => setPregResult(e.target.value)} className={INPUT_CLS}>
                     <option value="" disabled>Select…</option>
                     <option>Confirmed</option><option>Open</option><option>Suspect</option><option>First Calf Heifer</option>
                   </select>
