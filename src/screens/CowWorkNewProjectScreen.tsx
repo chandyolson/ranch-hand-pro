@@ -133,7 +133,7 @@ export default function CowWorkNewProjectScreen() {
         </FormFieldRow>
 
         <FormFieldRow label="Type" required>
-          <select value={processingType} onChange={e => setProcessingType(e.target.value)} className={FIELD_INPUT_CLS}>
+          <select value={processingType} onChange={e => setProcessingType(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select type</option>
             {(workTypes || []).map(wt => (
               <option key={wt.id} value={wt.id}>{wt.code} — {wt.name}</option>
