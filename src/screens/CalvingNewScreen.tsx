@@ -14,8 +14,9 @@ import {
   QUICK_NOTE_PILL_COLORS,
   DEATH_REASONS,
   GRAFT_REASONS,
-} from "@/lib/calving-constants";
-import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX } from "@/lib/constants";
+  TAG_COLOR_OPTIONS,
+  TAG_COLOR_HEX,
+} from "@/lib/constants";
 
 // ── Input style constant ──
 const IS: React.CSSProperties = {
