@@ -4,6 +4,7 @@ import ListScreenToolbar from "@/components/ListScreenToolbar";
 import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { PRODUCT_CATEGORIES, PRODUCT_CATEGORY_CONFIG, type ProductCategory } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
+import EditDeleteButtons from "@/components/EditDeleteButtons";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOperation } from '@/contexts/OperationContext';
@@ -243,14 +244,10 @@ const ReferenceTreatmentsScreen: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-                <button className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer active:scale-[0.95] transition-all" style={{ backgroundColor: "rgba(14,38,70,0.06)", border: "none" }} onClick={() => showToast("info", "Edit " + p.name)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0E2646" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                </button>
-                <button className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer active:scale-[0.95] transition-all" style={{ backgroundColor: "rgba(212,24,61,0.06)", border: "none" }} onClick={() => handleDelete(p.id, p.name)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4183d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                </button>
-              </div>
+              <EditDeleteButtons
+                  onEdit={() => showToast("info", "Edit " + p.name)}
+                  onDelete={() => handleDelete(p.id, p.name)}
+                />
             </div>
           );
         })}
