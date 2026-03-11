@@ -108,7 +108,6 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
           </div>
         ) : <div className="flex-1" />}
         <div className="flex items-center gap-2 shrink-0">
-          {advancedFilter}
           {hasMenu && (
             <div className="relative" ref={menuRef}>
               <button
@@ -183,7 +182,10 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
       )}
 
       {/* Row 3: Filter dropdown + Sort */}
-      {!hideFilter && (
+      {advancedFilter && (
+        <div>{advancedFilter}</div>
+      )}
+      {!hideFilter && !advancedFilter && (
       <div className="flex items-center gap-1.5">
         <div className="relative flex-1" ref={filterRef}>
           <button

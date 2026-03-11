@@ -134,7 +134,6 @@ const AnimalsScreen: React.FC = () => {
         onMassEdit={() => showToast("info", "Mass Edit — coming soon")}
         resultCount={filtered.length}
         isFiltering={isFiltering}
-        hideFilter
         advancedFilter={
           <AdvancedSearchPanel
             fields={ANIMAL_FILTER_FIELDS}
