@@ -407,7 +407,7 @@ export default function CowWorkProjectDetailScreen() {
                         ) : (
                           (animalCalvings || []).map(c => (
                             <div key={c.id} className="rounded-xl px-3 py-3 bg-[#0E2646]">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-3 min-w-0">
                                 <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>Calf {(c.calf as any)?.tag || "—"}</span>
                                 <span className="rounded-full" style={{
                                   fontSize: 9, fontWeight: 700, padding: "2px 8px",
@@ -469,16 +469,19 @@ export default function CowWorkProjectDetailScreen() {
             {projectType === "PREG" && (
               <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
                 <div style={SUB_LABEL}>PREG CHECK</div>
-                <FormFieldRow label="Preg">
+                <div className="flex items-center gap-3 min-w-0">
+                  <label style={LABEL_STYLE}>Preg</label>
                   <select value={pregResult} onChange={e => setPregResult(e.target.value)} className={INPUT_CLS}>
                     <option value="" disabled>Select…</option>
                     <option>Confirmed</option><option>Open</option><option>Suspect</option><option>First Calf Heifer</option>
                   </select>
-                </FormFieldRow>
-                <FormFieldRow label="Days Gest.">
+                </div>
+                <div className="flex items-center gap-3 min-w-0">
+                  <label style={LABEL_STYLE}>Days Gest.</label>
                   <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" className={INPUT_CLS} />
-                </FormFieldRow>
-                <FormFieldRow label="Calf Sex">
+                </div>
+                <div className="flex items-center gap-3 min-w-0">
+                  <label style={LABEL_STYLE}>Calf Sex</label>
                   <select value={calfSex} onChange={e => setCalfSex(e.target.value)} className={INPUT_CLS}>
                     <option value="" disabled>Select…</option>
                     {PREG_CALF_SEX_OPTIONS.filter(o => o !== "None").map(o => (
@@ -492,13 +495,16 @@ export default function CowWorkProjectDetailScreen() {
             {/* Optional fields */}
             <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div style={SUB_LABEL}>ADDITIONAL</div>
-              <FormFieldRow label="Weight">
+              <div className="flex items-center gap-3 min-w-0">
+                <label style={LABEL_STYLE}>Weight</label>
                 <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
-              </FormFieldRow>
-              <FormFieldRow label="Quick Note">
+              </div>
+              <div className="flex items-center gap-3 min-w-0">
+                <label style={LABEL_STYLE}>Quick Note</label>
                 <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" className={INPUT_CLS} />
-              </FormFieldRow>
-              <FormFieldRow label="Sample ID">
+              </div>
+              <div className="flex items-center gap-3 min-w-0">
+                <label style={LABEL_STYLE}>Sample ID</label>
                 <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={INPUT_CLS} />
               </FormFieldRow>
               <div className="pt-2">
@@ -560,7 +566,7 @@ export default function CowWorkProjectDetailScreen() {
                   <div key={a.id || i} className="rounded-xl px-3 py-3.5 bg-[#0E2646] cursor-pointer active:scale-[0.98] transition-all"
                     onClick={() => (a.animal as any)?.id && navigate("/animals/" + (a.animal as any).id)}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
                         <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(240,240,240,0.90)" }}>{animalTag}</span>
                       </div>
                       <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: pregColor.bg, color: pregColor.color }}>

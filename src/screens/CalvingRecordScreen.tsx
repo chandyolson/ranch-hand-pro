@@ -334,7 +334,7 @@ export default function CalvingRecordScreen() {
                 <span style={LABEL_STYLE}>Dam Tag</span>
                 <input type="text" value={fields.damTag} onChange={e => set("damTag", e.target.value)} readOnly={!isEditing} style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
               </div>
-              <div className="flex items-center gap-1.5" style={{ marginLeft: 104, marginTop: 2 }}>
+              <div className="flex items-center gap-1.5" style={{ marginLeft: 117, marginTop: 2 }}>
                 <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: fields.damColorHex, flexShrink: 0 }} />
                 <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{fields.damColor} · {fields.damType} · {fields.damYearBorn}</span>
               </div>
@@ -384,7 +384,7 @@ export default function CalvingRecordScreen() {
                   </select>
                 </div>
               ) : (
-                <div style={INPUT_READONLY} className="flex items-center gap-2">
+                <div style={INPUT_READONLY} className="flex items-center gap-3 min-w-0">
                   <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: TAG_COLOR_HEX[fields.calfColor] || "#999", flexShrink: 0 }} />
                   <span>{fields.calfColor}</span>
                 </div>
@@ -420,7 +420,7 @@ export default function CalvingRecordScreen() {
                 <input type="number" min={1} max={5} value={fields.calfSize} onChange={e => set("calfSize", e.target.value)} readOnly={!isEditing} placeholder="1–5" style={{ ...getStyle(isEditing), flex: "unset", width: 72 }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
               </div>
               {!isEditing && fields.calfSize && scoreLabels.calfSize[parseInt(fields.calfSize)] && (
-                <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
+                <div style={{ marginLeft: 117, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
                   {scoreLabels.calfSize[parseInt(fields.calfSize)]}
                 </div>
               )}
@@ -621,7 +621,7 @@ function ScoreField({ label, value, max, labels, isEditing, onChange }: {
         )}
       </div>
       {isEditing && value && labels[parseInt(value)] && (
-        <div style={{ marginLeft: 104, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
+        <div style={{ marginLeft: 117, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
           {labels[parseInt(value)]}
         </div>
       )}

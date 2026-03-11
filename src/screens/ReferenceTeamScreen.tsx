@@ -124,7 +124,7 @@ const ReferenceTeamScreen: React.FC = () => {
               {roleOptions.map(r => <option key={r} value={r}>{roleLabels[r]}</option>)}
             </select>
           </div>
-          <div style={{ marginLeft: 104, fontSize: 12, color: "rgba(26,26,26,0.40)", fontStyle: "italic", marginTop: 4 }}>
+          <div style={{ marginLeft: 117, fontSize: 12, color: "rgba(26,26,26,0.40)", fontStyle: "italic", marginTop: 4 }}>
             {roleDescriptions[inviteRole]}
           </div>
           <div className="flex gap-2 mt-1">

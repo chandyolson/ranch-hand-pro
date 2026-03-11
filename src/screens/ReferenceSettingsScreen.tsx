@@ -116,7 +116,7 @@ const ReferenceSettingsScreen: React.FC = () => {
           <span style={LABEL_STYLE}>ID Prefix</span>
           <input type="text" value={lifetimePrefix} onChange={e => setLifetimePrefix(e.target.value)} placeholder="e.g. SBR" className={INPUT_CLS} style={{ fontSize: 16 }} />
         </div>
-        <div style={{ marginLeft: 104, fontSize: 12, color: "rgba(26,26,26,0.40)", fontStyle: "italic", marginTop: 2 }}>
+        <div style={{ marginLeft: 117, fontSize: 12, color: "rgba(26,26,26,0.40)", fontStyle: "italic", marginTop: 2 }}>
           Lifetime IDs generate as {lifetimePrefix || "___"}25-3309 (e.g. {lifetimePrefix || "SBR"}25-3309)
         </div>
       </div>
