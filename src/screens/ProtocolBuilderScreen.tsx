@@ -393,7 +393,7 @@ export default function ProtocolBuilderScreen() {
       // Insert events
       for (let i = 0; i < events.length; i++) {
         const evt = events[i];
-        const workType = WORK_TYPES.find((w) => w.code === evt.work_type_code);
+        const workType = workTypesList.find((w) => w.code === evt.work_type_code);
         const { data: evtData, error: evtErr } = await supabase
           .from("protocol_template_events")
           .insert({
