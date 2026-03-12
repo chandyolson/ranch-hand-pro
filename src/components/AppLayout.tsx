@@ -102,6 +102,8 @@ const AppLayout: React.FC = () => {
               else if (path === "/animals") { navigate("/"); }
               else if (path === "/calving") { navigate("/"); }
               else if (path === "/cow-work") { navigate("/"); }
+              else if (path === "/protocols") { navigate("/"); }
+              else if (path.startsWith("/protocols/")) { navigate("/protocols"); }
               else if (path === "/red-book") { navigate("/"); }
               else if (path === "/reference") { navigate("/"); }
               else if (path.startsWith("/reference/")) { navigate("/reference"); }
