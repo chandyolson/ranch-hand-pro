@@ -891,6 +891,77 @@ export type Database = {
         }
         Relationships: []
       }
+      operation_preferences: {
+        Row: {
+          calf_tag_default_color: string | null
+          calf_tag_next_seq: number
+          calf_tag_pattern: string | null
+          calf_tag_seq_padding: number
+          calf_tag_seq_year: number | null
+          calf_tag_system: string
+          created_at: string | null
+          id: string
+          lifetime_id_next_seq: number
+          lifetime_id_pattern: string | null
+          lifetime_id_prefix: string | null
+          operation_id: string
+          preferred_breeds: string[] | null
+          preferred_diseases: string[] | null
+          preferred_preg_stages: string[] | null
+          updated_at: string | null
+          use_year_tag_system: boolean
+          year_letter_map: Json
+        }
+        Insert: {
+          calf_tag_default_color?: string | null
+          calf_tag_next_seq?: number
+          calf_tag_pattern?: string | null
+          calf_tag_seq_padding?: number
+          calf_tag_seq_year?: number | null
+          calf_tag_system?: string
+          created_at?: string | null
+          id?: string
+          lifetime_id_next_seq?: number
+          lifetime_id_pattern?: string | null
+          lifetime_id_prefix?: string | null
+          operation_id: string
+          preferred_breeds?: string[] | null
+          preferred_diseases?: string[] | null
+          preferred_preg_stages?: string[] | null
+          updated_at?: string | null
+          use_year_tag_system?: boolean
+          year_letter_map?: Json
+        }
+        Update: {
+          calf_tag_default_color?: string | null
+          calf_tag_next_seq?: number
+          calf_tag_pattern?: string | null
+          calf_tag_seq_padding?: number
+          calf_tag_seq_year?: number | null
+          calf_tag_system?: string
+          created_at?: string | null
+          id?: string
+          lifetime_id_next_seq?: number
+          lifetime_id_pattern?: string | null
+          lifetime_id_prefix?: string | null
+          operation_id?: string
+          preferred_breeds?: string[] | null
+          preferred_diseases?: string[] | null
+          preferred_preg_stages?: string[] | null
+          updated_at?: string | null
+          use_year_tag_system?: boolean
+          year_letter_map?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operation_preferences_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: true
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       operation_products: {
         Row: {
           created_at: string | null
