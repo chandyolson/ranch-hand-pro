@@ -1,6 +1,7 @@
 // TODO: Wire Supabase auth in final phase
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ToastProvider } from "@/components/ToastContext";
+import CowWorkCloseOutScreen from "@/screens/CowWorkCloseOutScreen";
 import AppLayout from "@/components/AppLayout";
 import DashboardScreen from "@/screens/DashboardScreen";
 import AnimalsScreen from "@/screens/AnimalsScreen";
@@ -40,7 +41,7 @@ const App = () => (
           <Route path="cow-work" element={<CowWorkScreen />} />
           <Route path="cow-work/new" element={<CowWorkNewProjectScreen />} />
           <Route path="cow-work/:id" element={<CowWorkProjectDetailScreen />} />
-          <Route path="cow-work/:id/close-out" element={<PlaceholderScreen title="Close Out" />} />
+          <Route path="cow-work/:id/close-out" element={<CowWorkCloseOutScreen />} />
           <Route path="protocols" element={<ProtocolsScreen />} />
           <Route path="protocols/new" element={<ProtocolBuilderScreen />} />
           <Route path="protocols/:id" element={<ProtocolDetailScreen />} />
