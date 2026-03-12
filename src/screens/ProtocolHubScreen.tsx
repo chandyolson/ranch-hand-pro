@@ -41,32 +41,52 @@ export default function ProtocolHubScreen() {
   const { data: customers, isLoading: loadingCustomers } = useQuery({
     queryKey: ["protocol-hub-customers", operationId],
     queryFn: async () => {
-      /* Get all client operations for this vet practice */
-      const { data: clients, error: cErr } = await supabase
+      /* Try vet_practice_clients first */
+      const { data: clients } = await supabase
         .from("vet_practice_clients")
         .select("operation_id, clinic_client_id, operation:operations(id, name)")
         .eq("vet_practice_id", operationId);
-      if (cErr) throw cErr;
-      if (!clients || clients.length === 0) return [];
 
-      const opIds = clients.map((c: any) => c.operation_id);
+      let customerOps: { operationId: string; name: string; clinicClientId: string | null }[] = [];
+
+      if (clients && clients.length > 0) {
+        customerOps = clients.map((c: any) => ({
+          operationId: c.operation_id,
+          name: (c.operation as any)?.name || "Unknown",
+          clinicClientId: c.clinic_client_id,
+        }));
+      } else {
+        /* Fallback: show all operations (including self) as customers */
+        const { data: ops } = await supabase
+          .from("operations")
+          .select("id, name")
+          .order("name");
+        customerOps = (ops || []).map((o: any) => ({
+          operationId: o.id,
+          name: o.name,
+          clinicClientId: null,
+        }));
+      }
+
+      if (customerOps.length === 0) return [];
+
+      const opIds = customerOps.map((c) => c.operationId);
 
       /* Assigned protocols for those operations */
       const { data: protocols } = await supabase
         .from("assigned_protocols")
-        .select("id, animal_class, protocol_status, created_at, operation_id")
-        .in("operation_id", opIds);
+        .select("id, animal_class, protocol_status, created_at, client_operation_id")
+        .in("client_operation_id", opIds);
 
-      /* Projects (working events) for those operations */
+      /* Projects for those operations */
       const { data: projects } = await supabase
         .from("projects")
         .select("id, operation_id")
         .in("operation_id", opIds);
 
-      return clients.map((c: any) => {
-        const op = c.operation as any;
-        const myProtos = (protocols || []).filter((p: any) => p.operation_id === c.operation_id);
-        const myProjects = (projects || []).filter((p: any) => p.operation_id === c.operation_id);
+      return customerOps.map((c) => {
+        const myProtos = (protocols || []).filter((p: any) => p.client_operation_id === c.operationId);
+        const myProjects = (projects || []).filter((p: any) => p.operation_id === c.operationId);
 
         const animalTypes = [...new Set(myProtos.map((p: any) => p.animal_class))];
         const latestYear = myProtos.length > 0
@@ -74,14 +94,13 @@ export default function ProtocolHubScreen() {
           : null;
 
         return {
-          operationId: c.operation_id,
-          name: op?.name || "Unknown",
-          clinicClientId: c.clinic_client_id,
+          operationId: c.operationId,
+          name: c.name,
+          clinicClientId: c.clinicClientId,
           animalTypes,
           protocolCount: myProtos.length,
           projectCount: myProjects.length,
           latestYear,
-          // sort priority: has protocols > has projects > neither
           sortPriority: myProtos.length > 0 ? 0 : myProjects.length > 0 ? 1 : 2,
         };
       }).sort((a: any, b: any) => a.sortPriority - b.sortPriority || a.name.localeCompare(b.name));
