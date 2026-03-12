@@ -520,7 +520,7 @@ export default function ProtocolBuilderScreen() {
                 }}
               >
                 <option value="">Select work type</option>
-                {WORK_TYPES.map((w) => (
+                {workTypesList.map((w) => (
                   <option key={w.code} value={w.code}>
                     {w.name}
                   </option>
