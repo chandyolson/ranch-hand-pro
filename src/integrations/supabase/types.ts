@@ -118,6 +118,7 @@ export type Database = {
           official_id: string | null
           operation_id: string
           origin: string | null
+          quick_notes: string[] | null
           reg_name: string | null
           reg_number: string | null
           registered: boolean | null
@@ -148,6 +149,7 @@ export type Database = {
           official_id?: string | null
           operation_id: string
           origin?: string | null
+          quick_notes?: string[] | null
           reg_name?: string | null
           reg_number?: string | null
           registered?: boolean | null
@@ -178,6 +180,7 @@ export type Database = {
           official_id?: string | null
           operation_id?: string
           origin?: string | null
+          quick_notes?: string[] | null
           reg_name?: string | null
           reg_number?: string | null
           registered?: boolean | null
@@ -211,6 +214,156 @@ export type Database = {
             columns: ["sire_id"]
             isOneToOne: false
             referencedRelation: "animals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assigned_protocol_events: {
+        Row: {
+          actual_head_count: number | null
+          assigned_protocol_id: string
+          completed_date: string | null
+          completion_notes: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          event_name: string
+          event_status: string | null
+          id: string
+          project_id: string | null
+          scheduled_date: string | null
+          template_event_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actual_head_count?: number | null
+          assigned_protocol_id: string
+          completed_date?: string | null
+          completion_notes?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          event_name: string
+          event_status?: string | null
+          id?: string
+          project_id?: string | null
+          scheduled_date?: string | null
+          template_event_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actual_head_count?: number | null
+          assigned_protocol_id?: string
+          completed_date?: string | null
+          completion_notes?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          event_name?: string
+          event_status?: string | null
+          id?: string
+          project_id?: string | null
+          scheduled_date?: string | null
+          template_event_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assigned_protocol_events_assigned_protocol_id_fkey"
+            columns: ["assigned_protocol_id"]
+            isOneToOne: false
+            referencedRelation: "assigned_protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assigned_protocol_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assigned_protocol_events_template_event_id_fkey"
+            columns: ["template_event_id"]
+            isOneToOne: false
+            referencedRelation: "protocol_template_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assigned_protocols: {
+        Row: {
+          animal_class: string
+          client_operation_id: string | null
+          created_at: string | null
+          created_by: string | null
+          estimated_head_count: number | null
+          group_id: string | null
+          id: string
+          notes: string | null
+          operation_id: string
+          protocol_status: string | null
+          start_date: string | null
+          template_id: string
+          total_estimated_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          animal_class: string
+          client_operation_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          estimated_head_count?: number | null
+          group_id?: string | null
+          id?: string
+          notes?: string | null
+          operation_id: string
+          protocol_status?: string | null
+          start_date?: string | null
+          template_id: string
+          total_estimated_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          animal_class?: string
+          client_operation_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          estimated_head_count?: number | null
+          group_id?: string | null
+          id?: string
+          notes?: string | null
+          operation_id?: string
+          protocol_status?: string | null
+          start_date?: string | null
+          template_id?: string
+          total_estimated_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assigned_protocols_client_operation_id_fkey"
+            columns: ["client_operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assigned_protocols_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assigned_protocols_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assigned_protocols_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "vaccination_protocol_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -957,12 +1110,83 @@ export type Database = {
           },
         ]
       }
+      product_sizes: {
+        Row: {
+          barcode: string | null
+          cost_per_dose: number | null
+          created_at: string | null
+          doses_per_unit: number | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          ndc: string | null
+          product_id: string
+          qb_item_name: string | null
+          qb_sku: string | null
+          size_label: string
+          size_unit: string | null
+          size_value: number | null
+          sort_order: number | null
+          unit_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          barcode?: string | null
+          cost_per_dose?: number | null
+          created_at?: string | null
+          doses_per_unit?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          ndc?: string | null
+          product_id: string
+          qb_item_name?: string | null
+          qb_sku?: string | null
+          size_label: string
+          size_unit?: string | null
+          size_value?: number | null
+          sort_order?: number | null
+          unit_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          barcode?: string | null
+          cost_per_dose?: number | null
+          created_at?: string | null
+          doses_per_unit?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          ndc?: string | null
+          product_id?: string
+          qb_item_name?: string | null
+          qb_sku?: string | null
+          size_label?: string
+          size_unit?: string | null
+          size_value?: number | null
+          sort_order?: number | null
+          unit_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sizes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           created_at: string | null
           description: string | null
           dosage: string | null
+          dosage_by_weight: Json | null
           id: string
+          image_url: string | null
+          injection_site: string | null
           manufacturer_id: string | null
           milk_withdrawal: string | null
           name: string
@@ -972,13 +1196,20 @@ export type Database = {
           product_type: string
           route: string | null
           slaughter_withdrawal: string | null
+          species_approvals: string[] | null
+          storage_requirements: string | null
+          unit_of_measure: string | null
+          updated_at: string | null
           use_status: boolean
         }
         Insert: {
           created_at?: string | null
           description?: string | null
           dosage?: string | null
+          dosage_by_weight?: Json | null
           id?: string
+          image_url?: string | null
+          injection_site?: string | null
           manufacturer_id?: string | null
           milk_withdrawal?: string | null
           name: string
@@ -988,13 +1219,20 @@ export type Database = {
           product_type: string
           route?: string | null
           slaughter_withdrawal?: string | null
+          species_approvals?: string[] | null
+          storage_requirements?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string | null
           use_status?: boolean
         }
         Update: {
           created_at?: string | null
           description?: string | null
           dosage?: string | null
+          dosage_by_weight?: Json | null
           id?: string
+          image_url?: string | null
+          injection_site?: string | null
           manufacturer_id?: string | null
           milk_withdrawal?: string | null
           name?: string
@@ -1004,6 +1242,10 @@ export type Database = {
           product_type?: string
           route?: string | null
           slaughter_withdrawal?: string | null
+          species_approvals?: string[] | null
+          storage_requirements?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string | null
           use_status?: boolean
         }
         Relationships: [
@@ -1231,6 +1473,110 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "project_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocol_event_products: {
+        Row: {
+          condition_rule: Json | null
+          created_at: string | null
+          dosage_override: string | null
+          event_id: string
+          id: string
+          injection_site: string | null
+          is_conditional: boolean | null
+          notes: string | null
+          product_id: string
+          route_override: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          condition_rule?: Json | null
+          created_at?: string | null
+          dosage_override?: string | null
+          event_id: string
+          id?: string
+          injection_site?: string | null
+          is_conditional?: boolean | null
+          notes?: string | null
+          product_id: string
+          route_override?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          condition_rule?: Json | null
+          created_at?: string | null
+          dosage_override?: string | null
+          event_id?: string
+          id?: string
+          injection_site?: string | null
+          is_conditional?: boolean | null
+          notes?: string | null
+          product_id?: string
+          route_override?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocol_event_products_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "protocol_template_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protocol_event_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocol_template_events: {
+        Row: {
+          clinical_notes: string | null
+          created_at: string | null
+          days_offset: number
+          equipment_notes: string | null
+          estimated_duration_minutes: number | null
+          event_name: string
+          event_order: number
+          id: string
+          template_id: string
+          timing_description: string | null
+        }
+        Insert: {
+          clinical_notes?: string | null
+          created_at?: string | null
+          days_offset?: number
+          equipment_notes?: string | null
+          estimated_duration_minutes?: number | null
+          event_name: string
+          event_order?: number
+          id?: string
+          template_id: string
+          timing_description?: string | null
+        }
+        Update: {
+          clinical_notes?: string | null
+          created_at?: string | null
+          days_offset?: number
+          equipment_notes?: string | null
+          estimated_duration_minutes?: number | null
+          event_name?: string
+          event_order?: number
+          id?: string
+          template_id?: string
+          timing_description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocol_template_events_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "vaccination_protocol_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -1621,6 +1967,53 @@ export type Database = {
           {
             foreignKeyName: "user_profiles_default_operation_id_fkey"
             columns: ["default_operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vaccination_protocol_templates: {
+        Row: {
+          animal_class: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          operation_id: string
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          animal_class: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          operation_id: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          animal_class?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          operation_id?: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccination_protocol_templates_operation_id_fkey"
+            columns: ["operation_id"]
             isOneToOne: false
             referencedRelation: "operations"
             referencedColumns: ["id"]
