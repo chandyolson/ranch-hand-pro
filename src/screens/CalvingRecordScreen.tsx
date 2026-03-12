@@ -90,7 +90,7 @@ export default function CalvingRecordScreen() {
     damType: dam?.type || dam?.sex || "",
     damYearBorn: dam?.year_born ? String(dam.year_born) : "",
     damFlag: null as FlagColor | null,
-    calfTag: "",
+    calfTag: (dbRecord as any).calf_tag || (dbRecord as any).calf?.tag || "",
     calfColor: "Yellow",
     calfColorHex: "#F3D12A",
     calfEid: "",
