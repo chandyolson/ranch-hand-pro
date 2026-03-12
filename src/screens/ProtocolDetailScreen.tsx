@@ -83,7 +83,7 @@ export default function ProtocolDetailScreen() {
 
       return evts.map((evt) => ({
         ...evt,
-        work_type_name: evt.work_type_code ? wtMap.get(evt.work_type_code) || evt.work_type_code : null,
+        work_type_name: (evt as any).work_type_code ? wtMap.get((evt as any).work_type_code) || (evt as any).work_type_code : null,
         products: (evtProducts || [])
           .filter((p) => p.event_id === evt.id)
           .map((p: any) => ({
