@@ -69,10 +69,8 @@ export default function AddAnimalScreen() {
           registered: !!regName || !!regNumber,
           reg_name: regName.trim() || null,
           reg_number: regNumber.trim() || null,
-          memo: [
-            selectedQuickNotes.length > 0 ? selectedQuickNotes.join(", ") : null,
-            memo.trim() || null,
-          ].filter(Boolean).join(" — ") || null,
+          memo: memo.trim() || null,
+          quick_notes: selectedQuickNotes.length > 0 ? selectedQuickNotes : [],
           lifetime_id: null,
         })
         .select()
