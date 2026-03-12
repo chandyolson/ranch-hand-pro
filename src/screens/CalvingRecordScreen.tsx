@@ -10,6 +10,39 @@ import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX, CALF_SEX_OPTIONS, FLAG_OPTIONS, QUICK
 import { LABEL_STYLE, INPUT_BASE, INPUT_READONLY, SUB_LABEL, focusGold, blurReset } from "@/lib/styles";
 
 /* ── Types ── */
+interface CalvingRecord {
+  id: string;
+  date: string;
+  group: string;
+  location: string;
+  damTag: string;
+  damColor: string;
+  damColorHex: string;
+  damType: string;
+  damYearBorn: string;
+  damFlag: FlagColor | null;
+  calfTag: string;
+  calfColor: string;
+  calfColorHex: string;
+  calfEid: string;
+  calfSex: "Bull" | "Heifer" | "Unknown";
+  calfStatus: "Alive" | "Dead";
+  birthWeight: string;
+  calfSize: string;
+  sire: string;
+  disposition: string;
+  assistance: string;
+  udder: string;
+  teat: string;
+  claw: string;
+  foot: string;
+  mothering: string;
+  calfVigor: string;
+  calfSize2: string;
+  quickNotes: string[];
+  memo: string;
+}
+
 const groupOptions = ["Spring Calvers","Fall Calvers","First Calf Heifers","Replacement Heifers","Mixed"];
 const locationOptions = ["Home Place","East Pasture","West Pasture","Calving Barn","Feedlot"];
 const calvingSexOptions = [...CALF_SEX_OPTIONS, "Unknown"] as const;

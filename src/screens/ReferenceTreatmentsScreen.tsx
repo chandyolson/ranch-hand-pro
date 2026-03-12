@@ -248,7 +248,7 @@ const ReferenceTreatmentsScreen: React.FC = () => {
                   onEdit={async () => {
                     const newName = window.prompt("Edit product name:", p.name);
                     if (!newName || newName.trim() === p.name) return;
-                    const { error } = await supabase.from("operation_products").update({ custom_name: newName.trim() }).eq("id", p.id);
+                    const { error } = await supabase.from("operation_products").update({ custom_dosage: newName.trim() }).eq("id", p.id);
                     if (error) { showToast("error", error.message); return; }
                     queryClient.invalidateQueries({ queryKey: ["operation-products"] });
                     showToast("success", newName.trim() + " updated");
