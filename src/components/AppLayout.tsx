@@ -32,6 +32,7 @@ const navRouteMap: Record<string, string> = {
   "Operation Dashboard": "/",
   Animals: "/animals",
   "Cow Work": "/cow-work",
+  Protocols: "/protocols",
   Calving: "/calving",
   "Red Book": "/red-book",
   Reference: "/reference",

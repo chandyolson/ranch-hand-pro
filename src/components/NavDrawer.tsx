@@ -4,6 +4,7 @@ const NAV_ITEMS = [
   "Operation Dashboard",
   "Animals",
   "Cow Work",
+  "Protocols",
   "Calving",
   "Red Book",
   "Reference",
