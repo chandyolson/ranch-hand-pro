@@ -56,8 +56,9 @@ export default function CalvingScreen() {
         .from("calving_records")
         .select("*, dam:animals!dam_id(tag, tag_color), calf:animals!calf_id(tag, tag_color)")
         .eq("operation_id", operationId)
-        .order("calving_date", { ascending: false })
-        .limit(200);
+        .gte("calving_date", `${new Date().getFullYear()}-01-01`)
+        .lte("calving_date", `${new Date().getFullYear()}-12-31`)
+        .order("calving_date", { ascending: false });
       if (error) throw error;
       return data;
     },
