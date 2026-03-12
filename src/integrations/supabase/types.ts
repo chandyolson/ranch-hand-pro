@@ -409,6 +409,8 @@ export type Database = {
           calf_sex: string | null
           calf_size: number | null
           calf_status: string | null
+          calf_tag: string | null
+          calf_tag_color: string | null
           calf_vigor: number | null
           calving_date: string
           claw: number | null
@@ -435,6 +437,8 @@ export type Database = {
           calf_sex?: string | null
           calf_size?: number | null
           calf_status?: string | null
+          calf_tag?: string | null
+          calf_tag_color?: string | null
           calf_vigor?: number | null
           calving_date: string
           claw?: number | null
@@ -461,6 +465,8 @@ export type Database = {
           calf_sex?: string | null
           calf_size?: number | null
           calf_status?: string | null
+          calf_tag?: string | null
+          calf_tag_color?: string | null
           calf_vigor?: number | null
           calving_date?: string
           claw?: number | null
