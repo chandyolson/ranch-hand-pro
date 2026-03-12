@@ -114,8 +114,8 @@ export default function CalvingScreen() {
 
   const calvingStats = {
     total: records.length,
-    heifers: records.filter(r => r.calfSex === "Heifer").length,
-    bulls: records.filter(r => r.calfSex === "Bull").length,
+    heifers: records.filter(r => r.calfSex === "Heifer" && r.calfStatus !== "Dead").length,
+    bulls: records.filter(r => r.calfSex === "Bull" && r.calfStatus !== "Dead").length,
     dead: records.filter(r => r.calfStatus === "Dead").length,
   };
 
