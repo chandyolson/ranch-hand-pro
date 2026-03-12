@@ -12,6 +12,8 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/calving/new": { title: "Calving", subtitle: "" },
   "/cow-work": { title: "Cow Work", subtitle: "5 Active Projects" },
   "/cow-work/new": { title: "New Project", subtitle: "Create Work Project" },
+  "/protocols": { title: "Protocols", subtitle: "Vaccination Programs" },
+  "/protocols/new": { title: "New Protocol", subtitle: "Create Protocol" },
   "/red-book": { title: "Red Book", subtitle: "Ranch Notes & Records" },
   "/red-book/new": { title: "New Note", subtitle: "Red Book Entry" },
   "/reference": { title: "Reference", subtitle: "Settings & Lookups" },
@@ -30,6 +32,7 @@ const navRouteMap: Record<string, string> = {
   "Operation Dashboard": "/",
   Animals: "/animals",
   "Cow Work": "/cow-work",
+  Protocols: "/protocols",
   Calving: "/calving",
   "Red Book": "/red-book",
   Reference: "/reference",
@@ -99,6 +102,8 @@ const AppLayout: React.FC = () => {
               else if (path === "/animals") { navigate("/"); }
               else if (path === "/calving") { navigate("/"); }
               else if (path === "/cow-work") { navigate("/"); }
+              else if (path === "/protocols") { navigate("/"); }
+              else if (path.startsWith("/protocols/")) { navigate("/protocols"); }
               else if (path === "/red-book") { navigate("/"); }
               else if (path === "/reference") { navigate("/"); }
               else if (path.startsWith("/reference/")) { navigate("/reference"); }
