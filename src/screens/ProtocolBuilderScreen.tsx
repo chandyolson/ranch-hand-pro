@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
-import { ANIMAL_TYPE_OPTIONS, WORK_TYPES } from "@/lib/constants";
+import { ANIMAL_TYPE_OPTIONS, WORK_TYPES as WORK_TYPES_FALLBACK } from "@/lib/constants";
 
 /* ── Types ── */
 
