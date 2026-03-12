@@ -10,9 +10,7 @@ import AddAnimalScreen from "@/screens/AddAnimalScreen";
 import CowWorkScreen from "@/screens/CowWorkScreen";
 import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
 import CowWorkProjectDetailScreen from "@/screens/CowWorkProjectDetailScreen";
-import ProtocolsScreen from "@/screens/ProtocolsScreen";
-import ProtocolBuilderScreen from "@/screens/ProtocolBuilderScreen";
-import ProtocolDetailScreen from "@/screens/ProtocolDetailScreen";
+import ProtocolHubScreen from "@/screens/ProtocolHubScreen";
 import CalvingScreen from "@/screens/CalvingScreen";
 import CalvingNewScreen from "@/screens/CalvingNewScreen";
 import CalvingRecordScreen from "@/screens/CalvingRecordScreen";
@@ -42,11 +40,10 @@ const App = () => (
           <Route path="cow-work/new" element={<CowWorkNewProjectScreen />} />
           <Route path="cow-work/:id" element={<CowWorkProjectDetailScreen />} />
           <Route path="cow-work/:id/close-out" element={<CowWorkCloseOutScreen />} />
-          <Route path="protocols" element={<ProtocolsScreen />} />
-          <Route path="protocols/new" element={<ProtocolBuilderScreen />} />
-          <Route path="protocols/:id" element={<ProtocolDetailScreen />} />
-          <Route path="protocols/:id/edit" element={<ProtocolBuilderScreen />} />
-          <Route path="protocols/:id/assign" element={<PlaceholderScreen title="Assign Protocol" />} />
+          <Route path="protocols" element={<ProtocolHubScreen />} />
+          <Route path="protocols/customer/:operationId" element={<PlaceholderScreen title="Customer Protocol" />} />
+          <Route path="protocols/templates/:id" element={<PlaceholderScreen title="Template Detail" />} />
+          <Route path="protocols/templates/new" element={<PlaceholderScreen title="New Template" />} />
           <Route path="calving" element={<CalvingScreen />} />
           <Route path="calving/new" element={<CalvingNewScreen />} />
           <Route path="calving/:id" element={<CalvingRecordScreen />} />
