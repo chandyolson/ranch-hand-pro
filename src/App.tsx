@@ -11,6 +11,7 @@ import CowWorkScreen from "@/screens/CowWorkScreen";
 import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
 import CowWorkProjectDetailScreen from "@/screens/CowWorkProjectDetailScreen";
 import ProtocolHubScreen from "@/screens/ProtocolHubScreen";
+import CustomerProtocolScreen from "@/screens/CustomerProtocolScreen";
 import CalvingScreen from "@/screens/CalvingScreen";
 import CalvingNewScreen from "@/screens/CalvingNewScreen";
 import CalvingRecordScreen from "@/screens/CalvingRecordScreen";
