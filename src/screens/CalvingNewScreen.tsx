@@ -138,6 +138,10 @@ export default function CalvingNewScreen() {
   const [birthWeight, setBirthWeight] = useState("");
   const [calfSize, setCalfSize] = useState("3");
 
+  // Sire
+  const [sireTag, setSireTag] = useState("");
+  const [selectedSireId, setSelectedSireId] = useState<string | null>(null);
+
   // Twin
   const [isTwin, setIsTwin] = useState(false);
   const [twin, setTwin] = useState({ tag: "", sex: "", weight: "", size: "3" });
@@ -323,6 +327,8 @@ export default function CalvingNewScreen() {
   const handleReset = () => {
     setDamTag("");
     setSelectedDamId(null);
+    setSireTag("");
+    setSelectedSireId(null);
     setCalfStatus("Alive");
     setCalfSex("");
     setCalfTag("");
@@ -383,6 +389,7 @@ export default function CalvingNewScreen() {
       const { error: calvErr } = await supabase.from("calving_records").insert({
         operation_id: operationId,
         dam_id: selectedDamId,
+        sire_id: selectedSireId || null,
         calf_id: calfId,
         calf_tag: calfTag.trim() || null,
         calf_tag_color: calfColor === "None" ? null : calfColor,
@@ -428,6 +435,8 @@ export default function CalvingNewScreen() {
 
       setDamTag("");
       setSelectedDamId(null);
+      setSireTag("");
+      setSelectedSireId(null);
       setCalfTag("");
       setCalfStatus("Alive");
       setCalfSex("");
@@ -1127,6 +1136,18 @@ export default function CalvingNewScreen() {
                   ))}
                 </select>
               </div>
+            </FieldRow>
+
+            {/* Sire */}
+            <FieldRow label="Sire">
+              <AnimalLookup
+                value={sireTag}
+                onChange={(v) => { setSireTag(v); if (!v) setSelectedSireId(null); }}
+                onSelect={(animal) => { setSelectedSireId(animal.id); }}
+                placeholder="Bull tag (optional)"
+                inputStyle={IS}
+                sexFilter={["Bull"]}
+              />
             </FieldRow>
 
             {/* Wt / Size */}

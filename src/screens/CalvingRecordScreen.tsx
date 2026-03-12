@@ -77,6 +77,28 @@ export default function CalvingRecordScreen() {
     enabled: !!id,
   });
 
+  // Query dam's active flag
+  const damId = dbRecord?.dam_id;
+  const { data: damFlagData } = useQuery({
+    queryKey: ["dam-flag", damId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("animal_flags")
+        .select("flag_tier")
+        .eq("animal_id", damId!)
+        .eq("operation_id", operationId)
+        .is("resolved_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data?.flag_tier || null;
+    },
+    enabled: !!damId,
+  });
+
+  const flagTierToColor: Record<string, FlagColor> = { management: "teal", production: "gold", cull: "red" };
+  const damFlagTier = damFlagData ? (flagTierToColor[damFlagData as string] || null) : null;
+
   // Map database fields to screen display fields
   const dam = dbRecord?.dam as any;
   const record = dbRecord ? {
@@ -89,7 +111,7 @@ export default function CalvingRecordScreen() {
     damColorHex: TAG_COLOR_HEX[dam?.tag_color] || "#999",
     damType: dam?.type || dam?.sex || "",
     damYearBorn: dam?.year_born ? String(dam.year_born) : "",
-    damFlag: null as FlagColor | null,
+    damFlag: damFlagTier || null,
     calfTag: (dbRecord as any).calf_tag || (dbRecord as any).calf?.tag || "",
     calfColor: (dbRecord as any).calf_tag_color || (dbRecord as any).calf?.tag_color || "Yellow",
     calfColorHex: TAG_COLOR_HEX[(dbRecord as any).calf_tag_color || (dbRecord as any).calf?.tag_color || "Yellow"] || "#F3D12A",
