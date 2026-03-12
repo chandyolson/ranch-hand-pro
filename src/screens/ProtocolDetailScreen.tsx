@@ -184,7 +184,7 @@ export default function ProtocolDetailScreen() {
       showToast("success", "Protocol duplicated");
       navigate(`/protocols/${newTpl.id}/edit`);
     } catch {
-      showToast("Failed to duplicate", "error");
+      showToast("error", "Failed to duplicate");
     }
   };
 
