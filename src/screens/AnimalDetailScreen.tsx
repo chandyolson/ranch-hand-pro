@@ -179,7 +179,9 @@ export default function AnimalDetailScreen() {
           eid: fields.eid.trim() || null,
           eid2: fields.eid2.trim() || null,
           breed: fields.breed.trim() || null,
+          lifetime_id: fields.lifetimeId.trim() || null,
           memo: memo.trim() || null,
+          quick_notes: selectedQuickNotes.length > 0 ? selectedQuickNotes : null,
         })
         .eq("id", id)
         .eq("operation_id", operationId);
