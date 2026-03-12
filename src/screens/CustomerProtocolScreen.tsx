@@ -377,7 +377,7 @@ export default function CustomerProtocolScreen() {
       setSelectedYear(CURRENT_YEAR);
       showToast("success", `Copied to ${CURRENT_YEAR} as draft`);
     } catch (err: any) {
-      showToast(err.message || "Copy failed", "error");
+      showToast("error", err.message || "Copy failed");
     } finally {
       setSaving(false);
     }
