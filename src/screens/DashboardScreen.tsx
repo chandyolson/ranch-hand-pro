@@ -5,58 +5,13 @@ import StatCard from "@/components/StatCard";
 import DataCard from "@/components/DataCard";
 import FlagIcon from "@/components/FlagIcon";
 import CollapsibleSection from "@/components/CollapsibleSection";
-import PillButton from "@/components/PillButton";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { useAnimalCounts } from "@/hooks/useAnimals";
 import { useCalvingCounts } from "@/hooks/useCalvingRecords";
+import { useFlagCounts } from "@/hooks/useAnimalFlags";
 import { useOperation } from "@/contexts/OperationContext";
 import { supabase } from "@/integrations/supabase/client";
 
-const recentAnimals = [
-  { title: "Tag 4782", values: ["Black Angus", "1,247 lbs", "Pen 2A"], flag: "teal" as const },
-  { title: "Tag 3091", values: ["Hereford", "983 lbs", "Pen 4B"], flag: "gold" as const, subtitle: ["Treatment follow-up", "Thursday"] },
-  { title: "Tag 5520", values: ["Charolais", "1,102 lbs", "Pen 1C"], flag: "red" as const, subtitle: ["Penicillin 10cc due", "Overdue 2 days"] },
-  { title: "Tag 2218", values: ["Simmental", "1,340 lbs", "Pen 3A"], flag: "teal" as const },
-  { title: "Tag 7801", values: ["Brahman Cross", "1,410 lbs", "Pen 1A"], flag: "gold" as const, subtitle: ["Calving expected", "Mar 8"] },
-];
-
-const upcomingWork = [
-  { task: "Pregnancy check — Pen 3A", count: "18 head", due: "Tomorrow" },
-  { task: "Vaccination booster — Pen 1C", count: "12 head", due: "Wed, Mar 4" },
-  { task: "Weaning — North Pasture", count: "31 head", due: "Mar 10" },
-];
-
-const activityFeed = [
-  { time: "2:14 PM", text: "Tag 4782 weighed at 1,247 lbs", flag: "teal" as const },
-  { time: "1:45 PM", text: "Tag 5520 treatment administered — Penicillin 10cc", flag: "red" as const },
-  { time: "11:20 AM", text: "Tag 3091 moved to Pen 4B for observation", flag: "gold" as const },
-  { time: "9:05 AM", text: "Tag 2218 BCS scored at 6", flag: "teal" as const },
-  { time: "8:30 AM", text: "Work session started — Pen 2A processing", flag: "teal" as const },
-];
-
-type ActionFlag = "red" | "gold";
-const initialActionItems = [
-  { id: "a1", title: "Tag 3309 feet need trimming", flag: "red" as ActionFlag, assignTo: "Me", linkedTo: "Animal", completed: false },
-  { id: "a2", title: "Fence down section 3", flag: "gold" as ActionFlag, assignTo: "Mike T.", linkedTo: "North Pasture", completed: false },
-  { id: "a3", title: "Order Draxxin restock", flag: "gold" as ActionFlag, assignTo: "Me", completed: false },
-  { id: "a4", title: "Water tank float — East Section", flag: "gold" as ActionFlag, assignTo: "Mike T.", linkedTo: "East Meadow", completed: false },
-  { id: "a5", title: "Move salt blocks to south pasture", flag: "gold" as ActionFlag, assignTo: "Emily O.", completed: false },
-  { id: "a6", title: "Check on Tag 7801 — calving soon", flag: "gold" as ActionFlag, assignTo: "Me", linkedTo: "Animal", completed: false },
-];
-
-const herdStatus = {
-  cull: { count: 8, color: "#9B2335", label: "Cull List", tier: "Critical / Urgent", flag: "red" as const },
-  production: { count: 27, color: "#F3D12A", label: "Monitor", tier: "Watch / Follow-up", flag: "gold" as const },
-  management: { count: 812, color: "#55BAAA", label: "Management", tier: "Routine / Active", flag: "teal" as const },
-};
-
-const herdSampleAnimals = [
-  { group: "cull", tag: "5520", type: "Cow", memo: "Chronic limp, poor BCS" },
-  { group: "production", tag: "3091", type: "Cow", memo: "Treatment follow-up Thu" },
-  { group: "management", tag: "4782", type: "Cow", memo: "Normal" },
-];
-
-// ── Helpers ───────────────────────────────────────────
 function SectionHeading({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-2 mb-2">
@@ -66,16 +21,23 @@ function SectionHeading({ text }: { text: string }) {
   );
 }
 
-// ── Component ─────────────────────────────────────────
+const FLAG_CONFIG = {
+  cull: { color: "#9B2335", label: "Cull List", tier: "Critical / Urgent", flag: "red" as const },
+  production: { color: "#F3D12A", label: "Monitor", tier: "Watch / Follow-up", flag: "gold" as const },
+  management: { color: "#55BAAA", label: "Management", tier: "Routine / Active", flag: "teal" as const },
+};
+
 const DashboardScreen: React.FC = () => {
   const [search, setSearch] = useState("");
   const [herdExpanded, setHerdExpanded] = useState(false);
-  const [actionItems, setActionItems] = useState(initialActionItems);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
   const { operationId } = useOperation();
+
+  // ── Stat card queries ──
   const { data: animalCounts } = useAnimalCounts();
   const { data: calvingCounts } = useCalvingCounts();
+  const { data: flagCounts } = useFlagCounts();
   const { data: projectCounts } = useQuery({
     queryKey: ["project-counts", operationId],
     queryFn: async () => {
@@ -88,19 +50,107 @@ const DashboardScreen: React.FC = () => {
     },
   });
 
+  // ── Recent animals (last 5 updated) ──
+  const { data: recentAnimals } = useQuery({
+    queryKey: ["dashboard-recent-animals", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("animals")
+        .select("id, tag, tag_color, breed, sex, type, year_born, status, memo")
+        .eq("operation_id", operationId)
+        .eq("status", "Active")
+        .order("updated_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // ── Upcoming work (next 3 pending/in-progress projects) ──
+  const { data: upcomingWork } = useQuery({
+    queryKey: ["dashboard-upcoming-work", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, date, project_status, head_count, group:groups(name)")
+        .eq("operation_id", operationId)
+        .in("project_status", ["Pending", "In Progress"])
+        .order("date", { ascending: true })
+        .limit(3);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // ── Action items (red book notes with has_action = true) ──
+  const { data: actionItems } = useQuery({
+    queryKey: ["dashboard-action-items", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("red_book_notes")
+        .select("id, title, category, is_pinned, has_action, created_at")
+        .eq("operation_id", operationId)
+        .eq("has_action", true)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // ── Recent activity (last 5 calving records) ──
+  const { data: recentActivity } = useQuery({
+    queryKey: ["dashboard-recent-activity", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("calving_records")
+        .select("id, calving_date, calf_status, calf_sex, dam:animals!calving_records_dam_id_fkey(tag)")
+        .eq("operation_id", operationId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // ── Herd status sample animals (one per flag tier) ──
+  const { data: flagSamples } = useQuery({
+    queryKey: ["dashboard-flag-samples", operationId],
+    queryFn: async () => {
+      const results: Record<string, { tag: string; type: string; memo: string }> = {};
+      for (const tier of ["cull", "production", "management"]) {
+        const { data } = await supabase
+          .from("animal_flags")
+          .select("animal:animals(tag, type, memo)")
+          .eq("operation_id", operationId)
+          .eq("flag_tier", tier)
+          .is("resolved_at", null)
+          .limit(1)
+          .maybeSingle();
+        const animal = (data as any)?.animal;
+        if (animal) {
+          results[tier] = { tag: animal.tag || "—", type: animal.type || "", memo: animal.memo || "" };
+        }
+      }
+      return results;
+    },
+  });
+
   const stats = [
     { label: "Total Head", value: String(animalCounts?.total ?? "—"), subtitle: `${animalCounts?.active ?? 0} active`, angle: 140, route: "/animals" },
     { label: "Calving", value: String(calvingCounts?.total ?? "—"), subtitle: `${calvingCounts?.alive ?? 0} alive`, angle: 155, route: "/calving" },
     { label: "Open Projects", value: String(projectCounts ?? "—"), subtitle: "active projects", angle: 165, route: "/cow-work" },
   ];
 
-  const openActions = actionItems.filter((a) => !a.completed);
-  const sortOrder: Record<string, number> = { red: 0, gold: 1 };
-  const sortedActions = [...openActions].sort((a, b) => (sortOrder[a.flag] ?? 9) - (sortOrder[b.flag] ?? 9)).slice(0, 3);
+  const fc = flagCounts || { management: 0, production: 0, cull: 0 };
+  const openActions = actionItems || [];
+  const animals = recentAnimals || [];
+  const work = upcomingWork || [];
+  const activity = recentActivity || [];
 
   const filteredAnimals = search
-    ? recentAnimals.filter((a) => a.title.toLowerCase().includes(search.toLowerCase()))
-    : recentAnimals;
+    ? animals.filter((a) => a.tag.toLowerCase().includes(search.toLowerCase()) || (a.breed || "").toLowerCase().includes(search.toLowerCase()))
+    : animals;
 
   return (
     <div className="px-4 space-y-5">
@@ -144,16 +194,13 @@ const DashboardScreen: React.FC = () => {
           className="w-full rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]"
           style={{ backgroundColor: "#0E2646" }}
           onClick={() => setHerdExpanded(!herdExpanded)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setHerdExpanded(!herdExpanded); }}
         >
           <div className="flex items-center gap-4">
-            {[
-              { flag: "teal" as const, count: herdStatus.management.count },
-              { flag: "gold" as const, count: herdStatus.production.count },
-              { flag: "red" as const, count: herdStatus.cull.count },
-            ].map(({ flag, count }) => (
+            {([
+              { flag: "teal" as const, count: fc.management },
+              { flag: "gold" as const, count: fc.production },
+              { flag: "red" as const, count: fc.cull },
+            ]).map(({ flag, count }) => (
               <div key={flag} className="flex items-center gap-1.5">
                 <FlagIcon color={flag} size="sm" />
                 <span style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 700 }}>{count}</span>
@@ -171,29 +218,33 @@ const DashboardScreen: React.FC = () => {
         {herdExpanded && (
           <div className="mt-3 space-y-4">
             {(["cull", "production", "management"] as const).map((key) => {
-              const g = herdStatus[key];
-              const sample = herdSampleAnimals.find((a) => a.group === key)!;
+              const g = FLAG_CONFIG[key];
+              const count = fc[key];
+              const sample = flagSamples?.[key];
+              if (count === 0) return null;
               return (
                 <div key={key} className="space-y-2">
                   <div className="flex items-center gap-2.5 px-1">
                     <FlagIcon color={g.flag} size="sm" />
                     <span style={{ textTransform: "uppercase", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: g.color }}>{g.label}</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: g.color, opacity: 0.5 }}>({g.count})</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: g.color, opacity: 0.5 }}>({count})</span>
                     <div className="flex-1 h-px" style={{ backgroundColor: `${g.color}1F` }} />
                     <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(26,26,26,0.30)" }}>{g.tier}</span>
                   </div>
-                  <div
-                    className="w-full rounded-xl px-3.5 py-2.5 flex items-center gap-3 cursor-pointer transition-all active:scale-[0.98]"
-                    style={{ backgroundColor: "#0E2646" }}
-                    onClick={() => navigate("/animals")}
-                  >
-                    <FlagIcon color={g.flag} size="sm" />
-                    <span style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 800 }}>{sample.tag}</span>
-                    <span className="rounded-full" style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.50)", backgroundColor: "rgba(255,255,255,0.08)", padding: "1.5px 7px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                      {sample.type}
-                    </span>
-                    <span className="truncate" style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.25)" }}>{sample.memo}</span>
-                  </div>
+                  {sample && (
+                    <div
+                      className="w-full rounded-xl px-3.5 py-2.5 flex items-center gap-3 cursor-pointer transition-all active:scale-[0.98]"
+                      style={{ backgroundColor: "#0E2646" }}
+                      onClick={() => navigate("/animals")}
+                    >
+                      <FlagIcon color={g.flag} size="sm" />
+                      <span style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 800 }}>{sample.tag}</span>
+                      <span className="rounded-full" style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.50)", backgroundColor: "rgba(255,255,255,0.08)", padding: "1.5px 7px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                        {sample.type}
+                      </span>
+                      <span className="truncate" style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.25)" }}>{sample.memo}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -209,9 +260,6 @@ const DashboardScreen: React.FC = () => {
             className="rounded-xl bg-white p-4 cursor-pointer active:scale-[0.99] transition-transform"
             style={{ border: "1px solid #D4D4D0" }}
             onClick={() => navigate("/red-book")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate("/red-book"); }}
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -224,42 +272,20 @@ const DashboardScreen: React.FC = () => {
                 {openActions.length}
               </span>
             </div>
-            {sortedActions.map((item, idx) => (
+            {openActions.slice(0, 3).map((item, idx) => (
               <div
                 key={item.id}
                 className="flex items-center gap-3"
-                style={{
-                  padding: "10px 0",
-                  borderBottom: idx < sortedActions.length - 1 ? "1px solid rgba(212,212,208,0.30)" : "none",
-                }}
+                style={{ padding: "10px 0", borderBottom: idx < Math.min(openActions.length, 3) - 1 ? "1px solid rgba(212,212,208,0.30)" : "none" }}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <FlagIcon color={item.flag} size="sm" />
-                    <span className="truncate" style={{ fontSize: 13, fontWeight: 500, color: "#1A1A1A" }}>{item.title}</span>
-                  </div>
-                  <div style={{ fontSize: 11, fontWeight: 400, color: "rgba(26,26,26,0.35)", marginLeft: 22 }}>
-                    {[item.assignTo, item.linkedTo].filter(Boolean).join(" · ")}
-                  </div>
+                  <span className="truncate block" style={{ fontSize: 13, fontWeight: 500, color: "#1A1A1A" }}>{item.title}</span>
+                  <span style={{ fontSize: 11, fontWeight: 400, color: "rgba(26,26,26,0.35)" }}>{item.category || ""}</span>
                 </div>
-                <button
-                  className="shrink-0 rounded-full transition-colors hover:bg-accent/20 active:scale-[0.95]"
-                  style={{ width: 22, height: 22, border: "2px solid #D4D4D0", backgroundColor: "transparent", cursor: "pointer" }}
-                  aria-label={`Complete ${item.title}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActionItems((prev) => prev.map((a) => a.id === item.id ? { ...a, completed: true } : a));
-                    showToast("success", "Marked complete");
-                  }}
-                />
               </div>
             ))}
-            <div
-              className="mt-2 cursor-pointer"
-              style={{ color: "#55BAAA", fontSize: 12, fontWeight: 600 }}
-              onClick={(e) => { e.stopPropagation(); navigate("/red-book"); }}
-            >
-              View all {openActions.length} open actions →
+            <div className="mt-2" style={{ color: "#55BAAA", fontSize: 12, fontWeight: 600 }}>
+              View all {openActions.length} action items →
             </div>
           </div>
         )}
@@ -267,70 +293,90 @@ const DashboardScreen: React.FC = () => {
         {/* Upcoming Work */}
         <div>
           <SectionHeading text="Upcoming Work" />
-          <div className="rounded-xl bg-white overflow-hidden divide-y" style={{ border: "1px solid rgba(212,212,208,0.60)", borderColor: "rgba(212,212,208,0.60)" }}>
-            {upcomingWork.map((w) => (
-              <div
-                key={w.task}
-                className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-page-bg active:bg-border-divider/40 transition-colors"
-                onClick={() => navigate("/cow-work")}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="truncate" style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{w.task}</div>
-                  <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{w.count}</div>
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#55BAAA", flexShrink: 0 }}>{w.due}</span>
-              </div>
-            ))}
-          </div>
+          {work.length > 0 ? (
+            <div className="rounded-xl bg-white overflow-hidden divide-y" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+              {work.map((w: any) => {
+                const fmtDate = new Date(w.date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                return (
+                  <div
+                    key={w.id}
+                    className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-page-bg active:bg-border-divider/40 transition-colors"
+                    onClick={() => navigate(`/cow-work/${w.id}`)}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate" style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{w.name}</div>
+                      <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
+                        {[w.group?.name, w.head_count ? `${w.head_count} head` : null].filter(Boolean).join(" · ")}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#55BAAA", flexShrink: 0 }}>{fmtDate}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-xl bg-white px-4 py-6 text-center" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "rgba(26,26,26,0.35)" }}>No upcoming projects</div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* SECTION 5 — Activity + Recent Animals */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Today's Activity */}
-        <CollapsibleSection title="Today's Activity" defaultOpen>
-          <div className="space-y-3">
-            {activityFeed.map((entry, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <span className="shrink-0" style={{ width: 58, fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.25)" }}>{entry.time}</span>
-                <FlagIcon color={entry.flag} size="sm" />
-                <span style={{ fontSize: 12, lineHeight: 1.5, color: "rgba(26,26,26,0.60)" }}>{entry.text}</span>
-              </div>
-            ))}
-          </div>
+        {/* Recent Activity */}
+        <CollapsibleSection title="Recent Activity" defaultOpen>
+          {activity.length > 0 ? (
+            <div className="space-y-3">
+              {activity.map((entry: any) => {
+                const dam = entry.dam as any;
+                const dateStr = new Date(entry.calving_date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                const sexLabel = entry.calf_sex === "Bull" ? "bull" : entry.calf_sex === "Heifer" ? "heifer" : "calf";
+                const text = entry.calf_status === "Dead"
+                  ? `Dam ${dam?.tag || "?"} — ${sexLabel} calf born dead`
+                  : `Dam ${dam?.tag || "?"} — ${sexLabel} calf born alive`;
+                return (
+                  <div key={entry.id} className="flex items-start gap-3">
+                    <span className="shrink-0" style={{ width: 58, fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.25)" }}>{dateStr}</span>
+                    <FlagIcon color={entry.calf_status === "Dead" ? "red" : "teal"} size="sm" />
+                    <span style={{ fontSize: 12, lineHeight: 1.5, color: "rgba(26,26,26,0.60)" }}>{text}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", padding: "8px 0" }}>No recent calving activity</div>
+          )}
         </CollapsibleSection>
 
         {/* Recent Animals */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <SectionHeading text="Recent Animals" />
-            <span
-              className="cursor-pointer"
-              style={{ fontSize: 12, fontWeight: 600, color: "#55BAAA" }}
-              onClick={() => navigate("/animals")}
-            >
+            <span className="cursor-pointer" style={{ fontSize: 12, fontWeight: 600, color: "#55BAAA" }} onClick={() => navigate("/animals")}>
               View All
             </span>
           </div>
           <div className="space-y-2">
             {filteredAnimals.map((animal) => (
               <div
-                key={animal.title}
+                key={animal.id}
                 className="cursor-pointer active:scale-[0.99] transition-transform duration-100"
-                onClick={() => navigate("/animals/" + animal.title.replace("Tag ", ""))}
+                onClick={() => navigate(`/animals/${animal.id}`)}
               >
                 <DataCard
-                  title={animal.title}
-                  values={animal.values}
-                  subtitle={animal.subtitle}
-                  trailing={<FlagIcon color={animal.flag} size="sm" />}
+                  title={`Tag ${animal.tag}`}
+                  values={[animal.breed || "Unknown", animal.type || "", animal.year_born ? String(animal.year_born) : ""].filter(Boolean)}
+                  subtitle={animal.memo ? [animal.memo] : undefined}
                 />
               </div>
             ))}
+            {filteredAnimals.length === 0 && (
+              <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", padding: "8px 0", textAlign: "center" }}>No animals found</div>
+            )}
           </div>
         </div>
       </div>
-
     </div>
   );
 };
