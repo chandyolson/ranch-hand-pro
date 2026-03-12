@@ -138,6 +138,7 @@ export default function AnimalDetailScreen() {
         lifetimeId: animal.lifetime_id || "",
       });
       setMemo(animal.memo || "");
+      setSelectedQuickNotes(animal.quick_notes || []);
       setInitialized(true);
     }
   }, [animal, initialized]);
