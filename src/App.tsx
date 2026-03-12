@@ -41,8 +41,8 @@ const App = () => (
           <Route path="cow-work/:id" element={<CowWorkProjectDetailScreen />} />
           <Route path="cow-work/:id/close-out" element={<PlaceholderScreen title="Close Out" />} />
           <Route path="protocols" element={<ProtocolsScreen />} />
-          <Route path="protocols/new" element={<PlaceholderScreen title="New Protocol" />} />
-          <Route path="protocols/:id" element={<PlaceholderScreen title="Protocol Detail" />} />
+          <Route path="protocols/new" element={<ProtocolBuilderScreen />} />
+          <Route path="protocols/:id" element={<ProtocolBuilderScreen />} />
           <Route path="calving" element={<CalvingScreen />} />
           <Route path="calving/new" element={<CalvingNewScreen />} />
           <Route path="calving/:id" element={<CalvingRecordScreen />} />
