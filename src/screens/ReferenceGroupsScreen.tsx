@@ -23,6 +23,7 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
 ];
 
 const ReferenceGroupsScreen: React.FC = () => {
+  const navigate = useNavigate();
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
   const { data: groups, isLoading, error, refetch } = useGroups();
