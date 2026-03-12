@@ -147,24 +147,24 @@ export interface WorkTypeConfig {
 }
 
 export const WORK_TYPES: WorkTypeConfig[] = [
-  { code: "PREG", name: "Pregnancy Check", appliesTo: "Cow, Replacement" },
   { code: "AI", name: "Artificial Insemination", appliesTo: "Cow, Replacement" },
-  { code: "ET", name: "Embryo Transfer", appliesTo: "Cow, Replacement" },
+  { code: "BRAND", name: "Branding", appliesTo: "Calf" },
   { code: "BREED", name: "Breeding", appliesTo: "Cow, Replacement" },
-  { code: "TO", name: "Turn Out", appliesTo: "Cow, Replacement" },
   { code: "BSE", name: "Breeding Soundness Exam", appliesTo: "Bull" },
+  { code: "BV", name: "Brucellosis Vaccination", appliesTo: "Replacement" },
+  { code: "CU", name: "Carcass Ultrasound", appliesTo: "Feeder, Calf" },
+  { code: "ET", name: "Embryo Transfer", appliesTo: "Cow, Replacement" },
+  { code: "FB", name: "Freeze Branding", appliesTo: "All" },
+  { code: "MOVE", name: "Movement", appliesTo: "All" },
+  { code: "PC", name: "Preconditioning", appliesTo: "Calf" },
+  { code: "PREG", name: "Pregnancy Check", appliesTo: "Cow, Replacement" },
+  { code: "PRO", name: "Processing", appliesTo: "All" },
   { code: "RTS", name: "Reproductive Track Score", appliesTo: "Replacement" },
   { code: "SALE", name: "Sale", appliesTo: "All" },
-  { code: "MOVE", name: "Movement", appliesTo: "All" },
-  { code: "CU", name: "Carcass Ultrasound", appliesTo: "All" },
-  { code: "PC", name: "Preconditioning", appliesTo: "Calf" },
-  { code: "BRAND", name: "Branding", appliesTo: "Calf" },
-  { code: "FB", name: "Freeze Branding", appliesTo: "All" },
-  { code: "WEAN", name: "Weaning", appliesTo: "Calf" },
-  { code: "PRO", name: "Processing", appliesTo: "All" },
-  { code: "WEIGH", name: "Weights", appliesTo: "All" },
+  { code: "TO", name: "Turn Out", appliesTo: "Cow, Replacement, Bull" },
   { code: "TREAT", name: "Mass Treatment", appliesTo: "All" },
-  { code: "BV", name: "Brucellosis Vaccination", appliesTo: "Replacement" },
+  { code: "WEAN", name: "Weaning", appliesTo: "Calf" },
+  { code: "WEIGH", name: "Weights", appliesTo: "All" },
 ];
 
 // ── Preg Check Calf Sex (for cow work preg projects) ──

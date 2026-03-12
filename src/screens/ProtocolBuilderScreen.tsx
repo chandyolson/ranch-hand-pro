@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
-import { ANIMAL_TYPE_OPTIONS, WORK_TYPES } from "@/lib/constants";
+import { ANIMAL_TYPE_OPTIONS, WORK_TYPES as WORK_TYPES_FALLBACK } from "@/lib/constants";
 
 /* ── Types ── */
 
@@ -253,6 +253,22 @@ export default function ProtocolBuilderScreen() {
   const [saving, setSaving] = useState(false);
   const [productModalEventIdx, setProductModalEventIdx] = useState<number | null>(null);
 
+  // Query work_types from Supabase (live data, fallback to constant)
+  const { data: dbWorkTypes } = useQuery({
+    queryKey: ["work-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("work_types")
+        .select("id, code, name")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const workTypesList = dbWorkTypes && dbWorkTypes.length > 0
+    ? dbWorkTypes.map((wt) => ({ code: wt.code, name: wt.name }))
+    : WORK_TYPES_FALLBACK.map((wt) => ({ code: wt.code, name: wt.name }));
+
   // Load existing protocol when editing
   const { data: existing } = useQuery({
     queryKey: ["protocol-detail", id],
@@ -377,7 +393,7 @@ export default function ProtocolBuilderScreen() {
       // Insert events
       for (let i = 0; i < events.length; i++) {
         const evt = events[i];
-        const workType = WORK_TYPES.find((w) => w.code === evt.work_type_code);
+        const workType = workTypesList.find((w) => w.code === evt.work_type_code);
         const { data: evtData, error: evtErr } = await supabase
           .from("protocol_template_events")
           .insert({
@@ -496,7 +512,7 @@ export default function ProtocolBuilderScreen() {
                 value={evt.work_type_code}
                 onChange={(e) => {
                   const code = e.target.value;
-                  const wt = WORK_TYPES.find((w) => w.code === code);
+                  const wt = workTypesList.find((w) => w.code === code);
                   updateEvent(idx, {
                     work_type_code: code,
                     event_name: evt.event_name || wt?.name || "",
@@ -504,7 +520,7 @@ export default function ProtocolBuilderScreen() {
                 }}
               >
                 <option value="">Select work type</option>
-                {WORK_TYPES.map((w) => (
+                {workTypesList.map((w) => (
                   <option key={w.code} value={w.code}>
                     {w.name}
                   </option>

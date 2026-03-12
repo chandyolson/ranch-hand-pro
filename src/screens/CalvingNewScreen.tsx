@@ -481,9 +481,9 @@ export default function CalvingNewScreen() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{fmtDate}</span>
               <span style={{ width: 1, height: 14, backgroundColor: "rgba(255,255,255,0.15)" }} />
-              <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(240,240,240,0.60)" }}>{group}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(240,240,240,0.60)" }}>{groups?.find(g => g.id === groupId)?.name || "—"}</span>
               <span style={{ width: 1, height: 14, backgroundColor: "rgba(255,255,255,0.15)" }} />
-              <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(240,240,240,0.60)" }}>{location}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(240,240,240,0.60)" }}>{locations?.find(l => l.id === locationId)?.name || "—"}</span>
             </div>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path
