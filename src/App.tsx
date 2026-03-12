@@ -17,6 +17,7 @@ import CalvingNewScreen from "@/screens/CalvingNewScreen";
 import CalvingRecordScreen from "@/screens/CalvingRecordScreen";
 import RedBookScreen from "@/screens/RedBookScreen";
 import RedBookNewScreen from "@/screens/RedBookNewScreen";
+import RedBookDetailScreen from "@/screens/RedBookDetailScreen";
 import ReferenceScreen from "@/screens/ReferenceScreen";
 import ReferenceGroupsScreen from "@/screens/ReferenceGroupsScreen";
 import ReferenceLocationsScreen from "@/screens/ReferenceLocationsScreen";
