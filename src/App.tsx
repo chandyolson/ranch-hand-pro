@@ -17,6 +17,7 @@ import CalvingNewScreen from "@/screens/CalvingNewScreen";
 import CalvingRecordScreen from "@/screens/CalvingRecordScreen";
 import RedBookScreen from "@/screens/RedBookScreen";
 import RedBookNewScreen from "@/screens/RedBookNewScreen";
+import RedBookDetailScreen from "@/screens/RedBookDetailScreen";
 import ReferenceScreen from "@/screens/ReferenceScreen";
 import ReferenceGroupsScreen from "@/screens/ReferenceGroupsScreen";
 import ReferenceLocationsScreen from "@/screens/ReferenceLocationsScreen";
@@ -50,7 +51,7 @@ const App = () => (
           <Route path="calving/:id" element={<CalvingRecordScreen />} />
           <Route path="red-book" element={<RedBookScreen />} />
           <Route path="red-book/new" element={<RedBookNewScreen />} />
-          <Route path="red-book/:id" element={<PlaceholderScreen title="Note Detail" />} />
+          <Route path="red-book/:id" element={<RedBookDetailScreen />} />
           <Route path="reference" element={<ReferenceScreen />} />
           <Route path="reference/groups" element={<ReferenceGroupsScreen />} />
           <Route path="reference/locations" element={<ReferenceLocationsScreen />} />
