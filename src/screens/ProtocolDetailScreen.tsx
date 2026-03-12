@@ -113,7 +113,7 @@ export default function ProtocolDetailScreen() {
       }
       await supabase.from("vaccination_protocol_templates").delete().eq("id", id!);
       queryClient.invalidateQueries({ queryKey: ["vaccination-protocols"] });
-      showToast("Protocol deleted", "success");
+      showToast("success", "Protocol deleted");
       navigate("/protocols");
     } catch {
       showToast("Failed to delete", "error");
