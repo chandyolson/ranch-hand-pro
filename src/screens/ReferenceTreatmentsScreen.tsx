@@ -245,7 +245,14 @@ const ReferenceTreatmentsScreen: React.FC = () => {
                 </div>
               </div>
               <EditDeleteButtons
-                  onEdit={() => showToast("info", "Edit " + p.name)}
+                  onEdit={async () => {
+                    const newName = window.prompt("Edit product name:", p.name);
+                    if (!newName || newName.trim() === p.name) return;
+                    const { error } = await supabase.from("operation_products").update({ custom_name: newName.trim() }).eq("id", p.id);
+                    if (error) { showToast("error", error.message); return; }
+                    queryClient.invalidateQueries({ queryKey: ["operation-products"] });
+                    showToast("success", newName.trim() + " updated");
+                  }}
                   onDelete={() => handleDelete(p.id, p.name)}
                 />
             </div>

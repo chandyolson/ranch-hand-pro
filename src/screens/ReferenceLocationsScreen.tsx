@@ -90,7 +90,13 @@ const ReferenceLocationsScreen: React.FC = () => {
                 <ReferenceItemRow
                   label={tl.name}
                   sublabel={tl.description || tl.location_type}
-                  onEdit={() => showToast("info", "Edit " + tl.name)}
+                  onEdit={async (newName, newDesc) => {
+                    const { error } = await supabase.from("locations").update({ name: newName, description: newDesc || null }).eq("id", tl.id);
+                    if (error) { showToast("error", error.message); return; }
+                    queryClient.invalidateQueries({ queryKey: ["locations"] });
+                    showToast("success", newName + " updated");
+                  }}
+                  editableSublabel
                   onDelete={() => handleDelete(tl.id, tl.name)}
                 />
                 {children.length > 0 && (
@@ -101,7 +107,13 @@ const ReferenceLocationsScreen: React.FC = () => {
                         label={ch.name}
                         sublabel={ch.description || "Sub-location"}
                         badge={{ text: tl.name, bg: "rgba(14,38,70,0.06)", color: "#0E2646" }}
-                        onEdit={() => showToast("info", "Edit " + ch.name)}
+                        onEdit={async (newName, newDesc) => {
+                          const { error } = await supabase.from("locations").update({ name: newName, description: newDesc || null }).eq("id", ch.id);
+                          if (error) { showToast("error", error.message); return; }
+                          queryClient.invalidateQueries({ queryKey: ["locations"] });
+                          showToast("success", newName + " updated");
+                        }}
+                        editableSublabel
                         onDelete={() => handleDelete(ch.id, ch.name)}
                       />
                     ))}

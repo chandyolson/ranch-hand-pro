@@ -96,7 +96,12 @@ const ReferenceQuickNotesScreen: React.FC = () => {
                   key={n.id}
                   label={n.note}
                   badge={cat ? { text: cat.label, bg: cat.bg, color: cat.color } : undefined}
-                  onEdit={() => showToast("info", "Edit " + n.note)}
+                  onEdit={async (newNote) => {
+                    const { error } = await supabase.from("quick_notes").update({ note: newNote }).eq("id", n.id);
+                    if (error) { showToast("error", error.message); return; }
+                    queryClient.invalidateQueries({ queryKey: ["quick-notes"] });
+                    showToast("success", newNote + " updated");
+                  }}
                   onDelete={() => handleDelete(n.id, n.note)}
                 />
               );

@@ -90,7 +90,12 @@ const ReferencePregStagesScreen: React.FC = () => {
               key={s.id}
               label={s.stage_name}
               sublabel={"Order: " + (s.sort_order ?? '—')}
-              onEdit={() => showToast("info", "Edit " + s.stage_name)}
+              onEdit={async (newName) => {
+                const { error } = await supabase.from("preg_stages").update({ stage_name: newName }).eq("id", s.id);
+                if (error) { showToast("error", error.message); return; }
+                queryClient.invalidateQueries({ queryKey: ["preg-stages"] });
+                showToast("success", newName + " updated");
+              }}
               onDelete={() => handleDelete(s.id, s.stage_name)}
             />
           ))

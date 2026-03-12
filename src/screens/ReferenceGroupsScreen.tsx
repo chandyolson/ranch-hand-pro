@@ -81,7 +81,13 @@ const ReferenceGroupsScreen: React.FC = () => {
               key={g.id}
               label={g.name}
               sublabel={g.description || ""}
-              onEdit={() => showToast("info", "Edit " + g.name)}
+              onEdit={async (newName, newDesc) => {
+                const { error } = await supabase.from("groups").update({ name: newName, description: newDesc || null }).eq("id", g.id);
+                if (error) { showToast("error", error.message); return; }
+                queryClient.invalidateQueries({ queryKey: ["groups"] });
+                showToast("success", newName + " updated");
+              }}
+              editableSublabel
               onDelete={() => handleDelete(g.id, g.name)}
             />
           ))}
