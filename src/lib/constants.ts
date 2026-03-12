@@ -158,12 +158,13 @@ export const WORK_TYPES: WorkTypeConfig[] = [
   { code: "MOVE", name: "Movement", appliesTo: "All" },
   { code: "CU", name: "Carcass Ultrasound", appliesTo: "All" },
   { code: "PC", name: "Preconditioning", appliesTo: "Calf" },
-  { code: "BR", name: "Branding", appliesTo: "Calf" },
+  { code: "BRAND", name: "Branding", appliesTo: "Calf" },
   { code: "FB", name: "Freeze Branding", appliesTo: "All" },
   { code: "WEAN", name: "Weaning", appliesTo: "Calf" },
-  { code: "PR", name: "Processing", appliesTo: "All" },
-  { code: "W", name: "Weights", appliesTo: "All" },
+  { code: "PRO", name: "Processing", appliesTo: "All" },
+  { code: "WEIGH", name: "Weights", appliesTo: "All" },
   { code: "TREAT", name: "Mass Treatment", appliesTo: "All" },
+  { code: "BV", name: "Brucellosis Vaccination", appliesTo: "Replacement" },
 ];
 
 // ── Preg Check Calf Sex (for cow work preg projects) ──

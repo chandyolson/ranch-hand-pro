@@ -1,12 +1,8 @@
--- Seed the canonical 17 work types
--- Step 1: Delete old incorrect codes (only if they aren't linked to any projects)
-DELETE FROM work_types 
-WHERE code IN ('BV', 'PRE', 'WN', 'TX', 'PROCESS')
-AND id NOT IN (SELECT work_type_id FROM project_work_types);
+-- Canonical 18 work types — matches Supabase as of March 12, 2026
+-- This migration is documentation only — these rows already exist.
+-- Run this only if seeding a fresh database.
 
--- Step 2: Insert all 17, skip any that already exist by code
-INSERT INTO work_types (code, name)
-SELECT v.code, v.name FROM (VALUES
+INSERT INTO work_types (code, name) VALUES
   ('PREG', 'Pregnancy Check'),
   ('AI', 'Artificial Insemination'),
   ('ET', 'Embryo Transfer'),
@@ -18,11 +14,11 @@ SELECT v.code, v.name FROM (VALUES
   ('MOVE', 'Movement'),
   ('CU', 'Carcass Ultrasound'),
   ('PC', 'Preconditioning'),
-  ('BR', 'Branding'),
+  ('BRAND', 'Branding'),
   ('FB', 'Freeze Branding'),
   ('WEAN', 'Weaning'),
-  ('PR', 'Processing'),
-  ('W', 'Weights'),
-  ('TREAT', 'Mass Treatment')
-) AS v(code, name)
-WHERE NOT EXISTS (SELECT 1 FROM work_types wt WHERE wt.code = v.code);
+  ('PRO', 'Processing'),
+  ('WEIGH', 'Weights'),
+  ('TREAT', 'Mass Treatment'),
+  ('BV', 'Brucellosis Vaccination')
+ON CONFLICT DO NOTHING;
