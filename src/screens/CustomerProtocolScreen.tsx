@@ -496,7 +496,7 @@ export default function CustomerProtocolScreen() {
       }
 
       queryClient.invalidateQueries({ queryKey: ["customer-protocols", clientOpId] });
-      showToast(activate ? "Protocol activated" : "Draft saved", "success");
+      showToast("success", activate ? "Protocol activated" : "Draft saved");
     } catch (err: any) {
       showToast(err.message || "Save failed", "error");
     } finally {
