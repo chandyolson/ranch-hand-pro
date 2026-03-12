@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import DataCard from "@/components/DataCard";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
@@ -22,6 +23,7 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
 ];
 
 const ReferenceGroupsScreen: React.FC = () => {
+  const navigate = useNavigate();
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
   const { data: groups, isLoading, error, refetch } = useGroups();
@@ -175,7 +177,12 @@ const ReferenceGroupsScreen: React.FC = () => {
       {!isLoading && !error && (
         <div className="grid grid-cols-1 gap-2">
           {filtered.map(g => (
-            <div key={g.id} className="rounded-xl px-3.5 py-3 flex items-center gap-3" style={{ backgroundColor: "#0E2646", minHeight: 56 }}>
+            <div
+              key={g.id}
+              className="rounded-xl px-3.5 py-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-all"
+              style={{ backgroundColor: "#0E2646", minHeight: 56 }}
+              onClick={() => navigate(`/reference/groups/${g.id}`)}
+            >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span style={{ fontSize: 15, fontWeight: 700, color: "white" }}>{g.name}</span>
@@ -187,27 +194,9 @@ const ReferenceGroupsScreen: React.FC = () => {
                   <div className="truncate" style={{ fontSize: 12, fontWeight: 400, color: "rgba(240,240,240,0.45)", marginTop: 2 }}>{g.description}</div>
                 )}
               </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={async () => {
-                    const newName = window.prompt("Edit group name:", g.name);
-                    if (!newName || newName.trim() === g.name) return;
-                    const { error } = await supabase.from("groups").update({ name: newName.trim() }).eq("id", g.id);
-                    if (error) { showToast("error", error.message); return; }
-                    queryClient.invalidateQueries({ queryKey: ["groups"] });
-                    showToast("success", newName.trim() + " updated");
-                  }}
-                  style={{ width: 28, height: 28, borderRadius: 8, border: "none", backgroundColor: "rgba(255,255,255,0.08)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5L10.5 3.5M1 11L1.5 8.5L9 1L11 3L3.5 10.5L1 11Z" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </button>
-                <button
-                  onClick={() => handleDelete(g.id, g.name)}
-                  style={{ width: 28, height: 28, borderRadius: 8, border: "none", backgroundColor: "rgba(155,35,53,0.15)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3H10M4.5 5V9M7.5 5V9M3 3L3.5 10.5H8.5L9 3" stroke="rgba(155,35,53,0.7)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </button>
-              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.30)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
           ))}
         </div>
