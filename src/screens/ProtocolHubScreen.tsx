@@ -1,0 +1,337 @@
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
+import { Skeleton } from "@/components/ui/skeleton";
+import { INPUT_CLS } from "@/lib/styles";
+import { COLORS } from "@/lib/constants";
+import { ChevronRight, Plus, Users, FileText, Search } from "lucide-react";
+
+/* ── Badge color map ── */
+const CLASS_BADGES: Record<string, { bg: string; text: string }> = {
+  Calves:      { bg: "rgba(85,186,170,0.12)",  text: "#55BAAA" },
+  Cows:        { bg: "rgba(14,38,70,0.12)",     text: "#0E2646" },
+  Heifers:     { bg: "rgba(232,116,97,0.12)",   text: "#E87461" },
+  Replacements:{ bg: "rgba(232,116,97,0.12)",   text: "#E87461" },
+  Bulls:       { bg: "rgba(243,209,42,0.12)",   text: "#B8860B" },
+  Feeders:     { bg: "rgba(168,168,168,0.12)",  text: "#888888" },
+};
+
+type Tab = "customers" | "templates";
+
+export default function ProtocolHubScreen() {
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<Tab>("customers");
+  const [fabOpen, setFabOpen] = useState(false);
+  const fabRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { operationId } = useOperation();
+
+  /* close FAB on outside click */
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (fabRef.current && !fabRef.current.contains(e.target as Node)) setFabOpen(false);
+    };
+    if (fabOpen) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [fabOpen]);
+
+  /* ── Customers query ── */
+  const { data: customers, isLoading: loadingCustomers } = useQuery({
+    queryKey: ["protocol-hub-customers", operationId],
+    queryFn: async () => {
+      /* Get all client operations for this vet practice */
+      const { data: clients, error: cErr } = await supabase
+        .from("vet_practice_clients")
+        .select("operation_id, clinic_client_id, operation:operations(id, name)")
+        .eq("vet_practice_id", operationId);
+      if (cErr) throw cErr;
+      if (!clients || clients.length === 0) return [];
+
+      const opIds = clients.map((c: any) => c.operation_id);
+
+      /* Assigned protocols for those operations */
+      const { data: protocols } = await supabase
+        .from("assigned_protocols")
+        .select("id, animal_class, protocol_status, created_at, operation_id")
+        .in("operation_id", opIds);
+
+      /* Projects (working events) for those operations */
+      const { data: projects } = await supabase
+        .from("projects")
+        .select("id, operation_id")
+        .in("operation_id", opIds);
+
+      return clients.map((c: any) => {
+        const op = c.operation as any;
+        const myProtos = (protocols || []).filter((p: any) => p.operation_id === c.operation_id);
+        const myProjects = (projects || []).filter((p: any) => p.operation_id === c.operation_id);
+
+        const animalTypes = [...new Set(myProtos.map((p: any) => p.animal_class))];
+        const latestYear = myProtos.length > 0
+          ? new Date(myProtos.sort((a: any, b: any) => b.created_at.localeCompare(a.created_at))[0].created_at).getFullYear()
+          : null;
+
+        return {
+          operationId: c.operation_id,
+          name: op?.name || "Unknown",
+          clinicClientId: c.clinic_client_id,
+          animalTypes,
+          protocolCount: myProtos.length,
+          projectCount: myProjects.length,
+          latestYear,
+          // sort priority: has protocols > has projects > neither
+          sortPriority: myProtos.length > 0 ? 0 : myProjects.length > 0 ? 1 : 2,
+        };
+      }).sort((a: any, b: any) => a.sortPriority - b.sortPriority || a.name.localeCompare(b.name));
+    },
+  });
+
+  /* ── Templates query ── */
+  const { data: templates, isLoading: loadingTemplates } = useQuery({
+    queryKey: ["protocol-hub-templates", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vaccination_protocol_templates")
+        .select("*, events:protocol_template_events(id)")
+        .eq("operation_id", operationId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        animalClass: t.animal_class || "Calves",
+        eventCount: Array.isArray(t.events) ? t.events.length : 0,
+        status: t.protocol_status || "draft",
+      }));
+    },
+  });
+
+  /* ── Filtered lists ── */
+  const filteredCustomers = (customers || []).filter(
+    (c) => !search || c.name.toLowerCase().includes(search.toLowerCase())
+  );
+  const filteredTemplates = (templates || []).filter(
+    (t) => !search || t.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const isLoading = tab === "customers" ? loadingCustomers : loadingTemplates;
+
+  return (
+    <div className="px-4 pt-1 pb-24 space-y-3" style={{ minHeight: "100%" }}>
+      {/* Search */}
+      <div className="relative">
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+          style={{ color: COLORS.mutedText }}
+        />
+        <input
+          className={INPUT_CLS}
+          style={{ paddingLeft: 36, width: "100%" }}
+          placeholder={tab === "customers" ? "Search customers…" : "Search templates…"}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2">
+        {([
+          { key: "customers" as Tab, label: "Customer Protocols", icon: Users },
+          { key: "templates" as Tab, label: "Templates", icon: FileText },
+        ]).map(({ key, label }) => {
+          const active = tab === key;
+          return (
+            <button
+              key={key}
+              onClick={() => { setTab(key); setSearch(""); }}
+              className="rounded-full px-4 py-1.5 text-sm font-semibold transition-all active:scale-[0.97]"
+              style={{
+                backgroundColor: active ? COLORS.navy : "transparent",
+                color: active ? "#FFFFFF" : COLORS.navy,
+                border: active ? "none" : `1px solid ${COLORS.borderDivider}`,
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[80px] rounded-lg" style={{ backgroundColor: "rgba(14,38,70,0.08)" }} />
+          ))}
+        </div>
+      )}
+
+      {/* ── Customer Protocols Tab ── */}
+      {tab === "customers" && !loadingCustomers && (
+        <>
+          {filteredCustomers.length > 0 ? (
+            <div className="space-y-2">
+              {filteredCustomers.map((c) => (
+                <button
+                  key={c.operationId}
+                  className="w-full text-left rounded-lg bg-white px-4 py-3.5 cursor-pointer active:scale-[0.98] transition-transform shadow-sm"
+                  style={{ border: `1px solid ${COLORS.borderDivider}` }}
+                  onClick={() => navigate(`/protocols/customer/${c.operationId}`)}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate" style={{ fontSize: 16, fontWeight: 700, color: COLORS.textOnLight, lineHeight: 1.3 }}>
+                        {c.name}
+                      </div>
+                      {c.animalTypes.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {c.animalTypes.map((at: string) => {
+                            const badge = CLASS_BADGES[at] || CLASS_BADGES.Feeders;
+                            return (
+                              <span
+                                key={at}
+                                className="rounded-full px-2 py-0.5"
+                                style={{ fontSize: 11, fontWeight: 600, backgroundColor: badge.bg, color: badge.text }}
+                              >
+                                {at}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div className="mt-1" style={{ fontSize: 13, color: COLORS.mutedText }}>
+                        {c.latestYear
+                          ? `${c.latestYear} Program · ${c.protocolCount} protocol${c.protocolCount !== 1 ? "s" : ""}`
+                          : c.projectCount > 0
+                            ? `${c.projectCount} working event${c.projectCount !== 1 ? "s" : ""}`
+                            : "No history yet"}
+                      </div>
+                    </div>
+                    <ChevronRight size={18} style={{ color: COLORS.mutedText, flexShrink: 0 }} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : customers && customers.length === 0 ? (
+            <div className="py-16 text-center space-y-2">
+              <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>
+                No customers yet
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>
+                Add customers in Reference → Team to get started.
+              </div>
+            </div>
+          ) : (
+            <div className="py-12 text-center space-y-1.5">
+              <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No customers found</div>
+              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search</div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Templates Tab ── */}
+      {tab === "templates" && !loadingTemplates && (
+        <>
+          {filteredTemplates.length > 0 ? (
+            <div className="space-y-2">
+              {filteredTemplates.map((t) => {
+                const badge = CLASS_BADGES[t.animalClass] || CLASS_BADGES.Feeders;
+                return (
+                  <button
+                    key={t.id}
+                    className="w-full text-left rounded-lg bg-white px-4 py-3.5 cursor-pointer active:scale-[0.98] transition-transform shadow-sm"
+                    style={{ border: `1px solid ${COLORS.borderDivider}` }}
+                    onClick={() => navigate(`/protocols/templates/${t.id}`)}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate" style={{ fontSize: 16, fontWeight: 700, color: COLORS.textOnLight }}>
+                          {t.name}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span
+                            className="rounded-full px-2 py-0.5"
+                            style={{ fontSize: 11, fontWeight: 600, backgroundColor: badge.bg, color: badge.text }}
+                          >
+                            {t.animalClass}
+                          </span>
+                          <span style={{ fontSize: 12, color: COLORS.mutedText }}>
+                            {t.eventCount} event{t.eventCount !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight size={18} style={{ color: COLORS.mutedText, flexShrink: 0 }} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : templates && templates.length === 0 ? (
+            <div className="py-16 text-center space-y-2">
+              <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>
+                No templates yet
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>
+                Create a template to reuse across customers.
+              </div>
+            </div>
+          ) : (
+            <div className="py-12 text-center space-y-1.5">
+              <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No templates found</div>
+              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search</div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── FAB ── */}
+      <div ref={fabRef} className="fixed bottom-20 right-4 z-50 flex flex-col items-end gap-2">
+        {fabOpen && (
+          <div
+            className="rounded-lg shadow-lg overflow-hidden"
+            style={{ backgroundColor: COLORS.white, border: `1px solid ${COLORS.borderDivider}`, minWidth: 200 }}
+          >
+            <button
+              className="w-full text-left px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center gap-3"
+              onClick={() => { setFabOpen(false); setTab("customers"); }}
+            >
+              <Users size={16} style={{ color: COLORS.navy }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.textOnLight }}>New from Customer</span>
+            </button>
+            <div style={{ height: 1, backgroundColor: COLORS.borderDivider }} />
+            <button
+              className="w-full text-left px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center gap-3"
+              onClick={() => { setFabOpen(false); navigate("/protocols/templates/new"); }}
+            >
+              <FileText size={16} style={{ color: COLORS.navy }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.textOnLight }}>New Blank Template</span>
+            </button>
+          </div>
+        )}
+        <button
+          onClick={() => setFabOpen((o) => !o)}
+          className="rounded-full shadow-lg active:scale-95 transition-all flex items-center justify-center"
+          style={{
+            width: 56,
+            height: 56,
+            backgroundColor: COLORS.gold,
+            boxShadow: "0 4px 14px rgba(243,209,42,0.40)",
+          }}
+        >
+          <Plus
+            size={24}
+            style={{
+              color: COLORS.textOnLight,
+              transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)",
+              transition: "transform 200ms",
+            }}
+          />
+        </button>
+      </div>
+    </div>
+  );
+}
