@@ -1158,14 +1158,14 @@ export default function CalvingNewScreen() {
                   value={birthWeight}
                   onChange={(e) => setBirthWeight(e.target.value)}
                   placeholder="lbs"
-                  style={{ ...IS, flex: 1, minWidth: 0, borderRadius: "8px 0 0 8px", borderRight: "none" }}
+                  style={{ ...IS, flex: "0 0 72px", minWidth: 0, borderRadius: "8px 0 0 8px", borderRight: "none" }}
                 />
                 <select
                   value={calfSize}
                   onChange={(e) => setCalfSize(e.target.value)}
                   style={{
                     ...IS,
-                    flex: "0 0 100px",
+                    flex: 1,
                     minWidth: 0,
                     appearance: "auto" as const,
                     borderRadius: "0 8px 8px 0",
