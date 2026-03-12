@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
+import { useGroups } from "@/hooks/useGroups";
+import { useLocations } from "@/hooks/useLocations";
 import { useChuteSideToast } from "@/components/ToastContext";
 import FieldRow from "@/components/calving/FieldRow";
 import SegmentedToggle from "@/components/calving/SegmentedToggle";
@@ -116,8 +118,10 @@ export default function CalvingNewScreen() {
   // Context
   const [contextOpen, setContextOpen] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [group, setGroup] = useState("Spring Calvers");
-  const [location, setLocation] = useState("Calving Barn");
+  const [groupId, setGroupId] = useState("");
+  const [locationId, setLocationId] = useState("");
+  const { data: groups } = useGroups();
+  const { data: locations } = useLocations();
 
   // Dam
   const [damTag, setDamTag] = useState("");
@@ -189,6 +193,7 @@ export default function CalvingNewScreen() {
         .from("calving_records")
         .select("*")
         .eq("dam_id", damLookup.id)
+        .eq("operation_id", operationId)
         .order("calving_date", { ascending: false })
         .limit(10);
       return data || [];
@@ -204,6 +209,7 @@ export default function CalvingNewScreen() {
         .from("cow_work")
         .select("*, project:projects(name)")
         .eq("animal_id", damLookup.id)
+        .eq("operation_id", operationId)
         .order("date", { ascending: false })
         .limit(10);
       return data || [];
@@ -362,7 +368,7 @@ export default function CalvingNewScreen() {
             sex: calfSex === "Bull" ? "Bull" : "Cow",
             type: "Calf",
             status: "Active",
-            year_born: new Date().getFullYear(),
+            year_born: date ? new Date(date).getFullYear() : new Date().getFullYear(),
             birth_date: date || new Date().toISOString().split("T")[0],
             dam_id: selectedDamId,
             breed: null,
@@ -394,8 +400,8 @@ export default function CalvingNewScreen() {
         teat: cowTraits.teat ? parseInt(cowTraits.teat) : null,
         claw: cowTraits.claw ? parseInt(cowTraits.claw) : null,
         foot: cowTraits.foot ? parseInt(cowTraits.foot) : null,
-        group_id: null,
-        location_id: null,
+        group_id: groupId || null,
+        location_id: locationId || null,
         memo: notes.trim() || null,
       });
       if (calvErr) throw calvErr;
@@ -522,24 +528,22 @@ export default function CalvingNewScreen() {
               </FieldRow>
               <FieldRow label="Group">
                 <select
-                  value={group}
-                  onChange={(e) => setGroup(e.target.value)}
-                  style={{ ...IS, appearance: "auto" as const }}
+                  value={groupId}
+                  onChange={(e) => setGroupId(e.target.value)}
+                  style={{ ...IS, appearance: "auto" as const, color: groupId ? "#1A1A1A" : "rgba(26,26,26,0.35)" }}
                 >
-                  <option>Spring Calvers</option>
-                  <option>Fall Calvers</option>
-                  <option>First Calf Heifers</option>
+                  <option value="">Select group…</option>
+                  {(groups || []).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                 </select>
               </FieldRow>
               <FieldRow label="Location">
                 <select
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  style={{ ...IS, appearance: "auto" as const }}
+                  value={locationId}
+                  onChange={(e) => setLocationId(e.target.value)}
+                  style={{ ...IS, appearance: "auto" as const, color: locationId ? "#1A1A1A" : "rgba(26,26,26,0.35)" }}
                 >
-                  <option>Calving Barn</option>
-                  <option>Home Place</option>
-                  <option>East Pasture</option>
+                  <option value="">Select location…</option>
+                  {(locations || []).map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </select>
               </FieldRow>
             </div>

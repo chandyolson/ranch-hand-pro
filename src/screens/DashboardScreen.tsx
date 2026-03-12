@@ -117,21 +117,19 @@ const DashboardScreen: React.FC = () => {
   const { data: flagSamples } = useQuery({
     queryKey: ["dashboard-flag-samples", operationId],
     queryFn: async () => {
+      const { data } = await supabase
+        .from("animal_flags")
+        .select("flag_tier, animal:animals(tag, type, memo)")
+        .eq("operation_id", operationId)
+        .in("flag_tier", ["cull", "production", "management"])
+        .is("resolved_at", null)
+        .limit(3);
       const results: Record<string, { tag: string; type: string; memo: string }> = {};
-      for (const tier of ["cull", "production", "management"]) {
-        const { data } = await supabase
-          .from("animal_flags")
-          .select("animal:animals(tag, type, memo)")
-          .eq("operation_id", operationId)
-          .eq("flag_tier", tier)
-          .is("resolved_at", null)
-          .limit(1)
-          .maybeSingle();
-        const animal = (data as any)?.animal;
-        if (animal) {
-          results[tier] = { tag: animal.tag || "—", type: animal.type || "", memo: animal.memo || "" };
+      (data || []).forEach((row: any) => {
+        if (!results[row.flag_tier] && row.animal) {
+          results[row.flag_tier] = { tag: row.animal.tag || "—", type: row.animal.type || "", memo: row.animal.memo || "" };
         }
-      }
+      });
       return results;
     },
   });

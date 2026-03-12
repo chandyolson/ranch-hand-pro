@@ -67,7 +67,7 @@ export default function CalvingRecordScreen() {
       if (!id) return null;
       const { data, error } = await supabase
         .from("calving_records")
-        .select("*, dam:animals!calving_records_dam_id_fkey(tag, tag_color, sex, type, year_born), calf:animals!calving_records_calf_id_fkey(tag, tag_color)")
+        .select("*, dam:animals!calving_records_dam_id_fkey(tag, tag_color, sex, type, year_born), calf:animals!calving_records_calf_id_fkey(tag, tag_color), sire:animals!calving_records_sire_id_fkey(tag), group:groups(name), location:locations(name)")
         .eq("id", id)
         .eq("operation_id", operationId)
         .maybeSingle();
@@ -82,8 +82,8 @@ export default function CalvingRecordScreen() {
   const record = dbRecord ? {
     id: dbRecord.id,
     date: dbRecord.calving_date,
-    group: "",
-    location: "",
+    group: (dbRecord as any).group?.name || "",
+    location: (dbRecord as any).location?.name || "",
     damTag: dam?.tag || "Unknown",
     damColor: dam?.tag_color || "None",
     damColorHex: TAG_COLOR_HEX[dam?.tag_color] || "#999",
@@ -98,7 +98,7 @@ export default function CalvingRecordScreen() {
     calfStatus: (dbRecord.calf_status || "Alive") as "Alive" | "Dead",
     birthWeight: dbRecord.birth_weight ? String(dbRecord.birth_weight) : "",
     calfSize: dbRecord.calf_size ? String(dbRecord.calf_size) : "",
-    sire: "",
+    sire: (dbRecord as any).sire?.tag || "",
     disposition: dbRecord.disposition ? String(dbRecord.disposition) : "",
     assistance: dbRecord.assistance ? String(dbRecord.assistance) : "",
     udder: dbRecord.udder ? String(dbRecord.udder) : "",

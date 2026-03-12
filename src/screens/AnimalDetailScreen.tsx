@@ -80,6 +80,7 @@ export default function AnimalDetailScreen() {
         .from("animal_flags")
         .select("*")
         .eq("animal_id", id!)
+        .eq("operation_id", operationId)
         .is("resolved_at", null);
       if (error) throw error;
       return data;

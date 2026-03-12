@@ -54,7 +54,7 @@ export default function CalvingScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("calving_records")
-        .select("*, dam:animals!dam_id(tag, tag_color), calf:animals!calf_id(tag)")
+        .select("*, dam:animals!dam_id(tag, tag_color), calf:animals!calf_id(tag, tag_color)")
         .eq("operation_id", operationId)
         .order("calving_date", { ascending: false })
         .limit(200);

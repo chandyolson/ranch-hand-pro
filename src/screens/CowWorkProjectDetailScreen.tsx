@@ -76,6 +76,7 @@ export default function CowWorkProjectDetailScreen() {
         .from("calving_records")
         .select("*, calf:animals!calving_records_calf_id_fkey(tag)")
         .eq("dam_id", matchedAnimal.id)
+        .eq("operation_id", operationId)
         .order("calving_date", { ascending: false })
         .limit(5);
       return data || [];
@@ -90,6 +91,7 @@ export default function CowWorkProjectDetailScreen() {
         .from("cow_work")
         .select("*, project:projects(name)")
         .eq("animal_id", matchedAnimal.id)
+        .eq("operation_id", operationId)
         .order("date", { ascending: false })
         .limit(5);
       return data || [];
