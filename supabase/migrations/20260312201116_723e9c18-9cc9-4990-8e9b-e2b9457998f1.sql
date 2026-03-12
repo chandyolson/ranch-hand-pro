@@ -1,0 +1,1 @@
+ALTER TABLE public.assigned_protocols ADD COLUMN IF NOT EXISTS protocol_year integer DEFAULT EXTRACT(year FROM now())::integer;

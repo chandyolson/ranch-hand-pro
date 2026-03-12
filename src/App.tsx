@@ -11,6 +11,7 @@ import CowWorkScreen from "@/screens/CowWorkScreen";
 import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
 import CowWorkProjectDetailScreen from "@/screens/CowWorkProjectDetailScreen";
 import ProtocolHubScreen from "@/screens/ProtocolHubScreen";
+import CustomerProtocolScreen from "@/screens/CustomerProtocolScreen";
 import CalvingScreen from "@/screens/CalvingScreen";
 import CalvingNewScreen from "@/screens/CalvingNewScreen";
 import CalvingRecordScreen from "@/screens/CalvingRecordScreen";
@@ -41,7 +42,7 @@ const App = () => (
           <Route path="cow-work/:id" element={<CowWorkProjectDetailScreen />} />
           <Route path="cow-work/:id/close-out" element={<CowWorkCloseOutScreen />} />
           <Route path="protocols" element={<ProtocolHubScreen />} />
-          <Route path="protocols/customer/:operationId" element={<PlaceholderScreen title="Customer Protocol" />} />
+          <Route path="protocols/customer/:operationId" element={<CustomerProtocolScreen />} />
           <Route path="protocols/templates/:id" element={<PlaceholderScreen title="Template Detail" />} />
           <Route path="protocols/templates/new" element={<PlaceholderScreen title="New Template" />} />
           <Route path="calving" element={<CalvingScreen />} />
