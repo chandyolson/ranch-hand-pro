@@ -375,7 +375,7 @@ export default function CustomerProtocolScreen() {
       queryClient.invalidateQueries({ queryKey: ["protocol-years", clientOpId] });
       setSections(null);
       setSelectedYear(CURRENT_YEAR);
-      showToast(`Copied to ${CURRENT_YEAR} as draft`, "success");
+      showToast("success", `Copied to ${CURRENT_YEAR} as draft`);
     } catch (err: any) {
       showToast(err.message || "Copy failed", "error");
     } finally {
