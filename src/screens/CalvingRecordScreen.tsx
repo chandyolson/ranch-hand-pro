@@ -6,90 +6,10 @@ import { useOperation } from "@/contexts/OperationContext";
 import CollapsibleSection from "../components/CollapsibleSection";
 import FlagIcon from "../components/FlagIcon";
 import { useChuteSideToast } from "../components/ToastContext";
-import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX, CALF_SEX_OPTIONS, FLAG_OPTIONS, QUICK_NOTES, type FlagColor } from "@/lib/constants";
+import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX, CALF_SEX_OPTIONS, FLAG_OPTIONS, QUICK_NOTES, TRAIT_LABELS, type FlagColor } from "@/lib/constants";
 import { LABEL_STYLE, INPUT_BASE, INPUT_READONLY, SUB_LABEL, focusGold, blurReset } from "@/lib/styles";
 
 /* ── Types ── */
-interface CalvingRecord {
-  id: string;
-  date: string;
-  group: string;
-  location: string;
-  damTag: string;
-  damColor: string;
-  damColorHex: string;
-  damType: string;
-  damYearBorn: string;
-  damFlag: FlagColor | null;
-  calfTag: string;
-  calfColor: string;
-  calfColorHex: string;
-  calfEid: string;
-  calfSex: "Bull" | "Heifer" | "Unknown";
-  calfStatus: "Alive" | "Dead";
-  birthWeight: string;
-  calfSize: string;
-  sire: string;
-  disposition: string;
-  assistance: string;
-  udder: string;
-  teat: string;
-  claw: string;
-  foot: string;
-  mothering: string;
-  calfVigor: string;
-  quickNotes: string[];
-  memo: string;
-}
-
-/* ── Mock data ── */
-const calvingRecords: Record<string, CalvingRecord> = {
-  c1: {
-    id: "c1", date: "2026-03-08", group: "Spring Calvers", location: "Calving Barn",
-    damTag: "3309", damColor: "Pink", damColorHex: "#E8A0BF", damType: "Cow", damYearBorn: "2020", damFlag: "teal",
-    calfTag: "8841", calfColor: "Yellow", calfColorHex: "#F3D12A", calfEid: "", calfSex: "Bull", calfStatus: "Alive",
-    birthWeight: "85", calfSize: "3", sire: "Bull 101 — Hereford",
-    disposition: "2", assistance: "1", udder: "2", teat: "2", claw: "1", foot: "1", mothering: "1",
-    calfVigor: "4", quickNotes: ["Good mother"], memo: "Normal birth — strong calf",
-  },
-  c2: {
-    id: "c2", date: "2026-03-07", group: "Spring Calvers", location: "Calving Barn",
-    damTag: "4782", damColor: "Yellow", damColorHex: "#F3D12A", damType: "Cow", damYearBorn: "2019", damFlag: null,
-    calfTag: "8842", calfColor: "Green", calfColorHex: "#55BAAA", calfEid: "", calfSex: "Heifer", calfStatus: "Alive",
-    birthWeight: "72", calfSize: "2", sire: "Unknown",
-    disposition: "1", assistance: "1", udder: "1", teat: "1", claw: "1", foot: "1", mothering: "2",
-    calfVigor: "3", quickNotes: [], memo: "",
-  },
-  c3: {
-    id: "c3", date: "2026-03-07", group: "Spring Calvers", location: "East Pasture",
-    damTag: "5520", damColor: "Green", damColorHex: "#55BAAA", damType: "Cow", damYearBorn: "2018", damFlag: "gold",
-    calfTag: "8843", calfColor: "Yellow", calfColorHex: "#F3D12A", calfEid: "", calfSex: "Bull", calfStatus: "Alive",
-    birthWeight: "90", calfSize: "4", sire: "Bull 202 — Angus",
-    disposition: "3", assistance: "2", udder: "2", teat: "2", claw: "1", foot: "1", mothering: "2",
-    calfVigor: "4", quickNotes: [], memo: "Large calf",
-  },
-  c4: {
-    id: "c4", date: "2026-03-06", group: "Spring Calvers", location: "Calving Barn",
-    damTag: "2218", damColor: "Orange", damColorHex: "#E8863A", damType: "Cow", damYearBorn: "2017", damFlag: "red",
-    calfTag: "8844", calfColor: "Yellow", calfColorHex: "#F3D12A", calfEid: "", calfSex: "Heifer", calfStatus: "Dead",
-    birthWeight: "68", calfSize: "2", sire: "Unknown",
-    disposition: "4", assistance: "3", udder: "3", teat: "3", claw: "2", foot: "2", mothering: "3",
-    calfVigor: "1", quickNotes: [], memo: "Stillborn",
-  },
-};
-
-const scoreLabels: Record<string, string[]> = {
-  disposition: ["","1 — Docile","2 — Restless","3 — Nervous","4 — Flighty","5 — Aggressive","6 — Dangerous"],
-  assistance:  ["","1 — None","2 — Easy Pull","3 — Hard Pull","4 — Mech. Assist","5 — C-Section"],
-  udder:       ["","1 — Ideal","2 — Acceptable","3 — Functional/Mod","4 — Functional/Serious","5 — Non-functional","6 — Very Non-functional","7 — Hard/Distorted","8 — Non-functional Quarters","9 — Blind Quarters"],
-  teat:        ["","1 — Small","2 — Mod. Small","3 — Mod. Large","4 — Large","5 — Very Large","6 — Funnel","7 — Bottle","8 — Inverted","9 — Other"],
-  claw:        ["","1 — Ideal","2 — Slight Deviation","3 — Mod. Deviation","4 — Severe Deviation"],
-  foot:        ["","1 — Ideal","2 — Mod. Issues","3 — Severe Issues","4 — Extreme Issues"],
-  mothering:   ["","1 — Excellent","2 — Good","3 — Fair","4 — Poor","5 — Rejected Calf"],
-  calfVigor:   ["","1 — Very Weak","2 — Weak","3 — Average","4 — Strong","5 — Very Strong"],
-  calfSize:    ["","1 — Small","2 — Mod. Small","3 — Average","4 — Mod. Large","5 — Large"],
-};
-
 const groupOptions = ["Spring Calvers","Fall Calvers","First Calf Heifers","Replacement Heifers","Mixed"];
 const locationOptions = ["Home Place","East Pasture","West Pasture","Calving Barn","Feedlot"];
 const calvingSexOptions = [...CALF_SEX_OPTIONS, "Unknown"] as const;
@@ -191,7 +111,7 @@ export default function CalvingRecordScreen() {
   const getStyle = (editing: boolean) => editing ? INPUT_BASE : INPUT_READONLY;
 
   const assistanceVal = parseInt(fields.assistance);
-  const assistanceLabel = assistanceVal > 1 ? scoreLabels.assistance[assistanceVal] : null;
+  const assistanceLabel = assistanceVal > 1 ? TRAIT_LABELS.assistance[assistanceVal] : null;
 
   const flagInfo = fields.damFlag ? FLAG_OPTIONS.find(f => f.color === fields.damFlag) : null;
 
@@ -419,9 +339,9 @@ export default function CalvingRecordScreen() {
                 <span style={{ color: "rgba(26,26,26,0.25)", margin: "0 2px" }}>/</span>
                 <input type="number" min={1} max={5} value={fields.calfSize} onChange={e => set("calfSize", e.target.value)} readOnly={!isEditing} placeholder="1–5" style={{ ...getStyle(isEditing), flex: "unset", width: 72 }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
               </div>
-              {!isEditing && fields.calfSize && scoreLabels.calfSize[parseInt(fields.calfSize)] && (
+              {!isEditing && fields.calfSize && TRAIT_LABELS.calfSize[parseInt(fields.calfSize)] && (
                 <div style={{ marginLeft: 93, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
-                  {scoreLabels.calfSize[parseInt(fields.calfSize)]}
+                  {TRAIT_LABELS.calfSize[parseInt(fields.calfSize)]}
                 </div>
               )}
             </div>
@@ -461,7 +381,7 @@ export default function CalvingRecordScreen() {
               ) : (
                 cowScoreKeys.filter(k => fields[k]).map(k => {
                   const val = parseInt(fields[k] as string);
-                  const label = scoreLabels[k]?.[val] || `${val}`;
+                  const label = TRAIT_LABELS[k]?.[val] || `${val}`;
                   return (
                     <span key={k} className="rounded-full" style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(14,38,70,0.06)", color: "#0E2646" }}>
                       {cowScoreLabelsMap[k]} {label}
@@ -474,7 +394,7 @@ export default function CalvingRecordScreen() {
         >
           <div className="space-y-3 pt-1">
             {cowScoreKeys.map(k => (
-              <ScoreField key={k} label={cowScoreLabelsMap[k]} value={fields[k] as string} max={cowScoreMax[k]} labels={scoreLabels[k]} isEditing={isEditing} onChange={v => set(k, v)} />
+              <ScoreField key={k} label={cowScoreLabelsMap[k]} value={fields[k] as string} max={cowScoreMax[k]} labels={TRAIT_LABELS[k]} isEditing={isEditing} onChange={v => set(k, v)} />
             ))}
           </div>
         </CollapsibleSection>
@@ -490,7 +410,7 @@ export default function CalvingRecordScreen() {
               ) : (
                 calfScoreKeys.filter(k => fields[k]).map(k => {
                   const val = parseInt(fields[k] as string);
-                  const label = scoreLabels[k]?.[val] || `${val}`;
+                  const label = TRAIT_LABELS[k]?.[val] || `${val}`;
                   return (
                     <span key={k} className="rounded-full" style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(14,38,70,0.06)", color: "#0E2646" }}>
                       {calfScoreLabelsMap[k]} {label}
@@ -503,7 +423,7 @@ export default function CalvingRecordScreen() {
         >
           <div className="space-y-3 pt-1">
             {calfScoreKeys.map(k => (
-              <ScoreField key={k} label={calfScoreLabelsMap[k]} value={fields[k] as string} max={calfScoreMax[k]} labels={scoreLabels[k]} isEditing={isEditing} onChange={v => set(k, v)} />
+              <ScoreField key={k} label={calfScoreLabelsMap[k]} value={fields[k] as string} max={calfScoreMax[k]} labels={TRAIT_LABELS[k]} isEditing={isEditing} onChange={v => set(k, v)} />
             ))}
           </div>
         </CollapsibleSection>
