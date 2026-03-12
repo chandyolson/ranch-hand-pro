@@ -253,6 +253,22 @@ export default function ProtocolBuilderScreen() {
   const [saving, setSaving] = useState(false);
   const [productModalEventIdx, setProductModalEventIdx] = useState<number | null>(null);
 
+  // Query work_types from Supabase (live data, fallback to constant)
+  const { data: dbWorkTypes } = useQuery({
+    queryKey: ["work-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("work_types")
+        .select("id, code, name")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const workTypesList = dbWorkTypes && dbWorkTypes.length > 0
+    ? dbWorkTypes.map((wt) => ({ code: wt.code, name: wt.name }))
+    : WORK_TYPES_FALLBACK.map((wt) => ({ code: wt.code, name: wt.name }));
+
   // Load existing protocol when editing
   const { data: existing } = useQuery({
     queryKey: ["protocol-detail", id],
