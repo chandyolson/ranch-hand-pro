@@ -326,7 +326,7 @@ export default function CustomerProtocolScreen() {
         const { data: newProto, error: pErr } = await supabase
           .from("assigned_protocols")
           .insert({
-            template_id: p.template_id || p.id,
+            template_id: (p as any).template_id || p.id,
             operation_id: vetOpId,
             client_operation_id: clientOpId,
             animal_class: p.animal_class,
