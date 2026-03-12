@@ -181,7 +181,7 @@ export default function ProtocolDetailScreen() {
       }
 
       queryClient.invalidateQueries({ queryKey: ["vaccination-protocols"] });
-      showToast("Protocol duplicated", "success");
+      showToast("success", "Protocol duplicated");
       navigate(`/protocols/${newTpl.id}/edit`);
     } catch {
       showToast("Failed to duplicate", "error");
