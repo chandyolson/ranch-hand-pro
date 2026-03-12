@@ -55,6 +55,7 @@ const App = () => (
           <Route path="red-book/:id" element={<RedBookDetailScreen />} />
           <Route path="reference" element={<ReferenceScreen />} />
           <Route path="reference/groups" element={<ReferenceGroupsScreen />} />
+          <Route path="reference/groups/:id" element={<ReferenceGroupDetailScreen />} />
           <Route path="reference/locations" element={<ReferenceLocationsScreen />} />
           <Route path="reference/quick-notes" element={<ReferenceQuickNotesScreen />} />
           <Route path="reference/preg-stages" element={<ReferencePregStagesScreen />} />
