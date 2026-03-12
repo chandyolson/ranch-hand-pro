@@ -300,6 +300,7 @@ export type Database = {
           notes: string | null
           operation_id: string
           protocol_status: string | null
+          protocol_year: number | null
           start_date: string | null
           template_id: string
           total_estimated_cost: number | null
@@ -316,6 +317,7 @@ export type Database = {
           notes?: string | null
           operation_id: string
           protocol_status?: string | null
+          protocol_year?: number | null
           start_date?: string | null
           template_id: string
           total_estimated_cost?: number | null
@@ -332,6 +334,7 @@ export type Database = {
           notes?: string | null
           operation_id?: string
           protocol_status?: string | null
+          protocol_year?: number | null
           start_date?: string | null
           template_id?: string
           total_estimated_cost?: number | null
