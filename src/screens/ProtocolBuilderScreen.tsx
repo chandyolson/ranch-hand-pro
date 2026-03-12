@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
+import { ANIMAL_TYPE_OPTIONS, WORK_TYPES } from "@/lib/constants";
 
 /* ── Types ── */
 
@@ -17,24 +18,16 @@ interface EventProduct {
   notes: string;
 }
 
-interface WorkingEvent {
-  id?: string; // existing DB id when editing
+interface ProtocolEvent {
+  id?: string;
   event_name: string;
+  work_type_code: string;
   days_offset: number;
   timing_description: string;
   equipment_notes: string;
   clinical_notes: string;
   products: EventProduct[];
 }
-
-const ANIMAL_CLASSES = [
-  "Spring Calves",
-  "Fall Calves",
-  "Cows",
-  "Replacement Heifers",
-  "Bulls",
-  "Stockers/Feeders",
-];
 
 const INJECTION_SITES = [
   "Left Neck",
@@ -57,9 +50,10 @@ const PRODUCT_TYPE_FILTERS = [
   { value: "other", label: "Other", color: "#A8A8A8" },
 ];
 
-function emptyEvent(): WorkingEvent {
+function emptyEvent(): ProtocolEvent {
   return {
     event_name: "",
+    work_type_code: "",
     days_offset: 0,
     timing_description: "",
     equipment_notes: "",
@@ -196,7 +190,6 @@ function ProductSearchModal({
                 disabled={added}
                 className="w-full text-left flex items-center gap-2 py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.03)]"
                 style={{
-                  borderBottom: "1px solid rgba(26,26,26,0.06)",
                   opacity: added ? 0.4 : 1,
                   background: "none",
                   border: "none",
@@ -254,9 +247,9 @@ export default function ProtocolBuilderScreen() {
   const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
-  const [animalClass, setAnimalClass] = useState("");
+  const [animalType, setAnimalType] = useState("");
   const [description, setDescription] = useState("");
-  const [events, setEvents] = useState<WorkingEvent[]>([emptyEvent()]);
+  const [events, setEvents] = useState<ProtocolEvent[]>([emptyEvent()]);
   const [saving, setSaving] = useState(false);
   const [productModalEventIdx, setProductModalEventIdx] = useState<number | null>(null);
 
@@ -278,13 +271,14 @@ export default function ProtocolBuilderScreen() {
   useEffect(() => {
     if (!existing) return;
     setName(existing.name);
-    setAnimalClass(existing.animal_class);
+    setAnimalType(existing.animal_class);
     setDescription(existing.description || "");
     const evts = ((existing as any).events || [])
       .sort((a: any, b: any) => a.event_order - b.event_order)
       .map((e: any) => ({
         id: e.id,
         event_name: e.event_name,
+        work_type_code: "",
         days_offset: e.days_offset,
         timing_description: e.timing_description || "",
         equipment_notes: e.equipment_notes || "",
@@ -302,7 +296,7 @@ export default function ProtocolBuilderScreen() {
   }, [existing]);
 
   const updateEvent = useCallback(
-    (idx: number, patch: Partial<WorkingEvent>) => {
+    (idx: number, patch: Partial<ProtocolEvent>) => {
       setEvents((prev) => prev.map((e, i) => (i === idx ? { ...e, ...patch } : e)));
     },
     []
@@ -341,8 +335,8 @@ export default function ProtocolBuilderScreen() {
       showToast("error", "Protocol name is required");
       return;
     }
-    if (!animalClass) {
-      showToast("error", "Animal class is required");
+    if (!animalType) {
+      showToast("error", "Animal type is required");
       return;
     }
     setSaving(true);
@@ -354,7 +348,7 @@ export default function ProtocolBuilderScreen() {
           .from("vaccination_protocol_templates")
           .update({
             name: name.trim(),
-            animal_class: animalClass,
+            animal_class: animalType,
             description: description.trim() || null,
             is_active: activate,
           })
@@ -369,7 +363,7 @@ export default function ProtocolBuilderScreen() {
           .from("vaccination_protocol_templates")
           .insert({
             name: name.trim(),
-            animal_class: animalClass,
+            animal_class: animalType,
             description: description.trim() || null,
             operation_id: operationId,
             is_active: activate,
@@ -383,11 +377,12 @@ export default function ProtocolBuilderScreen() {
       // Insert events
       for (let i = 0; i < events.length; i++) {
         const evt = events[i];
+        const workType = WORK_TYPES.find((w) => w.code === evt.work_type_code);
         const { data: evtData, error: evtErr } = await supabase
           .from("protocol_template_events")
           .insert({
             template_id: templateId,
-            event_name: evt.event_name || `Working ${i + 1}`,
+            event_name: evt.event_name || workType?.name || `Event ${i + 1}`,
             event_order: i + 1,
             days_offset: evt.days_offset,
             timing_description: evt.timing_description || null,
@@ -432,7 +427,7 @@ export default function ProtocolBuilderScreen() {
 
       {/* Header card */}
       <div className="rounded-lg bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid #D4D4D0" }}>
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <label style={LABEL_STYLE}>
             Name<span style={{ color: "#9B2335", marginLeft: 2 }}>*</span>
           </label>
@@ -443,22 +438,22 @@ export default function ProtocolBuilderScreen() {
             onChange={(e) => setName(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <label style={LABEL_STYLE}>
-            Class<span style={{ color: "#9B2335", marginLeft: 2 }}>*</span>
+            Type<span style={{ color: "#9B2335", marginLeft: 2 }}>*</span>
           </label>
-          <select className={INPUT_CLS} value={animalClass} onChange={(e) => setAnimalClass(e.target.value)}>
+          <select className={INPUT_CLS} value={animalType} onChange={(e) => setAnimalType(e.target.value)}>
             <option value="" disabled>
-              Select class
+              Select type
             </option>
-            {ANIMAL_CLASSES.map((c) => (
-              <option key={c} value={c}>
-                {c}
+            {ANIMAL_TYPE_OPTIONS.map((t) => (
+              <option key={t} value={t}>
+                {t}
               </option>
             ))}
           </select>
         </div>
-        <div className="flex items-start gap-2 min-w-0">
+        <div className="flex items-start gap-3 min-w-0">
           <label style={{ ...LABEL_STYLE, marginTop: 8 }}>Description</label>
           <textarea
             className="flex-1 min-w-0 rounded-lg border border-[#D4D4D0] bg-white px-3 py-2 text-base outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25 resize-none"
@@ -470,8 +465,8 @@ export default function ProtocolBuilderScreen() {
         </div>
       </div>
 
-      {/* Working Events */}
-      <div style={SUB_LABEL}>WORKING EVENTS</div>
+      {/* Work Type Events */}
+      <div style={SUB_LABEL}>WORK TYPES</div>
 
       {events.map((evt, idx) => (
         <div key={idx}>
@@ -494,16 +489,38 @@ export default function ProtocolBuilderScreen() {
             className="rounded-lg bg-white px-3 py-3 space-y-2 shadow-sm"
             style={{ border: "1px solid #D4D4D0", borderLeft: "4px solid #55BAAA" }}
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <label style={LABEL_STYLE}>Event</label>
+            <div className="flex items-center gap-3 min-w-0">
+              <label style={LABEL_STYLE}>Work Type</label>
+              <select
+                className={INPUT_CLS}
+                value={evt.work_type_code}
+                onChange={(e) => {
+                  const code = e.target.value;
+                  const wt = WORK_TYPES.find((w) => w.code === code);
+                  updateEvent(idx, {
+                    work_type_code: code,
+                    event_name: evt.event_name || wt?.name || "",
+                  });
+                }}
+              >
+                <option value="">Select work type</option>
+                {WORK_TYPES.map((w) => (
+                  <option key={w.code} value={w.code}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-3 min-w-0">
+              <label style={LABEL_STYLE}>Label</label>
               <input
                 className={INPUT_CLS}
-                placeholder={`Working ${idx + 1}`}
+                placeholder={`Event ${idx + 1}`}
                 value={evt.event_name}
                 onChange={(e) => updateEvent(idx, { event_name: e.target.value })}
               />
             </div>
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
               <label style={LABEL_STYLE}>Days Offset</label>
               <input
                 type="number"
@@ -514,7 +531,7 @@ export default function ProtocolBuilderScreen() {
                 style={{ maxWidth: 100 }}
               />
             </div>
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
               <label style={LABEL_STYLE}>Timing</label>
               <input
                 className={INPUT_CLS}
@@ -550,21 +567,21 @@ export default function ProtocolBuilderScreen() {
                     </div>
                     <div className="flex gap-1.5 flex-wrap">
                       <input
-                        className="rounded border border-[#D4D4D0] bg-white px-2 py-1 text-sm outline-none focus:border-[#F3D12A]"
+                        className={INPUT_CLS}
                         style={{ width: 80 }}
                         placeholder="Dosage"
                         value={p.dosage}
                         onChange={(e) => updateProduct(idx, pi, { dosage: e.target.value })}
                       />
                       <input
-                        className="rounded border border-[#D4D4D0] bg-white px-2 py-1 text-sm outline-none focus:border-[#F3D12A]"
+                        className={INPUT_CLS}
                         style={{ width: 60 }}
                         placeholder="Route"
                         value={p.route}
                         onChange={(e) => updateProduct(idx, pi, { route: e.target.value })}
                       />
                       <select
-                        className="rounded border border-[#D4D4D0] bg-white px-1 py-1 text-sm outline-none focus:border-[#F3D12A]"
+                        className={INPUT_CLS}
                         value={p.injection_site}
                         onChange={(e) => updateProduct(idx, pi, { injection_site: e.target.value })}
                       >
@@ -576,7 +593,7 @@ export default function ProtocolBuilderScreen() {
                         ))}
                       </select>
                       <input
-                        className="rounded border border-[#D4D4D0] bg-white px-2 py-1 text-sm outline-none focus:border-[#F3D12A] flex-1 min-w-[60px]"
+                        className={`${INPUT_CLS} flex-1 min-w-[60px]`}
                         placeholder="Notes"
                         value={p.notes}
                         onChange={(e) => updateProduct(idx, pi, { notes: e.target.value })}
@@ -596,7 +613,7 @@ export default function ProtocolBuilderScreen() {
             </button>
 
             {/* Equipment & Clinical notes */}
-            <div className="flex items-center gap-2 min-w-0 pt-1">
+            <div className="flex items-center gap-3 min-w-0 pt-1">
               <label style={LABEL_STYLE}>Equipment</label>
               <input
                 className={INPUT_CLS}
@@ -605,7 +622,7 @@ export default function ProtocolBuilderScreen() {
                 onChange={(e) => updateEvent(idx, { equipment_notes: e.target.value })}
               />
             </div>
-            <div className="flex items-start gap-2 min-w-0">
+            <div className="flex items-start gap-3 min-w-0">
               <label style={{ ...LABEL_STYLE, marginTop: 8 }}>Clinical</label>
               <textarea
                 className="flex-1 min-w-0 rounded-lg border border-[#D4D4D0] bg-white px-3 py-2 text-base outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25 resize-none"
@@ -624,7 +641,7 @@ export default function ProtocolBuilderScreen() {
                   style={{ fontSize: 12, fontWeight: 600, color: "#9B2335", background: "none", border: "none" }}
                   onClick={() => removeEvent(idx)}
                 >
-                  Delete Event
+                  Delete Work Type
                 </button>
               </div>
             )}
@@ -641,7 +658,7 @@ export default function ProtocolBuilderScreen() {
           setEvents((prev) => [...prev, { ...emptyEvent(), days_offset: lastOffset + 28 }]);
         }}
       >
-        + Add Working Event
+        + Add Work Type
       </button>
 
       {/* Product search modal */}
