@@ -32,7 +32,8 @@ export function useCalvingCounts() {
         .select('calf_status')
         .eq('operation_id', operationId)
         .gte('calving_date', yearStart)
-        .lte('calving_date', yearEnd);
+        .lte('calving_date', yearEnd)
+        .limit(5000);
       if (error) throw error;
       const rows = data || [];
       const alive = rows.filter(r => r.calf_status === 'Alive').length;

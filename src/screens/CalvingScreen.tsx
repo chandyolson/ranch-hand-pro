@@ -54,11 +54,12 @@ export default function CalvingScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("calving_records")
-        .select("*, dam:animals!dam_id(tag, tag_color), calf:animals!calf_id(tag, tag_color)")
+        .select("*, dam:animals!calving_records_dam_id_fkey(tag, tag_color), calf:animals!calving_records_calf_id_fkey(tag, tag_color)")
         .eq("operation_id", operationId)
         .gte("calving_date", `${new Date().getFullYear()}-01-01`)
         .lte("calving_date", `${new Date().getFullYear()}-12-31`)
-        .order("calving_date", { ascending: false });
+        .order("calving_date", { ascending: false })
+        .limit(5000);
       if (error) throw error;
       return data;
     },

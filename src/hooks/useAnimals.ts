@@ -11,7 +11,7 @@ export function useAnimals(statusFilter?: string) {
         .from('animals')
         .select('*')
         .eq('operation_id', operationId)
-        .order('tag', { ascending: true });
+        .order('tag', { ascending: true }).limit(5000);
       if (statusFilter && statusFilter !== 'All') {
         query = query.eq('status', statusFilter);
       }
