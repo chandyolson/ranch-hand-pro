@@ -557,46 +557,52 @@ export default function CalvingNewScreen() {
           }}
         >
           <FieldRow label="Dam Tag">
-            <div style={{ display: "flex", gap: 8, minWidth: 0, flex: 1 }}>
-              <AnimalLookup
-                value={damTag}
-                onChange={(v) => { setDamTag(v); if (!v) setSelectedDamId(null); }}
-                onSelect={(animal) => {
-                  setSelectedDamId(animal.id);
-                  // Auto-fill calf tag based on operation preferences
-                  const calvingYear = date ? new Date(date).getFullYear() : new Date().getFullYear();
-                  const suggested = generateCalfTag(prefs || null, animal.tag, calvingYear);
-                  if (suggested) {
-                    setCalfTag(suggested);
-                    if (prefs?.calf_tag_default_color) setCalfColor(prefs.calf_tag_default_color);
-                  }
-                }}
-                onNoMatch={(search) => { showToast("info", `Quick-Add Dam for "${search}" — coming soon`); }}
-                placeholder="Type dam tag…"
-                inputStyle={IS}
-                sexFilter={["Cow", "Spayed Heifer"]}
-              />
-              <button
-                onClick={() => setShowDam(!showDam)}
-                type="button"
-                style={{
-                  height: 40,
-                  padding: "0 14px",
-                  borderRadius: 8,
-                  border: "none",
-                  cursor: "pointer",
-                  flexShrink: 0,
-                  backgroundColor: showDam ? "#E8C820" : "#F3D12A",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#1A1A1A",
-                  boxShadow: showDam ? "inset 0 1px 3px rgba(0,0,0,0.15)" : "0 1px 4px rgba(243,209,42,0.30)",
-                }}
-              >
-                History
-              </button>
-            </div>
+            <AnimalLookup
+              value={damTag}
+              onChange={(v) => { setDamTag(v); if (!v) setSelectedDamId(null); }}
+              onSelect={(animal) => {
+                setSelectedDamId(animal.id);
+                // Auto-fill calf tag based on operation preferences
+                const calvingYear = date ? new Date(date).getFullYear() : new Date().getFullYear();
+                const suggested = generateCalfTag(prefs || null, animal.tag, calvingYear);
+                if (suggested) {
+                  setCalfTag(suggested);
+                  if (prefs?.calf_tag_default_color) setCalfColor(prefs.calf_tag_default_color);
+                }
+              }}
+              onNoMatch={(search) => { showToast("info", `Quick-Add Dam for "${search}" — coming soon`); }}
+              placeholder="Type dam tag…"
+              inputStyle={IS}
+              sexFilter={["Cow", "Spayed Heifer"]}
+            />
           </FieldRow>
+          {selectedDamId && (
+            <button
+              onClick={() => setShowDam(!showDam)}
+              type="button"
+              style={{
+                width: "100%",
+                marginTop: 8,
+                padding: "8px 0",
+                borderRadius: 8,
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: showDam ? "rgba(85,186,170,0.12)" : "rgba(14,38,70,0.04)",
+                fontSize: 12,
+                fontWeight: 700,
+                color: showDam ? "#55BAAA" : "rgba(14,38,70,0.45)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: showDam ? "rotate(90deg)" : "rotate(0)", transition: "transform 150ms" }}>
+                <path d="M4 2.5L8 6L4 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {showDam ? "Hide Dam History" : "View Dam History"}
+            </button>
+          )}
         </div>
 
         {/* ═══ DAM HISTORY PANEL ═══ */}
