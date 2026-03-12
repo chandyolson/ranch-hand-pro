@@ -302,7 +302,7 @@ export type Database = {
           protocol_status: string | null
           protocol_year: number | null
           start_date: string | null
-          template_id: string
+          template_id: string | null
           total_estimated_cost: number | null
           updated_at: string | null
         }
@@ -319,7 +319,7 @@ export type Database = {
           protocol_status?: string | null
           protocol_year?: number | null
           start_date?: string | null
-          template_id: string
+          template_id?: string | null
           total_estimated_cost?: number | null
           updated_at?: string | null
         }
@@ -336,7 +336,7 @@ export type Database = {
           protocol_status?: string | null
           protocol_year?: number | null
           start_date?: string | null
-          template_id?: string
+          template_id?: string | null
           total_estimated_cost?: number | null
           updated_at?: string | null
         }
