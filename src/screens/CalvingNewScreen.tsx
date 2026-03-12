@@ -8,6 +8,7 @@ import FieldRow from "@/components/calving/FieldRow";
 import SegmentedToggle from "@/components/calving/SegmentedToggle";
 import PillScore from "@/components/calving/PillScore";
 import AnimalLookup from "@/components/AnimalLookup";
+import { useOperationPreferences, generateCalfTag, incrementCalfTagSeq } from "@/hooks/useOperationPreferences";
 import TraitPair from "@/components/calving/TraitPair";
 import { TRAIT_LABELS, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, DEATH_REASONS, GRAFT_REASONS } from "@/lib/constants";
 import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX } from "@/lib/constants";
@@ -108,6 +109,9 @@ export default function CalvingNewScreen() {
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
+
+  // Preferences
+  const { data: prefs } = useOperationPreferences();
 
   // Context
   const [contextOpen, setContextOpen] = useState(false);
@@ -400,7 +404,14 @@ export default function CalvingNewScreen() {
       queryClient.invalidateQueries({ queryKey: ["animals"] });
       queryClient.invalidateQueries({ queryKey: ["animal-counts"] });
 
-      // Step 5: Toast + reset (keep date/group/location)
+      // Step 5: Increment calf tag sequence if using auto-tagging
+      if (prefs && prefs.calf_tag_system !== "manual") {
+        const calvingYear = date ? new Date(date).getFullYear() : new Date().getFullYear();
+        await incrementCalfTagSeq(operationId, calvingYear, prefs);
+        queryClient.invalidateQueries({ queryKey: ["operation-preferences"] });
+      }
+
+      // Step 6: Toast + reset (keep date/group/location)
       if (calfStatus === "Dead") {
         showToast("success", `Calving recorded — calf marked Dead`);
       } else {
@@ -550,7 +561,16 @@ export default function CalvingNewScreen() {
               <AnimalLookup
                 value={damTag}
                 onChange={(v) => { setDamTag(v); if (!v) setSelectedDamId(null); }}
-                onSelect={(animal) => { setSelectedDamId(animal.id); }}
+                onSelect={(animal) => {
+                  setSelectedDamId(animal.id);
+                  // Auto-fill calf tag based on operation preferences
+                  const calvingYear = date ? new Date(date).getFullYear() : new Date().getFullYear();
+                  const suggested = generateCalfTag(prefs || null, animal.tag, calvingYear);
+                  if (suggested) {
+                    setCalfTag(suggested);
+                    if (prefs?.calf_tag_default_color) setCalfColor(prefs.calf_tag_default_color);
+                  }
+                }}
                 onNoMatch={(search) => { showToast("info", `Quick-Add Dam for "${search}" — coming soon`); }}
                 placeholder="Type dam tag…"
                 inputStyle={IS}
