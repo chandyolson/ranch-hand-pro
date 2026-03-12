@@ -2,9 +2,9 @@ import React, { useState, useMemo } from "react";
 import { useChuteSideToast } from "@/components/ToastContext";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
 import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PRODUCT_CATEGORIES, PRODUCT_CATEGORY_CONFIG, type ProductCategory } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
-import EditDeleteButtons from "@/components/EditDeleteButtons";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOperation } from '@/contexts/OperationContext';
@@ -121,9 +121,34 @@ const ReferenceTreatmentsScreen: React.FC = () => {
   [allProducts, linkedProductIds, addSearch]);
 
   const isFiltering = search.length > 0 || filters.length > 0;
+  const allMapped = mapped;
+  const stats = {
+    total: allMapped.length,
+    vaccines: allMapped.filter(p => p.category === "vaccine").length,
+    antibiotics: allMapped.filter(p => p.category === "antibiotic").length,
+  };
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3">
+    <div className="px-4 pt-1 pb-10 space-y-2">
+      {/* Stats bar */}
+      <div
+        className="rounded-xl px-3 py-2.5 flex items-center justify-between"
+        style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
+      >
+        {[
+          { label: "TOTAL", value: isLoading ? "—" : stats.total },
+          { label: "VACCINES", value: isLoading ? "—" : stats.vaccines },
+          { label: "ANTIBIOTICS", value: isLoading ? "—" : stats.antibiotics },
+        ].map((stat, i, arr) => (
+          <div key={stat.label} className="flex items-center gap-3">
+            <div className="flex flex-col items-center" style={{ minWidth: 50 }}>
+              <span style={{ fontSize: 18, fontWeight: 600, color: "white", lineHeight: 1 }}>{stat.value}</span>
+              <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(168,230,218,0.60)", letterSpacing: "0.08em", marginTop: 4 }}>{stat.label}</span>
+            </div>
+            {i < arr.length - 1 && <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.12)" }} />}
+          </div>
+        ))}
+      </div>
       <ListScreenToolbar
         title="Products"
         addLabel="Add Product"
@@ -208,57 +233,59 @@ const ReferenceTreatmentsScreen: React.FC = () => {
       )}
 
       {/* Product list */}
-      <div className="rounded-xl px-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-        {isLoading ? (
-          <div className="py-8 text-center" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>Loading…</div>
-        ) : filtered.length === 0 ? (
-          <div className="py-8 text-center" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products found</div>
-        ) : filtered.map(p => {
-          const cat = PRODUCT_CATEGORY_CONFIG[p.category] || PRODUCT_CATEGORY_CONFIG.other;
-          return (
-            <div key={p.id} className="flex items-start gap-3 py-3 border-b border-[rgba(26,26,26,0.06)] last:border-b-0">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>{p.name}</span>
-                  <span className="rounded-full shrink-0" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: cat.bg, color: cat.color }}>{cat.label.toUpperCase()}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  {(p.defaultDosage || p.defaultRoute) && (
-                    <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.50)" }}>
-                      {[p.defaultDosage, p.defaultRoute].filter(Boolean).join(" · ")}
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[72px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.15)" }} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-12 text-center space-y-1.5">
+          <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No products found</div>
+          <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or filter</div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-2">
+          {filtered.map(p => {
+            const cat = PRODUCT_CATEGORY_CONFIG[p.category] || PRODUCT_CATEGORY_CONFIG.other;
+            return (
+              <div key={p.id} className="rounded-xl px-3.5 py-3 flex items-start gap-3" style={{ backgroundColor: "#0E2646", minHeight: 56 }}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "white" }}>{p.name}</span>
+                    <span className="rounded-full shrink-0" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: cat.bg, color: cat.color }}>
+                      {cat.label.toUpperCase()}
                     </span>
-                  )}
-                  {p.manufacturer && (
-                    <>
-                      <span style={{ width: 1, height: 10, backgroundColor: "rgba(26,26,26,0.12)" }} />
-                      <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.45)" }}>{p.manufacturer}</span>
-                    </>
-                  )}
-                  {p.withdrawalDays > 0 && (
-                    <>
-                      <span style={{ width: 1, height: 10, backgroundColor: "rgba(26,26,26,0.12)" }} />
-                      <span className="rounded-full" style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", backgroundColor: "rgba(243,209,42,0.12)", color: "#B8960F" }}>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {(p.defaultDosage || p.defaultRoute) && (
+                      <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.50)" }}>
+                        {[p.defaultDosage, p.defaultRoute].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                    {p.manufacturer && (
+                      <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.40)" }}>
+                        {p.manufacturer}
+                      </span>
+                    )}
+                    {p.withdrawalDays > 0 && (
+                      <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", backgroundColor: "rgba(243,209,42,0.15)", color: "#F3D12A" }}>
                         {p.withdrawalDays}d withdrawal
                       </span>
-                    </>
-                  )}
+                    )}
+                  </div>
                 </div>
+                <button
+                  onClick={() => handleDelete(p.id, p.name)}
+                  style={{ width: 28, height: 28, borderRadius: 8, border: "none", backgroundColor: "rgba(155,35,53,0.15)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3H10M4.5 5V9M7.5 5V9M3 3L3.5 10.5H8.5L9 3" stroke="rgba(155,35,53,0.7)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
               </div>
-              <EditDeleteButtons
-                  onEdit={async () => {
-                    const newName = window.prompt("Edit product name:", p.name);
-                    if (!newName || newName.trim() === p.name) return;
-                    const { error } = await supabase.from("operation_products").update({ custom_dosage: newName.trim() }).eq("id", p.id);
-                    if (error) { showToast("error", error.message); return; }
-                    queryClient.invalidateQueries({ queryKey: ["operation-products"] });
-                    showToast("success", newName.trim() + " updated");
-                  }}
-                  onDelete={() => handleDelete(p.id, p.name)}
-                />
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
