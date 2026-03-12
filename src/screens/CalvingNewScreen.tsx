@@ -378,8 +378,6 @@ export default function CalvingNewScreen() {
         operation_id: operationId,
         dam_id: selectedDamId,
         calf_id: calfId,
-        calf_tag: calfTag.trim() || null,
-        calf_tag_color: calfColor === "None" ? null : calfColor,
         calving_date: date || new Date().toISOString().split("T")[0],
         calf_sex: calfSex || null,
         birth_weight: birthWeight ? parseFloat(birthWeight) : null,

@@ -67,7 +67,7 @@ export default function CalvingRecordScreen() {
       if (!id) return null;
       const { data, error } = await supabase
         .from("calving_records")
-        .select("*, dam:animals!calving_records_dam_id_fkey(tag, tag_color, sex, type, year_born)")
+        .select("*, dam:animals!calving_records_dam_id_fkey(tag, tag_color, sex, type, year_born), calf:animals!calving_records_calf_id_fkey(tag, tag_color)")
         .eq("id", id)
         .eq("operation_id", operationId)
         .maybeSingle();
@@ -90,9 +90,9 @@ export default function CalvingRecordScreen() {
     damType: dam?.type || dam?.sex || "",
     damYearBorn: dam?.year_born ? String(dam.year_born) : "",
     damFlag: null as FlagColor | null,
-    calfTag: (dbRecord as any).calf_tag || (dbRecord as any).calf?.tag || "",
-    calfColor: "Yellow",
-    calfColorHex: "#F3D12A",
+    calfTag: (dbRecord as any).calf?.tag || "",
+    calfColor: (dbRecord as any).calf?.tag_color || "Yellow",
+    calfColorHex: TAG_COLOR_HEX[(dbRecord as any).calf?.tag_color || "Yellow"] || "#F3D12A",
     calfEid: "",
     calfSex: (dbRecord.calf_sex || "Unknown") as "Bull" | "Heifer" | "Unknown",
     calfStatus: (dbRecord.calf_status || "Alive") as "Alive" | "Dead",

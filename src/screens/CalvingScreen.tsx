@@ -68,7 +68,7 @@ export default function CalvingScreen() {
     damTag: (r.dam as any)?.tag || "Unknown",
     damColor: (r.dam as any)?.tag_color || "None",
     damColorHex: TAG_HEX[(r.dam as any)?.tag_color || "None"] || "#999",
-    calfTag: r.calf_tag || (r as any).calf?.tag || "",
+    calfTag: (r as any).calf?.tag || "",
     calfSex: (r.calf_sex || "Unknown") as string,
     calfStatus: (r.calf_status || "Alive") as string,
     date: fmtDate(r.calving_date),
