@@ -512,7 +512,7 @@ export default function ProtocolBuilderScreen() {
                 value={evt.work_type_code}
                 onChange={(e) => {
                   const code = e.target.value;
-                  const wt = WORK_TYPES.find((w) => w.code === code);
+                  const wt = workTypesList.find((w) => w.code === code);
                   updateEvent(idx, {
                     work_type_code: code,
                     event_name: evt.event_name || wt?.name || "",
