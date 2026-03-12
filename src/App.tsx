@@ -20,6 +20,7 @@ import RedBookNewScreen from "@/screens/RedBookNewScreen";
 import RedBookDetailScreen from "@/screens/RedBookDetailScreen";
 import ReferenceScreen from "@/screens/ReferenceScreen";
 import ReferenceGroupsScreen from "@/screens/ReferenceGroupsScreen";
+import ReferenceGroupDetailScreen from "@/screens/ReferenceGroupDetailScreen";
 import ReferenceLocationsScreen from "@/screens/ReferenceLocationsScreen";
 import ReferenceQuickNotesScreen from "@/screens/ReferenceQuickNotesScreen";
 import ReferencePregStagesScreen from "@/screens/ReferencePregStagesScreen";
