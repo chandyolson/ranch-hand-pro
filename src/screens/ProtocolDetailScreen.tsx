@@ -116,7 +116,7 @@ export default function ProtocolDetailScreen() {
       showToast("success", "Protocol deleted");
       navigate("/protocols");
     } catch {
-      showToast("Failed to delete", "error");
+      showToast("error", "Failed to delete");
     } finally {
       setDeleting(false);
     }
