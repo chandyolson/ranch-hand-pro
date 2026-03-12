@@ -1,6 +1,7 @@
 // TODO: Wire Supabase auth in final phase
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ToastProvider } from "@/components/ToastContext";
+import CowWorkCloseOutScreen from "@/screens/CowWorkCloseOutScreen";
 import AppLayout from "@/components/AppLayout";
 import DashboardScreen from "@/screens/DashboardScreen";
 import AnimalsScreen from "@/screens/AnimalsScreen";
