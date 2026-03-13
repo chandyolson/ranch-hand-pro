@@ -1178,6 +1178,7 @@ export default function CalvingNewScreen() {
               </div>
             </FieldRow>
           </div>
+          </div>
         </div>
 
         {/* ═══ 4. DETAILS — collapsible ═══ */}
