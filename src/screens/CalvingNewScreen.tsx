@@ -116,8 +116,8 @@ export default function CalvingNewScreen() {
   // Context
   const [contextOpen, setContextOpen] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [groupId, setGroupId] = useState("");
-  const [locationId, setLocationId] = useState("");
+  const [groupId, setGroupId] = useState(localStorage.getItem("cs_last_calving_group") || "");
+  const [locationId, setLocationId] = useState(localStorage.getItem("cs_last_calving_location") || "");
   const { data: groups } = useGroups();
   const { data: locations } = useLocations();
 
