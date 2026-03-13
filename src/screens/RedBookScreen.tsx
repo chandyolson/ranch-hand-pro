@@ -71,7 +71,7 @@ const RedBookScreen: React.FC = () => {
         <div
           className="rounded-xl px-3 py-3 flex items-center gap-3 cursor-pointer active:scale-[0.98]"
           style={{ background: "linear-gradient(135deg, #9B2335 0%, #7A1C2A 100%)" }}
-          onClick={() => clearFilters()}
+          onClick={() => setFilters([{ key: "has_action", type: "boolean", value: true, label: "Has Action: Yes" }])}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="shrink-0">
             <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" />
