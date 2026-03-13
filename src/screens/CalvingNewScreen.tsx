@@ -52,8 +52,6 @@ function Collapsible({
     <div
       style={{
         borderRadius: 12,
-        border: "1px solid rgba(212,212,208,0.60)",
-        backgroundColor: "white",
         overflow: "hidden",
       }}
     >
@@ -65,37 +63,37 @@ function Collapsible({
           alignItems: "center",
           justifyContent: "space-between",
           width: "100%",
-          padding: "12px",
+          padding: "9px 14px",
           cursor: "pointer",
-          backgroundColor: "white",
+          background: "linear-gradient(135deg, #0E2646 0%, #163A5E 100%)",
           border: "none",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>{title}</span>
-          {badge != null && <span style={{ fontSize: 11, fontWeight: 700, color: "#55BAAA" }}>{badge}</span>}
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", letterSpacing: "0.04em" }}>{title}</span>
+          {badge != null && <span style={{ fontSize: 11, fontWeight: 700, color: "#F3D12A" }}>{badge}</span>}
         </div>
         <svg
-          width="18"
-          height="18"
-          viewBox="0 0 18 18"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
           fill="none"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 200ms" }}
         >
           <path
-            d="M4.5 6.75L9 11.25L13.5 6.75"
-            stroke="rgba(26,26,26,0.40)"
-            strokeWidth="1.8"
+            d="M4 6L8 10L12 6"
+            stroke="rgba(255,255,255,0.50)"
+            strokeWidth="1.6"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
         </svg>
       </button>
       {!open && collapsedContent && (
-        <div style={{ padding: "0 12px 12px", borderTop: "1px solid rgba(212,212,208,0.40)" }}>{collapsedContent}</div>
+        <div style={{ padding: "8px 12px 10px", backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)", borderTop: "none", borderRadius: "0 0 12px 12px" }}>{collapsedContent}</div>
       )}
       {open && (
-        <div style={{ padding: "4px 12px 12px", borderTop: "1px solid rgba(212,212,208,0.40)" }}>{children}</div>
+        <div style={{ padding: "8px 12px 12px", backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)", borderTop: "none", borderRadius: "0 0 12px 12px" }}>{children}</div>
       )}
     </div>
   );
