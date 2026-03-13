@@ -1,0 +1,1 @@
+CREATE POLICY "dev_select_operations" ON public.operations FOR SELECT TO public USING (true);
