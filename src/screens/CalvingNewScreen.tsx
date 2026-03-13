@@ -116,8 +116,8 @@ export default function CalvingNewScreen() {
   // Context
   const [contextOpen, setContextOpen] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [groupId, setGroupId] = useState("");
-  const [locationId, setLocationId] = useState("");
+  const [groupId, setGroupId] = useState(localStorage.getItem("cs_last_calving_group") || "");
+  const [locationId, setLocationId] = useState(localStorage.getItem("cs_last_calving_location") || "");
   const { data: groups } = useGroups();
   const { data: locations } = useLocations();
 
@@ -430,7 +430,10 @@ export default function CalvingNewScreen() {
       });
       if (calvErr) throw calvErr;
 
-      // Step 4: Invalidate caches
+      // Persist last-used location and group for next entry
+      if (locationId) localStorage.setItem("cs_last_calving_location", locationId);
+      if (groupId) localStorage.setItem("cs_last_calving_group", groupId);
+
       queryClient.invalidateQueries({ queryKey: ["calving-list"] });
       queryClient.invalidateQueries({ queryKey: ["calving-counts"] });
       queryClient.invalidateQueries({ queryKey: ["animals"] });
