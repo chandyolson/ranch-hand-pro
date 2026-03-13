@@ -46,8 +46,8 @@ const App = () => (
           <Route path="cow-work/:id/close-out" element={<CowWorkCloseOutScreen />} />
           <Route path="protocols" element={<ProtocolHubScreen />} />
           <Route path="protocols/customer/:operationId" element={<CustomerProtocolScreen />} />
+          <Route path="protocols/templates/new" element={<ProtocolTemplateBuilderScreen />} />
           <Route path="protocols/templates/:id" element={<PlaceholderScreen title="Template Detail" />} />
-          <Route path="protocols/templates/new" element={<PlaceholderScreen title="New Template" />} />
           <Route path="calving" element={<CalvingScreen />} />
           <Route path="calving/new" element={<CalvingNewScreen />} />
           <Route path="calving/:id" element={<CalvingRecordScreen />} />
