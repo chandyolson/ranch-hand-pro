@@ -60,6 +60,7 @@ export default function CalvingRecordScreen() {
   const { showToast } = useChuteSideToast();
 
   const { operationId } = useOperation();
+  const queryClient = useQueryClient();
 
   const { data: dbRecord, isLoading } = useQuery({
     queryKey: ["calving-record", id],
