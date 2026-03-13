@@ -105,7 +105,7 @@ export default function ProtocolHubScreen() {
         name: t.name,
         animalClass: t.animal_class || "Calves",
         eventCount: Array.isArray(t.events) ? t.events.length : 0,
-        status: t.protocol_status || "draft",
+        isActive: t.is_active !== false,
       }));
     },
   });
