@@ -130,7 +130,7 @@ export default function CalvingRecordScreen() {
     mothering: dbRecord.mothering ? String(dbRecord.mothering) : "",
     calfVigor: dbRecord.calf_vigor ? String(dbRecord.calf_vigor) : "",
     calfSize2: dbRecord.calf_size ? String(dbRecord.calf_size) : "",
-    quickNotes: [] as string[],
+    quickNotes: (dbRecord as any).quick_notes || [],
     memo: dbRecord.memo || "",
   } : null;
 
