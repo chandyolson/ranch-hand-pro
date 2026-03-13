@@ -1699,6 +1699,54 @@ export type Database = {
           },
         ]
       }
+      red_book_attachments: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          note_id: string
+          operation_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          note_id: string
+          operation_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          note_id?: string
+          operation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "red_book_attachments_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "red_book_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "red_book_attachments_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       red_book_notes: {
         Row: {
           attachment_count: number
