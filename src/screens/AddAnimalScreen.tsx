@@ -151,7 +151,8 @@ export default function AddAnimalScreen() {
               className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full"
               style={{ width: 10, height: 10, backgroundColor: TAG_COLOR_HEX[tagColor] }}
             />
-            <select value={tagColor} onChange={e => setTagColor(e.target.value)} className={INPUT_CLS + " pl-7 w-full"} style={{ fontSize: 16 }}>
+            <select value={tagColor} onChange={e => setTagColor(e.target.value)} className={INPUT_CLS + " pl-7 w-full"} style={{ fontSize: 16, color: tagColor ? "#1A1A1A" : "rgba(26,26,26,0.35)" }}>
+              <option value="">Select color…</option>
               {TAG_COLOR_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
