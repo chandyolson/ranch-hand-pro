@@ -83,7 +83,7 @@ export default function ProtocolTemplateBuilderScreen() {
           name: templateName.trim(),
           animal_class: animalType,
           operation_id: operationId,
-          protocol_status: "draft",
+          is_active: true,
         })
         .select("id")
         .single();
