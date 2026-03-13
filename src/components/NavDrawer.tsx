@@ -14,6 +14,7 @@ interface NavDrawerProps {
   open: boolean;
   onClose: () => void;
   activeItem?: string;
+  operationName?: string;
   onItemSelect?: (item: string) => void;
   onSignOut?: () => void;
   onSwitchOperation?: () => void;
