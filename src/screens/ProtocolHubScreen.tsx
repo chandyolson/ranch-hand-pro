@@ -42,12 +42,13 @@ export default function ProtocolHubScreen() {
   const { data: customers, isLoading: loadingCustomers } = useQuery({
     queryKey: ["protocol-hub-customers", operationId],
     queryFn: async () => {
+      // Query all vet_practice_clients — don't filter by operationId
+      // vet_practice_clients.operation_id = client's operation, not the vet practice
       const { data: clients, error } = await supabase
         .from("vet_practice_clients")
-        .select("operation_id, clinic_client_id, operation:operations(id, name)")
-        .eq("vet_practice_id", operationId);
+        .select("id, operation_id, clinic_client_id, operations!vet_practice_clients_operation_id_fkey(id, name)");
 
-      console.log("[ProtocolHub] vet_practice_clients query:", { clients, error, operationId });
+      console.log("[ProtocolHub] vet_practice_clients query:", { clients, error });
 
       if (error) throw error;
       if (!clients || clients.length === 0) return [];
