@@ -422,9 +422,11 @@ export type Database = {
           dam_id: string
           death_explanation: string | null
           disposition: number | null
+          embryo_dam_id: string | null
           foot: number | null
           group_id: string | null
           id: string
+          is_embryo: boolean | null
           location_id: string | null
           memo: string | null
           mothering: number | null
@@ -451,9 +453,11 @@ export type Database = {
           dam_id: string
           death_explanation?: string | null
           disposition?: number | null
+          embryo_dam_id?: string | null
           foot?: number | null
           group_id?: string | null
           id?: string
+          is_embryo?: boolean | null
           location_id?: string | null
           memo?: string | null
           mothering?: number | null
@@ -480,9 +484,11 @@ export type Database = {
           dam_id?: string
           death_explanation?: string | null
           disposition?: number | null
+          embryo_dam_id?: string | null
           foot?: number | null
           group_id?: string | null
           id?: string
+          is_embryo?: boolean | null
           location_id?: string | null
           memo?: string | null
           mothering?: number | null
@@ -503,6 +509,13 @@ export type Database = {
           {
             foreignKeyName: "calving_records_dam_id_fkey"
             columns: ["dam_id"]
+            isOneToOne: false
+            referencedRelation: "animals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calving_records_embryo_dam_id_fkey"
+            columns: ["embryo_dam_id"]
             isOneToOne: false
             referencedRelation: "animals"
             referencedColumns: ["id"]

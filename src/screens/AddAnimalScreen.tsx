@@ -21,7 +21,7 @@ import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 
 export default function AddAnimalScreen() {
   const [tag, setTag] = useState("");
-  const [tagColor, setTagColor] = useState("Yellow");
+  const [tagColor, setTagColor] = useState("");
   const [eid, setEid] = useState("");
   const [sex, setSex] = useState("");
   const [animalType, setAnimalType] = useState("");
