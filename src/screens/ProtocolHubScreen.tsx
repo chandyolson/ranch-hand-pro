@@ -69,7 +69,7 @@ export default function ProtocolHubScreen() {
         clinicClientId: c.clinic_client_id,
       }));
 
-      const opIds = customerOps.map((c) => c.operationId);
+      // reuse opIds from above
 
       /* Check assigned_protocols for history */
       const { data: protocols } = await supabase
