@@ -22,6 +22,7 @@ const ReferenceQuickNotesScreen: React.FC = () => {
   const [newText, setNewText] = useState("");
   const [newCategory, setNewCategory] = useState("management");
   const { showToast } = useChuteSideToast();
+  const [search, setSearch] = useState("");
 
   const handleAdd = async () => {
     if (!newText.trim()) { showToast("error", "Note text is required"); return; }
@@ -88,8 +89,25 @@ const ReferenceQuickNotesScreen: React.FC = () => {
 
       {!isLoading && (
         <>
+          <input
+            type="text"
+            placeholder="Search quick notes..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              fontSize: 16,
+              borderRadius: 10,
+              border: "1px solid rgba(212,212,208,0.6)",
+              backgroundColor: "white",
+              marginBottom: 12,
+              outline: "none",
+              fontFamily: "inherit",
+            }}
+          />
           <div className="rounded-xl px-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-            {allNotes.map(n => {
+            {allNotes.filter((n) => !search || n.note.toLowerCase().includes(search.toLowerCase())).map(n => {
               const cat = categoryConfig[n.note_type];
               return (
                 <ReferenceItemRow
