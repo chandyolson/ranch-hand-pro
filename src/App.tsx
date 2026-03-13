@@ -27,6 +27,7 @@ import ReferencePregStagesScreen from "@/screens/ReferencePregStagesScreen";
 import ReferenceTreatmentsScreen from "@/screens/ReferenceTreatmentsScreen";
 import ReferenceTeamScreen from "@/screens/ReferenceTeamScreen";
 import ReferenceSettingsScreen from "@/screens/ReferenceSettingsScreen";
+import ProtocolTemplateBuilderScreen from "@/screens/ProtocolTemplateBuilderScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
 import NotFound from "@/pages/NotFound";
 
@@ -45,8 +46,8 @@ const App = () => (
           <Route path="cow-work/:id/close-out" element={<CowWorkCloseOutScreen />} />
           <Route path="protocols" element={<ProtocolHubScreen />} />
           <Route path="protocols/customer/:operationId" element={<CustomerProtocolScreen />} />
+          <Route path="protocols/templates/new" element={<ProtocolTemplateBuilderScreen />} />
           <Route path="protocols/templates/:id" element={<PlaceholderScreen title="Template Detail" />} />
-          <Route path="protocols/templates/new" element={<PlaceholderScreen title="New Template" />} />
           <Route path="calving" element={<CalvingScreen />} />
           <Route path="calving/new" element={<CalvingNewScreen />} />
           <Route path="calving/:id" element={<CalvingRecordScreen />} />
