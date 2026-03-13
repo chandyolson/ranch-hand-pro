@@ -276,7 +276,17 @@ export default function ProtocolHubScreen() {
                             {t.animalClass}
                           </span>
                           <span style={{ fontSize: 12, color: COLORS.mutedText }}>
-                            {t.eventCount} event{t.eventCount !== 1 ? "s" : ""}
+                            {t.eventCount} stage{t.eventCount !== 1 ? "s" : ""}
+                          </span>
+                          <span
+                            className="rounded-full px-2 py-0.5"
+                            style={{
+                              fontSize: 10, fontWeight: 600,
+                              backgroundColor: t.isActive ? "rgba(85,186,170,0.12)" : "rgba(168,168,168,0.12)",
+                              color: t.isActive ? "#55BAAA" : "#888888",
+                            }}
+                          >
+                            {t.isActive ? "Active" : "Inactive"}
                           </span>
                         </div>
                       </div>
