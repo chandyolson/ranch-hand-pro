@@ -38,14 +38,12 @@ const CLASS_BADGES: Record<string, { bg: string; text: string }> = {
   Feeder: { bg: "rgba(168,168,168,0.12)", text: "#888888" },
 };
 
-interface EventProduct {
-  id?: string;
+interface RecommendedProduct {
   product_id: string;
-  name: string;
-  route: string | null;
+  product_name: string;
   dosage: string | null;
-  injection_site: string | null;
-  included: boolean;
+  route: string | null;
+  notes: string | null;
 }
 
 interface StageData {
@@ -53,8 +51,9 @@ interface StageData {
   event_name: string;
   scheduled_date: string | null;
   event_status: string;
-  notes: string;
-  products: EventProduct[];
+  completion_notes: string;
+  actual_head_count: number | null;
+  products: RecommendedProduct[];
   hasData: boolean;
   expanded: boolean;
 }
@@ -83,7 +82,7 @@ export default function CustomerProtocolScreen() {
   const [addTypeOpen, setAddTypeOpen] = useState(false);
 
   const isCurrentYear = selectedYear === CURRENT_YEAR;
-  const isDraft = isCurrentYear; // simplified: current year = editable
+  const isDraft = isCurrentYear;
 
   /* ── Customer name ── */
   const { data: customer } = useQuery({
@@ -125,58 +124,36 @@ export default function CustomerProtocolScreen() {
           id, animal_class, estimated_head_count, protocol_status, notes,
           events:assigned_protocol_events(
             id, event_name, scheduled_date, event_status, completion_notes,
-            template_event_id
+            actual_head_count, recommended_products
           )
         `)
         .eq("client_operation_id", clientOpId!)
         .eq("protocol_year", selectedYear);
       if (error) throw error;
-
-      // Fetch products for all events
-      const eventIds = (protocols || []).flatMap((p: any) =>
-        (p.events || []).map((e: any) => e.template_event_id).filter(Boolean)
-      );
-      const assignedEventIds = (protocols || []).flatMap((p: any) =>
-        (p.events || []).map((e: any) => e.id)
-      );
-
-      let eventProducts: any[] = [];
-      if (eventIds.length > 0) {
-        const { data: ep } = await supabase
-          .from("protocol_event_products")
-          .select("id, event_id, product_id, dosage_override, route_override, injection_site, product:products(name, route, dosage, injection_site)")
-          .in("event_id", [...eventIds, ...assignedEventIds]);
-        eventProducts = ep || [];
-      }
-
-      return { protocols: protocols || [], eventProducts };
+      return protocols || [];
     },
     enabled: !!clientOpId,
   });
 
   /* ── Build sections from data ── */
-  const buildSections = useCallback((data: typeof protocolData): AnimalSection[] => {
-    if (!data || data.protocols.length === 0) return [];
+  const buildSections = useCallback((protocols: any[]): AnimalSection[] => {
+    if (!protocols || protocols.length === 0) return [];
 
-    return data.protocols.map((p: any) => {
+    return protocols.map((p: any) => {
       const stageNames = STAGE_MAP[p.animal_class] || [];
       const eventMap = new Map<string, any>();
       (p.events || []).forEach((e: any) => eventMap.set(e.event_name, e));
 
       const stages: StageData[] = stageNames.map((stageName) => {
         const ev = eventMap.get(stageName);
-        const products: EventProduct[] = ev
-          ? data.eventProducts
-              .filter((ep: any) => ep.event_id === ev.id || ep.event_id === ev.template_event_id)
-              .map((ep: any) => ({
-                id: ep.id,
-                product_id: ep.product_id,
-                name: ep.product?.name || "Unknown",
-                route: ep.route_override || ep.product?.route || null,
-                dosage: ep.dosage_override || ep.product?.dosage || null,
-                injection_site: ep.injection_site || ep.product?.injection_site || null,
-                included: true,
-              }))
+        const products: RecommendedProduct[] = ev
+          ? (Array.isArray(ev.recommended_products) ? ev.recommended_products : []).map((rp: any) => ({
+              product_id: rp.product_id || "",
+              product_name: rp.product_name || rp.name || "Unknown",
+              dosage: rp.dosage || null,
+              route: rp.route || null,
+              notes: rp.notes || null,
+            }))
           : [];
 
         return {
@@ -184,7 +161,8 @@ export default function CustomerProtocolScreen() {
           event_name: stageName,
           scheduled_date: ev?.scheduled_date || null,
           event_status: ev?.event_status || "upcoming",
-          notes: ev?.completion_notes || "",
+          completion_notes: ev?.completion_notes || "",
+          actual_head_count: ev?.actual_head_count || null,
           products,
           hasData: !!ev,
           expanded: !!ev,
@@ -194,23 +172,20 @@ export default function CustomerProtocolScreen() {
       // Add any events not in the reference map
       (p.events || []).forEach((e: any) => {
         if (!stageNames.includes(e.event_name)) {
-          const products = data.eventProducts
-            .filter((ep: any) => ep.event_id === e.id || ep.event_id === e.template_event_id)
-            .map((ep: any) => ({
-              id: ep.id,
-              product_id: ep.product_id,
-              name: ep.product?.name || "Unknown",
-              route: ep.route_override || ep.product?.route || null,
-              dosage: ep.dosage_override || ep.product?.dosage || null,
-              injection_site: ep.injection_site || ep.product?.injection_site || null,
-              included: true,
-            }));
+          const products: RecommendedProduct[] = (Array.isArray(e.recommended_products) ? e.recommended_products : []).map((rp: any) => ({
+            product_id: rp.product_id || "",
+            product_name: rp.product_name || rp.name || "Unknown",
+            dosage: rp.dosage || null,
+            route: rp.route || null,
+            notes: rp.notes || null,
+          }));
           stages.push({
             id: e.id,
             event_name: e.event_name,
             scheduled_date: e.scheduled_date,
             event_status: e.event_status || "upcoming",
-            notes: e.completion_notes || "",
+            completion_notes: e.completion_notes || "",
+            actual_head_count: e.actual_head_count || null,
             products,
             hasData: true,
             expanded: true,
@@ -235,7 +210,6 @@ export default function CustomerProtocolScreen() {
     }
   }, [protocolData, sections, buildSections]);
 
-  // Reset sections when year changes
   const changeYear = (year: number) => {
     setSections(null);
     setSelectedYear(year);
@@ -259,11 +233,10 @@ export default function CustomerProtocolScreen() {
       const stage = { ...next[sIdx].stages[stIdx] };
       stage.products = [...stage.products, {
         product_id: product.product_id,
-        name: product.name,
-        route: product.route,
+        product_name: product.name,
         dosage: product.dosage,
-        injection_site: product.injection_site,
-        included: true,
+        route: product.route,
+        notes: null,
       }];
       stage.hasData = true;
       stage.expanded = true;
@@ -285,12 +258,12 @@ export default function CustomerProtocolScreen() {
     });
   };
 
-  const toggleProduct = (sIdx: number, stIdx: number, pIdx: number) => {
+  const updateProduct = (sIdx: number, stIdx: number, pIdx: number, patch: Partial<RecommendedProduct>) => {
     setSections((prev) => {
       if (!prev) return prev;
       const next = [...prev];
       const stage = { ...next[sIdx].stages[stIdx] };
-      stage.products = stage.products.map((p, i) => i === pIdx ? { ...p, included: !p.included } : p);
+      stage.products = stage.products.map((p, i) => i === pIdx ? { ...p, ...patch } : p);
       next[sIdx] = { ...next[sIdx], stages: [...next[sIdx].stages] };
       next[sIdx].stages[stIdx] = stage;
       return next;
@@ -307,7 +280,8 @@ export default function CustomerProtocolScreen() {
         event_name: name,
         scheduled_date: null,
         event_status: "upcoming",
-        notes: "",
+        completion_notes: "",
+        actual_head_count: null,
         products: [],
         hasData: false,
         expanded: false,
@@ -322,15 +296,14 @@ export default function CustomerProtocolScreen() {
     if (!clientOpId || !protocolData) return;
     setSaving(true);
     try {
-      for (const p of protocolData.protocols) {
+      for (const p of protocolData) {
         const { data: newProto, error: pErr } = await supabase
           .from("assigned_protocols")
           .insert({
-            template_id: (p as any).template_id || p.id,
             operation_id: vetOpId,
             client_operation_id: clientOpId,
-            animal_class: p.animal_class,
-            estimated_head_count: p.estimated_head_count,
+            animal_class: (p as any).animal_class,
+            estimated_head_count: (p as any).estimated_head_count,
             protocol_year: CURRENT_YEAR,
             protocol_status: "draft",
           } as any)
@@ -338,37 +311,19 @@ export default function CustomerProtocolScreen() {
           .single();
         if (pErr) throw pErr;
 
-        for (const ev of (p as any).events || []) {
+        for (const ev of ((p as any).events || [])) {
           const newDate = ev.scheduled_date
             ? ev.scheduled_date.replace(/^\d{4}/, String(CURRENT_YEAR))
             : null;
-          const { data: newEv, error: eErr } = await supabase
+          await supabase
             .from("assigned_protocol_events")
             .insert({
               assigned_protocol_id: newProto.id,
               event_name: ev.event_name,
               scheduled_date: newDate,
               event_status: "upcoming",
-              template_event_id: ev.template_event_id,
-            })
-            .select("id")
-            .single();
-          if (eErr) throw eErr;
-
-          const evProducts = protocolData.eventProducts.filter(
-            (ep: any) => ep.event_id === ev.id || ep.event_id === ev.template_event_id
-          );
-          if (evProducts.length > 0) {
-            await supabase.from("protocol_event_products").insert(
-              evProducts.map((ep: any) => ({
-                event_id: newEv.id,
-                product_id: ep.product_id,
-                dosage_override: ep.dosage_override,
-                route_override: ep.route_override,
-                injection_site: ep.injection_site,
-              }))
-            );
-          }
+              recommended_products: ev.recommended_products || [],
+            });
         }
       }
       queryClient.invalidateQueries({ queryKey: ["customer-protocols", clientOpId] });
@@ -391,53 +346,20 @@ export default function CustomerProtocolScreen() {
       for (const section of sections) {
         let protoId = section.id;
         if (!protoId) {
-          // Find an existing template to reference, or use a dummy
-          const { data: templates } = await supabase
-            .from("vaccination_protocol_templates")
+          const { data: newP, error } = await supabase
+            .from("assigned_protocols")
+            .insert({
+              operation_id: vetOpId,
+              client_operation_id: clientOpId,
+              animal_class: section.animal_class,
+              estimated_head_count: section.estimated_head_count,
+              protocol_year: selectedYear,
+              protocol_status: activate ? "active" : "draft",
+            } as any)
             .select("id")
-            .eq("operation_id", vetOpId)
-            .limit(1);
-          const templateId = templates?.[0]?.id;
-          if (!templateId) {
-            // Create a minimal template
-            const { data: newT } = await supabase
-              .from("vaccination_protocol_templates")
-              .insert({ name: `${customer?.name} - ${section.animal_class}`, operation_id: vetOpId, animal_class: section.animal_class } as any)
-              .select("id")
-              .single();
-            if (!newT) throw new Error("Failed to create template");
-            const { data: newP, error } = await supabase
-              .from("assigned_protocols")
-              .insert({
-                template_id: newT.id,
-                operation_id: vetOpId,
-                client_operation_id: clientOpId,
-                animal_class: section.animal_class,
-                estimated_head_count: section.estimated_head_count,
-                protocol_year: selectedYear,
-                protocol_status: activate ? "active" : "draft",
-              } as any)
-              .select("id")
-              .single();
-            if (error) throw error;
-            protoId = newP!.id;
-          } else {
-            const { data: newP, error } = await supabase
-              .from("assigned_protocols")
-              .insert({
-                template_id: templateId,
-                operation_id: vetOpId,
-                client_operation_id: clientOpId,
-                animal_class: section.animal_class,
-                estimated_head_count: section.estimated_head_count,
-                protocol_year: selectedYear,
-                protocol_status: activate ? "active" : "draft",
-              } as any)
-              .select("id")
-              .single();
-            if (error) throw error;
-            protoId = newP!.id;
-          }
+            .single();
+          if (error) throw error;
+          protoId = newP!.id;
         } else {
           await supabase
             .from("assigned_protocols")
@@ -450,52 +372,45 @@ export default function CustomerProtocolScreen() {
 
         for (const stage of section.stages) {
           if (!stage.hasData && stage.products.length === 0) continue;
-          let eventId = stage.id;
-          if (!eventId) {
-            const { data: newEv, error } = await supabase
-              .from("assigned_protocol_events")
-              .insert({
-                assigned_protocol_id: protoId,
-                event_name: stage.event_name,
-                scheduled_date: stage.scheduled_date,
-                event_status: stage.event_status,
-                completion_notes: stage.notes || null,
-              })
-              .select("id")
-              .single();
-            if (error) throw error;
-            eventId = newEv!.id;
-          } else {
+
+          const recommendedProducts = stage.products.map((p) => ({
+            product_id: p.product_id,
+            product_name: p.product_name,
+            dosage: p.dosage,
+            route: p.route,
+            notes: p.notes,
+          }));
+
+          if (stage.id) {
             await supabase
               .from("assigned_protocol_events")
               .update({
                 event_name: stage.event_name,
                 scheduled_date: stage.scheduled_date,
                 event_status: stage.event_status,
-                completion_notes: stage.notes || null,
+                completion_notes: stage.completion_notes || null,
+                actual_head_count: stage.actual_head_count,
+                recommended_products: recommendedProducts as any,
               })
-              .eq("id", eventId);
-          }
-
-          // Delete + re-insert products
-          await supabase.from("protocol_event_products").delete().eq("event_id", eventId);
-          const includedProducts = stage.products.filter((p) => p.included);
-          if (includedProducts.length > 0) {
-            await supabase.from("protocol_event_products").insert(
-              includedProducts.map((p, i) => ({
-                event_id: eventId!,
-                product_id: p.product_id,
-                dosage_override: p.dosage,
-                route_override: p.route,
-                injection_site: p.injection_site,
-                sort_order: i,
-              }))
-            );
+              .eq("id", stage.id);
+          } else {
+            await supabase
+              .from("assigned_protocol_events")
+              .insert({
+                assigned_protocol_id: protoId,
+                event_name: stage.event_name,
+                scheduled_date: stage.scheduled_date,
+                event_status: stage.event_status,
+                completion_notes: stage.completion_notes || null,
+                actual_head_count: stage.actual_head_count,
+                recommended_products: recommendedProducts as any,
+              });
           }
         }
       }
 
       queryClient.invalidateQueries({ queryKey: ["customer-protocols", clientOpId] });
+      setSections(null);
       showToast("success", activate ? "Protocol activated" : "Draft saved");
     } catch (err: any) {
       showToast("error", err.message || "Save failed");
@@ -507,8 +422,8 @@ export default function CustomerProtocolScreen() {
   /* ── Derived ── */
   const usedTypes = (sections || []).map((s) => s.animal_class);
   const availableTypes = (ANIMAL_TYPE_OPTIONS as readonly string[]).filter((t) => !usedTypes.includes(t));
-  const hasSourceData = protocolData && protocolData.protocols.length > 0;
-  const displaySections = sections || buildSections(protocolData || { protocols: [], eventProducts: [] });
+  const hasSourceData = protocolData && protocolData.length > 0;
+  const displaySections = sections || buildSections(protocolData || []);
   const totalEvents = displaySections.reduce((sum, s) => sum + s.stages.filter((st) => st.hasData).length, 0);
 
   const canGoLeft = availableYears && availableYears.indexOf(selectedYear) > 0;
@@ -551,7 +466,7 @@ export default function CustomerProtocolScreen() {
       {!isCurrentYear && hasSourceData && (
         <div
           className="rounded-lg px-4 py-3 flex items-center justify-between gap-3"
-          style={{ backgroundColor: "rgba(243,209,42,0.15)", border: `1px solid rgba(243,209,42,0.40)` }}
+          style={{ backgroundColor: "rgba(243,209,42,0.15)", border: "1px solid rgba(243,209,42,0.40)" }}
         >
           <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.textOnLight }}>
             Viewing {selectedYear} program
@@ -570,7 +485,7 @@ export default function CustomerProtocolScreen() {
       {isCurrentYear && hasSourceData && (
         <div
           className="rounded-lg px-4 py-3"
-          style={{ backgroundColor: "rgba(85,186,170,0.12)", border: `1px solid rgba(85,186,170,0.30)` }}
+          style={{ backgroundColor: "rgba(85,186,170,0.12)", border: "1px solid rgba(85,186,170,0.30)" }}
         >
           <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.teal }}>
             {selectedYear} Draft — {totalEvents} event{totalEvents !== 1 ? "s" : ""} scheduled
@@ -707,6 +622,11 @@ export default function CustomerProtocolScreen() {
                               <span style={{ fontSize: 12, color: COLORS.mutedText }}>{stage.scheduled_date}</span>
                             )}
                           </div>
+                          {stage.actual_head_count != null && stage.actual_head_count > 0 && (
+                            <span className="rounded-full px-2 py-0.5 shrink-0 mr-2" style={{ fontSize: 10, fontWeight: 600, backgroundColor: "rgba(85,186,170,0.12)", color: COLORS.teal }}>
+                              {stage.actual_head_count} hd
+                            </span>
+                          )}
                           {stage.products.length > 0 && (
                             <span style={{ fontSize: 11, color: COLORS.mutedText, marginRight: 8 }}>
                               {stage.products.length} product{stage.products.length !== 1 ? "s" : ""}
@@ -721,7 +641,30 @@ export default function CustomerProtocolScreen() {
                         {/* Expanded content */}
                         {stage.expanded && (
                           <div style={{ borderTop: `1px solid ${COLORS.borderDivider}` }}>
-                            {/* Product table */}
+                            {/* Date + head count row in edit mode */}
+                            {isDraft && (
+                              <div className="flex items-center gap-2 px-3 py-2">
+                                <label style={{ fontSize: 12, fontWeight: 600, color: COLORS.mutedText }}>Date</label>
+                                <input
+                                  type="date"
+                                  className={INPUT_CLS}
+                                  style={{ width: 140, fontSize: 14 }}
+                                  value={stage.scheduled_date || ""}
+                                  onChange={(e) => updateStage(sIdx, stIdx, { scheduled_date: e.target.value || null })}
+                                />
+                                <label style={{ fontSize: 12, fontWeight: 600, color: COLORS.mutedText, marginLeft: 8 }}>Hd</label>
+                                <input
+                                  type="number"
+                                  className={INPUT_CLS}
+                                  style={{ width: 60, fontSize: 14 }}
+                                  placeholder="—"
+                                  value={stage.actual_head_count ?? ""}
+                                  onChange={(e) => updateStage(sIdx, stIdx, { actual_head_count: e.target.value ? parseInt(e.target.value) : null })}
+                                />
+                              </div>
+                            )}
+
+                            {/* Product list */}
                             {stage.products.length > 0 && (
                               <div>
                                 {stage.products.map((prod, pIdx) => (
@@ -730,32 +673,42 @@ export default function CustomerProtocolScreen() {
                                     className="flex items-center gap-2 px-3 py-2"
                                     style={{ backgroundColor: pIdx % 2 === 1 ? COLORS.background : "white", minHeight: 40 }}
                                   >
-                                    {isDraft && (
-                                      <button
-                                        onClick={() => toggleProduct(sIdx, stIdx, pIdx)}
-                                        className="shrink-0 rounded flex items-center justify-center"
-                                        style={{
-                                          width: 20, height: 20,
-                                          border: `2px solid ${prod.included ? COLORS.teal : COLORS.borderDivider}`,
-                                          backgroundColor: prod.included ? COLORS.teal : "transparent",
-                                        }}
-                                      >
-                                        {prod.included && <Check size={12} color="white" />}
-                                      </button>
-                                    )}
                                     <span className="flex-1 min-w-0 truncate" style={{ fontSize: 13, fontWeight: 600, color: COLORS.textOnLight }}>
-                                      {prod.name}
+                                      {prod.product_name}
                                     </span>
                                     {prod.route && (
-                                      <span className="rounded-full px-2 py-0.5 shrink-0" style={{ fontSize: 10, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: COLORS.navy }}>
-                                        {prod.route}
-                                      </span>
+                                      isDraft ? (
+                                        <select
+                                          value={prod.route}
+                                          onChange={(e) => updateProduct(sIdx, stIdx, pIdx, { route: e.target.value })}
+                                          className="rounded-full px-2 py-0.5 shrink-0 text-center appearance-none cursor-pointer"
+                                          style={{ fontSize: 10, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: COLORS.navy, border: "none", outline: "none" }}
+                                        >
+                                          {["SubQ", "IM", "IV", "Oral", "Topical", "Pour-On"].map((r) => (
+                                            <option key={r} value={r}>{r}</option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <span className="rounded-full px-2 py-0.5 shrink-0" style={{ fontSize: 10, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: COLORS.navy }}>
+                                          {prod.route}
+                                        </span>
+                                      )
                                     )}
-                                    {prod.dosage && (
-                                      <span className="shrink-0" style={{ fontSize: 11, color: COLORS.mutedText }}>{prod.dosage}</span>
+                                    {isDraft ? (
+                                      <input
+                                        className="shrink-0 bg-transparent outline-none text-right"
+                                        style={{ fontSize: 11, color: COLORS.mutedText, width: 60 }}
+                                        placeholder="Dosage"
+                                        value={prod.dosage || ""}
+                                        onChange={(e) => updateProduct(sIdx, stIdx, pIdx, { dosage: e.target.value || null })}
+                                      />
+                                    ) : (
+                                      prod.dosage && (
+                                        <span className="shrink-0" style={{ fontSize: 11, color: COLORS.mutedText }}>{prod.dosage}</span>
+                                      )
                                     )}
-                                    {prod.injection_site && (
-                                      <span className="shrink-0" style={{ fontSize: 11, color: COLORS.mutedText }}>{prod.injection_site}</span>
+                                    {prod.notes && !isDraft && (
+                                      <span className="shrink-0" style={{ fontSize: 11, color: COLORS.mutedText }}>{prod.notes}</span>
                                     )}
                                     {isDraft && (
                                       <button onClick={() => removeProduct(sIdx, stIdx, pIdx)} className="shrink-0 p-0.5 rounded active:scale-90">
@@ -778,18 +731,18 @@ export default function CustomerProtocolScreen() {
                                   <Plus size={14} /> Add Product
                                 </button>
                               )}
-                              {(stage.notes || isDraft) && (
+                              {(stage.completion_notes || isDraft) && (
                                 <div className="rounded-lg px-3 py-2" style={{ backgroundColor: COLORS.background }}>
                                   {isDraft ? (
                                     <textarea
                                       className="w-full bg-transparent outline-none resize-none"
                                       style={{ fontSize: 13, color: COLORS.textOnLight, minHeight: 32 }}
                                       placeholder="Notes…"
-                                      value={stage.notes}
-                                      onChange={(e) => updateStage(sIdx, stIdx, { notes: e.target.value })}
+                                      value={stage.completion_notes}
+                                      onChange={(e) => updateStage(sIdx, stIdx, { completion_notes: e.target.value })}
                                     />
                                   ) : (
-                                    <p style={{ fontSize: 13, color: COLORS.mutedText }}>{stage.notes}</p>
+                                    <p style={{ fontSize: 13, color: COLORS.mutedText }}>{stage.completion_notes}</p>
                                   )}
                                 </div>
                               )}
@@ -892,7 +845,7 @@ export default function CustomerProtocolScreen() {
             style={{ border: `2px solid ${COLORS.navy}`, color: COLORS.navy, backgroundColor: "transparent" }}
           >
             <FileText size={14} className="inline mr-1 -mt-0.5" />
-            Preview PDF
+            PDF
           </button>
         </div>
       )}

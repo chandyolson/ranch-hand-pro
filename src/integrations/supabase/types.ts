@@ -104,6 +104,7 @@ export type Database = {
         Row: {
           birth_date: string | null
           breed: string | null
+          calf_tag: string | null
           characteristics: Json | null
           created_at: string | null
           created_by: string | null
@@ -135,6 +136,7 @@ export type Database = {
         Insert: {
           birth_date?: string | null
           breed?: string | null
+          calf_tag?: string | null
           characteristics?: Json | null
           created_at?: string | null
           created_by?: string | null
@@ -166,6 +168,7 @@ export type Database = {
         Update: {
           birth_date?: string | null
           breed?: string | null
+          calf_tag?: string | null
           characteristics?: Json | null
           created_at?: string | null
           created_by?: string | null
@@ -230,6 +233,7 @@ export type Database = {
           event_status: string | null
           id: string
           project_id: string | null
+          recommended_products: Json | null
           scheduled_date: string | null
           template_event_id: string | null
           updated_at: string | null
@@ -245,6 +249,7 @@ export type Database = {
           event_status?: string | null
           id?: string
           project_id?: string | null
+          recommended_products?: Json | null
           scheduled_date?: string | null
           template_event_id?: string | null
           updated_at?: string | null
@@ -260,6 +265,7 @@ export type Database = {
           event_status?: string | null
           id?: string
           project_id?: string | null
+          recommended_products?: Json | null
           scheduled_date?: string | null
           template_event_id?: string | null
           updated_at?: string | null
@@ -1578,7 +1584,7 @@ export type Database = {
           condition_rule: Json | null
           created_at: string | null
           dosage_override: string | null
-          event_id: string
+          event_id: string | null
           id: string
           injection_site: string | null
           is_conditional: boolean | null
@@ -1591,7 +1597,7 @@ export type Database = {
           condition_rule?: Json | null
           created_at?: string | null
           dosage_override?: string | null
-          event_id: string
+          event_id?: string | null
           id?: string
           injection_site?: string | null
           is_conditional?: boolean | null
@@ -1604,7 +1610,7 @@ export type Database = {
           condition_rule?: Json | null
           created_at?: string | null
           dosage_override?: string | null
-          event_id?: string
+          event_id?: string | null
           id?: string
           injection_site?: string | null
           is_conditional?: boolean | null
