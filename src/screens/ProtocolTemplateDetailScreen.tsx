@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
-import { useToast } from "@/components/ToastContext";
+import { useChuteSideToast } from "@/components/ToastContext";
 import { COLORS } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoreVertical, Trash2 } from "lucide-react";
