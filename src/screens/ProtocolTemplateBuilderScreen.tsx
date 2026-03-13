@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { COLORS } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
-import { ChevronDown, Plus, X, GripVertical } from "lucide-react";
+import { ChevronDown, Plus, X } from "lucide-react";
 import ProductSearchModal, { SelectedProduct } from "@/components/ProductSearchModal";
 
 const ANIMAL_TYPES = ["Calf", "Replacement", "Cow", "Bull", "Feeder"] as const;
@@ -33,6 +33,8 @@ interface Stage {
 
 export default function ProtocolTemplateBuilderScreen() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
 
@@ -41,6 +43,51 @@ export default function ProtocolTemplateBuilderScreen() {
   const [stages, setStages] = useState<Stage[]>([]);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [activeStageIdx, setActiveStageIdx] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  // Load existing template for edit mode
+  const { data: existingTemplate } = useQuery({
+    queryKey: ["protocol-template-edit", editId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vaccination_protocol_templates")
+        .select("*")
+        .eq("id", editId!)
+        .single();
+      if (error) throw error;
+
+      const { data: events, error: evtErr } = await supabase
+        .from("protocol_template_events")
+        .select("*, products:protocol_event_products(*, product:products(id, name, route, dosage, product_type))")
+        .eq("template_id", editId!)
+        .order("event_order", { ascending: true });
+      if (evtErr) throw evtErr;
+
+      return { ...data, events: events || [] };
+    },
+    enabled: !!editId,
+  });
+
+  // Populate form from existing template
+  useEffect(() => {
+    if (existingTemplate && !loaded) {
+      setTemplateName(existingTemplate.name || "");
+      setAnimalType(existingTemplate.animal_class || "");
+      setStages(
+        (existingTemplate.events || []).map((evt: any) => ({
+          name: evt.event_name,
+          products: (evt.products || []).map((ep: any) => ({
+            product_id: ep.product?.id || ep.product_id,
+            name: ep.product?.name || "Unknown",
+            route: ep.route_override || ep.product?.route || null,
+            dosage: ep.dosage_override || ep.product?.dosage || null,
+            product_type: ep.product?.product_type || "",
+          })),
+        }))
+      );
+      setLoaded(true);
+    }
+  }, [existingTemplate, loaded]);
 
   const handleAnimalTypeChange = (type: string) => {
     setAnimalType(type);
@@ -76,26 +123,51 @@ export default function ProtocolTemplateBuilderScreen() {
       if (!templateName.trim()) throw new Error("Template name is required");
       if (!animalType) throw new Error("Animal type is required");
 
-      // 1. Insert template
-      const { data: tmpl, error: tmplErr } = await supabase
-        .from("vaccination_protocol_templates")
-        .insert({
-          name: templateName.trim(),
-          animal_class: animalType,
-          operation_id: operationId,
-          is_active: true,
-        })
-        .select("id")
-        .single();
-      if (tmplErr) throw tmplErr;
+      // If editing, delete old events/products then update template
+      if (editId) {
+        const { data: oldEvents } = await supabase
+          .from("protocol_template_events")
+          .select("id")
+          .eq("template_id", editId);
+        const oldEventIds = (oldEvents || []).map((e: any) => e.id);
+        if (oldEventIds.length > 0) {
+          await supabase.from("protocol_event_products").delete().in("event_id", oldEventIds);
+        }
+        await supabase.from("protocol_template_events").delete().eq("template_id", editId);
 
-      // 2. Insert events
+        const { error: updErr } = await supabase
+          .from("vaccination_protocol_templates")
+          .update({ name: templateName.trim(), animal_class: animalType })
+          .eq("id", editId);
+        if (updErr) throw updErr;
+      }
+
+      const templateId = editId || undefined;
+
+      // If creating new
+      let finalId = editId;
+      if (!editId) {
+        const { data: tmpl, error: tmplErr } = await supabase
+          .from("vaccination_protocol_templates")
+          .insert({
+            name: templateName.trim(),
+            animal_class: animalType,
+            operation_id: operationId,
+            is_active: true,
+          })
+          .select("id")
+          .single();
+        if (tmplErr) throw tmplErr;
+        finalId = tmpl.id;
+      }
+
+      // Insert events + products
       for (let i = 0; i < stages.length; i++) {
         const stage = stages[i];
         const { data: evt, error: evtErr } = await supabase
           .from("protocol_template_events")
           .insert({
-            template_id: tmpl.id,
+            template_id: finalId!,
             event_name: stage.name,
             event_order: i + 1,
             days_offset: 0,
@@ -104,7 +176,6 @@ export default function ProtocolTemplateBuilderScreen() {
           .single();
         if (evtErr) throw evtErr;
 
-        // 3. Insert event products
         if (stage.products.length > 0) {
           const productRows = stage.products.map((p, pi) => ({
             event_id: evt.id,
@@ -120,10 +191,11 @@ export default function ProtocolTemplateBuilderScreen() {
         }
       }
 
-      return tmpl.id;
+      return finalId!;
     },
     onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ["protocol-hub-templates"] });
+      queryClient.invalidateQueries({ queryKey: ["protocol-template-detail", id] });
       navigate(`/protocols/templates/${id}`);
     },
   });
@@ -132,18 +204,22 @@ export default function ProtocolTemplateBuilderScreen() {
     ? stages[activeStageIdx]?.products.map((p) => p.product_id) || []
     : [];
 
+  const isEdit = !!editId;
+
   return (
     <div className="px-4 pt-1 pb-28 space-y-4" style={{ minHeight: "100%" }}>
       {/* Header */}
       <div>
         <button
-          onClick={() => navigate("/protocols")}
+          onClick={() => navigate(isEdit ? `/protocols/templates/${editId}` : "/protocols")}
           className="text-sm mb-2 active:opacity-70"
           style={{ color: COLORS.mutedText }}
         >
-          ← Back to Protocols
+          ← {isEdit ? "Back to Template" : "Back to Protocols"}
         </button>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: COLORS.textOnLight }}>New Template</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: COLORS.textOnLight }}>
+          {isEdit ? "Edit Template" : "New Template"}
+        </h1>
       </div>
 
       {/* Template Name */}
@@ -198,7 +274,6 @@ export default function ProtocolTemplateBuilderScreen() {
                 />
               </div>
 
-              {/* Products */}
               {stage.products.length > 0 && (
                 <div style={{ borderTop: `1px solid ${COLORS.borderDivider}` }}>
                   {stage.products.map((p, pi) => (
@@ -236,7 +311,6 @@ export default function ProtocolTemplateBuilderScreen() {
                 </div>
               )}
 
-              {/* Add Product */}
               <button
                 className="w-full px-3 py-2 text-left flex items-center gap-1.5 hover:bg-gray-50 active:bg-gray-100 transition-colors"
                 style={{ borderTop: `1px solid ${COLORS.borderDivider}`, fontSize: 13, fontWeight: 600, color: COLORS.teal, minHeight: 44 }}
@@ -250,7 +324,6 @@ export default function ProtocolTemplateBuilderScreen() {
         </div>
       )}
 
-      {/* Product Search Modal */}
       <ProductSearchModal
         open={productModalOpen}
         onClose={() => { setProductModalOpen(false); setActiveStageIdx(null); }}
@@ -270,7 +343,7 @@ export default function ProtocolTemplateBuilderScreen() {
             className="flex-1 rounded-lg py-2.5 font-semibold text-sm active:scale-[0.98] transition-all disabled:opacity-50"
             style={{ backgroundColor: COLORS.gold, color: COLORS.textOnLight, minHeight: 44 }}
           >
-            {saveMutation.isPending ? "Saving…" : "Save Template"}
+            {saveMutation.isPending ? "Saving…" : isEdit ? "Update Template" : "Save Template"}
           </button>
         </div>
       )}
