@@ -376,6 +376,7 @@ export default function CalvingNewScreen() {
           .insert({
             operation_id: operationId,
             tag: calfTag.trim(),
+            calf_tag: calfTag.trim(),
             tag_color: calfColor === "None" ? null : calfColor,
             sex: calfSex === "Bull" ? "Bull" : "Cow",
             type: "Calf",
