@@ -21,7 +21,7 @@ export default function ProtocolTemplateDetailScreen() {
   const navigate = useNavigate();
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
-  const { showToast } = useToast();
+  const { showToast } = useChuteSideToast();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const { data: template, isLoading } = useQuery({
