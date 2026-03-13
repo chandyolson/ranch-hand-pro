@@ -71,10 +71,10 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
             fontFamily: "'Inter', sans-serif",
             textShadow: "0 0 8px rgba(243,209,42,0.50), 0 0 20px rgba(243,209,42,0.30), 0 0 40px rgba(243,209,42,0.15)",
           }}>
-            CHUTESIDE
+            HERD WORK
           </div>
           <div style={{ color: "#55BAAA", fontSize: 13, fontWeight: 500, opacity: 0.7, marginTop: 6 }}>
-            Saddle Butte Ranch
+            {operationName || "My Operation"}
           </div>
         </div>
 

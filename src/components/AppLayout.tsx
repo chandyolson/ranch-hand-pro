@@ -154,6 +154,7 @@ const AppLayout: React.FC = () => {
       </header>
 
       <NavDrawer
+        operationName={operationName}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         activeItem={activeItem}
