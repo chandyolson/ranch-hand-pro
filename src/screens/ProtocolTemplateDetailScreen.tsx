@@ -232,7 +232,7 @@ export default function ProtocolTemplateDetailScreen() {
           Edit
         </button>
         <button
-          onClick={() => showToast("Assign to Customer — coming soon", "info")}
+          onClick={() => showToast("info", "Assign to Customer — coming soon")}
           className="flex-1 rounded-lg py-2.5 font-semibold text-sm active:scale-[0.98] transition-all"
           style={{ backgroundColor: COLORS.gold, color: COLORS.textOnLight, minHeight: 44 }}
         >
