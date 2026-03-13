@@ -390,9 +390,9 @@ export default function CalvingRecordScreen() {
             <div>
               <div className="flex items-center gap-2 min-w-0">
                 <span style={LABEL_STYLE}>Wt / Size</span>
-                <input type="number" value={fields.birthWeight} onChange={e => set("birthWeight", e.target.value)} readOnly={!isEditing} placeholder="lbs" style={getStyle(isEditing)} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
+                <input type="number" value={fields.birthWeight} onChange={e => set("birthWeight", e.target.value)} readOnly={!isEditing} placeholder="lbs" style={{ ...getStyle(isEditing), flex: 1, minWidth: 0 }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
                 <span style={{ color: "rgba(26,26,26,0.25)", margin: "0 2px" }}>/</span>
-                <input type="number" min={1} max={5} value={fields.calfSize} onChange={e => set("calfSize", e.target.value)} readOnly={!isEditing} placeholder="1–5" style={{ ...getStyle(isEditing), flex: "unset", width: 72 }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
+                <input type="number" min={1} max={5} value={fields.calfSize} onChange={e => set("calfSize", e.target.value)} readOnly={!isEditing} placeholder="1–5" style={{ ...getStyle(isEditing), flex: 4, minWidth: 0 }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
               </div>
               {!isEditing && fields.calfSize && TRAIT_LABELS.calfSize[parseInt(fields.calfSize)] && (
                 <div style={{ marginLeft: 93, fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
