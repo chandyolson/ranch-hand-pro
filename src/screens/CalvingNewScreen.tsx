@@ -997,24 +997,24 @@ export default function CalvingNewScreen() {
         )}
 
         {/* ═══ 3. CALF CARD ═══ */}
-        <div
-          style={{
-            borderRadius: 10,
-            overflow: "hidden",
-            background: "linear-gradient(135deg, #0E2646 0%, #163A5E 100%)",
-            padding: "8px 14px",
-          }}
-        >
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#FFFFFF", letterSpacing: "0.04em" }}>Calf</span>
-        </div>
-        <div
-          style={{
-            borderRadius: 12,
-            backgroundColor: "white",
-            border: "1px solid rgba(212,212,208,0.60)",
-            padding: "12px",
-          }}
-        >
+        <div style={{ borderRadius: 12, overflow: "hidden" }}>
+          <div
+            style={{
+              background: "linear-gradient(135deg, #0E2646 0%, #163A5E 100%)",
+              padding: "9px 14px",
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", letterSpacing: "0.04em" }}>Calf</span>
+          </div>
+          <div
+            style={{
+              backgroundColor: "white",
+              border: "1px solid rgba(212,212,208,0.60)",
+              borderTop: "none",
+              borderRadius: "0 0 12px 12px",
+              padding: "12px",
+            }}
+          >
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {/* Calf Tag */}
