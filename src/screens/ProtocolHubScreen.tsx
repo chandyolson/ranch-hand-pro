@@ -71,7 +71,7 @@ export default function ProtocolHubScreen() {
         const myProtos = (protocols || []).filter((p: any) => p.client_operation_id === c.operationId);
         const animalTypes = [...new Set(myProtos.map((p: any) => p.animal_class))];
         const latestYear = myProtos.length > 0
-          ? new Date(myProtos.sort((a: any, b: any) => b.created_at.localeCompare(a.created_at))[0].created_at).getFullYear()
+          ? Math.max(...myProtos.map((p: any) => p.protocol_year).filter(Boolean))
           : null;
 
         return {
