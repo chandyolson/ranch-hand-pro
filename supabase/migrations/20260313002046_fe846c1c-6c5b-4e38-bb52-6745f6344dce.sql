@@ -1,0 +1,1 @@
+ALTER TABLE public.calving_records ADD COLUMN quick_notes text[] DEFAULT '{}'::text[];

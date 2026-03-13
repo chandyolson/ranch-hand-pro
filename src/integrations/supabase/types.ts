@@ -429,6 +429,7 @@ export type Database = {
           memo: string | null
           mothering: number | null
           operation_id: string
+          quick_notes: string[] | null
           sire_id: string | null
           teat: number | null
           udder: number | null
@@ -457,6 +458,7 @@ export type Database = {
           memo?: string | null
           mothering?: number | null
           operation_id: string
+          quick_notes?: string[] | null
           sire_id?: string | null
           teat?: number | null
           udder?: number | null
@@ -485,6 +487,7 @@ export type Database = {
           memo?: string | null
           mothering?: number | null
           operation_id?: string
+          quick_notes?: string[] | null
           sire_id?: string | null
           teat?: number | null
           udder?: number | null

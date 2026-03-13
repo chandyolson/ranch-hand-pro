@@ -410,6 +410,7 @@ export default function CalvingNewScreen() {
         group_id: groupId || null,
         location_id: locationId || null,
         memo: notes.trim() || null,
+        quick_notes: selectedNotes.length > 0 ? selectedNotes : [],
       });
       if (calvErr) throw calvErr;
 
