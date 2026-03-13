@@ -392,7 +392,16 @@ export default function CalvingNewScreen() {
         calfId = calfAnimal.id;
       }
 
-      // Step 2: Insert calving record
+      // Step 1b: If steer quick notes selected, update calf sex to Steer
+      const STEER_TRIGGERS = ["Castrated", "Banded", "Steer"];
+      const hasSteerNote = selectedNotes.some((n) => STEER_TRIGGERS.includes(n));
+      if (hasSteerNote && calfId) {
+        await supabase
+          .from("animals")
+          .update({ sex: "Steer", type: "Feeder" })
+          .eq("id", calfId);
+      }
+
       const { error: calvErr } = await supabase.from("calving_records").insert({
         operation_id: operationId,
         dam_id: selectedDamId,
