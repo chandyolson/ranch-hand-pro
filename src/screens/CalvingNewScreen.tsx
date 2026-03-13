@@ -1183,6 +1183,16 @@ export default function CalvingNewScreen() {
         </div>
 
         {/* ═══ 4. DETAILS — collapsible ═══ */}
+        <div
+          style={{
+            borderRadius: 10,
+            overflow: "hidden",
+            background: "linear-gradient(135deg, #0E2646 0%, #163A5E 100%)",
+            padding: "8px 14px",
+          }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#FFFFFF", letterSpacing: "0.04em" }}>Calf Details</span>
+        </div>
         <Collapsible
           title="Details"
           badge={detailBits.length > 0 ? detailBits.length.toString() : null}
