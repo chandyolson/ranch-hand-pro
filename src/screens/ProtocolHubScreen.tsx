@@ -46,16 +46,26 @@ export default function ProtocolHubScreen() {
       // vet_practice_clients.operation_id = client's operation, not the vet practice
       const { data: clients, error } = await supabase
         .from("vet_practice_clients")
-        .select("id, operation_id, clinic_client_id, operations!vet_practice_clients_operation_id_fkey(id, name)");
+        .select("id, operation_id, clinic_client_id");
 
       console.log("[ProtocolHub] vet_practice_clients query:", { clients, error });
 
       if (error) throw error;
       if (!clients || clients.length === 0) return [];
 
+      const opIds = clients.map((c: any) => c.operation_id);
+
+      /* Fetch operation names */
+      const { data: ops } = await supabase
+        .from("operations")
+        .select("id, name")
+        .in("id", opIds);
+
+      const opMap = new Map((ops || []).map((o: any) => [o.id, o.name]));
+
       const customerOps = clients.map((c: any) => ({
         operationId: c.operation_id,
-        name: (c.operations as any)?.name || "Unknown",
+        name: opMap.get(c.operation_id) || "Unknown",
         clinicClientId: c.clinic_client_id,
       }));
 
