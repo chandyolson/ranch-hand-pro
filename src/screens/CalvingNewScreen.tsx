@@ -1283,7 +1283,7 @@ export default function CalvingNewScreen() {
                           value={twin.weight}
                           onChange={(e) => setTwin((p) => ({ ...p, weight: e.target.value }))}
                           placeholder="lbs"
-                          style={{ ...IS, flex: "0 0 72px", borderRadius: "8px 0 0 8px", borderRight: "none" }}
+                          style={{ ...IS, flex: "0 0 56px", minWidth: 0, borderRadius: "8px 0 0 8px", borderRight: "none" }}
                         />
                         <select
                           value={twin.size}
@@ -1291,7 +1291,7 @@ export default function CalvingNewScreen() {
                           style={{
                             ...IS,
                             flex: 1,
-                            minWidth: 0,
+                            minWidth: 80,
                             appearance: "auto" as const,
                             borderRadius: "0 8px 8px 0",
                             color: "#1A1A1A",
