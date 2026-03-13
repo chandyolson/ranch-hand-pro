@@ -215,7 +215,7 @@ export default function AnimalDetailScreen() {
   // ── Derived history arrays ──
   const calvingHistory = (calvingRecords || []).map((c) => ({
     date: fmtDate(c.calving_date),
-    calfTag: "(calf)",
+    calfTag: c.calf_tag || "(no tag)",
     calfSex: c.calf_sex || "Unknown",
     birthWeight: c.birth_weight ? `${c.birth_weight} lbs` : "",
     calfSize: c.calf_size,
