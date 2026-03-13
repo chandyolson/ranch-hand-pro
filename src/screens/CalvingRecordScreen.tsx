@@ -390,9 +390,9 @@ export default function CalvingRecordScreen() {
             <div>
               <div className="flex items-center gap-2 min-w-0">
                 <span style={LABEL_STYLE}>Wt / Size</span>
-                <input type="number" value={fields.birthWeight} onChange={e => set("birthWeight", e.target.value)} readOnly={!isEditing} placeholder="lbs" style={{ ...getStyle(isEditing), flex: 1, minWidth: 0 }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
+                <input type="number" value={fields.birthWeight} onChange={e => set("birthWeight", e.target.value)} readOnly={!isEditing} placeholder="lbs" style={{ ...getStyle(isEditing), flex: 1.5, minWidth: 56 }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined} />
                 <span style={{ color: "rgba(26,26,26,0.25)", margin: "0 2px" }}>/</span>
-                <select value={fields.calfSize} onChange={e => set("calfSize", e.target.value)} disabled={!isEditing} style={{ ...getStyle(isEditing), flex: 4, minWidth: 0, appearance: "auto" as const }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined}>
+                <select value={fields.calfSize} onChange={e => set("calfSize", e.target.value)} disabled={!isEditing} style={{ ...getStyle(isEditing), flex: 3, minWidth: 0, appearance: "auto" as const }} onFocus={isEditing ? focusGold : undefined} onBlur={isEditing ? blurReset : undefined}>
                   <option value="">—</option>
                   {TRAIT_LABELS.calfSize.slice(1).map((l, i) => (
                     <option key={i + 1} value={String(i + 1)}>{l}</option>
