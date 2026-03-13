@@ -6,7 +6,7 @@ import { useOperation } from "@/contexts/OperationContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { INPUT_CLS } from "@/lib/styles";
 import { COLORS } from "@/lib/constants";
-import { ChevronRight, Plus, Users, FileText, Search } from "lucide-react";
+import { ChevronRight, Plus, Users, FileText, Search, X } from "lucide-react";
 
 /* ── Badge color map ── */
 const CLASS_BADGES: Record<string, { bg: string; text: string }> = {
@@ -24,6 +24,7 @@ export default function ProtocolHubScreen() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<Tab>("customers");
   const [fabOpen, setFabOpen] = useState(false);
+  const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const fabRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { operationId } = useOperation();
@@ -37,57 +38,36 @@ export default function ProtocolHubScreen() {
     return () => document.removeEventListener("mousedown", handler);
   }, [fabOpen]);
 
-  /* ── Customers query ── */
+  /* ── Customers query (vet_practice_clients → operations) ── */
   const { data: customers, isLoading: loadingCustomers } = useQuery({
     queryKey: ["protocol-hub-customers", operationId],
     queryFn: async () => {
-      /* Try vet_practice_clients first */
-      const { data: clients } = await supabase
+      const { data: clients, error } = await supabase
         .from("vet_practice_clients")
         .select("operation_id, clinic_client_id, operation:operations(id, name)")
         .eq("vet_practice_id", operationId);
 
-      let customerOps: { operationId: string; name: string; clinicClientId: string | null }[] = [];
+      console.log("[ProtocolHub] vet_practice_clients query:", { clients, error, operationId });
 
-      if (clients && clients.length > 0) {
-        customerOps = clients.map((c: any) => ({
-          operationId: c.operation_id,
-          name: (c.operation as any)?.name || "Unknown",
-          clinicClientId: c.clinic_client_id,
-        }));
-      } else {
-        /* Fallback: show all operations (including self) as customers */
-        const { data: ops } = await supabase
-          .from("operations")
-          .select("id, name")
-          .order("name");
-        customerOps = (ops || []).map((o: any) => ({
-          operationId: o.id,
-          name: o.name,
-          clinicClientId: null,
-        }));
-      }
+      if (error) throw error;
+      if (!clients || clients.length === 0) return [];
 
-      if (customerOps.length === 0) return [];
+      const customerOps = clients.map((c: any) => ({
+        operationId: c.operation_id,
+        name: (c.operation as any)?.name || "Unknown",
+        clinicClientId: c.clinic_client_id,
+      }));
 
       const opIds = customerOps.map((c) => c.operationId);
 
-      /* Assigned protocols for those operations */
+      /* Check assigned_protocols for history */
       const { data: protocols } = await supabase
         .from("assigned_protocols")
         .select("id, animal_class, protocol_status, created_at, client_operation_id")
         .in("client_operation_id", opIds);
 
-      /* Projects for those operations */
-      const { data: projects } = await supabase
-        .from("projects")
-        .select("id, operation_id")
-        .in("operation_id", opIds);
-
       return customerOps.map((c) => {
         const myProtos = (protocols || []).filter((p: any) => p.client_operation_id === c.operationId);
-        const myProjects = (projects || []).filter((p: any) => p.operation_id === c.operationId);
-
         const animalTypes = [...new Set(myProtos.map((p: any) => p.animal_class))];
         const latestYear = myProtos.length > 0
           ? new Date(myProtos.sort((a: any, b: any) => b.created_at.localeCompare(a.created_at))[0].created_at).getFullYear()
@@ -99,11 +79,14 @@ export default function ProtocolHubScreen() {
           clinicClientId: c.clinicClientId,
           animalTypes,
           protocolCount: myProtos.length,
-          projectCount: myProjects.length,
           latestYear,
-          sortPriority: myProtos.length > 0 ? 0 : myProjects.length > 0 ? 1 : 2,
         };
-      }).sort((a: any, b: any) => a.sortPriority - b.sortPriority || a.name.localeCompare(b.name));
+      }).sort((a, b) => {
+        const aPri = a.protocolCount > 0 ? 0 : 1;
+        const bPri = b.protocolCount > 0 ? 0 : 1;
+        if (aPri !== bPri) return aPri - bPri;
+        return a.name.localeCompare(b.name);
+      });
     },
   });
 
@@ -158,8 +141,8 @@ export default function ProtocolHubScreen() {
       {/* Tabs */}
       <div className="flex gap-2">
         {([
-          { key: "customers" as Tab, label: "Customer Protocols", icon: Users },
-          { key: "templates" as Tab, label: "Templates", icon: FileText },
+          { key: "customers" as Tab, label: "Customer Protocols" },
+          { key: "templates" as Tab, label: "Templates" },
         ]).map(({ key, label }) => {
           const active = tab === key;
           return (
@@ -224,9 +207,7 @@ export default function ProtocolHubScreen() {
                       <div className="mt-1" style={{ fontSize: 13, color: COLORS.mutedText }}>
                         {c.latestYear
                           ? `${c.latestYear} Program · ${c.protocolCount} protocol${c.protocolCount !== 1 ? "s" : ""}`
-                          : c.projectCount > 0
-                            ? `${c.projectCount} working event${c.projectCount !== 1 ? "s" : ""}`
-                            : "No history yet"}
+                          : "No protocols yet"}
                       </div>
                     </div>
                     <ChevronRight size={18} style={{ color: COLORS.mutedText, flexShrink: 0 }} />
@@ -255,7 +236,23 @@ export default function ProtocolHubScreen() {
       {/* ── Templates Tab ── */}
       {tab === "templates" && !loadingTemplates && (
         <>
-          {filteredTemplates.length > 0 ? (
+          {(templates || []).length === 0 ? (
+            <div className="py-16 text-center space-y-3">
+              <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>
+                No templates yet
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>
+                Create a template to reuse across customers.
+              </div>
+              <button
+                onClick={() => navigate("/protocols/templates/new")}
+                className="rounded-full px-5 py-2 text-sm font-semibold active:scale-95 transition-all"
+                style={{ backgroundColor: COLORS.gold, color: COLORS.textOnLight }}
+              >
+                Create Template
+              </button>
+            </div>
+          ) : filteredTemplates.length > 0 ? (
             <div className="space-y-2">
               {filteredTemplates.map((t) => {
                 const badge = CLASS_BADGES[t.animalClass] || CLASS_BADGES.Feeders;
@@ -289,15 +286,6 @@ export default function ProtocolHubScreen() {
                 );
               })}
             </div>
-          ) : templates && templates.length === 0 ? (
-            <div className="py-16 text-center space-y-2">
-              <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>
-                No templates yet
-              </div>
-              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>
-                Create a template to reuse across customers.
-              </div>
-            </div>
           ) : (
             <div className="py-12 text-center space-y-1.5">
               <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No templates found</div>
@@ -305,6 +293,47 @@ export default function ProtocolHubScreen() {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Customer Picker Modal ── */}
+      {customerPickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={() => setCustomerPickerOpen(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative w-full max-w-md max-h-[60vh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <span style={{ fontSize: 16, fontWeight: 700, color: COLORS.textOnLight }}>Select Customer</span>
+              <button onClick={() => setCustomerPickerOpen(false)} className="p-1 rounded-full hover:bg-gray-100">
+                <X size={20} style={{ color: COLORS.mutedText }} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
+              {(customers || []).length === 0 && (
+                <div className="py-8 text-center" style={{ fontSize: 13, color: COLORS.mutedText }}>
+                  No customers found. Add customers in Reference → Team.
+                </div>
+              )}
+              {(customers || []).map((c) => (
+                <button
+                  key={c.operationId}
+                  className="w-full text-left rounded-lg px-3 py-2.5 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                  style={{ minHeight: 44 }}
+                  onClick={() => {
+                    setCustomerPickerOpen(false);
+                    navigate(`/protocols/customer/${c.operationId}`);
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.textOnLight }}>{c.name}</div>
+                  {c.clinicClientId && (
+                    <div style={{ fontSize: 11, color: COLORS.mutedText }}>{c.clinicClientId}</div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── FAB ── */}
@@ -316,10 +345,10 @@ export default function ProtocolHubScreen() {
           >
             <button
               className="w-full text-left px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center gap-3"
-              onClick={() => { setFabOpen(false); setTab("customers"); }}
+              onClick={() => { setFabOpen(false); setCustomerPickerOpen(true); }}
             >
               <Users size={16} style={{ color: COLORS.navy }} />
-              <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.textOnLight }}>New from Customer</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.textOnLight }}>New Customer Protocol</span>
             </button>
             <div style={{ height: 1, backgroundColor: COLORS.borderDivider }} />
             <button

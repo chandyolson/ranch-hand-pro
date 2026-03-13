@@ -27,6 +27,7 @@ import ReferencePregStagesScreen from "@/screens/ReferencePregStagesScreen";
 import ReferenceTreatmentsScreen from "@/screens/ReferenceTreatmentsScreen";
 import ReferenceTeamScreen from "@/screens/ReferenceTeamScreen";
 import ReferenceSettingsScreen from "@/screens/ReferenceSettingsScreen";
+import ProtocolTemplateBuilderScreen from "@/screens/ProtocolTemplateBuilderScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
 import NotFound from "@/pages/NotFound";
 
