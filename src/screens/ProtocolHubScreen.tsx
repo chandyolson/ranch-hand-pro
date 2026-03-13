@@ -55,7 +55,7 @@ export default function ProtocolHubScreen() {
 
       const customerOps = clients.map((c: any) => ({
         operationId: c.operation_id,
-        name: (c.operation as any)?.name || "Unknown",
+        name: (c.operations as any)?.name || "Unknown",
         clinicClientId: c.clinic_client_id,
       }));
 
