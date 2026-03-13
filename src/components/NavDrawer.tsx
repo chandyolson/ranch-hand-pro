@@ -20,7 +20,7 @@ interface NavDrawerProps {
   onSwitchOperation?: () => void;
 }
 
-const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, onItemSelect, onSignOut, onSwitchOperation }) => {
+const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operationName, onItemSelect, onSignOut, onSwitchOperation }) => {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
