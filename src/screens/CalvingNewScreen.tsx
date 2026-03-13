@@ -271,6 +271,14 @@ export default function CalvingNewScreen() {
         {list.map((n) => {
           const active = selectedNotes.includes(n.label);
           const c = QUICK_NOTE_PILL_COLORS[n.flag || "none"];
+          const solidActive: Record<string, { bg: string; border: string; text: string }> = {
+            red: { bg: "#9B2335", border: "#9B2335", text: "#FFFFFF" },
+            gold: { bg: "#B8860B", border: "#B8860B", text: "#FFFFFF" },
+            teal: { bg: "#55BAAA", border: "#3D9A8B", text: "#FFFFFF" },
+            none: { bg: "#717182", border: "#5A5A6A", text: "#FFFFFF" },
+          };
+          const tier = n.flag || "none";
+          const s = active ? solidActive[tier] : null;
           return (
             <button
               key={n.label}
@@ -281,9 +289,9 @@ export default function CalvingNewScreen() {
                 padding: "4px 10px",
                 fontSize: 11,
                 fontWeight: active ? 700 : 600,
-                backgroundColor: active ? c.bgSel : c.bg,
-                border: `${active ? 2 : 1}px solid ${active ? c.borderSel : c.border}`,
-                color: c.text,
+                backgroundColor: active ? s!.bg : c.bg,
+                border: `${active ? 2 : 1}px solid ${active ? s!.border : c.border}`,
+                color: active ? s!.text : c.text,
                 cursor: collapsed ? "default" : "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -295,7 +303,7 @@ export default function CalvingNewScreen() {
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                   <path
                     d="M2 5L4 7L8 3"
-                    stroke={c.text}
+                    stroke="#FFFFFF"
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
