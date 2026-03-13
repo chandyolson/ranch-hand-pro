@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,13 @@ const categories = [
   { value: "repairs", label: "Repairs" },
 ];
 
+const formatFileSize = (bytes: number | null) => {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
 const RedBookDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -31,12 +38,14 @@ const RedBookDetailScreen: React.FC = () => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Editable fields
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [category, setCategory] = useState("");
   const [hasAction, setHasAction] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: note, isLoading } = useQuery({
     queryKey: ["red-book-note", id],
@@ -52,7 +61,20 @@ const RedBookDetailScreen: React.FC = () => {
     enabled: !!id,
   });
 
-  // Populate form when note loads
+  const { data: attachments, refetch: refetchAttachments } = useQuery({
+    queryKey: ["red-book-attachments", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("red_book_attachments")
+        .select("*")
+        .eq("note_id", id!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   useEffect(() => {
     if (note) {
       setTitle(note.title);
@@ -62,6 +84,62 @@ const RedBookDetailScreen: React.FC = () => {
       setIsPinned(note.is_pinned);
     }
   }, [note]);
+
+  const getPublicUrl = (filePath: string) => {
+    const { data } = supabase.storage
+      .from("red-book-attachments")
+      .getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
+  const handleUploadFile = async (file: File, fileType: "photo" | "document") => {
+    if (!id) return;
+    const ext = file.name.split(".").pop() || "bin";
+    const storagePath = `${operationId}/${id}/${crypto.randomUUID()}.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("red-book-attachments")
+      .upload(storagePath, file, { cacheControl: "3600", upsert: false });
+    if (uploadErr) {
+      showToast("error", `Failed to upload ${file.name}`);
+      return;
+    }
+
+    const { error: dbErr } = await supabase.from("red_book_attachments").insert({
+      note_id: id,
+      operation_id: operationId,
+      file_name: file.name,
+      file_type: fileType,
+      file_path: storagePath,
+      file_size: file.size,
+    });
+    if (dbErr) {
+      showToast("error", `Failed to save attachment record`);
+      return;
+    }
+
+    // Update attachment count
+    await supabase.from("red_book_notes").update({
+      attachment_count: (attachments?.length || 0) + 1,
+    }).eq("id", id);
+
+    refetchAttachments();
+    queryClient.invalidateQueries({ queryKey: ["red-book-note", id] });
+    showToast("success", `${file.name} uploaded`);
+  };
+
+  const handleDeleteAttachment = async (attachmentId: string, filePath: string) => {
+    await supabase.storage.from("red-book-attachments").remove([filePath]);
+    await supabase.from("red_book_attachments").delete().eq("id", attachmentId);
+    
+    // Update count
+    const newCount = Math.max(0, (attachments?.length || 1) - 1);
+    await supabase.from("red_book_notes").update({ attachment_count: newCount }).eq("id", id!);
+
+    refetchAttachments();
+    queryClient.invalidateQueries({ queryKey: ["red-book-note", id] });
+    showToast("success", "Attachment removed");
+  };
 
   const handleSave = async () => {
     if (!title.trim()) { showToast("error", "Title is required"); return; }
@@ -92,6 +170,12 @@ const RedBookDetailScreen: React.FC = () => {
 
   const handleDelete = async () => {
     try {
+      // Delete storage files first
+      if (attachments && attachments.length > 0) {
+        await supabase.storage
+          .from("red-book-attachments")
+          .remove(attachments.map(a => a.file_path));
+      }
       const { error } = await supabase.from("red_book_notes").delete().eq("id", id!);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["red-book-notes"] });
@@ -165,6 +249,33 @@ const RedBookDetailScreen: React.FC = () => {
 
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
+      {/* Hidden file inputs for edit mode */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        multiple
+        className="hidden"
+        onChange={e => {
+          const files = e.target.files;
+          if (files) Array.from(files).forEach(f => handleUploadFile(f, "photo"));
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.heic"
+        multiple
+        className="hidden"
+        onChange={e => {
+          const files = e.target.files;
+          if (files) Array.from(files).forEach(f => handleUploadFile(f, "document"));
+          e.target.value = "";
+        }}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <button
@@ -181,7 +292,6 @@ const RedBookDetailScreen: React.FC = () => {
         </div>
         {!editing && (
           <div className="flex items-center gap-1.5">
-            {/* Pin toggle */}
             <button
               className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer active:scale-[0.95] transition-all"
               style={{ backgroundColor: note.is_pinned ? "rgba(243,209,42,0.15)" : "rgba(14,38,70,0.06)", border: "none" }}
@@ -198,7 +308,6 @@ const RedBookDetailScreen: React.FC = () => {
 
       {/* Main card */}
       <div className="rounded-xl px-3 py-3.5 space-y-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-        {/* Title */}
         {editing ? (
           <input
             type="text"
@@ -238,7 +347,6 @@ const RedBookDetailScreen: React.FC = () => {
           </div>
         )}
 
-        {/* Body */}
         {editing ? (
           <textarea
             value={body}
@@ -253,7 +361,6 @@ const RedBookDetailScreen: React.FC = () => {
           </div>
         )}
 
-        {/* Meta row (view mode only) */}
         {!editing && (
           <div className="flex items-center gap-2 pt-2" style={{ borderTop: "1px solid rgba(212,212,208,0.30)" }}>
             <div
@@ -269,18 +376,115 @@ const RedBookDetailScreen: React.FC = () => {
             <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.40)" }}>
               Updated {updatedDate}
             </span>
-            <span className="flex-1" />
-            {note.attachment_count > 0 && (
-              <div className="flex items-center gap-1">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,26,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                </svg>
-                <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.40)" }}>{note.attachment_count}</span>
-              </div>
-            )}
           </div>
         )}
       </div>
+
+      {/* Attachments section — always visible */}
+      {((attachments && attachments.length > 0) || editing) && (
+        <div className="rounded-xl px-3 py-3.5" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>
+              ATTACHMENTS {attachments && attachments.length > 0 ? `(${attachments.length})` : ""}
+            </span>
+          </div>
+
+          {/* Photo grid for images */}
+          {attachments && attachments.filter(a => a.file_type === "photo").length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {attachments.filter(a => a.file_type === "photo").map(a => (
+                <div key={a.id} className="relative group">
+                  <a href={getPublicUrl(a.file_path)} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={getPublicUrl(a.file_path)}
+                      alt={a.file_name}
+                      className="w-full aspect-square object-cover rounded-lg"
+                    />
+                  </a>
+                  {editing && (
+                    <button
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer"
+                      style={{ backgroundColor: "rgba(155,35,53,0.85)", border: "none" }}
+                      onClick={() => handleDeleteAttachment(a.id, a.file_path)}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Document list */}
+          {attachments && attachments.filter(a => a.file_type === "document").length > 0 && (
+            <div className="space-y-1 mb-3">
+              {attachments.filter(a => a.file_type === "document").map(a => (
+                <div key={a.id} className="flex items-center gap-2.5 py-2" style={{ borderBottom: "1px solid rgba(26,26,26,0.06)" }}>
+                  <div className="shrink-0 w-9 h-9 rounded-md flex items-center justify-center" style={{ backgroundColor: "rgba(14,38,70,0.06)" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,26,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                  </div>
+                  <a
+                    href={getPublicUrl(a.file_path)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 min-w-0"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <div className="truncate" style={{ fontSize: 13, fontWeight: 500, color: "#0E2646" }}>{a.file_name}</div>
+                    <div style={{ fontSize: 11, color: "rgba(26,26,26,0.35)" }}>{formatFileSize(a.file_size)}</div>
+                  </a>
+                  {editing && (
+                    <button
+                      className="cursor-pointer shrink-0 w-7 h-7 rounded-full flex items-center justify-center active:scale-[0.9]"
+                      style={{ backgroundColor: "rgba(155,35,53,0.08)", border: "none" }}
+                      onClick={() => handleDeleteAttachment(a.id, a.file_path)}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9B2335" strokeWidth="2.5" strokeLinecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Upload buttons in edit mode */}
+          {editing && (
+            <div className="flex gap-2">
+              <button
+                className="flex-1 rounded-xl py-3 border flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
+                style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }}
+                onClick={() => photoInputRef.current?.click()}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E2646" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                Add Photo
+              </button>
+              <button
+                className="flex-1 rounded-xl py-3 border flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
+                style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E2646" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                Add File
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Category card (edit mode) */}
       {editing && (
@@ -314,7 +518,6 @@ const RedBookDetailScreen: React.FC = () => {
       {/* Options card (edit mode) */}
       {editing && (
         <div className="rounded-xl px-3 py-3.5 space-y-4" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-          {/* Action toggle */}
           <div className="flex items-center justify-between">
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Needs Follow-up</div>
@@ -336,7 +539,6 @@ const RedBookDetailScreen: React.FC = () => {
             </button>
           </div>
 
-          {/* Pin toggle */}
           <div className="flex items-center justify-between" style={{ borderTop: "1px solid rgba(212,212,208,0.30)", paddingTop: 16 }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Pinned</div>

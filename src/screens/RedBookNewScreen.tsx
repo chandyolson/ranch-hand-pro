@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,13 @@ const categories = [
   { value: "repairs", label: "Repairs" },
 ];
 
+interface PendingFile {
+  file: File;
+  name: string;
+  type: "photo" | "document";
+  previewUrl?: string;
+}
+
 const RedBookNewScreen: React.FC = () => {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -26,18 +33,55 @@ const RedBookNewScreen: React.FC = () => {
   const [hasAction, setHasAction] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [attachments, setAttachments] = useState<{ name: string; type: "photo" | "document" }[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
+
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).forEach(file => {
+      const previewUrl = URL.createObjectURL(file);
+      setPendingFiles(prev => [...prev, { file, name: file.name, type: "photo", previewUrl }]);
+    });
+    e.target.value = "";
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).forEach(file => {
+      setPendingFiles(prev => [...prev, { file, name: file.name, type: "document" }]);
+    });
+    e.target.value = "";
+  };
+
+  const removeFile = (index: number) => {
+    setPendingFiles(prev => {
+      const removed = prev[index];
+      if (removed.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   const handleSave = async () => {
     if (!title.trim()) { showToast("error", "Title is required"); return; }
     if (!category) { showToast("error", "Select a category"); return; }
     setSaving(true);
     try {
-      const { error } = await supabase
+      // 1. Create the note
+      const { data: noteData, error: noteErr } = await supabase
         .from("red_book_notes")
         .insert({
           operation_id: operationId,
@@ -46,10 +90,39 @@ const RedBookNewScreen: React.FC = () => {
           category,
           has_action: hasAction,
           is_pinned: false,
-          attachment_count: attachments.length,
+          attachment_count: pendingFiles.length,
           author_initials: "ME",
-        });
-      if (error) throw error;
+        })
+        .select("id")
+        .single();
+      if (noteErr) throw noteErr;
+
+      // 2. Upload files and create attachment records
+      if (pendingFiles.length > 0) {
+        for (const pf of pendingFiles) {
+          const ext = pf.file.name.split(".").pop() || "bin";
+          const storagePath = `${operationId}/${noteData.id}/${crypto.randomUUID()}.${ext}`;
+
+          const { error: uploadErr } = await supabase.storage
+            .from("red-book-attachments")
+            .upload(storagePath, pf.file, { cacheControl: "3600", upsert: false });
+          if (uploadErr) {
+            console.error("Upload error:", uploadErr);
+            showToast("error", `Failed to upload ${pf.name}`);
+            continue;
+          }
+
+          await supabase.from("red_book_attachments").insert({
+            note_id: noteData.id,
+            operation_id: operationId,
+            file_name: pf.name,
+            file_type: pf.type,
+            file_path: storagePath,
+            file_size: pf.file.size,
+          });
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ["red-book-notes"] });
       showToast("success", "Note saved");
       navigate("/red-book");
@@ -60,13 +133,29 @@ const RedBookNewScreen: React.FC = () => {
     }
   };
 
-  const hasPhoto = attachments.some(a => a.type === "photo");
-
   return (
     <div className="px-4 pt-4 pb-10 space-y-3">
+      {/* Hidden file inputs */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        multiple
+        className="hidden"
+        onChange={handlePhotoSelect}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.heic"
+        multiple
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+
       {/* Main entry card */}
       <div className="rounded-xl px-3 py-3.5 space-y-3" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
-        {/* Title */}
         <input
           type="text"
           value={title}
@@ -81,7 +170,6 @@ const RedBookNewScreen: React.FC = () => {
           onBlur={e => { e.currentTarget.style.borderBottomColor = "rgba(212,212,208,0.50)"; }}
         />
 
-        {/* Body + mic */}
         <div className="flex items-start gap-2 pt-1">
           <textarea
             value={body}
@@ -171,32 +259,50 @@ const RedBookNewScreen: React.FC = () => {
       {/* Attachments card */}
       <div className="rounded-xl px-3 py-3.5" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
         <div className="flex items-center justify-between mb-2">
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>ATTACHMENTS</span>
+          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>
+            ATTACHMENTS {pendingFiles.length > 0 && `(${pendingFiles.length})`}
+          </span>
         </div>
 
-        {attachments.length > 0 && (
+        {/* File previews */}
+        {pendingFiles.length > 0 && (
           <div className="space-y-2 mb-3">
-            {attachments.map((a, i) => (
+            {pendingFiles.map((pf, i) => (
               <div key={i} className="flex items-center gap-2.5 py-2" style={{ borderBottom: "1px solid rgba(26,26,26,0.06)" }}>
-                {a.type === "photo" ? (
+                {pf.type === "photo" && pf.previewUrl ? (
+                  <img
+                    src={pf.previewUrl}
+                    alt={pf.name}
+                    className="rounded-md shrink-0 object-cover"
+                    style={{ width: 36, height: 36 }}
+                  />
+                ) : pf.type === "photo" ? (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,26,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" />
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <polyline points="21 15 16 10 5 21" />
                   </svg>
                 ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,26,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                  </svg>
+                  <div className="shrink-0 w-9 h-9 rounded-md flex items-center justify-center" style={{ backgroundColor: "rgba(14,38,70,0.06)" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,26,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                  </div>
                 )}
-                <span className="flex-1 truncate" style={{ fontSize: 13, fontWeight: 500, color: "#1A1A1A" }}>{a.name}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="truncate" style={{ fontSize: 13, fontWeight: 500, color: "#1A1A1A" }}>{pf.name}</div>
+                  <div style={{ fontSize: 11, color: "rgba(26,26,26,0.35)" }}>{formatFileSize(pf.file.size)}</div>
+                </div>
                 <button
-                  className="cursor-pointer"
-                  style={{ fontSize: 14, color: "rgba(26,26,26,0.30)", border: "none", background: "none" }}
-                  onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))}
+                  className="cursor-pointer shrink-0 w-7 h-7 rounded-full flex items-center justify-center active:scale-[0.9]"
+                  style={{ backgroundColor: "rgba(155,35,53,0.08)", border: "none" }}
+                  onClick={() => removeFile(i)}
                 >
-                  ×
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9B2335" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </button>
               </div>
             ))}
@@ -207,7 +313,7 @@ const RedBookNewScreen: React.FC = () => {
           <button
             className="flex-1 rounded-xl py-3 border flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
             style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }}
-            onClick={() => setAttachments(prev => [...prev, { name: "photo_" + Date.now() + ".jpg", type: "photo" }])}
+            onClick={() => photoInputRef.current?.click()}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E2646" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -218,7 +324,7 @@ const RedBookNewScreen: React.FC = () => {
           <button
             className="flex-1 rounded-xl py-3 border flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
             style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }}
-            onClick={() => setAttachments(prev => [...prev, { name: "document_" + Date.now() + ".pdf", type: "document" }])}
+            onClick={() => fileInputRef.current?.click()}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E2646" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -227,18 +333,6 @@ const RedBookNewScreen: React.FC = () => {
             Add File
           </button>
         </div>
-
-        {hasPhoto && (
-          <div className="mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: "rgba(85,186,170,0.08)", border: "1px solid rgba(85,186,170,0.20)" }}>
-            <button
-              className="cursor-pointer"
-              style={{ fontSize: 12, fontWeight: 600, color: "#55BAAA", background: "none", border: "none", padding: 0 }}
-              onClick={() => showToast("info", "OCR text extraction: connect Google Cloud Vision API")}
-            >
-              Extract text from photo
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Action buttons */}
