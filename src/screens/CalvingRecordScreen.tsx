@@ -146,9 +146,35 @@ export default function CalvingRecordScreen() {
   const set = <K extends keyof CalvingRecord>(key: K, val: CalvingRecord[K]) =>
     setFields(prev => ({ ...prev, [key]: val }));
 
-  const handleSave = () => {
-    showToast("success", "Calving record updated");
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const { error } = await supabase
+        .from("calving_records")
+        .update({
+          birth_weight: fields.birthWeight ? parseFloat(fields.birthWeight) : null,
+          calf_size: fields.calfSize ? parseInt(fields.calfSize) : null,
+          calf_sex: fields.calfSex || null,
+          calf_status: fields.calfStatus || null,
+          disposition: fields.disposition ? parseInt(fields.disposition) : null,
+          assistance: fields.assistance ? parseInt(fields.assistance) : null,
+          udder: fields.udder ? parseInt(fields.udder) : null,
+          teat: fields.teat ? parseInt(fields.teat) : null,
+          claw: fields.claw ? parseInt(fields.claw) : null,
+          foot: fields.foot ? parseInt(fields.foot) : null,
+          mothering: fields.mothering ? parseInt(fields.mothering) : null,
+          calf_vigor: fields.calfVigor ? parseInt(fields.calfVigor) : null,
+          memo: fields.memo?.trim() || null,
+          quick_notes: fields.quickNotes || [],
+        })
+        .eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["calving-record", id] });
+      queryClient.invalidateQueries({ queryKey: ["calving-list"] });
+      showToast("success", "Calving record updated");
+      setIsEditing(false);
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to save");
+    }
   };
   const handleCancel = () => {
     if (record) setFields({ ...record });
