@@ -22,6 +22,7 @@ const ReferenceQuickNotesScreen: React.FC = () => {
   const [newText, setNewText] = useState("");
   const [newCategory, setNewCategory] = useState("management");
   const { showToast } = useChuteSideToast();
+  const [search, setSearch] = useState("");
 
   const handleAdd = async () => {
     if (!newText.trim()) { showToast("error", "Note text is required"); return; }
