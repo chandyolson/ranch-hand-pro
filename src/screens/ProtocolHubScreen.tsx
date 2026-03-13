@@ -64,7 +64,7 @@ export default function ProtocolHubScreen() {
       /* Check assigned_protocols for history */
       const { data: protocols } = await supabase
         .from("assigned_protocols")
-        .select("id, animal_class, protocol_status, created_at, client_operation_id")
+        .select("id, animal_class, protocol_status, created_at, client_operation_id, protocol_year")
         .in("client_operation_id", opIds);
 
       return customerOps.map((c) => {
