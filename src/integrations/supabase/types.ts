@@ -1636,6 +1636,59 @@ export type Database = {
           },
         ]
       }
+      protocol_blocks: {
+        Row: {
+          animal_class: string
+          clinical_notes: string | null
+          created_at: string | null
+          default_products: Json | null
+          description: string | null
+          equipment_notes: string | null
+          id: string
+          is_shared: boolean | null
+          name: string
+          operation_id: string
+          updated_at: string | null
+          work_type_code: string
+        }
+        Insert: {
+          animal_class: string
+          clinical_notes?: string | null
+          created_at?: string | null
+          default_products?: Json | null
+          description?: string | null
+          equipment_notes?: string | null
+          id?: string
+          is_shared?: boolean | null
+          name: string
+          operation_id: string
+          updated_at?: string | null
+          work_type_code: string
+        }
+        Update: {
+          animal_class?: string
+          clinical_notes?: string | null
+          created_at?: string | null
+          default_products?: Json | null
+          description?: string | null
+          equipment_notes?: string | null
+          id?: string
+          is_shared?: boolean | null
+          name?: string
+          operation_id?: string
+          updated_at?: string | null
+          work_type_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocol_blocks_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       protocol_template_events: {
         Row: {
           clinical_notes: string | null
@@ -1646,8 +1699,10 @@ export type Database = {
           event_name: string
           event_order: number
           id: string
+          source_block_id: string | null
           template_id: string
           timing_description: string | null
+          work_type_code: string | null
         }
         Insert: {
           clinical_notes?: string | null
@@ -1658,8 +1713,10 @@ export type Database = {
           event_name: string
           event_order?: number
           id?: string
+          source_block_id?: string | null
           template_id: string
           timing_description?: string | null
+          work_type_code?: string | null
         }
         Update: {
           clinical_notes?: string | null
@@ -1670,8 +1727,10 @@ export type Database = {
           event_name?: string
           event_order?: number
           id?: string
+          source_block_id?: string | null
           template_id?: string
           timing_description?: string | null
+          work_type_code?: string | null
         }
         Relationships: [
           {
@@ -1679,6 +1738,13 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "vaccination_protocol_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protocol_template_events_source_block_id_fkey"
+            columns: ["source_block_id"]
+            isOneToOne: false
+            referencedRelation: "protocol_blocks"
             referencedColumns: ["id"]
           },
         ]
