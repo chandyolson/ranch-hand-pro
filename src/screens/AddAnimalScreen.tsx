@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
+import { useOperationPreferences } from "@/hooks/useOperationPreferences";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import { useChuteSideToast } from "@/components/ToastContext";
 import {
@@ -12,7 +13,6 @@ import {
   ANIMAL_TYPE_OPTIONS,
   YEAR_OPTIONS,
   STATUS_OPTIONS,
-  BREED_OPTIONS,
   FLAG_OPTIONS,
   QUICK_NOTES,
   QUICK_NOTE_PILL_COLORS,
