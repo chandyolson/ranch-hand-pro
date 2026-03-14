@@ -256,8 +256,8 @@ export function generateProtocolPDF(params: PDFParams): void {
           lineWidth: 0.2,
         },
         headStyles: {
-          fillColor: NAVY as unknown as number[],
-          textColor: WHITE as unknown as number[],
+          fillColor: NAVY,
+          textColor: WHITE,
           fontStyle: "bold",
           fontSize: 8,
         },
