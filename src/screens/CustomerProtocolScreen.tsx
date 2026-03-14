@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { DEFAULT_STAGES, STAGE_TIMING_HINTS, CLASS_BADGE_COLORS, type ProtocolAnimalType } from "@/lib/protocol-constants";
 import { generateProtocolPDF } from "@/lib/protocol-pdf";
+import { useProductCosts, calcProductCost, formatCost } from "@/hooks/useProductCosts";
 
 interface RecommendedProduct {
   product_id: string;
@@ -403,6 +404,29 @@ export default function CustomerProtocolScreen() {
   const displaySections = sections || buildSections(protocolData || []);
   const totalEvents = displaySections.reduce((sum, s) => sum + s.stages.filter((st) => st.hasData).length, 0);
 
+  // ── Cost calculator: collect all product IDs, fetch cheapest cost_per_dose ──
+  const allProductIds = useMemo(
+    () => displaySections.flatMap((s) => s.stages.flatMap((st) => st.products.map((p) => p.product_id))),
+    [displaySections]
+  );
+  const { costs: costMap } = useProductCosts(allProductIds, vetOpId);
+
+  // Grand total across all sections
+  const grandTotal = useMemo(() => {
+    let total = 0;
+    let hasAny = false;
+    for (const section of displaySections) {
+      const hc = section.estimated_head_count;
+      for (const stage of section.stages) {
+        for (const prod of stage.products) {
+          const c = calcProductCost(costMap.get(prod.product_id), hc);
+          if (c != null) { total += c; hasAny = true; }
+        }
+      }
+    }
+    return hasAny ? total : null;
+  }, [displaySections, costMap]);
+
   const canGoLeft = availableYears && availableYears.indexOf(selectedYear) > 0;
   const canGoRight = availableYears && availableYears.indexOf(selectedYear) < availableYears.length - 1;
 
@@ -644,7 +668,9 @@ export default function CustomerProtocolScreen() {
                             {/* Product list */}
                             {stage.products.length > 0 && (
                               <div>
-                                {stage.products.map((prod, pIdx) => (
+                                {stage.products.map((prod, pIdx) => {
+                                  const prodCost = calcProductCost(costMap.get(prod.product_id), section.estimated_head_count);
+                                  return (
                                   <div
                                     key={pIdx}
                                     className="flex items-center gap-2 px-3 py-2"
@@ -684,7 +710,12 @@ export default function CustomerProtocolScreen() {
                                         <span className="shrink-0" style={{ fontSize: 11, color: COLORS.mutedText }}>{prod.dosage}</span>
                                       )
                                     )}
-                                    {prod.notes && !isDraft && (
+                                    {prodCost != null && (
+                                      <span className="shrink-0 text-right" style={{ fontSize: 11, fontWeight: 600, color: COLORS.teal, minWidth: 48 }}>
+                                        {formatCost(prodCost)}
+                                      </span>
+                                    )}
+                                    {prod.notes && !isDraft && !prodCost && (
                                       <span className="shrink-0" style={{ fontSize: 11, color: COLORS.mutedText }}>{prod.notes}</span>
                                     )}
                                     {isDraft && (
@@ -693,7 +724,28 @@ export default function CustomerProtocolScreen() {
                                       </button>
                                     )}
                                   </div>
-                                ))}
+                                  );
+                                })}
+                                {/* Stage cost subtotal */}
+                                {(() => {
+                                  const stageCost = stage.products.reduce((sum, p) => {
+                                    const c = calcProductCost(costMap.get(p.product_id), section.estimated_head_count);
+                                    return c != null ? sum + c : sum;
+                                  }, 0);
+                                  return stageCost > 0 ? (
+                                    <div
+                                      className="flex items-center justify-between px-3 py-1.5"
+                                      style={{ borderTop: `1px solid ${COLORS.borderDivider}`, backgroundColor: "#FAFAF8" }}
+                                    >
+                                      <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.mutedText }}>
+                                        Stage cost ({section.estimated_head_count || 0} hd)
+                                      </span>
+                                      <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.teal }}>
+                                        {formatCost(stageCost)}
+                                      </span>
+                                    </div>
+                                  ) : null;
+                                })()}
                               </div>
                             )}
 
@@ -793,6 +845,31 @@ export default function CustomerProtocolScreen() {
             : []
         }
       />
+
+      {/* ── Grand Total Cost Estimate ── */}
+      {!isLoading && displaySections.length > 0 && grandTotal != null && (
+        <div
+          className="rounded-lg overflow-hidden"
+          style={{ border: `1px solid ${COLORS.borderDivider}`, backgroundColor: "white" }}
+        >
+          <div
+            className="flex items-center justify-between px-4 py-3"
+            style={{ borderLeft: `4px solid ${COLORS.gold}` }}
+          >
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.textOnLight }}>
+                Estimated Total Cost
+              </div>
+              <div style={{ fontSize: 11, color: COLORS.mutedText }}>
+                Based on cheapest available size per product
+              </div>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.teal }}>
+              {formatCost(grandTotal)}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Bottom Action Bar ── */}
       {isDraft && !isLoading && displaySections.length > 0 && (
