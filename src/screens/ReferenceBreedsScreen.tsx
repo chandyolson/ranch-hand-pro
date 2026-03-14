@@ -14,6 +14,41 @@ const BREED_TYPE_LABELS: Record<string, { label: string; color: string; bg: stri
   dual: { label: "DUAL", color: "#6B4C1B", bg: "rgba(107,76,27,0.10)" },
 };
 
+const BreedRow: React.FC<{ breed: any; isFav: boolean; toggleFavorite: (name: string) => void }> = ({ breed, isFav, toggleFavorite }) => {
+  const typeInfo = BREED_TYPE_LABELS[breed.breed_type || ""] || { label: breed.breed_type?.toUpperCase() || "", color: "rgba(26,26,26,0.50)", bg: "rgba(26,26,26,0.06)" };
+  return (
+    <div
+      className="rounded-xl px-3.5 py-3 flex items-center gap-3"
+      style={{ backgroundColor: "white", border: isFav ? "1.5px solid rgba(243,209,42,0.50)" : "1px solid rgba(212,212,208,0.60)" }}
+    >
+      <button
+        onClick={() => toggleFavorite(breed.name)}
+        className="shrink-0 cursor-pointer active:scale-[0.90] transition-transform"
+        style={{ background: "none", border: "none", padding: 0, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}
+      >
+        <svg width="18" height="18" viewBox="0 0 20 20" fill={isFav ? "#F3D12A" : "none"} stroke={isFav ? "#F3D12A" : "rgba(26,26,26,0.25)"} strokeWidth="1.5">
+          <path d="M10 2l2.4 5.2L18 8l-4 3.8 1 5.7L10 14.6 4.9 17.5l1-5.7L2 8l5.6-.8L10 2z" strokeLinejoin="round" strokeLinecap="round" />
+        </svg>
+      </button>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="truncate" style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>{breed.name}</span>
+          {typeInfo.label && (
+            <span className="rounded-full shrink-0" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: typeInfo.bg, color: typeInfo.color }}>
+              {typeInfo.label}
+            </span>
+          )}
+        </div>
+        {(breed.origin || breed.characteristics) && (
+          <div className="truncate" style={{ fontSize: 12, fontWeight: 400, color: "rgba(26,26,26,0.45)", marginTop: 2 }}>
+            {[breed.origin, breed.characteristics].filter(Boolean).join(" · ")}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const ReferenceBreedsScreen: React.FC = () => {
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
