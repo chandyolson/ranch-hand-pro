@@ -320,8 +320,8 @@ export function generateProtocolPDF(params: PDFParams): void {
         font: "helvetica",
         fontSize: 9,
         cellPadding: { top: 2, bottom: 2, left: 3, right: 3 },
-        textColor: TEXT as unknown as number[],
-        lineColor: BORDER as unknown as number[],
+        textColor: TEXT,
+        lineColor: BORDER,
         lineWidth: 0.2,
       },
       headStyles: {
