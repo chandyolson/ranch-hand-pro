@@ -262,7 +262,7 @@ export function generateProtocolPDF(params: PDFParams): void {
           fontSize: 8,
         },
         alternateRowStyles: {
-          fillColor: CREAM as unknown as number[],
+          fillColor: CREAM,
         },
         columnStyles: {
           0: { cellWidth: CW * 0.28 },  // Product
