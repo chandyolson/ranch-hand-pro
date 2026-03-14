@@ -57,6 +57,9 @@ const ReferenceBreedsScreen: React.FC = () => {
     });
   }, [breeds, search, filterType, sort, favorites]);
 
+  const favBreeds = useMemo(() => filtered.filter(b => favorites.has(b.name)), [filtered, favorites]);
+  const otherBreeds = useMemo(() => filtered.filter(b => !favorites.has(b.name)), [filtered, favorites]);
+
   const toggleFavorite = async (breedName: string) => {
     const current = prefs?.preferred_breeds || [];
     const next = current.includes(breedName)
