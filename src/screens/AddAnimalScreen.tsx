@@ -43,6 +43,24 @@ export default function AddAnimalScreen() {
   const navigate = useNavigate();
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
+  const { data: prefs } = useOperationPreferences();
+
+  const { data: allBreeds } = useQuery({
+    queryKey: ["breeds"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("breeds").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const breedOptions = useMemo(() => {
+    const breeds = allBreeds || [];
+    const favSet = new Set(prefs?.preferred_breeds || []);
+    const favs = breeds.filter(b => favSet.has(b.name));
+    const rest = breeds.filter(b => !favSet.has(b.name));
+    return { favs, rest };
+  }, [allBreeds, prefs]);
 
   useEffect(() => {
     setDuplicate(tag === "3309" && tagColor === "Pink" && yearBorn === "2020");
