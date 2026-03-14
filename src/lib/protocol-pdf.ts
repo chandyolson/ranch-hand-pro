@@ -38,14 +38,15 @@ interface PDFParams {
 }
 
 // ── Colors ──
-const NAVY = [14, 38, 70] as const;     // #0E2646
-const TEAL = [85, 186, 170] as const;   // #55BAAA
-const GOLD = [243, 209, 42] as const;   // #F3D12A
-const WHITE = [255, 255, 255] as const;
-const CREAM = [245, 245, 240] as const; // #F5F5F0
-const TEXT = [26, 26, 26] as const;     // #1A1A1A
-const MUTED = [113, 113, 130] as const; // #717182
-const BORDER = [212, 212, 208] as const;// #D4D4D0
+type Color = [number, number, number];
+const NAVY: Color = [14, 38, 70];       // #0E2646
+const TEAL: Color = [85, 186, 170];     // #55BAAA
+const GOLD: Color = [243, 209, 42];     // #F3D12A
+const WHITE: Color = [255, 255, 255];
+const CREAM: Color = [245, 245, 240];   // #F5F5F0
+const TEXT: Color = [26, 26, 26];       // #1A1A1A
+const MUTED: Color = [113, 113, 130];   // #717182
+const BORDER: Color = [212, 212, 208];  // #D4D4D0
 
 // ── Helpers ──
 function formatDate(dateStr: string | null): string {
@@ -250,18 +251,18 @@ export function generateProtocolPDF(params: PDFParams): void {
           font: "helvetica",
           fontSize: 8.5,
           cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 },
-          textColor: TEXT as unknown as number[],
-          lineColor: BORDER as unknown as number[],
+          textColor: TEXT,
+          lineColor: BORDER,
           lineWidth: 0.2,
         },
         headStyles: {
-          fillColor: NAVY as unknown as number[],
-          textColor: WHITE as unknown as number[],
+          fillColor: NAVY,
+          textColor: WHITE,
           fontStyle: "bold",
           fontSize: 8,
         },
         alternateRowStyles: {
-          fillColor: CREAM as unknown as number[],
+          fillColor: CREAM,
         },
         columnStyles: {
           0: { cellWidth: CW * 0.28 },  // Product
@@ -319,17 +320,17 @@ export function generateProtocolPDF(params: PDFParams): void {
         font: "helvetica",
         fontSize: 9,
         cellPadding: { top: 2, bottom: 2, left: 3, right: 3 },
-        textColor: TEXT as unknown as number[],
-        lineColor: BORDER as unknown as number[],
+        textColor: TEXT,
+        lineColor: BORDER,
         lineWidth: 0.2,
       },
       headStyles: {
-        fillColor: NAVY as unknown as number[],
-        textColor: WHITE as unknown as number[],
+        fillColor: NAVY,
+        textColor: WHITE,
         fontStyle: "bold",
       },
       alternateRowStyles: {
-        fillColor: CREAM as unknown as number[],
+        fillColor: CREAM,
       },
       didDrawPage: () => {
         drawHeader();
