@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
+import { useOperationPreferences } from "@/hooks/useOperationPreferences";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import { useChuteSideToast } from "@/components/ToastContext";
 import {
@@ -12,7 +13,6 @@ import {
   ANIMAL_TYPE_OPTIONS,
   YEAR_OPTIONS,
   STATUS_OPTIONS,
-  BREED_OPTIONS,
   FLAG_OPTIONS,
   QUICK_NOTES,
   QUICK_NOTE_PILL_COLORS,
@@ -43,6 +43,24 @@ export default function AddAnimalScreen() {
   const navigate = useNavigate();
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
+  const { data: prefs } = useOperationPreferences();
+
+  const { data: allBreeds } = useQuery({
+    queryKey: ["breeds"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("breeds").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const breedOptions = useMemo(() => {
+    const breeds = allBreeds || [];
+    const favSet = new Set(prefs?.preferred_breeds || []);
+    const favs = breeds.filter(b => favSet.has(b.name));
+    const rest = breeds.filter(b => !favSet.has(b.name));
+    return { favs, rest };
+  }, [allBreeds, prefs]);
 
   useEffect(() => {
     setDuplicate(tag === "3309" && tagColor === "Pink" && yearBorn === "2020");
@@ -193,7 +211,14 @@ export default function AddAnimalScreen() {
         <Row label="Breed">
           <select value={breed} onChange={e => setBreed(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16, color: breed ? "#1A1A1A" : "rgba(26,26,26,0.35)" }}>
             <option value="">Optional</option>
-            {BREED_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+            {breedOptions.favs.length > 0 && (
+              <optgroup label="★ Favorites">
+                {breedOptions.favs.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+              </optgroup>
+            )}
+            <optgroup label={breedOptions.favs.length > 0 ? "All Breeds" : "Breeds"}>
+              {breedOptions.rest.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+            </optgroup>
           </select>
         </Row>
       </div>
