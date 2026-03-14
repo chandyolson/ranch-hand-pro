@@ -7,16 +7,7 @@ import { COLORS } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
 import { ChevronDown, Plus, X } from "lucide-react";
 import ProductSearchModal, { SelectedProduct } from "@/components/ProductSearchModal";
-
-const ANIMAL_TYPES = ["Calf", "Replacement", "Cow", "Bull", "Feeder"] as const;
-
-const STAGE_MAP: Record<string, string[]> = {
-  Calf: ["Birth/Calving", "Branding", "Preconditioning", "Weaning"],
-  Replacement: ["Bangs/Pre-Breeding", "Pre-Breeding", "Breeding/AI", "Pregnancy Check", "Pre-Calving"],
-  Cow: ["Pre-Calving", "Pre-Breeding", "Breeding/AI", "Fall Preg Check"],
-  Bull: ["BSE/Pre-Turnout", "Fall Check"],
-  Feeder: ["Arrival Processing", "Booster"],
-};
+import { PROTOCOL_ANIMAL_TYPES, DEFAULT_STAGES, type ProtocolAnimalType } from "@/lib/protocol-constants";
 
 interface StageProduct {
   product_id: string;
@@ -91,7 +82,7 @@ export default function ProtocolTemplateBuilderScreen() {
 
   const handleAnimalTypeChange = (type: string) => {
     setAnimalType(type);
-    const stageNames = STAGE_MAP[type] || [];
+    const stageNames = DEFAULT_STAGES[type as ProtocolAnimalType] || [];
     setStages(stageNames.map((name) => ({ name, products: [] })));
   };
 
@@ -245,7 +236,7 @@ export default function ProtocolTemplateBuilderScreen() {
             onChange={(e) => handleAnimalTypeChange(e.target.value)}
           >
             <option value="">Select animal type…</option>
-            {ANIMAL_TYPES.map((t) => (
+            {PROTOCOL_ANIMAL_TYPES.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>

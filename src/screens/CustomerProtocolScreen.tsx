@@ -12,31 +12,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
   Plus, X, Check, Copy, FileText,
 } from "lucide-react";
-
-/* ── Stage reference map ── */
-const STAGE_MAP: Record<string, string[]> = {
-  Calf: ["Birth / Calving", "Branding", "Preconditioning", "Weaning"],
-  Replacement: ["Bangs / Pre-Breeding", "Pre-Breeding", "Breeding / AI", "Pregnancy Check", "Pre-Calving"],
-  Cow: ["Pre-Calving", "Pre-Breeding", "Breeding / AI", "Fall Preg Check"],
-  Bull: ["BSE / Pre-Turnout", "Fall Check"],
-  Feeder: ["Arrival Processing", "Booster"],
-};
-
-const TIMING_LABELS: Record<string, Record<string, string>> = {
-  Calf: { "Branding": "~90 days", "Preconditioning": "~120 days", "Weaning": "~60 days" },
-  Replacement: { "Pre-Breeding": "~60 days", "Breeding / AI": "~30 days", "Pregnancy Check": "~60 days", "Pre-Calving": "~120 days" },
-  Cow: { "Pre-Breeding": "~60 days", "Breeding / AI": "~30 days", "Fall Preg Check": "~120 days" },
-  Bull: { "Fall Check": "~180 days" },
-  Feeder: { "Booster": "~21 days" },
-};
-
-const CLASS_BADGES: Record<string, { bg: string; text: string }> = {
-  Calf: { bg: "rgba(85,186,170,0.12)", text: "#55BAAA" },
-  Cow: { bg: "rgba(14,38,70,0.12)", text: "#0E2646" },
-  Replacement: { bg: "rgba(232,116,97,0.12)", text: "#E87461" },
-  Bull: { bg: "rgba(243,209,42,0.12)", text: "#B8860B" },
-  Feeder: { bg: "rgba(168,168,168,0.12)", text: "#888888" },
-};
+import { DEFAULT_STAGES, STAGE_TIMING_HINTS, CLASS_BADGE_COLORS, type ProtocolAnimalType } from "@/lib/protocol-constants";
 
 interface RecommendedProduct {
   product_id: string;
@@ -140,7 +116,7 @@ export default function CustomerProtocolScreen() {
     if (!protocols || protocols.length === 0) return [];
 
     return protocols.map((p: any) => {
-      const stageNames = STAGE_MAP[p.animal_class] || [];
+      const stageNames = DEFAULT_STAGES[p.animal_class as ProtocolAnimalType] || [];
       const eventMap = new Map<string, any>();
       (p.events || []).forEach((e: any) => eventMap.set(e.event_name, e));
 
@@ -271,7 +247,7 @@ export default function CustomerProtocolScreen() {
   };
 
   const addAnimalType = (type: string) => {
-    const stageNames = STAGE_MAP[type] || [];
+    const stageNames = DEFAULT_STAGES[type as ProtocolAnimalType] || [];
     const newSection: AnimalSection = {
       animal_class: type,
       estimated_head_count: null,
@@ -522,7 +498,7 @@ export default function CustomerProtocolScreen() {
 
       {/* ── Animal Type Sections ── */}
       {!isLoading && displaySections.map((section, sIdx) => {
-        const badge = CLASS_BADGES[section.animal_class] || CLASS_BADGES.Feeder;
+        const badge = CLASS_BADGE_COLORS[section.animal_class] || CLASS_BADGE_COLORS.Feeder;
         const filledStages = section.stages.filter((s) => s.hasData);
         return (
           <div key={section.animal_class} className="rounded-lg bg-white overflow-hidden shadow-sm" style={{ border: `1px solid ${COLORS.borderDivider}` }}>
@@ -576,7 +552,7 @@ export default function CustomerProtocolScreen() {
                 )}
 
                 {section.stages.map((stage, stIdx) => {
-                  const timingLabel = TIMING_LABELS[section.animal_class]?.[stage.event_name];
+                  const timingLabel = STAGE_TIMING_HINTS[stage.event_name];
                   return (
                     <div key={stage.event_name}>
                       {/* Timing connector */}
