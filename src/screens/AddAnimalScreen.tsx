@@ -211,7 +211,14 @@ export default function AddAnimalScreen() {
         <Row label="Breed">
           <select value={breed} onChange={e => setBreed(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16, color: breed ? "#1A1A1A" : "rgba(26,26,26,0.35)" }}>
             <option value="">Optional</option>
-            {BREED_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+            {breedOptions.favs.length > 0 && (
+              <optgroup label="★ Favorites">
+                {breedOptions.favs.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+              </optgroup>
+            )}
+            <optgroup label={breedOptions.favs.length > 0 ? "All Breeds" : "Breeds"}>
+              {breedOptions.rest.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+            </optgroup>
           </select>
         </Row>
       </div>
