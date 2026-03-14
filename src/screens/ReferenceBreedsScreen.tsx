@@ -110,6 +110,8 @@ const ReferenceBreedsScreen: React.FC = () => {
 
       <ListScreenToolbar
         title="Breeds"
+        addLabel=""
+        onAdd={() => {}}
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search breeds…"
