@@ -330,7 +330,7 @@ export function generateProtocolPDF(params: PDFParams): void {
         fontStyle: "bold",
       },
       alternateRowStyles: {
-        fillColor: CREAM as unknown as number[],
+        fillColor: CREAM,
       },
       didDrawPage: () => {
         drawHeader();
