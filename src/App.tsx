@@ -30,6 +30,8 @@ import ReferenceSettingsScreen from "@/screens/ReferenceSettingsScreen";
 import ProtocolTemplateBuilderScreen from "@/screens/ProtocolTemplateBuilderScreen";
 import ProtocolTemplateDetailScreen from "@/screens/ProtocolTemplateDetailScreen";
 import ReferenceBreedsScreen from "@/screens/ReferenceBreedsScreen";
+import WorkTemplateListScreen from "@/screens/WorkTemplateListScreen";
+import WorkTemplateEditScreen from "@/screens/WorkTemplateEditScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
 import NotFound from "@/pages/NotFound";
 
@@ -66,7 +68,9 @@ const App = () => (
           <Route path="reference/team" element={<ReferenceTeamScreen />} />
           <Route path="reference/settings" element={<ReferenceSettingsScreen />} />
           <Route path="reference/breeds" element={<ReferenceBreedsScreen />} />
-          <Route path="reference/templates" element={<PlaceholderScreen title="Work Templates" />} />
+          <Route path="reference/templates" element={<WorkTemplateListScreen />} />
+          <Route path="reference/templates/new" element={<WorkTemplateEditScreen />} />
+          <Route path="reference/templates/edit" element={<WorkTemplateEditScreen />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
