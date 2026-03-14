@@ -5,8 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { COLORS } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
-import { ChevronDown, ChevronUp, Plus, X, Package, Layers } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, X, Package } from "lucide-react";
 import ProductSearchModal, { SelectedProduct } from "@/components/ProductSearchModal";
+import BlockLibraryPanel, { type BlockData } from "@/components/BlockLibraryPanel";
 import { PROTOCOL_ANIMAL_TYPES, CLASS_BADGE_COLORS, type ProtocolAnimalType } from "@/lib/protocol-constants";
 
 interface StageProduct {
@@ -28,17 +29,6 @@ interface Stage {
   daysOffset: number;
 }
 
-interface BlockData {
-  id: string;
-  name: string;
-  work_type_code: string;
-  animal_class: string;
-  description: string | null;
-  default_products: any[];
-  clinical_notes: string | null;
-  equipment_notes: string | null;
-}
-
 export default function ProtocolTemplateBuilderScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -52,7 +42,6 @@ export default function ProtocolTemplateBuilderScreen() {
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [activeStageIdx, setActiveStageIdx] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [blockLibraryOpen, setBlockLibraryOpen] = useState(false);
 
   // ── Load existing template for edit mode ──
   const { data: existingTemplate } = useQuery({
@@ -75,27 +64,6 @@ export default function ProtocolTemplateBuilderScreen() {
       return { ...data, events: events || [] };
     },
     enabled: !!editId,
-  });
-
-  // ── Block library query ──
-  const { data: blocks } = useQuery({
-    queryKey: ["protocol-blocks", operationId, animalType],
-    queryFn: async () => {
-      let query = supabase
-        .from("protocol_blocks")
-        .select("*")
-        .eq("operation_id", operationId)
-        .order("name");
-
-      if (animalType) {
-        query = query.eq("animal_class", animalType);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data || []) as BlockData[];
-    },
-    enabled: !!operationId && !!animalType,
   });
 
   // Populate form from existing template
@@ -130,7 +98,6 @@ export default function ProtocolTemplateBuilderScreen() {
     // Don't auto-generate stages anymore — let the user pick from the block library
     if (!editId) {
       setStages([]);
-      setBlockLibraryOpen(true);
     }
   };
 
@@ -358,95 +325,28 @@ export default function ProtocolTemplateBuilderScreen() {
         </div>
       </div>
 
-      {/* ── Block Library ── */}
+      {/* ── Block Library (reusable component with full CRUD) ── */}
       {animalType && (
-        <div className="space-y-2">
-          <button
-            onClick={() => setBlockLibraryOpen((o) => !o)}
-            className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 active:scale-[0.98] transition-all"
-            style={{ backgroundColor: "rgba(85,186,170,0.08)", border: `1px solid rgba(85,186,170,0.25)` }}
-          >
-            <div className="flex items-center gap-2">
-              <Layers size={16} style={{ color: COLORS.teal }} />
-              <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.teal }}>
-                Block Library
-              </span>
-              <span style={{ fontSize: 12, color: COLORS.mutedText }}>
-                {(blocks || []).length} available
-              </span>
-            </div>
-            <ChevronDown
-              size={16}
-              style={{
-                color: COLORS.teal,
-                transform: blockLibraryOpen ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 200ms",
-              }}
-            />
-          </button>
+        <BlockLibraryPanel
+          animalClass={animalType}
+          usedBlockIds={usedBlockIds}
+          onAddBlock={addBlockAsStage}
+          defaultOpen={!editId}
+        />
+      )}
 
-          {blockLibraryOpen && (
-            <div className="space-y-2">
-              {(!blocks || blocks.length === 0) && (
-                <div className="py-4 text-center" style={{ fontSize: 13, color: COLORS.mutedText }}>
-                  No blocks for {animalType} yet
-                </div>
-              )}
-              {(blocks || []).map((block) => {
-                const isUsed = usedBlockIds.has(block.id);
-                const productCount = (block.default_products || []).length;
-                const badge = CLASS_BADGE_COLORS[block.animal_class] || CLASS_BADGE_COLORS.Feeder;
-                return (
-                  <button
-                    key={block.id}
-                    onClick={() => { if (!isUsed) addBlockAsStage(block); }}
-                    disabled={isUsed}
-                    className="w-full text-left rounded-lg bg-white shadow-sm overflow-hidden active:scale-[0.98] transition-all disabled:opacity-50"
-                    style={{ border: `1px solid ${COLORS.borderDivider}`, borderLeft: `4px solid ${isUsed ? COLORS.mutedText : COLORS.gold}` }}
-                  >
-                    <div className="px-3 py-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.textOnLight }}>
-                          {block.name}
-                        </span>
-                        {isUsed && (
-                          <span className="rounded-full px-2 py-0.5" style={{ fontSize: 9, fontWeight: 700, backgroundColor: "rgba(85,186,170,0.12)", color: COLORS.teal }}>
-                            ADDED
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="rounded-full px-2 py-0.5" style={{ fontSize: 10, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.06)", color: COLORS.navy }}>
-                          {block.work_type_code}
-                        </span>
-                        <span style={{ fontSize: 11, color: COLORS.mutedText }}>
-                          {productCount} product{productCount !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      {block.description && (
-                        <div className="truncate mt-1" style={{ fontSize: 12, color: COLORS.mutedText }}>
-                          {block.description}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* Add blank custom stage */}
-              <button
-                onClick={addBlankStage}
-                className="w-full text-left rounded-lg px-3 py-2.5 active:scale-[0.98] transition-all"
-                style={{ border: `1px dashed ${COLORS.borderDivider}`, backgroundColor: "transparent" }}
-              >
-                <div className="flex items-center gap-2">
-                  <Plus size={14} style={{ color: COLORS.mutedText }} />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.mutedText }}>Add Custom Stage</span>
-                </div>
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Add blank custom stage (always visible when animal type is selected) */}
+      {animalType && (
+        <button
+          onClick={addBlankStage}
+          className="w-full text-left rounded-lg px-3 py-2.5 active:scale-[0.98] transition-all"
+          style={{ border: `1px dashed ${COLORS.borderDivider}`, backgroundColor: "transparent" }}
+        >
+          <div className="flex items-center gap-2">
+            <Plus size={14} style={{ color: COLORS.mutedText }} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.mutedText }}>Add Custom Stage</span>
+          </div>
+        </button>
       )}
 
       {/* ── Stage Cards ── */}
@@ -574,18 +474,6 @@ export default function ProtocolTemplateBuilderScreen() {
             </div>
           ))}
         </div>
-      )}
-
-      {/* Inline add buttons when stages exist but library is closed */}
-      {animalType && stages.length > 0 && !blockLibraryOpen && (
-        <button
-          onClick={() => setBlockLibraryOpen(true)}
-          className="w-full rounded-full py-2.5 text-sm font-bold active:scale-[0.98] transition-all"
-          style={{ border: `2px solid ${COLORS.teal}`, color: COLORS.teal, backgroundColor: "transparent" }}
-        >
-          <Layers size={14} className="inline mr-1.5 -mt-0.5" />
-          Add Stage from Library
-        </button>
       )}
 
       <ProductSearchModal
