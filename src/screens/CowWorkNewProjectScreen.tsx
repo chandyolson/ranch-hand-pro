@@ -1,15 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
+import { useGroupMemberCount } from "@/hooks/useAnimalGroups";
 import { useChuteSideToast } from "../components/ToastContext";
 import FormFieldRow from "../components/FormFieldRow";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 
 const cattleTypeOptions = ["Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
+
+interface ProductRow {
+  id: string;
+  name: string;
+  dosage: string;
+  route: string;
+  source?: "manual" | "template";
+  source_ref?: string | null;
+}
 
 export default function CowWorkNewProjectScreen() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -18,9 +28,12 @@ export default function CowWorkNewProjectScreen() {
   const [cattleType, setCattleType] = useState("");
   const [location, setLocation] = useState("");
   const [memo, setMemo] = useState("");
+  const [estimatedHead, setEstimatedHead] = useState<number | "">("");
+  const [preloadEnabled, setPreloadEnabled] = useState(false);
+  const [preloadMode, setPreloadMode] = useState<"expected" | "worked">("expected");
   const [productsOpen, setProductsOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
-  const [products, setProducts] = useState<{ id: string; name: string; dosage: string; route: string }[]>([]);
+  const [products, setProducts] = useState<ProductRow[]>([]);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const { showToast } = useChuteSideToast();
@@ -30,6 +43,7 @@ export default function CowWorkNewProjectScreen() {
 
   const { data: groups } = useGroups();
   const { data: locations } = useLocations();
+  const { data: memberCount } = useGroupMemberCount(group || undefined);
   const { data: workTypes } = useQuery({
     queryKey: ["work-types"],
     queryFn: async () => {
@@ -66,6 +80,37 @@ export default function CowWorkNewProjectScreen() {
     },
   });
 
+  // Task 8: Auto-fill estimated head from group member count
+  useEffect(() => {
+    if (memberCount && memberCount > 0) {
+      setEstimatedHead(memberCount);
+    }
+  }, [memberCount]);
+
+  // Task 4: Template load handler — now includes products
+  const handleTemplateSelect = (t: any) => {
+    if (t.work_type_id) setProcessingType(t.work_type_id);
+    if (t.default_cattle_type) setCattleType(t.default_cattle_type);
+
+    // Load template products (append, don't replace)
+    if (Array.isArray(t.default_products) && t.default_products.length > 0) {
+      const templateProducts: ProductRow[] = t.default_products.map((p: any) => ({
+        id: p.product_id,
+        name: p.product_name,
+        dosage: p.dosage || "",
+        route: p.route || "",
+        source: "template" as const,
+        source_ref: t.id,
+      }));
+      setProducts(prev => [...prev, ...templateProducts]);
+      showToast("success", `${t.default_products.length} product${t.default_products.length !== 1 ? "s" : ""} added from template`);
+    } else {
+      showToast("success", "Template loaded");
+    }
+
+    setTemplateOpen(false);
+  };
+
   const handleSave = async (startWorking: boolean) => {
     if (!processingType) { showToast("error", "Processing type is required"); return; }
     setSaving(true);
@@ -92,6 +137,9 @@ export default function CowWorkNewProjectScreen() {
           location_id: location || null,
           description: memo.trim() || null,
           record_individual_animals: true,
+          // Task 7+8: preload and estimated head
+          preload_mode: preloadEnabled ? preloadMode : "none",
+          estimated_head: estimatedHead || null,
         })
         .select()
         .single();
@@ -103,6 +151,24 @@ export default function CowWorkNewProjectScreen() {
           work_type_id: processingType,
           is_primary: true,
         });
+      }
+
+      // Task 4: Save products to project_products junction table
+      if (products.length > 0) {
+        const productRows = products.map(p => ({
+          project_id: project.id,
+          product_id: p.id,
+          dosage: p.dosage || null,
+          route: p.route || null,
+          source: p.source || "manual",
+          source_ref: p.source_ref || null,
+        }));
+
+        const { error: prodError } = await supabase
+          .from("project_products")
+          .insert(productRows);
+
+        if (prodError) console.error("Failed to save products:", prodError);
       }
 
       queryClient.invalidateQueries({ queryKey: ["projects"] });
@@ -148,12 +214,25 @@ export default function CowWorkNewProjectScreen() {
         {/* Group */}
         <div className="flex items-center gap-2 min-w-0">
           <label style={LABEL_STYLE}>Group</label>
-          <select value={group} onChange={e => setGroup(e.target.value)} className={INPUT_CLS}>
+          <select value={group} onChange={e => { setGroup(e.target.value); setPreloadEnabled(false); }} className={INPUT_CLS}>
             <option value="" disabled>Select group</option>
             {(groups || []).map(g => (
               <option key={g.id} value={g.id}>{g.name}</option>
             ))}
           </select>
+        </div>
+
+        {/* Expected Head */}
+        <div className="flex items-center gap-2 min-w-0">
+          <label style={LABEL_STYLE}>Expected Hd</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={estimatedHead}
+            onChange={e => setEstimatedHead(e.target.value ? parseInt(e.target.value, 10) : "")}
+            placeholder="Optional"
+            className={INPUT_CLS}
+          />
         </div>
 
         {/* Cattle Type */}
@@ -188,6 +267,65 @@ export default function CowWorkNewProjectScreen() {
         </div>
       </div>
 
+      {/* Task 7: Pre-load toggle — only when a group is selected */}
+      {group && (
+        <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+          <div className="flex items-center justify-between">
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Pre-load animals from group</span>
+            <button
+              onClick={() => {
+                setPreloadEnabled(!preloadEnabled);
+                if (preloadEnabled) setPreloadMode("expected");
+              }}
+              className="relative shrink-0 cursor-pointer"
+              style={{
+                width: 44, height: 24, borderRadius: 12, border: "none",
+                backgroundColor: preloadEnabled ? "#55BAAA" : "#CBCED4",
+                transition: "background-color 200ms",
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute", top: 2,
+                  left: preloadEnabled ? 22 : 2,
+                  width: 20, height: 20, borderRadius: 10,
+                  backgroundColor: "#FFFFFF",
+                  transition: "left 200ms",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                }}
+              />
+            </button>
+          </div>
+
+          {preloadEnabled && (
+            <div className="flex gap-4 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="preloadMode"
+                  value="expected"
+                  checked={preloadMode === "expected"}
+                  onChange={() => setPreloadMode("expected")}
+                  style={{ accentColor: "#55BAAA" }}
+                />
+                <span style={{ fontSize: 16, color: "#1A1A1A" }}>As Expected</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="preloadMode"
+                  value="worked"
+                  checked={preloadMode === "worked"}
+                  onChange={() => setPreloadMode("worked")}
+                  style={{ accentColor: "#55BAAA" }}
+                />
+                <span style={{ fontSize: 16, color: "#1A1A1A" }}>As Worked</span>
+              </label>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Products Given collapsible */}
       <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         <button
@@ -195,10 +333,17 @@ export default function CowWorkNewProjectScreen() {
           onClick={() => setProductsOpen(!productsOpen)}
         >
           <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>Products Given</span>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
-            style={{ transform: productsOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
-            <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="rgba(26,26,26,0.40)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <div className="flex items-center gap-2">
+            {products.length > 0 && (
+              <span style={{ fontSize: 12, color: "rgba(26,26,26,0.40)" }}>
+                {products.length} product{products.length !== 1 ? "s" : ""}
+              </span>
+            )}
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+              style={{ transform: productsOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
+              <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="rgba(26,26,26,0.40)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
         </button>
 
         {productsOpen && (
@@ -207,7 +352,7 @@ export default function CowWorkNewProjectScreen() {
               <div className="text-center py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products added</div>
             ) : (
               products.map((p, i) => (
-                <div key={p.id} className="flex items-center gap-2 py-2" style={{ borderBottom: "1px solid rgba(26,26,26,0.06)" }}>
+                <div key={`${p.id}-${i}`} className="flex items-center gap-2 py-2" style={{ borderBottom: "1px solid rgba(26,26,26,0.06)" }}>
                   <span className="flex-1 min-w-0 truncate" style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{p.name}</span>
                   <span className="shrink-0" style={{ fontSize: 13, color: "rgba(26,26,26,0.50)" }}>{[p.dosage, p.route].filter(Boolean).join(" · ")}</span>
                   <button
@@ -258,6 +403,7 @@ export default function CowWorkNewProjectScreen() {
                               name: prod.name,
                               dosage: op.custom_dosage || prod.dosage || "",
                               route: prod.route || "",
+                              source: "manual",
                             }]);
                           }}
                         >
@@ -301,26 +447,38 @@ export default function CowWorkNewProjectScreen() {
             {(templates || []).length === 0 ? (
               <div className="text-center py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No templates</div>
             ) : (
-              (templates || []).map(t => (
-                <button
-                  key={t.id}
-                  className="flex items-center justify-between w-full py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.02)]"
-                  style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", background: "none", border: "none", borderBottomStyle: "solid", borderBottomWidth: 1, borderBottomColor: "rgba(26,26,26,0.06)" }}
-                  onClick={() => {
-                    if (t.work_type_id) setProcessingType(t.work_type_id);
-                    setTemplateOpen(false);
-                    showToast("success", "Template loaded");
-                  }}
-                >
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{t.name}</span>
-                  <span
-                    className="rounded-full"
-                    style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.15)", color: "#F3D12A" }}
+              (templates || []).map(t => {
+                const tProducts = Array.isArray(t.default_products) ? (t.default_products as any[]) : [];
+                return (
+                  <button
+                    key={t.id}
+                    className="flex items-center justify-between w-full py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.02)]"
+                    style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", background: "none", border: "none", borderBottomStyle: "solid", borderBottomWidth: 1, borderBottomColor: "rgba(26,26,26,0.06)" }}
+                    onClick={() => handleTemplateSelect(t)}
                   >
-                    {(t.work_type as any)?.code || ""}
-                  </span>
-                </button>
-              ))
+                    <div className="text-left min-w-0">
+                      <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{t.name}</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {t.default_cattle_type && (
+                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{t.default_cattle_type}</span>
+                        )}
+                        {/* Task 5: Product count badge on template cards */}
+                        {tProducts.length > 0 && (
+                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
+                            {tProducts.length} product{tProducts.length !== 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span
+                      className="rounded-full shrink-0"
+                      style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.15)", color: "#C4A600" }}
+                    >
+                      {(t.work_type as any)?.code || ""}
+                    </span>
+                  </button>
+                );
+              })
             )}
           </div>
         )}

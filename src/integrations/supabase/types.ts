@@ -68,6 +68,64 @@ export type Database = {
           },
         ]
       }
+      animal_groups: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          group_id: string
+          id: string
+          animal_id: string
+          operation_id: string
+          source: string | null
+          source_ref: string | null
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          group_id: string
+          id?: string
+          animal_id: string
+          operation_id: string
+          source?: string | null
+          source_ref?: string | null
+          start_date?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          group_id?: string
+          id?: string
+          animal_id?: string
+          operation_id?: string
+          source?: string | null
+          source_ref?: string | null
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "animal_groups_animal_id_fkey"
+            columns: ["animal_id"]
+            isOneToOne: false
+            referencedRelation: "animals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "animal_groups_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "animal_groups_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       animal_ids: {
         Row: {
           animal_id: string
@@ -588,6 +646,7 @@ export type Database = {
       }
       cow_work: {
         Row: {
+          additional_products: Json | null
           animal_id: string
           breeding_sire_id: string | null
           bse_memo: string | null
@@ -601,6 +660,7 @@ export type Database = {
           fetal_sex: string | null
           flex_data: Json | null
           id: string
+          is_new_animal: boolean | null
           memo: string | null
           morph_desc: string | null
           morphology: number | null
@@ -625,6 +685,7 @@ export type Database = {
           weight: number | null
         }
         Insert: {
+          additional_products?: Json | null
           animal_id: string
           breeding_sire_id?: string | null
           bse_memo?: string | null
@@ -638,6 +699,7 @@ export type Database = {
           fetal_sex?: string | null
           flex_data?: Json | null
           id?: string
+          is_new_animal?: boolean | null
           memo?: string | null
           morph_desc?: string | null
           morphology?: number | null
@@ -662,6 +724,7 @@ export type Database = {
           weight?: number | null
         }
         Update: {
+          additional_products?: Json | null
           animal_id?: string
           breeding_sire_id?: string | null
           bse_memo?: string | null
@@ -675,6 +738,7 @@ export type Database = {
           fetal_sex?: string | null
           flex_data?: Json | null
           id?: string
+          is_new_animal?: boolean | null
           memo?: string | null
           morph_desc?: string | null
           morphology?: number | null
@@ -1366,24 +1430,88 @@ export type Database = {
           },
         ]
       }
+      project_expected_animals: {
+        Row: {
+          created_at: string
+          id: string
+          animal_id: string
+          project_id: string
+          status: string
+          worked_record_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          animal_id: string
+          project_id: string
+          status?: string
+          worked_record_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          animal_id?: string
+          project_id?: string
+          status?: string
+          worked_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_expected_animals_animal_id_fkey"
+            columns: ["animal_id"]
+            isOneToOne: false
+            referencedRelation: "animals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_expected_animals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_expected_animals_worked_record_id_fkey"
+            columns: ["worked_record_id"]
+            isOneToOne: false
+            referencedRelation: "cow_work"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_products: {
         Row: {
           created_at: string | null
+          dosage: string | null
           id: string
+          notes: string | null
           product_id: string
           project_id: string
+          route: string | null
+          source: string | null
+          source_ref: string | null
         }
         Insert: {
           created_at?: string | null
+          dosage?: string | null
           id?: string
+          notes?: string | null
           product_id: string
           project_id: string
+          route?: string | null
+          source?: string | null
+          source_ref?: string | null
         }
         Update: {
           created_at?: string | null
+          dosage?: string | null
           id?: string
+          notes?: string | null
           product_id?: string
           project_id?: string
+          route?: string | null
+          source?: string | null
+          source_ref?: string | null
         }
         Relationships: [
           {
@@ -1495,6 +1623,7 @@ export type Database = {
           created_by: string | null
           date: string
           description: string | null
+          estimated_head: number | null
           field_visibility: Json | null
           group_id: string | null
           head_count: number | null
@@ -1502,6 +1631,7 @@ export type Database = {
           location_id: string | null
           name: string
           operation_id: string
+          preload_mode: string | null
           primary_work_type_id: string | null
           project_id_display: string | null
           project_status: string
@@ -1514,6 +1644,7 @@ export type Database = {
           created_by?: string | null
           date?: string
           description?: string | null
+          estimated_head?: number | null
           field_visibility?: Json | null
           group_id?: string | null
           head_count?: number | null
@@ -1521,6 +1652,7 @@ export type Database = {
           location_id?: string | null
           name: string
           operation_id: string
+          preload_mode?: string | null
           primary_work_type_id?: string | null
           project_id_display?: string | null
           project_status?: string
@@ -1533,6 +1665,7 @@ export type Database = {
           created_by?: string | null
           date?: string
           description?: string | null
+          estimated_head?: number | null
           field_visibility?: Json | null
           group_id?: string | null
           head_count?: number | null
@@ -1540,6 +1673,7 @@ export type Database = {
           location_id?: string | null
           name?: string
           operation_id?: string
+          preload_mode?: string | null
           primary_work_type_id?: string | null
           project_id_display?: string | null
           project_status?: string
