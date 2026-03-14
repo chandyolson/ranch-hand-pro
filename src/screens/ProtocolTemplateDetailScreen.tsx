@@ -7,14 +7,7 @@ import { useChuteSideToast } from "@/components/ToastContext";
 import { COLORS } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoreVertical, Trash2 } from "lucide-react";
-
-const CLASS_BADGES: Record<string, { bg: string; text: string }> = {
-  Calf:        { bg: "rgba(85,186,170,0.12)",  text: "#55BAAA" },
-  Replacement: { bg: "rgba(232,116,97,0.12)",  text: "#E87461" },
-  Cow:         { bg: "rgba(14,38,70,0.12)",     text: "#0E2646" },
-  Bull:        { bg: "rgba(243,209,42,0.12)",   text: "#B8860B" },
-  Feeder:      { bg: "rgba(168,168,168,0.12)",  text: "#888888" },
-};
+import { CLASS_BADGE_COLORS } from "@/lib/protocol-constants";
 
 export default function ProtocolTemplateDetailScreen() {
   const { id } = useParams<{ id: string }>();
@@ -81,7 +74,7 @@ export default function ProtocolTemplateDetailScreen() {
     );
   }
 
-  const badge = CLASS_BADGES[template.animal_class] || CLASS_BADGES.Feeder;
+  const badge = CLASS_BADGE_COLORS[template.animal_class] || CLASS_BADGE_COLORS.Feeder;
 
   return (
     <div className="px-4 pt-1 pb-28 space-y-4" style={{ minHeight: "100%" }}>

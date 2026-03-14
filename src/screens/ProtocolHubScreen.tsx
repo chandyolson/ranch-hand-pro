@@ -7,16 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { INPUT_CLS } from "@/lib/styles";
 import { COLORS } from "@/lib/constants";
 import { ChevronRight, Plus, Users, FileText, Search, X } from "lucide-react";
-
-/* ── Badge color map ── */
-const CLASS_BADGES: Record<string, { bg: string; text: string }> = {
-  Calves:      { bg: "rgba(85,186,170,0.12)",  text: "#55BAAA" },
-  Cows:        { bg: "rgba(14,38,70,0.12)",     text: "#0E2646" },
-  Heifers:     { bg: "rgba(232,116,97,0.12)",   text: "#E87461" },
-  Replacements:{ bg: "rgba(232,116,97,0.12)",   text: "#E87461" },
-  Bulls:       { bg: "rgba(243,209,42,0.12)",   text: "#B8860B" },
-  Feeders:     { bg: "rgba(168,168,168,0.12)",  text: "#888888" },
-};
+import { CLASS_BADGE_COLORS } from "@/lib/protocol-constants";
 
 type Tab = "customers" | "templates";
 
@@ -200,7 +191,7 @@ export default function ProtocolHubScreen() {
                       {c.animalTypes.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
                           {c.animalTypes.map((at: string) => {
-                            const badge = CLASS_BADGES[at] || CLASS_BADGES.Feeders;
+                            const badge = CLASS_BADGE_COLORS[at] || CLASS_BADGE_COLORS.Feeders;
                             return (
                               <span
                                 key={at}
@@ -264,7 +255,7 @@ export default function ProtocolHubScreen() {
           ) : filteredTemplates.length > 0 ? (
             <div className="space-y-2">
               {filteredTemplates.map((t) => {
-                const badge = CLASS_BADGES[t.animalClass] || CLASS_BADGES.Feeders;
+                const badge = CLASS_BADGE_COLORS[t.animalClass] || CLASS_BADGE_COLORS.Feeders;
                 return (
                   <button
                     key={t.id}
