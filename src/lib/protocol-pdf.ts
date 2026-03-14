@@ -251,8 +251,8 @@ export function generateProtocolPDF(params: PDFParams): void {
           font: "helvetica",
           fontSize: 8.5,
           cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 },
-          textColor: TEXT as unknown as number[],
-          lineColor: BORDER as unknown as number[],
+          textColor: TEXT,
+          lineColor: BORDER,
           lineWidth: 0.2,
         },
         headStyles: {
