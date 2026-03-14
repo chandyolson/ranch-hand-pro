@@ -30,6 +30,7 @@ import ReferenceSettingsScreen from "@/screens/ReferenceSettingsScreen";
 import ProtocolTemplateBuilderScreen from "@/screens/ProtocolTemplateBuilderScreen";
 import ProtocolTemplateDetailScreen from "@/screens/ProtocolTemplateDetailScreen";
 import ReferenceBreedsScreen from "@/screens/ReferenceBreedsScreen";
+import PlaceholderScreen from "@/components/PlaceholderScreen";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
