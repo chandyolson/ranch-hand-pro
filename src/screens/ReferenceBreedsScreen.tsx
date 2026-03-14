@@ -64,8 +64,10 @@ const ReferenceBreedsScreen: React.FC = () => {
 
     const { error } = await supabase
       .from("operation_preferences")
-      .update({ preferred_breeds: next })
-      .eq("operation_id", operationId);
+      .upsert(
+        { operation_id: operationId, preferred_breeds: next },
+        { onConflict: "operation_id" }
+      );
 
     if (error) {
       showToast("error", error.message);
