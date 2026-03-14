@@ -46,16 +46,19 @@ const AppLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { operationName } = useOperation();
+  const { operationName, operationType } = useOperation();
   const { data: counts } = useAnimalCounts();
   const path = location.pathname;
 
   const isHome = path === "/";
   const isAnimalDetail = /^\/animals\/[^/]+$/.test(path) && path !== "/animals/new";
 
+  // Display-friendly operation type label
+  const opTypeLabel = operationType === 'vet_practice' ? 'Veterinary Practice' : 'Ranch';
+
   let config = routeConfig[path];
   if (isHome) {
-    config = { title: operationName, subtitle: `Ranch · ${counts?.total ?? '...'} Head · Active` };
+    config = { title: operationName, subtitle: `${opTypeLabel} · ${counts?.total ?? '...'} Head · Active` };
   } else if (path === "/animals") {
     config = { title: "Animals", subtitle: `${counts?.total ?? '...'} Total · ${counts?.active ?? '...'} Active` };
   } else if (!config) {
