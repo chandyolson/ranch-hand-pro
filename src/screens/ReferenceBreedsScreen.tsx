@@ -6,6 +6,7 @@ import { useOperationPreferences } from "@/hooks/useOperationPreferences";
 import { useChuteSideToast } from "@/components/ToastContext";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
 import { Skeleton } from "@/components/ui/skeleton";
+import CollapsibleSection from "@/components/CollapsibleSection";
 
 const BREED_TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   beef: { label: "BEEF", color: "#0E2646", bg: "rgba(14,38,70,0.10)" },
