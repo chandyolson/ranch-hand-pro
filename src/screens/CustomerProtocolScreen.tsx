@@ -13,6 +13,7 @@ import {
   Plus, X, Check, Copy, FileText,
 } from "lucide-react";
 import { DEFAULT_STAGES, STAGE_TIMING_HINTS, CLASS_BADGE_COLORS, type ProtocolAnimalType } from "@/lib/protocol-constants";
+import { generateProtocolPDF } from "@/lib/protocol-pdf";
 
 interface RecommendedProduct {
   product_id: string;
@@ -46,7 +47,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 export default function CustomerProtocolScreen() {
   const { operationId: clientOpId } = useParams<{ operationId: string }>();
-  const { operationId: vetOpId } = useOperation();
+  const { operationId: vetOpId, operationName } = useOperation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useChuteSideToast();
@@ -816,12 +817,89 @@ export default function CustomerProtocolScreen() {
             Activate
           </button>
           <button
-            disabled
-            className="rounded-full px-5 py-2.5 text-sm font-bold transition-all opacity-50"
+            onClick={() => {
+              if (!sections || !customer) return;
+              const pdfSections = (sections || [])
+                .filter(s => s.stages.some(st => st.products.length > 0))
+                .map(s => ({
+                  animal_class: s.animal_class,
+                  estimated_head_count: s.estimated_head_count,
+                  stages: s.stages
+                    .filter(st => st.products.length > 0 || st.hasData)
+                    .map(st => ({
+                      event_name: st.event_name,
+                      scheduled_date: st.scheduled_date,
+                      event_status: st.event_status,
+                      recommended_products: st.products.map(p => ({
+                        product_name: p.product_name,
+                        dosage: p.dosage,
+                        route: p.route,
+                        notes: p.notes,
+                      })),
+                      completion_notes: st.completion_notes,
+                      actual_head_count: st.actual_head_count,
+                    })),
+                }));
+              generateProtocolPDF({
+                customerName: customer.name,
+                practiceName: operationName,
+                year: selectedYear,
+                sections: pdfSections,
+              });
+              showToast("success", "PDF downloaded");
+            }}
+            className="rounded-full px-5 py-2.5 text-sm font-bold transition-all active:scale-95"
             style={{ border: `2px solid ${COLORS.navy}`, color: COLORS.navy, backgroundColor: "transparent" }}
           >
             <FileText size={14} className="inline mr-1 -mt-0.5" />
             PDF
+          </button>
+        </div>
+      )}
+
+      {/* PDF button for non-draft views (past years / activated protocols) */}
+      {!isDraft && !isLoading && displaySections.length > 0 && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-3 bg-white"
+          style={{ borderTop: `1px solid ${COLORS.borderDivider}`, boxShadow: "0 -2px 10px rgba(0,0,0,0.06)" }}
+        >
+          <button
+            onClick={() => {
+              if (!sections || !customer) return;
+              const pdfSections = (sections || [])
+                .filter(s => s.stages.some(st => st.products.length > 0))
+                .map(s => ({
+                  animal_class: s.animal_class,
+                  estimated_head_count: s.estimated_head_count,
+                  stages: s.stages
+                    .filter(st => st.products.length > 0 || st.hasData)
+                    .map(st => ({
+                      event_name: st.event_name,
+                      scheduled_date: st.scheduled_date,
+                      event_status: st.event_status,
+                      recommended_products: st.products.map(p => ({
+                        product_name: p.product_name,
+                        dosage: p.dosage,
+                        route: p.route,
+                        notes: p.notes,
+                      })),
+                      completion_notes: st.completion_notes,
+                      actual_head_count: st.actual_head_count,
+                    })),
+                }));
+              generateProtocolPDF({
+                customerName: customer.name,
+                practiceName: operationName,
+                year: selectedYear,
+                sections: pdfSections,
+              });
+              showToast("success", "PDF downloaded");
+            }}
+            className="rounded-full px-6 py-2.5 text-sm font-bold transition-all active:scale-95"
+            style={{ backgroundColor: COLORS.navy, color: COLORS.white }}
+          >
+            <FileText size={14} className="inline mr-1.5 -mt-0.5" />
+            Download PDF
           </button>
         </div>
       )}
