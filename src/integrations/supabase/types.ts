@@ -1282,6 +1282,7 @@ export type Database = {
       }
       products: {
         Row: {
+          aliases: string[] | null
           created_at: string | null
           description: string | null
           dosage: string | null
@@ -1300,11 +1301,13 @@ export type Database = {
           slaughter_withdrawal: string | null
           species_approvals: string[] | null
           storage_requirements: string | null
+          subcategory: string | null
           unit_of_measure: string | null
           updated_at: string | null
           use_status: boolean
         }
         Insert: {
+          aliases?: string[] | null
           created_at?: string | null
           description?: string | null
           dosage?: string | null
@@ -1323,11 +1326,13 @@ export type Database = {
           slaughter_withdrawal?: string | null
           species_approvals?: string[] | null
           storage_requirements?: string | null
+          subcategory?: string | null
           unit_of_measure?: string | null
           updated_at?: string | null
           use_status?: boolean
         }
         Update: {
+          aliases?: string[] | null
           created_at?: string | null
           description?: string | null
           dosage?: string | null
@@ -1346,6 +1351,7 @@ export type Database = {
           slaughter_withdrawal?: string | null
           species_approvals?: string[] | null
           storage_requirements?: string | null
+          subcategory?: string | null
           unit_of_measure?: string | null
           updated_at?: string | null
           use_status?: boolean
