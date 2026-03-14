@@ -5,9 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { COLORS } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
-import { ChevronDown, Plus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, X, Package, Layers } from "lucide-react";
 import ProductSearchModal, { SelectedProduct } from "@/components/ProductSearchModal";
-import { PROTOCOL_ANIMAL_TYPES, DEFAULT_STAGES, type ProtocolAnimalType } from "@/lib/protocol-constants";
+import { PROTOCOL_ANIMAL_TYPES, CLASS_BADGE_COLORS, type ProtocolAnimalType } from "@/lib/protocol-constants";
 
 interface StageProduct {
   product_id: string;
@@ -20,6 +20,23 @@ interface StageProduct {
 interface Stage {
   name: string;
   products: StageProduct[];
+  sourceBlockId: string | null;
+  workTypeCode: string | null;
+  clinicalNotes: string | null;
+  equipmentNotes: string | null;
+  timingDescription: string | null;
+  daysOffset: number;
+}
+
+interface BlockData {
+  id: string;
+  name: string;
+  work_type_code: string;
+  animal_class: string;
+  description: string | null;
+  default_products: any[];
+  clinical_notes: string | null;
+  equipment_notes: string | null;
 }
 
 export default function ProtocolTemplateBuilderScreen() {
@@ -35,8 +52,9 @@ export default function ProtocolTemplateBuilderScreen() {
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [activeStageIdx, setActiveStageIdx] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [blockLibraryOpen, setBlockLibraryOpen] = useState(false);
 
-  // Load existing template for edit mode
+  // ── Load existing template for edit mode ──
   const { data: existingTemplate } = useQuery({
     queryKey: ["protocol-template-edit", editId],
     queryFn: async () => {
@@ -59,6 +77,27 @@ export default function ProtocolTemplateBuilderScreen() {
     enabled: !!editId,
   });
 
+  // ── Block library query ──
+  const { data: blocks } = useQuery({
+    queryKey: ["protocol-blocks", operationId, animalType],
+    queryFn: async () => {
+      let query = supabase
+        .from("protocol_blocks")
+        .select("*")
+        .eq("operation_id", operationId)
+        .order("name");
+
+      if (animalType) {
+        query = query.eq("animal_class", animalType);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as BlockData[];
+    },
+    enabled: !!operationId && !!animalType,
+  });
+
   // Populate form from existing template
   useEffect(() => {
     if (existingTemplate && !loaded) {
@@ -74,6 +113,12 @@ export default function ProtocolTemplateBuilderScreen() {
             dosage: ep.dosage_override || ep.product?.dosage || null,
             product_type: ep.product?.product_type || "",
           })),
+          sourceBlockId: evt.source_block_id || null,
+          workTypeCode: evt.work_type_code || null,
+          clinicalNotes: evt.clinical_notes || null,
+          equipmentNotes: evt.equipment_notes || null,
+          timingDescription: evt.timing_description || null,
+          daysOffset: evt.days_offset || 0,
         }))
       );
       setLoaded(true);
@@ -82,8 +127,65 @@ export default function ProtocolTemplateBuilderScreen() {
 
   const handleAnimalTypeChange = (type: string) => {
     setAnimalType(type);
-    const stageNames = DEFAULT_STAGES[type as ProtocolAnimalType] || [];
-    setStages(stageNames.map((name) => ({ name, products: [] })));
+    // Don't auto-generate stages anymore — let the user pick from the block library
+    if (!editId) {
+      setStages([]);
+      setBlockLibraryOpen(true);
+    }
+  };
+
+  // ── Add block as a stage ──
+  const addBlockAsStage = (block: BlockData) => {
+    const products: StageProduct[] = (block.default_products || []).map((p: any) => ({
+      product_id: p.product_id || "",
+      name: p.product_name || "Unknown",
+      route: p.route || null,
+      dosage: p.dosage || null,
+      product_type: "",
+    }));
+
+    const newStage: Stage = {
+      name: block.name,
+      products,
+      sourceBlockId: block.id,
+      workTypeCode: block.work_type_code,
+      clinicalNotes: block.clinical_notes,
+      equipmentNotes: block.equipment_notes,
+      timingDescription: block.description,
+      daysOffset: 0,
+    };
+
+    setStages((prev) => [...prev, newStage]);
+  };
+
+  // ── Add blank custom stage ──
+  const addBlankStage = () => {
+    setStages((prev) => [...prev, {
+      name: "",
+      products: [],
+      sourceBlockId: null,
+      workTypeCode: null,
+      clinicalNotes: null,
+      equipmentNotes: null,
+      timingDescription: null,
+      daysOffset: 0,
+    }]);
+  };
+
+  // ── Remove a stage ──
+  const removeStage = (idx: number) => {
+    setStages((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  // ── Move stage up/down ──
+  const moveStage = (idx: number, direction: "up" | "down") => {
+    setStages((prev) => {
+      const next = [...prev];
+      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= next.length) return prev;
+      [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+      return next;
+    });
   };
 
   const handleAddProduct = (product: SelectedProduct) => {
@@ -109,10 +211,17 @@ export default function ProtocolTemplateBuilderScreen() {
     setStages((prev) => prev.map((s, i) => (i === idx ? { ...s, name } : s)));
   };
 
+  const updateDaysOffset = (idx: number, days: string) => {
+    const val = parseInt(days, 10);
+    setStages((prev) => prev.map((s, i) => (i === idx ? { ...s, daysOffset: isNaN(val) ? 0 : val } : s)));
+  };
+
+  // ── Save mutation ──
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!templateName.trim()) throw new Error("Template name is required");
       if (!animalType) throw new Error("Animal type is required");
+      if (stages.length === 0) throw new Error("Add at least one stage");
 
       // If editing, delete old events/products then update template
       if (editId) {
@@ -133,9 +242,6 @@ export default function ProtocolTemplateBuilderScreen() {
         if (updErr) throw updErr;
       }
 
-      const templateId = editId || undefined;
-
-      // If creating new
       let finalId = editId;
       if (!editId) {
         const { data: tmpl, error: tmplErr } = await supabase
@@ -161,7 +267,12 @@ export default function ProtocolTemplateBuilderScreen() {
             template_id: finalId!,
             event_name: stage.name,
             event_order: i + 1,
-            days_offset: 0,
+            days_offset: stage.daysOffset,
+            source_block_id: stage.sourceBlockId,
+            work_type_code: stage.workTypeCode,
+            clinical_notes: stage.clinicalNotes,
+            equipment_notes: stage.equipmentNotes,
+            timing_description: stage.timingDescription,
           })
           .select("id")
           .single();
@@ -197,6 +308,9 @@ export default function ProtocolTemplateBuilderScreen() {
 
   const isEdit = !!editId;
 
+  // Blocks already used in stages (to show check marks in library)
+  const usedBlockIds = new Set(stages.filter(s => s.sourceBlockId).map(s => s.sourceBlockId!));
+
   return (
     <div className="px-4 pt-1 pb-28 space-y-4" style={{ minHeight: "100%" }}>
       {/* Header */}
@@ -218,7 +332,7 @@ export default function ProtocolTemplateBuilderScreen() {
         <label style={{ fontSize: 13, fontWeight: 600, color: COLORS.textOnLight }}>Protocol Name</label>
         <input
           className={INPUT_CLS}
-          style={{ width: "100%" }}
+          style={{ width: "100%", fontSize: 16 }}
           placeholder="e.g., Spring Calf Program"
           value={templateName}
           onChange={(e) => setTemplateName(e.target.value)}
@@ -231,7 +345,7 @@ export default function ProtocolTemplateBuilderScreen() {
         <div className="relative">
           <select
             className={INPUT_CLS}
-            style={{ width: "100%", appearance: "none", paddingRight: 32 }}
+            style={{ width: "100%", appearance: "none", paddingRight: 32, fontSize: 16 }}
             value={animalType}
             onChange={(e) => handleAnimalTypeChange(e.target.value)}
           >
@@ -244,27 +358,162 @@ export default function ProtocolTemplateBuilderScreen() {
         </div>
       </div>
 
-      {/* Stage Cards */}
+      {/* ── Block Library ── */}
+      {animalType && (
+        <div className="space-y-2">
+          <button
+            onClick={() => setBlockLibraryOpen((o) => !o)}
+            className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 active:scale-[0.98] transition-all"
+            style={{ backgroundColor: "rgba(85,186,170,0.08)", border: `1px solid rgba(85,186,170,0.25)` }}
+          >
+            <div className="flex items-center gap-2">
+              <Layers size={16} style={{ color: COLORS.teal }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.teal }}>
+                Block Library
+              </span>
+              <span style={{ fontSize: 12, color: COLORS.mutedText }}>
+                {(blocks || []).length} available
+              </span>
+            </div>
+            <ChevronDown
+              size={16}
+              style={{
+                color: COLORS.teal,
+                transform: blockLibraryOpen ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 200ms",
+              }}
+            />
+          </button>
+
+          {blockLibraryOpen && (
+            <div className="space-y-2">
+              {(!blocks || blocks.length === 0) && (
+                <div className="py-4 text-center" style={{ fontSize: 13, color: COLORS.mutedText }}>
+                  No blocks for {animalType} yet
+                </div>
+              )}
+              {(blocks || []).map((block) => {
+                const isUsed = usedBlockIds.has(block.id);
+                const productCount = (block.default_products || []).length;
+                const badge = CLASS_BADGE_COLORS[block.animal_class] || CLASS_BADGE_COLORS.Feeder;
+                return (
+                  <button
+                    key={block.id}
+                    onClick={() => { if (!isUsed) addBlockAsStage(block); }}
+                    disabled={isUsed}
+                    className="w-full text-left rounded-lg bg-white shadow-sm overflow-hidden active:scale-[0.98] transition-all disabled:opacity-50"
+                    style={{ border: `1px solid ${COLORS.borderDivider}`, borderLeft: `4px solid ${isUsed ? COLORS.mutedText : COLORS.gold}` }}
+                  >
+                    <div className="px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.textOnLight }}>
+                          {block.name}
+                        </span>
+                        {isUsed && (
+                          <span className="rounded-full px-2 py-0.5" style={{ fontSize: 9, fontWeight: 700, backgroundColor: "rgba(85,186,170,0.12)", color: COLORS.teal }}>
+                            ADDED
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="rounded-full px-2 py-0.5" style={{ fontSize: 10, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.06)", color: COLORS.navy }}>
+                          {block.work_type_code}
+                        </span>
+                        <span style={{ fontSize: 11, color: COLORS.mutedText }}>
+                          {productCount} product{productCount !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      {block.description && (
+                        <div className="truncate mt-1" style={{ fontSize: 12, color: COLORS.mutedText }}>
+                          {block.description}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+
+              {/* Add blank custom stage */}
+              <button
+                onClick={addBlankStage}
+                className="w-full text-left rounded-lg px-3 py-2.5 active:scale-[0.98] transition-all"
+                style={{ border: `1px dashed ${COLORS.borderDivider}`, backgroundColor: "transparent" }}
+              >
+                <div className="flex items-center gap-2">
+                  <Plus size={14} style={{ color: COLORS.mutedText }} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.mutedText }}>Add Custom Stage</span>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Stage Cards ── */}
       {stages.length > 0 && (
         <div className="space-y-3">
           <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.mutedText, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-            Stages
+            Stages ({stages.length})
           </div>
           {stages.map((stage, si) => (
             <div
               key={si}
               className="rounded-lg bg-white shadow-sm overflow-hidden"
-              style={{ border: `1px solid ${COLORS.borderDivider}`, borderLeft: `4px solid ${COLORS.teal}` }}
+              style={{ border: `1px solid ${COLORS.borderDivider}`, borderLeft: `4px solid ${stage.sourceBlockId ? COLORS.teal : COLORS.gold}` }}
             >
-              <div className="px-3 py-2.5">
-                <input
-                  className="w-full bg-transparent outline-none"
-                  style={{ fontSize: 15, fontWeight: 700, color: COLORS.textOnLight }}
-                  value={stage.name}
-                  onChange={(e) => updateStageName(si, e.target.value)}
-                />
+              {/* Stage header */}
+              <div className="px-3 py-2.5 flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <input
+                    className="w-full bg-transparent outline-none"
+                    style={{ fontSize: 15, fontWeight: 700, color: COLORS.textOnLight }}
+                    value={stage.name}
+                    onChange={(e) => updateStageName(si, e.target.value)}
+                    placeholder="Stage name…"
+                  />
+                  {stage.timingDescription && (
+                    <div style={{ fontSize: 12, color: COLORS.mutedText, fontStyle: "italic", marginTop: 2 }}>
+                      {stage.timingDescription}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {si > 0 && (
+                    <button onClick={() => moveStage(si, "up")} className="p-1 rounded hover:bg-gray-100 active:bg-gray-200">
+                      <ChevronUp size={14} style={{ color: COLORS.mutedText }} />
+                    </button>
+                  )}
+                  {si < stages.length - 1 && (
+                    <button onClick={() => moveStage(si, "down")} className="p-1 rounded hover:bg-gray-100 active:bg-gray-200">
+                      <ChevronDown size={14} style={{ color: COLORS.mutedText }} />
+                    </button>
+                  )}
+                  <button onClick={() => removeStage(si)} className="p-1 rounded hover:bg-gray-100 active:bg-gray-200">
+                    <X size={14} style={{ color: COLORS.mutedText }} />
+                  </button>
+                </div>
               </div>
 
+              {/* Days offset */}
+              <div className="px-3 py-1.5 flex items-center gap-2" style={{ borderTop: `1px solid ${COLORS.borderDivider}`, backgroundColor: "#FAFAF8" }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.mutedText, whiteSpace: "nowrap" }}>Days from start:</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  className="bg-transparent outline-none"
+                  style={{ fontSize: 14, fontWeight: 600, color: COLORS.textOnLight, width: 60, textAlign: "center", border: `1px solid ${COLORS.borderDivider}`, borderRadius: 6, padding: "2px 4px" }}
+                  value={stage.daysOffset}
+                  onChange={(e) => updateDaysOffset(si, e.target.value)}
+                />
+                {stage.workTypeCode && (
+                  <span className="rounded-full px-2 py-0.5 ml-auto" style={{ fontSize: 10, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.06)", color: COLORS.navy }}>
+                    {stage.workTypeCode}
+                  </span>
+                )}
+              </div>
+
+              {/* Products */}
               {stage.products.length > 0 && (
                 <div style={{ borderTop: `1px solid ${COLORS.borderDivider}` }}>
                   {stage.products.map((p, pi) => (
@@ -279,10 +528,7 @@ export default function ProtocolTemplateBuilderScreen() {
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           {p.route && (
-                            <span
-                              className="rounded-full px-2 py-0.5"
-                              style={{ fontSize: 10, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: COLORS.navy }}
-                            >
+                            <span className="rounded-full px-2 py-0.5" style={{ fontSize: 10, fontWeight: 600, backgroundColor: "rgba(14,38,70,0.08)", color: COLORS.navy }}>
                               {p.route}
                             </span>
                           )}
@@ -302,6 +548,7 @@ export default function ProtocolTemplateBuilderScreen() {
                 </div>
               )}
 
+              {/* Add product button */}
               <button
                 className="w-full px-3 py-2 text-left flex items-center gap-1.5 hover:bg-gray-50 active:bg-gray-100 transition-colors"
                 style={{ borderTop: `1px solid ${COLORS.borderDivider}`, fontSize: 13, fontWeight: 600, color: COLORS.teal, minHeight: 44 }}
@@ -310,9 +557,35 @@ export default function ProtocolTemplateBuilderScreen() {
                 <Plus size={14} />
                 Add Product
               </button>
+
+              {/* Clinical notes (read-only from block) */}
+              {stage.clinicalNotes && (
+                <div className="px-3 py-2" style={{ borderTop: `1px solid ${COLORS.borderDivider}`, backgroundColor: "#F5F5F0" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.mutedText, letterSpacing: "0.05em", textTransform: "uppercase" }}>Clinical Notes</div>
+                  <div style={{ fontSize: 12, color: COLORS.textOnLight, marginTop: 2 }}>{stage.clinicalNotes}</div>
+                </div>
+              )}
+              {stage.equipmentNotes && (
+                <div className="px-3 py-2" style={{ borderTop: `1px solid ${COLORS.borderDivider}`, backgroundColor: "#F5F5F0" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.mutedText, letterSpacing: "0.05em", textTransform: "uppercase" }}>Equipment / Supplies</div>
+                  <div style={{ fontSize: 12, color: COLORS.textOnLight, marginTop: 2 }}>{stage.equipmentNotes}</div>
+                </div>
+              )}
             </div>
           ))}
         </div>
+      )}
+
+      {/* Inline add buttons when stages exist but library is closed */}
+      {animalType && stages.length > 0 && !blockLibraryOpen && (
+        <button
+          onClick={() => setBlockLibraryOpen(true)}
+          className="w-full rounded-full py-2.5 text-sm font-bold active:scale-[0.98] transition-all"
+          style={{ border: `2px solid ${COLORS.teal}`, color: COLORS.teal, backgroundColor: "transparent" }}
+        >
+          <Layers size={14} className="inline mr-1.5 -mt-0.5" />
+          Add Stage from Library
+        </button>
       )}
 
       <ProductSearchModal
