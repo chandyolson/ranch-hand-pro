@@ -572,412 +572,246 @@ export default function CalvingNewScreen() {
               sexFilter={["Cow", "Spayed Heifer"]}
             />
           </FieldRow>
-          {selectedDamId && (
-            <button
-              onClick={() => setShowDam(!showDam)}
-              type="button"
-              style={{
-                width: "100%",
-                marginTop: 8,
-                padding: "8px 0",
-                borderRadius: 8,
-                border: "none",
-                cursor: "pointer",
-                backgroundColor: showDam ? "rgba(85,186,170,0.12)" : "rgba(14,38,70,0.04)",
-                fontSize: 12,
-                fontWeight: 700,
-                color: showDam ? "#55BAAA" : "rgba(14,38,70,0.45)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: showDam ? "rotate(90deg)" : "rotate(0)", transition: "transform 150ms" }}>
-                <path d="M4 2.5L8 6L4 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {showDam ? "Hide Dam History" : "View Dam History"}
-            </button>
-          )}
-        </div>
+          {selectedDamId && damLookup && (() => {
+            // Compute stat chips from damCalvings
+            const calvings = damCalvings || [];
+            const calvingCount = calvings.length;
+            const lastRecord = calvings[0];
+            const lastWt = lastRecord?.birth_weight ? `${Math.round(Number(lastRecord.birth_weight))} lb` : "—";
+            const avgWt = (() => {
+              const wts = calvings.filter(c => c.birth_weight).map(c => Number(c.birth_weight));
+              return wts.length > 0 ? `${Math.round(wts.reduce((a, b) => a + b, 0) / wts.length)} lb` : "—";
+            })();
+            const lastAsst = lastRecord?.assistance
+              ? (TRAIT_LABELS.assistance[lastRecord.assistance] || "—")
+              : "—";
+            const flags = damFlags || [];
+            const flagColor = (tier: string) => {
+              if (tier === "cull") return { bg: "rgba(155,35,53,0.12)", color: "#9B2335" };
+              if (tier === "production") return { bg: "rgba(243,209,42,0.15)", color: "#B8860B" };
+              return { bg: "rgba(85,186,170,0.12)", color: "#0F6E56" };
+            };
 
-        {/* ═══ DAM HISTORY PANEL ═══ */}
-        {showDam && (
-          <div
-            style={{
-              borderRadius: 12,
-              overflow: "hidden",
-              background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)",
-            }}
-          >
-            {damTag ? (
+            return (
               <>
-                {/* ── Level 1: Summary ── */}
-                <div style={{ padding: "14px 16px" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                    <div>
-                      <div style={{ color: "white", fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{damTag}</div>
-                      {damLookup ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-                          <span
-                            style={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: 9999,
-                              backgroundColor: TAG_HEX[damLookup.tag_color || "None"] || "#999",
-                            }}
-                          />
-                          <span style={{ fontSize: 12, color: "rgba(240,240,240,0.45)" }}>
-                            {damLookup.tag_color || "None"} · {damLookup.sex} · {damLookup.year_born || "—"}
-                          </span>
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: 12, color: "rgba(240,240,240,0.35)", marginTop: 4 }}>Looking up…</div>
-                      )}
+                {/* ═══ DAM COLLAPSED CARD ═══ */}
+                <div
+                  onClick={() => setShowDam(!showDam)}
+                  style={{
+                    marginTop: 8,
+                    background: "#FFFFFF",
+                    border: "1px solid #D4D4D0",
+                    borderRadius: 12,
+                    padding: "12px 14px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {/* Row 1 — Tag + meta + chevron */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: "#0E2646" }}>{damLookup.tag}</span>
+                      <span style={{ fontSize: 12, color: "rgba(26,26,26,0.45)" }}>
+                        {damLookup.type || "—"} · {damLookup.breed || "—"} · {damLookup.year_born || "—"}
+                      </span>
                     </div>
-                  </div>
-
-                  {/* Recent calvings — compact */}
-                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: 10, paddingTop: 8 }}>
-                    <div
-                      style={{
-                        fontSize: 9,
-                        fontWeight: 700,
-                        color: "rgba(240,240,240,0.25)",
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        marginBottom: 4,
-                      }}
-                    >
-                      Last 3 Calvings
-                    </div>
-                    {(!damCalvings || damCalvings.length === 0) && (
-                      <div style={{ fontSize: 11, color: "rgba(240,240,240,0.30)", padding: "4px 0" }}>
-                        No calving records
-                      </div>
-                    )}
-                    {(damCalvings || []).slice(0, 3).map((c, i) => {
-                      const sexChar = c.calf_sex === "Bull" ? "B" : c.calf_sex === "Heifer" ? "H" : "?";
-                      const assist = assistLabel(c.assistance);
-                      return (
-                        <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0" }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "white", width: 40 }}>
-                            {c.calf_sex === "Bull" ? "B" : "H"}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: 9,
-                              fontWeight: 700,
-                              width: 14,
-                              color: sexChar === "B" ? "#55BAAA" : "#E8A0BF",
-                            }}
-                          >
-                            {sexChar}
-                          </span>
-                          <span style={{ fontSize: 11, color: "rgba(240,240,240,0.30)" }}>
-                            {fmtShortDate(c.calving_date)}
-                          </span>
-                          <span style={{ fontSize: 11, color: "rgba(240,240,240,0.30)" }}>
-                            {c.birth_weight || "—"}lb
-                          </span>
-                          {assist && (
-                            <span
-                              style={{
-                                fontSize: 9,
-                                fontWeight: 600,
-                                borderRadius: 9999,
-                                padding: "1px 5px",
-                                backgroundColor: "rgba(243,209,42,0.15)",
-                                color: "rgba(243,209,42,0.70)",
-                              }}
-                            >
-                              {assist}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* ── Level 2: Full History toggle ── */}
-                <div style={{ backgroundColor: "rgba(0,0,0,0.15)" }}>
-                  <button
-                    onClick={() => setDamFullHistory(!damFullHistory)}
-                    type="button"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                      width: "100%",
-                      padding: "8px 16px",
-                      cursor: "pointer",
-                      backgroundColor: "transparent",
-                      border: "none",
-                    }}
-                  >
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(240,240,240,0.40)" }}>
-                      {damFullHistory ? "Hide" : "Full"} History
-                    </span>
                     <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 12 12"
-                      fill="none"
-                      style={{
-                        transform: damFullHistory ? "rotate(180deg)" : "rotate(0)",
-                        transition: "transform 200ms",
-                      }}
+                      width="14" height="14" viewBox="0 0 14 14" fill="none"
+                      style={{ transform: showDam ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms", flexShrink: 0 }}
                     >
-                      <path
-                        d="M3 4.5L6 7.5L9 4.5"
-                        stroke="rgba(240,240,240,0.35)"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                      <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="rgba(26,26,26,0.3)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                  </button>
+                  </div>
 
-                  {damFullHistory && (
-                    <div style={{ padding: "0 16px 14px" }}>
-                      {/* Tab bar */}
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 0,
-                          borderRadius: 6,
-                          overflow: "hidden",
-                          border: "1px solid rgba(255,255,255,0.10)",
-                          marginBottom: 10,
-                        }}
-                      >
-                        {[
-                          { k: "calving", l: "Calving" },
-                          { k: "work", l: "Work" },
-                          { k: "treatments", l: "Treatments" },
-                        ].map((t) => (
-                          <button
-                            key={t.k}
-                            onClick={() => setDamHistoryTab(t.k)}
-                            type="button"
-                            style={{
-                              flex: 1,
-                              padding: "6px 0",
-                              fontSize: 11,
-                              fontWeight: 600,
-                              cursor: "pointer",
-                              backgroundColor: damHistoryTab === t.k ? "rgba(255,255,255,0.12)" : "transparent",
-                              color: damHistoryTab === t.k ? "#F3D12A" : "rgba(240,240,240,0.35)",
-                              border: "none",
-                              borderRight: t.k !== "treatments" ? "1px solid rgba(255,255,255,0.08)" : "none",
-                            }}
-                          >
-                            {t.l}
-                          </button>
-                        ))}
+                  {/* Row 2 — Stat chips */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                    {[
+                      { label: "Calvings", value: String(calvingCount) },
+                      { label: "Last Wt", value: lastWt },
+                      { label: "Avg Wt", value: avgWt },
+                      { label: "Last Asst", value: lastAsst },
+                    ].map(chip => (
+                      <div key={chip.label} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(26,26,26,0.04)", borderRadius: 6, padding: "4px 8px" }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.4)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{chip.label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#0E2646" }}>{chip.value}</span>
                       </div>
+                    ))}
+                  </div>
 
-                      {/* Calving tab */}
-                      {damHistoryTab === "calving" && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                          {(!damCalvings || damCalvings.length === 0) && (
-                            <div style={{ fontSize: 11, color: "rgba(240,240,240,0.30)", padding: 8 }}>
-                              No calving records
-                            </div>
-                          )}
-                          {(damCalvings || []).map((c) => (
-                            <div
-                              key={c.id}
-                              style={{ borderRadius: 8, backgroundColor: "rgba(0,0,0,0.15)", padding: "10px 12px" }}
-                            >
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                  <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>
-                                    {c.calf_sex || "Unknown"}
-                                  </span>
-                                  <span
-                                    style={{
-                                      fontSize: 9,
-                                      fontWeight: 600,
-                                      borderRadius: 9999,
-                                      padding: "1px 6px",
-                                      backgroundColor:
-                                        c.calf_sex === "Bull" ? "rgba(85,186,170,0.15)" : "rgba(232,160,191,0.20)",
-                                      color: c.calf_sex === "Bull" ? "#55BAAA" : "#E8A0BF",
-                                    }}
-                                  >
-                                    {c.calf_sex || "?"}
-                                  </span>
-                                </div>
-                                <span style={{ fontSize: 10, color: "rgba(240,240,240,0.30)" }}>
-                                  {fmtHistDate(c.calving_date)}
-                                </span>
-                              </div>
-                              <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
-                                {c.birth_weight && (
-                                  <span
-                                    style={{
-                                      fontSize: 9,
-                                      fontWeight: 600,
-                                      borderRadius: 9999,
-                                      padding: "2px 6px",
-                                      backgroundColor: "rgba(240,240,240,0.08)",
-                                      color: "rgba(240,240,240,0.50)",
-                                    }}
-                                  >
-                                    {c.birth_weight} lbs
-                                  </span>
-                                )}
-                                <span
-                                  style={{
-                                    fontSize: 9,
-                                    fontWeight: 600,
-                                    borderRadius: 9999,
-                                    padding: "2px 6px",
-                                    backgroundColor: "rgba(240,240,240,0.08)",
-                                    color: "rgba(240,240,240,0.50)",
-                                  }}
-                                >
-                                  {!c.assistance || c.assistance === 1
-                                    ? "No Assistance"
-                                    : c.assistance === 2
-                                      ? "Easy Pull"
-                                      : "Hard Pull"}
-                                </span>
-                              </div>
-                              {c.memo && (
-                                <div style={{ fontSize: 11, color: "rgba(240,240,240,0.30)", marginTop: 4 }}>
-                                  {c.memo}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Work tab */}
-                      {damHistoryTab === "work" && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                          {(!damWork || damWork.length === 0) && (
-                            <div style={{ fontSize: 11, color: "rgba(240,240,240,0.30)", padding: 8 }}>
-                              No work records
-                            </div>
-                          )}
-                          {(damWork || []).map((w) => (
-                            <div
-                              key={w.id}
-                              style={{ borderRadius: 8, backgroundColor: "rgba(0,0,0,0.15)", padding: "10px 12px" }}
-                            >
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
-                                  {(w.project as any)?.name || "Work Record"}
-                                </span>
-                                <span style={{ fontSize: 10, color: "rgba(240,240,240,0.30)" }}>
-                                  {fmtHistDate(w.date)}
-                                </span>
-                              </div>
-                              <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
-                                {w.weight && (
-                                  <span
-                                    style={{
-                                      fontSize: 9,
-                                      fontWeight: 600,
-                                      borderRadius: 9999,
-                                      padding: "2px 6px",
-                                      backgroundColor: "rgba(240,240,240,0.08)",
-                                      color: "rgba(240,240,240,0.50)",
-                                    }}
-                                  >
-                                    {w.weight} lbs
-                                  </span>
-                                )}
-                                {w.preg_stage && (
-                                  <span
-                                    style={{
-                                      fontSize: 9,
-                                      fontWeight: 600,
-                                      borderRadius: 9999,
-                                      padding: "2px 6px",
-                                      backgroundColor: "rgba(85,186,170,0.15)",
-                                      color: "#55BAAA",
-                                    }}
-                                  >
-                                    {w.preg_stage}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Treatments tab */}
-                      {damHistoryTab === "treatments" && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                          {[
-                            {
-                              product: "Penicillin G",
-                              date: "Nov 10, 2025",
-                              dose: "10 mL",
-                              route: "IM",
-                              reason: "Respiratory",
-                              withdrawal: "Dec 10, 2025",
-                            },
-                            {
-                              product: "Banamine",
-                              date: "Aug 5, 2025",
-                              dose: "20 mL",
-                              route: "IV",
-                              reason: "Foot rot",
-                              withdrawal: "Aug 9, 2025",
-                            },
-                          ].map((t) => (
-                            <div
-                              key={t.date}
-                              style={{ borderRadius: 8, backgroundColor: "rgba(0,0,0,0.15)", padding: "10px 12px" }}
-                            >
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>{t.product}</span>
-                                <span
-                                  style={{
-                                    fontSize: 9,
-                                    fontWeight: 600,
-                                    borderRadius: 9999,
-                                    padding: "1px 6px",
-                                    backgroundColor: "rgba(85,186,170,0.15)",
-                                    color: "#55BAAA",
-                                  }}
-                                >
-                                  {t.route}
-                                </span>
-                              </div>
-                              <div style={{ fontSize: 10, color: "rgba(240,240,240,0.30)", marginTop: 2 }}>
-                                {t.date} · {t.dose}
-                              </div>
-                              <div style={{ fontSize: 11, color: "rgba(240,240,240,0.40)", marginTop: 2 }}>
-                                {t.reason}
-                              </div>
-                              <div style={{ fontSize: 10, color: "rgba(243,209,42,0.60)", marginTop: 4 }}>
-                                Withdrawal: {t.withdrawal}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                  {/* Row 3 — Flag pills */}
+                  {flags.length > 0 && (
+                    <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                      {flags.map(f => {
+                        const fc = flagColor(f.flag_tier);
+                        return (
+                          <span key={f.id} style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.04em", padding: "2px 8px", borderRadius: 10, backgroundColor: fc.bg, color: fc.color }}>
+                            {f.flag_name}
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
-              </>
-            ) : (
-              <div style={{ textAlign: "center", padding: "12px 16px" }}>
-                <span style={{ fontSize: 13, color: "rgba(240,240,240,0.40)" }}>Type a dam tag to load history</span>
-              </div>
-            )}
-          </div>
-        )}
 
+                {/* Toggle link */}
+                <div style={{ textAlign: "center", marginTop: 6 }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowDam(!showDam); }}
+                    type="button"
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#55BAAA" }}
+                  >
+                    {showDam ? "▴ Hide Dam History" : "▾ Show Dam History"}
+                  </button>
+                </div>
+
+                {/* ═══ DAM HISTORY PANEL ═══ */}
+                {showDam && (
+                  <div
+                    style={{
+                      borderRadius: 12,
+                      overflow: "hidden",
+                      background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)",
+                    }}
+                  >
+                    {/* ── Level 1: Summary ── */}
+                    <div style={{ padding: "14px 16px" }}>
+                      {/* Recent calvings — compact */}
+                      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 8 }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(240,240,240,0.25)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+                          Last 3 Calvings
+                        </div>
+                        {calvingCount === 0 && (
+                          <div style={{ fontSize: 11, color: "rgba(240,240,240,0.30)", padding: "4px 0" }}>No calving records</div>
+                        )}
+                        {calvings.slice(0, 3).map((c) => {
+                          const sexChar = c.calf_sex === "Bull" ? "B" : c.calf_sex === "Heifer" ? "H" : "?";
+                          const assist = assistLabel(c.assistance);
+                          return (
+                            <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0" }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "white", width: 40 }}>
+                                {c.calf_sex === "Bull" ? "B" : "H"}
+                              </span>
+                              <span style={{ fontSize: 9, fontWeight: 700, width: 14, color: sexChar === "B" ? "#55BAAA" : "#E8A0BF" }}>{sexChar}</span>
+                              <span style={{ fontSize: 11, color: "rgba(240,240,240,0.30)" }}>{fmtShortDate(c.calving_date)}</span>
+                              <span style={{ fontSize: 11, color: "rgba(240,240,240,0.30)" }}>{c.birth_weight || "—"}lb</span>
+                              {assist && (
+                                <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: "1px 5px", backgroundColor: "rgba(243,209,42,0.15)", color: "rgba(243,209,42,0.70)" }}>{assist}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* ── Level 2: Full History toggle ── */}
+                    <div style={{ backgroundColor: "rgba(0,0,0,0.15)" }}>
+                      <button
+                        onClick={() => setDamFullHistory(!damFullHistory)}
+                        type="button"
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", padding: "8px 16px", cursor: "pointer", backgroundColor: "transparent", border: "none" }}
+                      >
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(240,240,240,0.40)" }}>
+                          {damFullHistory ? "Hide" : "Full"} History
+                        </span>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: damFullHistory ? "rotate(180deg)" : "rotate(0)", transition: "transform 200ms" }}>
+                          <path d="M3 4.5L6 7.5L9 4.5" stroke="rgba(240,240,240,0.35)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+
+                      {damFullHistory && (
+                        <div style={{ padding: "0 16px 14px" }}>
+                          {/* Tab bar */}
+                          <div style={{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(255,255,255,0.10)", marginBottom: 10 }}>
+                            {[
+                              { k: "calving", l: "Calving" },
+                              { k: "work", l: "Work" },
+                              { k: "treatments", l: "Treatments" },
+                            ].map((t) => (
+                              <button
+                                key={t.k}
+                                onClick={() => setDamHistoryTab(t.k)}
+                                type="button"
+                                style={{ flex: 1, padding: "6px 0", fontSize: 11, fontWeight: 600, cursor: "pointer", backgroundColor: damHistoryTab === t.k ? "rgba(255,255,255,0.12)" : "transparent", color: damHistoryTab === t.k ? "#F3D12A" : "rgba(240,240,240,0.35)", border: "none", borderRight: t.k !== "treatments" ? "1px solid rgba(255,255,255,0.08)" : "none" }}
+                              >
+                                {t.l}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Calving tab */}
+                          {damHistoryTab === "calving" && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              {calvingCount === 0 && (
+                                <div style={{ fontSize: 11, color: "rgba(240,240,240,0.30)", padding: 8 }}>No calving records</div>
+                              )}
+                              {calvings.map((c) => (
+                                <div key={c.id} style={{ borderRadius: 8, backgroundColor: "rgba(0,0,0,0.15)", padding: "10px 12px" }}>
+                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>{c.calf_sex || "Unknown"}</span>
+                                      <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: "1px 6px", backgroundColor: c.calf_sex === "Bull" ? "rgba(85,186,170,0.15)" : "rgba(232,160,191,0.20)", color: c.calf_sex === "Bull" ? "#55BAAA" : "#E8A0BF" }}>{c.calf_sex || "?"}</span>
+                                    </div>
+                                    <span style={{ fontSize: 10, color: "rgba(240,240,240,0.30)" }}>{fmtHistDate(c.calving_date)}</span>
+                                  </div>
+                                  <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
+                                    {c.birth_weight && (
+                                      <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: "2px 6px", backgroundColor: "rgba(240,240,240,0.08)", color: "rgba(240,240,240,0.50)" }}>{c.birth_weight} lbs</span>
+                                    )}
+                                    <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: "2px 6px", backgroundColor: "rgba(240,240,240,0.08)", color: "rgba(240,240,240,0.50)" }}>
+                                      {!c.assistance || c.assistance === 1 ? "No Assistance" : c.assistance === 2 ? "Easy Pull" : "Hard Pull"}
+                                    </span>
+                                  </div>
+                                  {c.memo && <div style={{ fontSize: 11, color: "rgba(240,240,240,0.30)", marginTop: 4 }}>{c.memo}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Work tab */}
+                          {damHistoryTab === "work" && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              {(!damWork || damWork.length === 0) && (
+                                <div style={{ fontSize: 11, color: "rgba(240,240,240,0.30)", padding: 8 }}>No work records</div>
+                              )}
+                              {(damWork || []).map((w) => (
+                                <div key={w.id} style={{ borderRadius: 8, backgroundColor: "rgba(0,0,0,0.15)", padding: "10px 12px" }}>
+                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>{(w.project as any)?.name || "Work"}</span>
+                                    <span style={{ fontSize: 10, color: "rgba(240,240,240,0.30)" }}>{fmtHistDate(w.date)}</span>
+                                  </div>
+                                  {w.weight && <div style={{ fontSize: 11, color: "rgba(240,240,240,0.40)", marginTop: 2 }}>{w.weight} lbs</div>}
+                                  {w.memo && <div style={{ fontSize: 11, color: "rgba(240,240,240,0.30)", marginTop: 2 }}>{w.memo}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Treatments tab */}
+                          {damHistoryTab === "treatments" && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              {[
+                                { product: "Penicillin G", date: "Nov 10, 2025", dose: "10 mL", route: "IM", reason: "Respiratory", withdrawal: "Dec 10, 2025" },
+                                { product: "Banamine", date: "Aug 5, 2025", dose: "20 mL", route: "IV", reason: "Foot rot", withdrawal: "Aug 9, 2025" },
+                              ].map((t) => (
+                                <div key={t.date} style={{ borderRadius: 8, backgroundColor: "rgba(0,0,0,0.15)", padding: "10px 12px" }}>
+                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>{t.product}</span>
+                                    <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: "1px 6px", backgroundColor: "rgba(85,186,170,0.15)", color: "#55BAAA" }}>{t.route}</span>
+                                  </div>
+                                  <div style={{ fontSize: 10, color: "rgba(240,240,240,0.30)", marginTop: 2 }}>{t.date} · {t.dose}</div>
+                                  <div style={{ fontSize: 11, color: "rgba(240,240,240,0.40)", marginTop: 2 }}>{t.reason}</div>
+                                  <div style={{ fontSize: 10, color: "rgba(243,209,42,0.60)", marginTop: 4 }}>Withdrawal: {t.withdrawal}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         {/* ═══ 3. CALF CARD ═══ */}
         <div style={{ borderRadius: 12, overflow: "hidden" }}>
           <div
