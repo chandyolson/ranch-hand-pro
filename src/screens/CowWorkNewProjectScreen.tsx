@@ -262,13 +262,10 @@ export default function CowWorkNewProjectScreen() {
   };
 
   return (
-    <div className="px-4 pt-4 pb-10 space-y-3">
-      {/* Section label */}
-      <div style={SUB_LABEL}>PROJECT SETUP</div>
-
+    <div className="px-4 pt-2 pb-10 space-y-3">
       {/* Live Project Record ID preview */}
       <div
-        className="rounded-xl px-3.5 py-3"
+        className="rounded-xl px-3.5 py-2.5"
         style={{
           background: projectRecordId
             ? "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)"
@@ -276,10 +273,10 @@ export default function CowWorkNewProjectScreen() {
           transition: "background 300ms",
         }}
       >
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: projectRecordId ? "rgba(168,230,218,0.60)" : "rgba(26,26,26,0.30)", marginBottom: 4 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: projectRecordId ? "rgba(168,230,218,0.60)" : "rgba(26,26,26,0.30)", marginBottom: 2 }}>
           PROJECT RECORD ID
         </div>
-        <div style={{ fontSize: 18, fontWeight: 700, color: projectRecordId ? "#FFFFFF" : "rgba(26,26,26,0.25)", letterSpacing: "-0.01em" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: projectRecordId ? "#FFFFFF" : "rgba(26,26,26,0.25)", letterSpacing: "-0.01em" }}>
           {projectRecordId || "Select type and group…"}
         </div>
       </div>
@@ -358,7 +355,7 @@ export default function CowWorkNewProjectScreen() {
                     onChange={() => setPreloadMode("expected")}
                     style={{ accentColor: "#55BAAA" }}
                   />
-                  <span style={{ fontSize: 16, color: "#1A1A1A" }}>As Expected</span>
+                  <span style={{ fontSize: 16, color: "#1A1A1A" }}>Check Off List</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -369,7 +366,7 @@ export default function CowWorkNewProjectScreen() {
                     onChange={() => setPreloadMode("worked")}
                     style={{ accentColor: "#55BAAA" }}
                   />
-                  <span style={{ fontSize: 16, color: "#1A1A1A" }}>As Worked</span>
+                  <span style={{ fontSize: 16, color: "#1A1A1A" }}>Mark All Worked</span>
                 </label>
               </div>
             )}
