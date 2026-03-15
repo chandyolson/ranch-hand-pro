@@ -421,6 +421,15 @@ export default function CowWorkProjectDetailScreen() {
             is_new_animal: createdNew,
           });
         if (error) throw error;
+
+        // Auto-flip project status to In Progress on first animal added
+        if (projectStatus === "Pending") {
+          await supabase
+            .from("projects")
+            .update({ project_status: "In Progress" })
+            .eq("id", id!);
+          queryClient.invalidateQueries({ queryKey: ["project", id] });
+        }
       }
 
       // Phase D: Flip Expected → Worked in project_expected_animals
