@@ -263,15 +263,12 @@ export default function CowWorkNewProjectScreen() {
         </div>
       </div>
 
-      {/* Form card — Step 1: What & When */}
+      {/* All project fields in one card */}
       <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-        {/* Date */}
         <div className="flex items-center gap-2 min-w-0">
           <label style={LABEL_STYLE}>Date</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className={INPUT_CLS} />
         </div>
-
-        {/* Type — what are you doing? */}
         <div className="flex items-center gap-2 min-w-0">
           <label style={LABEL_STYLE}>Type</label>
           <select value={processingType} onChange={e => setProcessingType(e.target.value)} className={INPUT_CLS}>
@@ -281,11 +278,6 @@ export default function CowWorkNewProjectScreen() {
             ))}
           </select>
         </div>
-      </div>
-
-      {/* Step 3: Group & Pre-load — which group, and how to load them? */}
-      <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-        {/* Group */}
         <div className="flex items-center gap-2 min-w-0">
           <label style={LABEL_STYLE}>Group</label>
           <select value={group} onChange={e => setGroup(e.target.value)} className={INPUT_CLS}>
@@ -295,40 +287,30 @@ export default function CowWorkNewProjectScreen() {
             ))}
           </select>
         </div>
-
-        {/* Record individual animals toggle — only when a group is selected */}
         {group && (
-          <div className="flex items-center justify-between pt-1">
-            <div>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Record individual animals</span>
-              <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 1 }}>
-                {recordIndividuals ? "Scan animals one at a time at the chute" : "No per-animal data — group marked as worked"}
-              </div>
-            </div>
+          <div className="flex items-center justify-between pl-[105px]">
+            <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.50)" }}>
+              {recordIndividuals ? "Record individual animals" : "No individual records"}
+            </span>
             <button
               onClick={() => setRecordIndividuals(!recordIndividuals)}
               className="relative shrink-0 cursor-pointer"
               style={{
-                width: 44, height: 24, borderRadius: 12, border: "none",
+                width: 40, height: 22, borderRadius: 11, border: "none",
                 backgroundColor: recordIndividuals ? "#55BAAA" : "#CBCED4",
                 transition: "background-color 200ms",
               }}
             >
-              <span
-                style={{
-                  position: "absolute", top: 2,
-                  left: recordIndividuals ? 22 : 2,
-                  width: 20, height: 20, borderRadius: 10,
-                  backgroundColor: "#FFFFFF",
-                  transition: "left 200ms",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-                }}
-              />
+              <span style={{
+                position: "absolute", top: 2,
+                left: recordIndividuals ? 20 : 2,
+                width: 18, height: 18, borderRadius: 9,
+                backgroundColor: "#FFFFFF", transition: "left 200ms",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+              }} />
             </button>
           </div>
         )}
-
-        {/* Cattle Type */}
         <div className="flex items-center gap-2 min-w-0">
           <label style={LABEL_STYLE}>Cattle Type</label>
           <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={INPUT_CLS}>
@@ -336,8 +318,6 @@ export default function CowWorkNewProjectScreen() {
             {cattleTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
-
-        {/* Expected Head */}
         <div className="flex items-center gap-2 min-w-0">
           <label style={LABEL_STYLE}>Head Expected</label>
           <input
@@ -349,8 +329,6 @@ export default function CowWorkNewProjectScreen() {
             className={INPUT_CLS}
           />
         </div>
-
-        {/* Location */}
         <div className="flex items-center gap-2 min-w-0">
           <label style={LABEL_STYLE}>Location</label>
           <select value={location} onChange={e => setLocation(e.target.value)} className={INPUT_CLS}>
@@ -360,16 +338,17 @@ export default function CowWorkNewProjectScreen() {
             ))}
           </select>
         </div>
-
-        {/* Memo */}
-        <div className="pt-2">
-          <div style={{ ...SUB_LABEL, marginBottom: 6 }}>MEMO</div>
-          <textarea
-            value={memo}
-            onChange={e => setMemo(e.target.value)}
-            className="w-full resize-none rounded-lg px-3 py-2.5 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
-            style={{ minHeight: 56, backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16 }}
-          />
+        <div className="pt-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <label style={LABEL_STYLE}>Memo</label>
+            <textarea
+              value={memo}
+              onChange={e => setMemo(e.target.value)}
+              className="flex-1 min-w-0 resize-none rounded-lg px-3 py-2 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
+              style={{ minHeight: 44, backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16 }}
+              placeholder="Notes…"
+            />
+          </div>
         </div>
       </div>
 
