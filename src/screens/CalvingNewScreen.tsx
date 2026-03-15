@@ -185,7 +185,7 @@ export default function CalvingNewScreen() {
         .maybeSingle();
       return data;
     },
-    enabled: showDam && !!selectedDamId,
+    enabled: !!selectedDamId,
   });
 
   const { data: damCalvings } = useQuery({
