@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SUB_LABEL } from "@/lib/styles";
+import { SUB_LABEL, INPUT_CLS, LABEL_STYLE } from "@/lib/styles";
+import { ANIMAL_TYPE_OPTIONS, SEX_OPTIONS, BREED_OPTIONS, TAG_COLOR_HEX } from "@/lib/constants";
 
 export default function CowWorkCloseOutScreen() {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +16,12 @@ export default function CowWorkCloseOutScreen() {
   const navigate = useNavigate();
   const [closing, setClosing] = useState(false);
   const [closingNotes, setClosingNotes] = useState("");
+
+  // Phase E: Review New Animals wizard state
+  const [reviewIndex, setReviewIndex] = useState(0);
+  const [reviewData, setReviewData] = useState<Record<string, { year_born?: string; type?: string; sex?: string; breed?: string }>>({});
+  const [reviewComplete, setReviewComplete] = useState(false);
+  const [savingReview, setSavingReview] = useState(false);
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["project", id],
@@ -64,6 +71,78 @@ export default function CowWorkCloseOutScreen() {
     weighedAnimals.length > 0
       ? Math.round(weighedAnimals.reduce((s, a) => s + Number(a.weight), 0) / weighedAnimals.length)
       : 0;
+
+  // Phase E: New animals that need review
+  const newAnimals = worked.filter(a => a.is_new_animal);
+  const hasNewAnimals = newAnimals.length > 0 && !reviewComplete;
+  const currentNewAnimal = newAnimals[reviewIndex];
+  const currentAnimalId = (currentNewAnimal?.animal as any)?.id || currentNewAnimal?.animal_id;
+
+  // Smart defaults for year_born based on cattle type
+  const getSmartYearDefault = (cattleType: string) => {
+    const currentYear = new Date().getFullYear();
+    if (cattleType === "Calf") return String(currentYear);
+    if (cattleType === "Replacement") return String(currentYear - 1);
+    return "";
+  };
+
+  // Get current review values for the active animal
+  const getReviewField = (field: string) => {
+    if (!currentAnimalId) return "";
+    return (reviewData[currentAnimalId] as any)?.[field] || "";
+  };
+
+  const setReviewField = (field: string, value: string) => {
+    if (!currentAnimalId) return;
+    setReviewData(prev => ({
+      ...prev,
+      [currentAnimalId]: {
+        ...prev[currentAnimalId],
+        [field]: value,
+        // Smart default: when type changes, auto-fill year_born
+        ...(field === "type" ? { year_born: prev[currentAnimalId]?.year_born || getSmartYearDefault(value) } : {}),
+      },
+    }));
+  };
+
+  const handleReviewNext = () => {
+    if (reviewIndex < newAnimals.length - 1) {
+      setReviewIndex(reviewIndex + 1);
+    } else {
+      handleSaveReview();
+    }
+  };
+
+  const handleReviewBack = () => {
+    if (reviewIndex > 0) setReviewIndex(reviewIndex - 1);
+  };
+
+  const handleSkipAll = () => {
+    handleSaveReview();
+  };
+
+  const handleSaveReview = async () => {
+    setSavingReview(true);
+    try {
+      // Update each animal that has review data
+      for (const [animalId, data] of Object.entries(reviewData)) {
+        const updates: any = {};
+        if (data.year_born) updates.year_born = parseInt(data.year_born);
+        if (data.type) updates.type = data.type;
+        if (data.sex) updates.sex = data.sex;
+        if (data.breed) updates.breed = data.breed;
+        if (Object.keys(updates).length > 0) {
+          await supabase.from("animals").update(updates).eq("id", animalId);
+        }
+      }
+      setReviewComplete(true);
+      showToast("success", "New animal details saved");
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to save animal details");
+    } finally {
+      setSavingReview(false);
+    }
+  };
 
   const handleCloseOut = async () => {
     setClosing(true);
@@ -182,6 +261,9 @@ export default function CowWorkCloseOutScreen() {
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{animalTag}</span>
+                  {a.is_new_animal && (
+                    <span className="rounded-full" style={{ fontSize: 8, fontWeight: 700, padding: "1px 6px", backgroundColor: "rgba(243,209,42,0.20)", color: "#B8960F" }}>NEW</span>
+                  )}
                   <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.40)" }}>{animalType}</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -245,6 +327,141 @@ export default function CowWorkCloseOutScreen() {
         </div>
       )}
 
+      {/* Phase E: Review New Animals Wizard */}
+      {hasNewAnimals && currentNewAnimal && (
+        <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "2px solid #F3D12A" }}>
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646" }}>
+                Review {newAnimals.length} New Animal{newAnimals.length !== 1 ? "s" : ""}
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(26,26,26,0.45)", marginTop: 2 }}>
+                Fill in the basics so your herd list stays clean.
+              </div>
+            </div>
+            <span
+              className="rounded-full shrink-0"
+              style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", backgroundColor: "rgba(243,209,42,0.20)", color: "#B8960F" }}
+            >
+              {reviewIndex + 1} of {newAnimals.length}
+            </span>
+          </div>
+
+          {/* Animal context card */}
+          <div className="rounded-lg px-3 py-2.5" style={{ backgroundColor: "rgba(14,38,70,0.04)", border: "1px solid rgba(14,38,70,0.08)" }}>
+            <div className="flex items-center gap-2">
+              {(currentNewAnimal.animal as any)?.tag_color && (
+                <span
+                  className="shrink-0 rounded-full"
+                  style={{ width: 10, height: 10, backgroundColor: TAG_COLOR_HEX[(currentNewAnimal.animal as any).tag_color] || "#999" }}
+                />
+              )}
+              <span style={{ fontSize: 18, fontWeight: 800, color: "#0E2646" }}>
+                {(currentNewAnimal.animal as any)?.tag || "Unknown"}
+              </span>
+              <span
+                className="rounded-full"
+                style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.20)", color: "#F3D12A" }}
+              >
+                NEW
+              </span>
+            </div>
+            {(currentNewAnimal.weight || currentNewAnimal.memo) && (
+              <div style={{ fontSize: 12, color: "rgba(26,26,26,0.45)", marginTop: 4 }}>
+                {currentNewAnimal.weight && `${currentNewAnimal.weight} lbs`}
+                {currentNewAnimal.weight && currentNewAnimal.memo ? " · " : ""}
+                {currentNewAnimal.memo || ""}
+              </div>
+            )}
+          </div>
+
+          {/* Review fields */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <label style={LABEL_STYLE}>Cattle Type</label>
+              <select
+                value={getReviewField("type")}
+                onChange={e => setReviewField("type", e.target.value)}
+                className={INPUT_CLS}
+              >
+                <option value="">Select…</option>
+                {ANIMAL_TYPE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <label style={LABEL_STYLE}>Year Born</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={getReviewField("year_born")}
+                onChange={e => setReviewField("year_born", e.target.value)}
+                placeholder={getReviewField("type") ? getSmartYearDefault(getReviewField("type")) || "Year" : "Year"}
+                className={INPUT_CLS}
+              />
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <label style={LABEL_STYLE}>Sex</label>
+              <select
+                value={getReviewField("sex")}
+                onChange={e => setReviewField("sex", e.target.value)}
+                className={INPUT_CLS}
+              >
+                <option value="">Select…</option>
+                {SEX_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <label style={LABEL_STYLE}>Breed</label>
+              <select
+                value={getReviewField("breed")}
+                onChange={e => setReviewField("breed", e.target.value)}
+                className={INPUT_CLS}
+              >
+                <option value="">Select…</option>
+                {BREED_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between pt-1">
+            <button
+              className="rounded-full px-5 py-2.5 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
+              style={{ fontSize: 13, fontWeight: 600, color: "#0E2646", opacity: reviewIndex === 0 ? 0.35 : 1 }}
+              disabled={reviewIndex === 0}
+              onClick={handleReviewBack}
+            >
+              ← Back
+            </button>
+            <button
+              className="cursor-pointer"
+              style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.40)", background: "none", border: "none", textDecoration: "underline" }}
+              onClick={handleSkipAll}
+            >
+              Skip All
+            </button>
+            <button
+              className="rounded-full px-5 py-2.5 bg-[#F3D12A] cursor-pointer active:scale-[0.97]"
+              style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", border: "none", opacity: savingReview ? 0.5 : 1 }}
+              disabled={savingReview}
+              onClick={handleReviewNext}
+            >
+              {savingReview ? "Saving…" : reviewIndex < newAnimals.length - 1 ? "Next →" : "Done"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Review complete confirmation */}
+      {newAnimals.length > 0 && reviewComplete && (
+        <div className="rounded-xl px-4 py-3" style={{ backgroundColor: "rgba(85,186,170,0.08)", border: "1px solid rgba(85,186,170,0.20)" }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#3D9A8B" }}>
+            ✓ {newAnimals.length} new animal{newAnimals.length !== 1 ? "s" : ""} reviewed
+          </span>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="flex gap-3 pt-1">
         <button
@@ -265,10 +482,10 @@ export default function CowWorkCloseOutScreen() {
             border: "none",
             opacity: closing ? 0.5 : 1,
           }}
-          disabled={closing}
+          disabled={closing || hasNewAnimals}
           onClick={handleCloseOut}
         >
-          {closing ? "Closing…" : "Complete Project"}
+          {closing ? "Closing…" : hasNewAnimals ? "Review New Animals First" : "Complete Project"}
         </button>
       </div>
     </div>
