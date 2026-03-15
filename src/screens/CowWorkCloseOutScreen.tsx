@@ -21,6 +21,8 @@ export default function CowWorkCloseOutScreen() {
   const [templateName, setTemplateName] = useState("");
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [actionedMissing, setActionedMissing] = useState<Record<string, string>>({});
+  const [reconSource, setReconSource] = useState<"group" | "project" | null>(hasExpected ? "group" : null);
+  const [reconProjectId, setReconProjectId] = useState("");
 
   // Phase E: Review New Animals wizard state
   const [reviewIndex, setReviewIndex] = useState(0);
@@ -83,12 +85,51 @@ export default function CowWorkCloseOutScreen() {
   const expected = expectedAnimals || [];
   const hasExpected = expected.length > 0;
 
-  // Reconciliation buckets
+  // Past completed projects (for reconciliation source picker)
+  const { data: pastProjects } = useQuery({
+    queryKey: ["past-projects-recon", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, date")
+        .eq("operation_id", operationId)
+        .eq("project_status", "Completed")
+        .neq("id", id!)
+        .order("date", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!operationId,
+  });
+
+  // Animals from selected past project (for reconciliation)
+  const { data: pastProjectAnimals } = useQuery({
+    queryKey: ["past-project-animals-recon", reconProjectId],
+    queryFn: async () => {
+      const { data: cwData, error } = await supabase
+        .from("cow_work")
+        .select("animal_id")
+        .eq("project_id", reconProjectId);
+      if (error) throw error;
+      if (!cwData || cwData.length === 0) return [];
+      const animalIds = [...new Set(cwData.map(r => r.animal_id).filter(Boolean))];
+      if (animalIds.length === 0) return [];
+      const { data: anData } = await supabase.from("animals").select("id, tag, tag_color, sex, type, year_born").in("id", animalIds);
+      return (anData || []).map(a => ({ animal_id: a.id, animal: a }));
+    },
+    enabled: !!reconProjectId,
+  });
+
+  // Reconciliation source — either group expected or past project
+  const reconList = reconSource === "group" ? expected
+    : reconSource === "project" ? (pastProjectAnimals || [])
+    : [];
   const workedAnimalIds = new Set(worked.map(w => w.animal_id));
-  const expectedAnimalIds = new Set(expected.map((e: any) => e.animal_id));
-  const matched = expected.filter((e: any) => workedAnimalIds.has(e.animal_id));
-  const missing = expected.filter((e: any) => !workedAnimalIds.has(e.animal_id));
-  const extra = worked.filter(w => !expectedAnimalIds.has(w.animal_id));
+  const reconAnimalIds = new Set(reconList.map((e: any) => e.animal_id));
+  const matched = reconList.filter((e: any) => workedAnimalIds.has(e.animal_id));
+  const missing = reconList.filter((e: any) => !workedAnimalIds.has(e.animal_id));
+  const extra = worked.filter(w => !reconAnimalIds.has(w.animal_id));
   const projectDate = project
     ? new Date(project.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : "";
@@ -319,132 +360,181 @@ export default function CowWorkCloseOutScreen() {
         </div>
       )}
 
-      {/* Reconciliation (optional, expandable) */}
-      {hasExpected && (
-        <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-          <button
-            onClick={() => setReconOpen(!reconOpen)}
-            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "none", border: "none", cursor: "pointer" }}
-          >
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646" }}>Reconcile Animals</div>
-              <div style={{ fontSize: 12, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
-                {matched.length} matched · {missing.length} missing · {extra.length} extra
-              </div>
+      {/* Reconciliation */}
+      <div style={{ borderRadius: 12, backgroundColor: "white", overflow: "hidden", border: "1px solid rgba(212,212,208,0.60)" }}>
+        <button
+          onClick={() => setReconOpen(!reconOpen)}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "none", border: "none", cursor: "pointer" }}
+        >
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646" }}>Reconcile Animals</div>
+            <div style={{ fontSize: 12, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
+              {reconSource ? `${matched.length} matched · ${missing.length} missing · ${extra.length} extra` : "Compare worked animals against a source list"}
             </div>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: reconOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
-              <path d="M4 6L8 10L12 6" stroke="rgba(26,26,26,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: reconOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
+            <path d="M4 6L8 10L12 6" stroke="rgba(26,26,26,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
 
-          {reconOpen && (
-            <div style={{ padding: "0 16px 16px", borderTop: "1px solid rgba(212,212,208,0.30)" }}>
-              {/* Matched bucket */}
-              <div style={{ paddingTop: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#55BAAA", flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#55BAAA" }}>Matched — {matched.length}</span>
-                </div>
-                {matched.length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {matched.map((e: any) => (
-                      <span key={e.animal_id} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.10)", color: "#3D9A8B" }}>
-                        {(e.animal as any)?.tag || "?"}
-                      </span>
-                    ))}
-                  </div>
-                )}
+        {reconOpen && (
+          <div style={{ padding: "0 16px 16px", borderTop: "1px solid rgba(212,212,208,0.30)" }}>
+            {/* Source picker */}
+            <div style={{ paddingTop: 12, marginBottom: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 6 }}>COMPARE AGAINST</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button
+                  onClick={() => { setReconSource("group"); setReconProjectId(""); }}
+                  disabled={!hasExpected}
+                  style={{
+                    flex: 1, padding: "8px 0", borderRadius: 9999, cursor: hasExpected ? "pointer" : "default",
+                    border: reconSource === "group" ? "2px solid #55BAAA" : "1px solid #D4D4D0",
+                    backgroundColor: reconSource === "group" ? "rgba(85,186,170,0.06)" : "white",
+                    fontSize: 12, fontWeight: 600, color: hasExpected ? "#0E2646" : "rgba(26,26,26,0.25)",
+                  }}
+                >
+                  Group{hasExpected ? ` (${expected.length})` : ""}
+                </button>
+                <button
+                  onClick={() => setReconSource("project")}
+                  style={{
+                    flex: 1, padding: "8px 0", borderRadius: 9999, cursor: "pointer",
+                    border: reconSource === "project" ? "2px solid #55BAAA" : "1px solid #D4D4D0",
+                    backgroundColor: reconSource === "project" ? "rgba(85,186,170,0.06)" : "white",
+                    fontSize: 12, fontWeight: 600, color: "#0E2646",
+                  }}
+                >
+                  Past Project
+                </button>
               </div>
-
-              {/* Missing bucket — expanded by default */}
-              <div style={{ paddingTop: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#F3D12A", flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#B8960F" }}>Missing — {missing.length}</span>
-                </div>
-                {missing.length > 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {missing.map((e: any) => {
-                      const animalId = e.animal_id;
-                      const tag = (e.animal as any)?.tag || "?";
-                      const actioned = actionedMissing[animalId];
-                      return (
-                        <div key={animalId} style={{ borderRadius: 8, backgroundColor: actioned ? "rgba(85,186,170,0.06)" : "rgba(243,209,42,0.06)", border: `1px solid ${actioned ? "rgba(85,186,170,0.20)" : "rgba(243,209,42,0.15)"}`, padding: "8px 10px" }}>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              {(e.animal as any)?.tag_color && (
-                                <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TAG_COLOR_HEX[(e.animal as any).tag_color] || "#999", flexShrink: 0 }} />
-                              )}
-                              <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{tag}</span>
-                              <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{(e.animal as any)?.type || (e.animal as any)?.sex || ""}</span>
-                            </div>
-                            {actioned && (
-                              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.15)", color: "#3D9A8B" }}>{actioned}</span>
-                            )}
-                          </div>
-                          {!actioned && (
-                            <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                              <button
-                                onClick={async () => {
-                                  await supabase.from("animal_flags").insert({
-                                    operation_id: operationId, animal_id: animalId,
-                                    flag_tier: "management", flag_name: "Missing from project",
-                                    flag_note: `Missing from ${projectName} close-out`,
-                                  });
-                                  setActionedMissing(prev => ({ ...prev, [animalId]: "Flagged" }));
-                                  showToast("success", `${tag} flagged`);
-                                }}
-                                style={{ padding: "5px 12px", borderRadius: 9999, border: "1px solid rgba(85,186,170,0.30)", backgroundColor: "white", fontSize: 11, fontWeight: 600, color: "#55BAAA", cursor: "pointer" }}
-                              >
-                                Flag
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  await supabase.from("animals").update({ status: "Sold" }).eq("id", animalId);
-                                  setActionedMissing(prev => ({ ...prev, [animalId]: "Sold" }));
-                                  showToast("success", `${tag} marked Sold`);
-                                }}
-                                style={{ padding: "5px 12px", borderRadius: 9999, border: "1px solid rgba(232,116,97,0.30)", backgroundColor: "white", fontSize: 11, fontWeight: 600, color: "#E87461", cursor: "pointer" }}
-                              >
-                                Mark Sold
-                              </button>
-                              <button
-                                onClick={() => setActionedMissing(prev => ({ ...prev, [animalId]: "Skipped" }))}
-                                style={{ padding: "5px 12px", borderRadius: 9999, border: "none", backgroundColor: "rgba(26,26,26,0.04)", fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.40)", cursor: "pointer" }}
-                              >
-                                Skip
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>All expected animals were worked</div>
-                )}
-              </div>
-
-              {/* Extra bucket */}
-              {extra.length > 0 && (
-                <div style={{ paddingTop: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#E87461", flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#E87461" }}>Extra — {extra.length}</span>
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {extra.map((w: any) => (
-                      <span key={w.id} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(232,116,97,0.10)", color: "#E87461" }}>
-                        {(w.animal as any)?.tag || "?"}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              {reconSource === "project" && (
+                <select
+                  value={reconProjectId}
+                  onChange={e => setReconProjectId(e.target.value)}
+                  style={{ width: "100%", marginTop: 8, height: 36, borderRadius: 8, border: "1px solid #D4D4D0", paddingLeft: 12, paddingRight: 12, fontSize: 14, fontFamily: "'Inter', sans-serif", color: reconProjectId ? "#1A1A1A" : "rgba(26,26,26,0.40)", appearance: "auto" as any }}
+                >
+                  <option value="">Select a completed project…</option>
+                  {(pastProjects || []).map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
               )}
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Results — only show when a source is selected */}
+            {reconSource && reconList.length > 0 && (
+              <>
+                {/* Matched bucket */}
+                <div style={{ paddingTop: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#55BAAA", flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#55BAAA" }}>Matched — {matched.length}</span>
+                  </div>
+                  {matched.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {matched.map((e: any) => (
+                        <span key={e.animal_id} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.10)", color: "#3D9A8B" }}>
+                          {(e.animal as any)?.tag || "?"}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Missing bucket */}
+                <div style={{ paddingTop: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#F3D12A", flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#B8960F" }}>Missing — {missing.length}</span>
+                  </div>
+                  {missing.length > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {missing.map((e: any) => {
+                        const animalId = e.animal_id;
+                        const tag = (e.animal as any)?.tag || "?";
+                        const actioned = actionedMissing[animalId];
+                        return (
+                          <div key={animalId} style={{ borderRadius: 8, backgroundColor: actioned ? "rgba(85,186,170,0.06)" : "rgba(243,209,42,0.06)", border: `1px solid ${actioned ? "rgba(85,186,170,0.20)" : "rgba(243,209,42,0.15)"}`, padding: "8px 10px" }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                {(e.animal as any)?.tag_color && (
+                                  <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TAG_COLOR_HEX[(e.animal as any).tag_color] || "#999", flexShrink: 0 }} />
+                                )}
+                                <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{tag}</span>
+                                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{(e.animal as any)?.type || (e.animal as any)?.sex || ""}</span>
+                              </div>
+                              {actioned && (
+                                <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.15)", color: "#3D9A8B" }}>{actioned}</span>
+                              )}
+                            </div>
+                            {!actioned && (
+                              <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                                <button
+                                  onClick={async () => {
+                                    await supabase.from("animal_flags").insert({
+                                      operation_id: operationId, animal_id: animalId,
+                                      flag_tier: "management", flag_name: "Missing from project",
+                                      flag_note: `Missing from ${projectName} close-out`,
+                                    });
+                                    setActionedMissing(prev => ({ ...prev, [animalId]: "Flagged" }));
+                                    showToast("success", `${tag} flagged`);
+                                  }}
+                                  style={{ padding: "5px 12px", borderRadius: 9999, border: "1px solid rgba(85,186,170,0.30)", backgroundColor: "white", fontSize: 11, fontWeight: 600, color: "#55BAAA", cursor: "pointer" }}
+                                >
+                                  Flag
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    await supabase.from("animals").update({ status: "Sold" }).eq("id", animalId);
+                                    setActionedMissing(prev => ({ ...prev, [animalId]: "Sold" }));
+                                    showToast("success", `${tag} marked Sold`);
+                                  }}
+                                  style={{ padding: "5px 12px", borderRadius: 9999, border: "1px solid rgba(232,116,97,0.30)", backgroundColor: "white", fontSize: 11, fontWeight: 600, color: "#E87461", cursor: "pointer" }}
+                                >
+                                  Mark Sold
+                                </button>
+                                <button
+                                  onClick={() => setActionedMissing(prev => ({ ...prev, [animalId]: "Skipped" }))}
+                                  style={{ padding: "5px 12px", borderRadius: 9999, border: "none", backgroundColor: "rgba(26,26,26,0.04)", fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.40)", cursor: "pointer" }}
+                                >
+                                  Skip
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>All source animals were worked</div>
+                  )}
+                </div>
+
+                {/* Extra bucket */}
+                {extra.length > 0 && (
+                  <div style={{ paddingTop: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#E87461", flexShrink: 0 }} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#E87461" }}>Extra — {extra.length}</span>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {extra.map((w: any) => (
+                        <span key={w.id} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(232,116,97,0.10)", color: "#E87461" }}>
+                          {(w.animal as any)?.tag || "?"}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {reconSource && reconList.length === 0 && reconSource === "project" && !reconProjectId && (
+              <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", paddingTop: 8 }}>Select a project above to compare</div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Animals List */}
       <div className="rounded-xl bg-white px-4 py-4" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
