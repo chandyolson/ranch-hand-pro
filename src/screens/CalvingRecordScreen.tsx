@@ -837,7 +837,7 @@ export default function CalvingRecordScreen() {
                   cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#55BAAA",
                 }}
               >
-                View Full Animal Record →
+                View Dam Record →
               </button>
               <p style={{ fontSize: 10, color: "rgba(26,26,26,0.3)", textAlign: "center" as const, marginTop: 4, fontStyle: "italic" }}>
                 Opens {damAnimal.tag}'s animal record (leaves this page)
