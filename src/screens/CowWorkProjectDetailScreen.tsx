@@ -116,6 +116,21 @@ export default function CowWorkProjectDetailScreen() {
   const { data: groups } = useGroups();
   const { data: locations } = useLocations();
 
+  // Load preg stages from operation's custom list
+  const { data: pregStages } = useQuery({
+    queryKey: ["preg-stages", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("preg_stages")
+        .select("id, stage_name, sort_order")
+        .eq("operation_id", operationId)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Edit mode state for Project Details tab
   const [isEditingProject, setIsEditingProject] = useState(false);
   const [editDate, setEditDate] = useState("");
@@ -124,6 +139,9 @@ export default function CowWorkProjectDetailScreen() {
   const [editStatus, setEditStatus] = useState("");
   const [editHeadCount, setEditHeadCount] = useState("");
   const [editMemo, setEditMemo] = useState("");
+  const [editProducts, setEditProducts] = useState<{ id: string; name: string; dosage: string; route: string }[]>([]);
+  const [editProductPickerOpen, setEditProductPickerOpen] = useState(false);
+  const [editProductSearch, setEditProductSearch] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
   const startEditingProject = () => {
@@ -133,6 +151,15 @@ export default function CowWorkProjectDetailScreen() {
     setEditStatus(project?.project_status || "Pending");
     setEditHeadCount(project?.estimated_head ? String(project.estimated_head) : "");
     setEditMemo(project?.description || "");
+    // Load current products into edit state
+    setEditProducts((projectProducts || []).map((pp: any) => ({
+      id: (pp.product as any)?.id || pp.product_id,
+      name: (pp.product as any)?.name || pp.product_name || "Unknown",
+      dosage: (pp.product as any)?.dosage || "",
+      route: (pp.product as any)?.route || "",
+    })));
+    setEditProductPickerOpen(false);
+    setEditProductSearch("");
     setIsEditingProject(true);
   };
 
@@ -151,7 +178,23 @@ export default function CowWorkProjectDetailScreen() {
         })
         .eq("id", id!);
       if (error) throw error;
+
+      // Sync products: delete existing, insert new set
+      await supabase.from("project_products").delete().eq("project_id", id!);
+      if (editProducts.length > 0) {
+        await supabase.from("project_products").insert(
+          editProducts.map(p => ({
+            project_id: id!,
+            product_id: p.id,
+            dosage: p.dosage || null,
+            route: p.route || null,
+            source: "manual",
+          }))
+        );
+      }
+
       queryClient.invalidateQueries({ queryKey: ["project", id] });
+      queryClient.invalidateQueries({ queryKey: ["project-products", id] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       showToast("success", "Project updated");
       setIsEditingProject(false);
@@ -818,7 +861,9 @@ export default function CowWorkProjectDetailScreen() {
                         <label style={LABEL_STYLE}>Preg</label>
                         <select value={pregResult} onChange={e => setPregResult(e.target.value)} className={INPUT_CLS}>
                           <option value="" disabled>Select…</option>
-                          <option>Confirmed</option><option>Open</option><option>Suspect</option><option>First Calf Heifer</option>
+                          {(pregStages || []).map(s => (
+                            <option key={s.id} value={s.stage_name}>{s.stage_name}</option>
+                          ))}
                         </select>
                       </div>
                     );
@@ -1375,18 +1420,108 @@ export default function CowWorkProjectDetailScreen() {
             <div style={{ borderTop: "1px solid rgba(26,26,26,0.06)", margin: "8px 0" }} />
 
             <div style={SUB_LABEL}>PRODUCTS GIVEN</div>
-            {(projectProducts || []).length === 0 ? (
-              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products configured</div>
-            ) : (
-              <div className="space-y-1">
-                {(projectProducts || []).map((pp: any, i: number) => (
-                  <div key={pp.id || i} className="flex items-center gap-2">
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{(pp.product as any)?.name || pp.product_name || "Unknown"}</span>
-                    <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>
-                      {[(pp.product as any)?.dosage, (pp.product as any)?.route].filter(Boolean).join(" · ")}
-                    </span>
+
+            {/* VIEW MODE products */}
+            {!isEditingProject && (
+              <>
+                {(projectProducts || []).length === 0 ? (
+                  <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products configured</div>
+                ) : (
+                  <div className="space-y-1">
+                    {(projectProducts || []).map((pp: any, i: number) => (
+                      <div key={pp.id || i} className="flex items-center gap-2">
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{(pp.product as any)?.name || pp.product_name || "Unknown"}</span>
+                        <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>
+                          {[(pp.product as any)?.dosage, (pp.product as any)?.route].filter(Boolean).join(" · ")}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
+              </>
+            )}
+
+            {/* EDIT MODE products — searchable multi-select */}
+            {isEditingProject && (
+              <div className="space-y-2">
+                {/* Current selections as removable pills */}
+                <div className="flex flex-wrap gap-1.5">
+                  {editProducts.map((p, i) => (
+                    <span key={p.id} className="flex items-center gap-1 rounded-full" style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px 3px 10px", backgroundColor: "rgba(85,186,170,0.12)", color: "#1A1A1A" }}>
+                      {p.name}
+                      <button
+                        className="cursor-pointer"
+                        style={{ background: "none", border: "none", fontSize: 13, color: "rgba(26,26,26,0.40)", lineHeight: 1, padding: 0 }}
+                        onClick={() => setEditProducts(prev => prev.filter((_, idx) => idx !== i))}
+                      >×</button>
+                    </span>
+                  ))}
+                  {editProducts.length === 0 && (
+                    <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>No products — tap below to add</span>
+                  )}
+                </div>
+
+                {!editProductPickerOpen ? (
+                  <button
+                    className="rounded-full px-4 py-2 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
+                    style={{ fontSize: 13, fontWeight: 600, color: "#0E2646" }}
+                    onClick={() => setEditProductPickerOpen(true)}
+                  >
+                    + Add Products
+                  </button>
+                ) : (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 bg-white rounded-lg px-3 h-10" style={{ border: "1px solid #D4D4D0" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,26,0.30)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                      <input
+                        type="text"
+                        value={editProductSearch}
+                        onChange={e => setEditProductSearch(e.target.value)}
+                        placeholder="Search products…"
+                        className="flex-1 outline-none bg-transparent"
+                        style={{ fontSize: 16, color: "#1A1A1A" }}
+                      />
+                      {editProductSearch && (
+                        <button className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 cursor-pointer" style={{ backgroundColor: "rgba(26,26,26,0.08)", fontSize: 11, color: "rgba(26,26,26,0.50)", border: "none" }} onClick={() => setEditProductSearch("")}>×</button>
+                      )}
+                    </div>
+                    <div className="max-h-48 overflow-y-auto rounded-lg" style={{ border: "1px solid #D4D4D0" }}>
+                      {(allProducts || [])
+                        .filter(p => !editProductSearch || p.name.toLowerCase().includes(editProductSearch.toLowerCase()))
+                        .map(prod => {
+                          const isSelected = editProducts.some(p => p.id === prod.id);
+                          return (
+                            <button
+                              key={prod.id}
+                              className="flex items-center gap-2.5 w-full px-3 py-2.5 cursor-pointer"
+                              style={{ background: isSelected ? "rgba(85,186,170,0.08)" : "white", border: "none", borderBottom: "1px solid rgba(26,26,26,0.06)", textAlign: "left" as const }}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setEditProducts(prev => prev.filter(p => p.id !== prod.id));
+                                } else {
+                                  setEditProducts(prev => [...prev, { id: prod.id, name: prod.name, dosage: prod.dosage || "", route: prod.route || "" }]);
+                                }
+                              }}
+                            >
+                              <div className="shrink-0 rounded flex items-center justify-center" style={{ width: 20, height: 20, border: isSelected ? "none" : "2px solid #D4D4D0", backgroundColor: isSelected ? "#55BAAA" : "white" }}>
+                                {isSelected && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                              </div>
+                              <span className="truncate" style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: "#1A1A1A" }}>{prod.name}</span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                    <button
+                      className="rounded-full px-4 py-1.5 bg-[#0E2646] cursor-pointer active:scale-[0.97]"
+                      style={{ fontSize: 12, fontWeight: 700, color: "white", border: "none" }}
+                      onClick={() => { setEditProductPickerOpen(false); setEditProductSearch(""); }}
+                    >
+                      Done
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
