@@ -12,7 +12,7 @@ import FormFieldRow from "../components/FormFieldRow";
 import FieldRow from "../components/calving/FieldRow";
 import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
-import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, BSE_PASS_FAIL, BSE_MOTILITY, BSE_PHYSICAL_DEFECTS, BSE_SEMEN_DEFECTS, SALE_REASONS, DISEASE_TYPES, BREEDING_METHODS, ESTRUS_STATUS, type FlagColor } from "@/lib/constants";
+import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, BSE_PASS_FAIL, BSE_MOTILITY, BSE_PHYSICAL_DEFECTS, BSE_SEMEN_DEFECTS, SALE_REASONS, DISEASE_TYPES, BREEDING_METHODS, ESTRUS_STATUS, SEX_OPTIONS, ANIMAL_TYPE_OPTIONS, BREED_OPTIONS, type FlagColor } from "@/lib/constants";
 import { ALL_FIELDS, getLockedFields, getOptionalFields, resolveFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,6 +55,11 @@ export default function CowWorkProjectDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [isNewAnimal, setIsNewAnimal] = useState(false);
   const [newTagColor, setNewTagColor] = useState("");
+  const [newEid, setNewEid] = useState("");
+  const [newYearBorn, setNewYearBorn] = useState("");
+  const [newSex, setNewSex] = useState("");
+  const [newCattleType, setNewCattleType] = useState("");
+  const [newBreed, setNewBreed] = useState("");
 
   const [pregResult, setPregResult] = useState("");
   const [pregDays, setPregDays] = useState("");
@@ -459,6 +464,11 @@ export default function CowWorkProjectDetailScreen() {
     setIsExpectedMatch(false);
     setEditingRecord(null);
     setNewTagColor("");
+    setNewEid("");
+    setNewYearBorn("");
+    setNewSex("");
+    setNewCattleType("");
+    setNewBreed("");
     setHistoryOpen(false);
     setPregResult("");
     setPregDays("");
@@ -519,7 +529,11 @@ export default function CowWorkProjectDetailScreen() {
             operation_id: operationId,
             tag: tagField.trim(),
             tag_color: newTagColor || null,
-            sex: "F",
+            eid: newEid.trim() || null,
+            sex: newSex || "F",
+            type: newCattleType || null,
+            breed: newBreed || null,
+            year_born: newYearBorn || null,
             status: "Active",
           } as any)
           .select()
@@ -792,39 +806,44 @@ export default function CowWorkProjectDetailScreen() {
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#3D9A8B" }}>Editing existing record — data loaded below</span>
                 </div>
               )}
-              {/* Phase C: New animal — will be created on save */}
+              {/* Phase C: New animal — expanded details section */}
               {tagField.length >= 3 && isNewAnimal && !isMatched && !isDuplicate && (
-                <div className="space-y-2 mt-1">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="rounded-full px-2.5 py-0.5"
-                      style={{ fontSize: 11, fontWeight: 700, backgroundColor: "rgba(243,209,42,0.20)", color: "#B8960F" }}
-                    >
-                      NEW
-                    </span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#B8960F" }}>
-                      New animal — will be created on save
-                    </span>
+                <div style={{ marginTop: 6, borderRadius: 10, border: "1.5px solid rgba(243,209,42,0.40)", padding: 10, backgroundColor: "rgba(243,209,42,0.04)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(243,209,42,0.20)", color: "#B8960F" }}>NEW</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#B8960F" }}>New animal — fill in details below</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <label style={{ fontSize: 13, fontWeight: 600, color: "rgba(26,26,26,0.50)", flexShrink: 0, width: 105 }}>Tag Color</label>
-                    <select
-                      value={newTagColor}
-                      onChange={e => setNewTagColor(e.target.value)}
-                      className="flex-1 h-[40px] rounded-lg border px-3 outline-none"
-                      style={{
-                        fontSize: 16,
-                        fontFamily: "Inter, sans-serif",
-                        color: newTagColor ? "#1A1A1A" : "rgba(26,26,26,0.40)",
-                        borderColor: "#D4D4D0",
-                        backgroundColor: "white",
-                      }}
-                    >
-                      <option value="">Select color…</option>
-                      {TAG_COLOR_OPTIONS.map(c => (
-                        <option key={c} value={c === "None" ? "" : c}>{c}</option>
-                      ))}
-                    </select>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <FieldRow label="EID">
+                      <input type="text" value={newEid} onChange={e => setNewEid(e.target.value)} placeholder="Electronic ID…" style={IS} />
+                    </FieldRow>
+                    <FieldRow label="Tag Color">
+                      <select value={newTagColor} onChange={e => setNewTagColor(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                        <option value="">Select…</option>
+                        {TAG_COLOR_OPTIONS.filter(c => c !== "None").map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </FieldRow>
+                    <FieldRow label="Sex">
+                      <select value={newSex} onChange={e => setNewSex(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                        <option value="">Select…</option>
+                        {SEX_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </FieldRow>
+                    <FieldRow label="Cattle Type">
+                      <select value={newCattleType} onChange={e => setNewCattleType(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                        <option value="">Select…</option>
+                        {ANIMAL_TYPE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </FieldRow>
+                    <FieldRow label="Year Born">
+                      <input type="number" inputMode="numeric" value={newYearBorn} onChange={e => setNewYearBorn(e.target.value)} placeholder="e.g. 2024" style={IS} />
+                    </FieldRow>
+                    <FieldRow label="Breed">
+                      <select value={newBreed} onChange={e => setNewBreed(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                        <option value="">Select…</option>
+                        {BREED_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </FieldRow>
                   </div>
                 </div>
               )}
