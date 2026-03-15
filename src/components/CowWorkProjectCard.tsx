@@ -55,13 +55,33 @@ const CowWorkProjectCard: React.FC<CowWorkProjectCardProps> = ({
 
       {/* Row 3 — progress */}
       <div className="mt-3">
-        <div className="w-full rounded-full" style={{ height: 4, backgroundColor: "rgba(255,255,255,0.08)" }}>
-          <div className="rounded-full" style={{ height: 4, backgroundColor: "#55BAAA", width: `${pct}%`, transition: "width 300ms" }} />
-        </div>
-        <div className="flex justify-between mt-1.5">
-          <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(240,240,240,0.50)" }}>{workedCount} worked</span>
-          <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.30)" }}>{headCount} head</span>
-        </div>
+        {headCount > 0 ? (
+          <>
+            <div className="w-full rounded-full" style={{ height: 4, backgroundColor: "rgba(255,255,255,0.08)", position: "relative", overflow: "hidden" }}>
+              {workedCount <= headCount ? (
+                // Normal: teal fill up to 100%
+                <div className="rounded-full" style={{ height: 4, backgroundColor: "#55BAAA", width: `${Math.min(pct, 100)}%`, transition: "width 300ms" }} />
+              ) : (
+                // Over: teal for expected portion, red for extras
+                <div style={{ display: "flex", height: 4, width: "100%" }}>
+                  <div style={{ height: 4, backgroundColor: "#55BAAA", flex: headCount, borderRadius: "9999px 0 0 9999px" }} />
+                  <div style={{ height: 4, backgroundColor: "#E87461", flex: workedCount - headCount, borderRadius: "0 9999px 9999px 0" }} />
+                </div>
+              )}
+            </div>
+            <div className="flex justify-between mt-1.5">
+              <span style={{ fontSize: 11, fontWeight: 600, color: workedCount > headCount ? "#E87461" : "rgba(240,240,240,0.50)" }}>
+                {workedCount} worked{workedCount > headCount ? ` (+${workedCount - headCount})` : ""}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.30)" }}>{headCount} expected</span>
+            </div>
+          </>
+        ) : (
+          // No expected head count — just show worked count
+          <div className="mt-0.5">
+            <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(240,240,240,0.50)" }}>{workedCount} worked</span>
+          </div>
+        )}
       </div>
     </div>
   );
