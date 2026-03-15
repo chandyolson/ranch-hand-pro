@@ -333,7 +333,7 @@ const DashboardScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* SECTION 5 — Activity + Recent Animals */}
+      {/* SECTION 5 — Activity + Calving Chart */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Recent Activity */}
         <CollapsibleSection title="Recent Activity" defaultOpen>
@@ -360,32 +360,30 @@ const DashboardScreen: React.FC = () => {
           )}
         </CollapsibleSection>
 
-        {/* Recent Animals */}
+        {/* Calving Chart */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <SectionHeading text="Recent Animals" />
-            <span className="cursor-pointer" style={{ fontSize: 12, fontWeight: 600, color: "#55BAAA" }} onClick={() => navigate("/animals")}>
-              View All
-            </span>
-          </div>
-          <div className="space-y-2">
-            {filteredAnimals.map((animal) => (
-              <div
-                key={animal.id}
-                className="cursor-pointer active:scale-[0.99] transition-transform duration-100"
-                onClick={() => navigate(`/animals/${animal.id}`)}
-              >
-                <DataCard
-                  title={`Tag ${animal.tag}`}
-                  values={[animal.breed || "Unknown", animal.type || "", animal.year_born ? String(animal.year_born) : ""].filter(Boolean)}
-                  subtitle={animal.memo ? [animal.memo] : undefined}
-                />
-              </div>
-            ))}
-            {filteredAnimals.length === 0 && (
-              <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", padding: "8px 0", textAlign: "center" }}>No animals found</div>
-            )}
-          </div>
+          <SectionHeading text="Calves per Day (Last 30 Days)" />
+          {chartData.length > 0 ? (
+            <div className="rounded-xl bg-white p-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={chartData} barCategoryGap="20%">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,212,208,0.40)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: "rgba(26,26,26,0.40)" }} tickLine={false} axisLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "rgba(26,26,26,0.40)" }} tickLine={false} axisLine={false} width={24} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid rgba(212,212,208,0.60)" }}
+                    labelStyle={{ fontWeight: 600 }}
+                  />
+                  <Bar dataKey="alive" stackId="a" fill="#55BAAA" radius={[0, 0, 0, 0]} name="Alive" />
+                  <Bar dataKey="dead" stackId="a" fill="#9B2335" radius={[4, 4, 0, 0]} name="Dead" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-white px-4 py-6 text-center" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "rgba(26,26,26,0.35)" }}>No calving data in the last 30 days</div>
+            </div>
+          )}
         </div>
       </div>
     </div>
