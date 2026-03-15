@@ -771,14 +771,20 @@ export default function CalvingRecordScreen() {
                     const defaultBadge = { bg: "rgba(26,26,26,0.06)", text: "rgba(26,26,26,0.45)" };
                     const renderWorkCard = (r: any, i: number) => {
                       const code = workTypeCode(r);
+                      const wtName = r.project?.work_types?.[0]?.work_type?.name || code;
                       const bc = badgeColors[code] || defaultBadge;
                       const projDate = r.project?.project_date ? formatDate(r.project.project_date) : "—";
+                      const projName = r.project?.name || "";
                       return (
                         <div key={r.id || i} style={{ background: "rgba(26,26,26,0.03)", border: "1px solid rgba(26,26,26,0.06)", borderRadius: 8, padding: "10px 12px", marginBottom: 6 }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 8, letterSpacing: "0.04em", background: bc.bg, color: bc.text }}>{code}</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 8, letterSpacing: "0.04em", background: bc.bg, color: bc.text }}>{code}</span>
+                              <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.55)" }}>{wtName}</span>
+                            </div>
                             <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{projDate}</span>
                           </div>
+                          {projName && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.4)", marginTop: 2 }}>{projName}</div>}
                           <div style={{ fontSize: 12, color: "rgba(26,26,26,0.55)", marginTop: 4 }}>
                             {code === "PREG" && (<>
                               <span style={{ fontWeight: 600, color: "#1A1A1A" }}>{r.preg_status || "Checked"}</span>
@@ -797,7 +803,9 @@ export default function CalvingRecordScreen() {
                               {r.estrus_status && <> · Estrus: {r.estrus_status}</>}
                             </>)}
                             {code !== "PREG" && code !== "BREED" && (<>
-                              {r.project?.name || "Project"}{r.weight ? ` · ${r.weight} lb` : ""}
+                              {r.weight && <><span style={{ fontWeight: 600, color: "#1A1A1A" }}>{r.weight} lb</span></>}
+                              {r.memo && <>{r.weight ? " · " : ""}{r.memo}</>}
+                              {!r.weight && !r.memo && <span style={{ color: "rgba(26,26,26,0.35)" }}>No details recorded</span>}
                             </>)}
                           </div>
                         </div>
@@ -816,6 +824,24 @@ export default function CalvingRecordScreen() {
                 </div>
               )}
 
+            </div>
+
+            {/* Link to full animal record */}
+            <div style={{ padding: "10px 14px 14px", borderTop: "1px solid rgba(26,26,26,0.06)" }}>
+              <button
+                onClick={() => navigate("/animals/" + damId)}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  width: "100%", padding: "10px 0",
+                  background: "transparent", border: "1px solid rgba(85,186,170,0.3)", borderRadius: 8,
+                  cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#55BAAA",
+                }}
+              >
+                View Full Animal Record →
+              </button>
+              <p style={{ fontSize: 10, color: "rgba(26,26,26,0.3)", textAlign: "center" as const, marginTop: 4, fontStyle: "italic" }}>
+                Opens {damAnimal.tag}'s animal record (leaves this page)
+              </p>
             </div>
           </div>
         )}
