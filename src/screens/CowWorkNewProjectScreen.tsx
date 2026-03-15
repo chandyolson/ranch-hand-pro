@@ -59,9 +59,6 @@ export default function CowWorkNewProjectScreen() {
   const [protocolDrawerOpen, setProtocolDrawerOpen] = useState(false);
   const [fieldConfig, setFieldConfig] = useState<FieldVisibilityConfig>(getDefaultFieldConfig());
   const [saving, setSaving] = useState(false);
-  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
-  const [templateName, setTemplateName] = useState("");
-  const [savingTemplate, setSavingTemplate] = useState(false);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
   const { operationId } = useOperation();
@@ -272,33 +269,6 @@ export default function CowWorkNewProjectScreen() {
       showToast("error", err.message || "Failed to create project");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const saveAsTemplate = async () => {
-    if (!templateName.trim()) { showToast("error", "Template name is required"); return; }
-    if (!processingType) { showToast("error", "Select a work type first"); return; }
-    setSavingTemplate(true);
-    try {
-      const { error } = await supabase.from("project_templates").insert({
-        operation_id: operationId,
-        name: templateName.trim(),
-        work_type_id: processingType,
-        default_cattle_type: cattleType || null,
-        default_field_visibility: fieldConfig as any,
-        default_products: products.length > 0
-          ? products.map(p => ({ product_id: p.id, product_name: p.name, dosage: p.dosage, route: p.route }))
-          : null,
-      });
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["project-templates"] });
-      showToast("success", `Template "${templateName.trim()}" saved`);
-      setShowSaveTemplate(false);
-      setTemplateName("");
-    } catch (err: any) {
-      showToast("error", err.message || "Failed to save template");
-    } finally {
-      setSavingTemplate(false);
     }
   };
 
@@ -645,48 +615,6 @@ export default function CowWorkNewProjectScreen() {
           </button>
         </div>
 
-        {/* Save as Template */}
-        {!showSaveTemplate ? (
-          <button
-            className="w-full rounded-full py-2.5 border border-[#55BAAA] bg-white cursor-pointer active:scale-[0.97]"
-            style={{ fontSize: 13, fontWeight: 600, color: "#55BAAA" }}
-            onClick={() => setShowSaveTemplate(true)}
-          >
-            Save as Template
-          </button>
-        ) : (
-          <div className="rounded-xl bg-white px-3 py-3 space-y-2" style={{ border: "2px solid #55BAAA" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#55BAAA", letterSpacing: "0.04em" }}>SAVE AS TEMPLATE</div>
-            <input
-              type="text"
-              value={templateName}
-              onChange={e => setTemplateName(e.target.value)}
-              placeholder="Template name…"
-              className={INPUT_CLS}
-              autoFocus
-            />
-            <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
-              Saves: work type, cattle type, field config{products.length > 0 ? `, ${products.length} product${products.length !== 1 ? "s" : ""}` : ""}
-            </div>
-            <div className="flex gap-2">
-              <button
-                className="flex-1 rounded-full py-2 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
-                style={{ fontSize: 13, fontWeight: 600, color: "rgba(26,26,26,0.50)" }}
-                onClick={() => { setShowSaveTemplate(false); setTemplateName(""); }}
-              >
-                Cancel
-              </button>
-              <button
-                className="flex-1 rounded-full py-2 bg-[#55BAAA] cursor-pointer active:scale-[0.97]"
-                style={{ fontSize: 13, fontWeight: 700, color: "white", border: "none", opacity: savingTemplate ? 0.5 : 1 }}
-                disabled={savingTemplate}
-                onClick={saveAsTemplate}
-              >
-                {savingTemplate ? "Saving…" : "Save Template"}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Phase B: Protocol product loader */}
