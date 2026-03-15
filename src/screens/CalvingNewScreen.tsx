@@ -743,30 +743,80 @@ export default function CalvingNewScreen() {
 
                       {/* Calving tab */}
                       {damHistoryTab === "calving" && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div>
                           {calvingCount === 0 && (
-                            <div style={{ fontSize: 11, color: "rgba(26,26,26,0.30)", padding: 8 }}>No calving records</div>
+                            <div style={{ fontSize: 13, color: "rgba(26,26,26,0.35)", padding: "20px 0", textAlign: "center" }}>No calving history</div>
                           )}
-                          {calvings.map((c) => (
-                            <div key={c.id} style={{ borderRadius: 8, backgroundColor: "rgba(26,26,26,0.03)", padding: "10px 12px", border: "1px solid rgba(26,26,26,0.06)" }}>
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                  <span style={{ fontSize: 14, fontWeight: 700, color: "#0E2646" }}>{c.calf_sex || "Unknown"}</span>
-                                  <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: "1px 6px", backgroundColor: c.calf_sex === "Bull" ? "rgba(85,186,170,0.12)" : "rgba(232,160,191,0.15)", color: c.calf_sex === "Bull" ? "#55BAAA" : "#E8A0BF" }}>{c.calf_sex || "?"}</span>
+                          {calvings.map((c) => {
+                            const isDead = c.calf_status === "Dead";
+                            const isProblem = (c.assistance != null && c.assistance >= 3) || isDead;
+                            const assistText = c.assistance ? (TRAIT_LABELS.assistance[c.assistance] || "") : "";
+                            const vigorText = c.calf_vigor ? (TRAIT_LABELS.calfVigor[c.calf_vigor] || "") : "";
+                            const alertParts: string[] = [];
+                            if (isDead) alertParts.push("Dead");
+                            if (c.assistance && c.assistance >= 3) alertParts.push(assistText);
+
+                            return (
+                              <div
+                                key={c.id}
+                                style={{
+                                  background: "rgba(26,26,26,0.03)",
+                                  border: "1px solid rgba(26,26,26,0.06)",
+                                  borderRadius: 8,
+                                  padding: "10px 12px",
+                                  marginBottom: 6,
+                                  borderLeft: isDead ? "3px solid #9B2335" : isProblem ? "3px solid #D4606E" : "1px solid rgba(26,26,26,0.06)",
+                                }}
+                              >
+                                {/* Row 1 — Sex + calf tag + date */}
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                  <div style={{ display: "flex", alignItems: "center" }}>
+                                    <span style={{
+                                      fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, letterSpacing: "0.04em",
+                                      backgroundColor: c.calf_sex === "Bull" ? "rgba(85,186,170,0.15)" : "rgba(232,160,191,0.2)",
+                                      color: c.calf_sex === "Bull" ? "#0F6E56" : "#993556",
+                                    }}>
+                                      {c.calf_sex || "Unknown"}
+                                    </span>
+                                    <span style={{ color: "rgba(26,26,26,0.25)", fontSize: 11, margin: "0 3px" }}>→</span>
+                                    <span style={{ fontSize: 14, fontWeight: 700, color: isDead ? "rgba(26,26,26,0.3)" : "#0E2646" }}>
+                                      {isDead ? "—" : (c.calf_tag || "—")}
+                                    </span>
+                                  </div>
+                                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{fmtHistDate(c.calving_date)}</span>
                                 </div>
-                                <span style={{ fontSize: 10, color: "rgba(26,26,26,0.35)" }}>{fmtHistDate(c.calving_date)}</span>
-                              </div>
-                              <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
-                                {c.birth_weight && (
-                                  <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: "2px 6px", backgroundColor: "rgba(26,26,26,0.05)", color: "rgba(26,26,26,0.55)" }}>{c.birth_weight} lbs</span>
+
+                                {/* Row 2 — Details */}
+                                <div style={{ fontSize: 12, color: "rgba(26,26,26,0.5)", marginTop: 5, display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                                  {c.birth_weight && (
+                                    <>
+                                      <span style={{ fontWeight: 600, color: "#1A1A1A" }}>{c.birth_weight} lb</span>
+                                      {(assistText || vigorText) && <span style={{ margin: "0 6px", color: "rgba(26,26,26,0.2)" }}>·</span>}
+                                    </>
+                                  )}
+                                  {assistText && (
+                                    <>
+                                      <span>{assistText}</span>
+                                      {vigorText && <span style={{ margin: "0 6px", color: "rgba(26,26,26,0.2)" }}>·</span>}
+                                    </>
+                                  )}
+                                  {vigorText && <span>{vigorText}</span>}
+                                </div>
+
+                                {/* Alert badge */}
+                                {isProblem && alertParts.length > 0 && (
+                                  <div style={{
+                                    fontSize: 10, fontWeight: 600, color: "#9B2335",
+                                    background: "rgba(155,35,53,0.08)",
+                                    padding: "2px 8px", borderRadius: 8,
+                                    marginTop: 5, display: "inline-flex", alignItems: "center", gap: 3,
+                                  }}>
+                                    {isDead && !c.assistance ? alertParts.join(" · ") : `⚠ ${alertParts.join(" · ")}`}
+                                  </div>
                                 )}
-                                <span style={{ fontSize: 9, fontWeight: 600, borderRadius: 9999, padding: "2px 6px", backgroundColor: "rgba(26,26,26,0.05)", color: "rgba(26,26,26,0.55)" }}>
-                                  {!c.assistance || c.assistance === 1 ? "No Assistance" : c.assistance === 2 ? "Easy Pull" : "Hard Pull"}
-                                </span>
                               </div>
-                              {c.memo && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.35)", marginTop: 4 }}>{c.memo}</div>}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
 
