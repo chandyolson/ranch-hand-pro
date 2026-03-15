@@ -6,6 +6,7 @@ interface CowWorkProjectCardProps {
   date: string;
   status: "pending" | "in-progress" | "completed";
   type: string;
+  typeCode: string;
   group: string;
   headCount: number;
   workedCount: number;
@@ -19,7 +20,7 @@ const statusConfig = {
 };
 
 const CowWorkProjectCard: React.FC<CowWorkProjectCardProps> = ({
-  name, date, status, type, group, headCount, workedCount, onClick,
+  name, date, status, type, typeCode, group, headCount, workedCount, onClick,
 }) => {
   const s = statusConfig[status];
   const pct = headCount > 0 ? Math.round((workedCount / headCount) * 100) : 0;
@@ -32,7 +33,7 @@ const CowWorkProjectCard: React.FC<CowWorkProjectCardProps> = ({
       {/* Row 1 */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="truncate" style={{ fontSize: 15, fontWeight: 700, color: "white" }}>{type}</div>
+          <div className="truncate" style={{ fontSize: 15, fontWeight: 700, color: "white", textTransform: "uppercase" }}>{typeCode || type}</div>
           <div className="truncate" style={{ fontSize: 12, fontWeight: 500, color: "rgba(240,240,240,0.50)", marginTop: 1 }}>{name}</div>
         </div>
         <div className="shrink-0 flex items-center gap-2">
