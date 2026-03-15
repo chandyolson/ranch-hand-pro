@@ -223,16 +223,51 @@ export default function CalvingNewScreen() {
     queryKey: ["dam-work", damLookup?.id],
     queryFn: async () => {
       if (!damLookup?.id) return [];
-      const { data } = await supabase
+      // Step 1: fetch cow_work records
+      const { data: cwRows } = await supabase
         .from("cow_work")
-        .select("*, project:projects(name)")
+        .select("*")
         .eq("animal_id", damLookup.id)
         .eq("operation_id", operationId)
         .order("date", { ascending: false })
-        .limit(10);
-      return data || [];
+        .limit(20);
+      if (!cwRows || cwRows.length === 0) return [];
+      // Step 2: fetch projects to get work type code
+      const projectIds = [...new Set(cwRows.filter(r => r.project_id).map(r => r.project_id!))];
+      let projectMap = new Map<string, any>();
+      if (projectIds.length > 0) {
+        const { data: projects } = await supabase
+          .from("projects")
+          .select("id, name, date, primary_work_type_id, work_types:project_work_types(work_type:work_types(code))")
+          .in("id", projectIds);
+        (projects || []).forEach(p => projectMap.set(p.id, p));
+      }
+      // Step 3: fetch sire tags for breeding_sire_id
+      const sireIds = [...new Set(cwRows.filter(r => r.breeding_sire_id).map(r => r.breeding_sire_id!))];
+      let sireMap = new Map<string, string>();
+      if (sireIds.length > 0) {
+        const { data: sires } = await supabase
+          .from("animals")
+          .select("id, tag")
+          .in("id", sireIds);
+        (sires || []).forEach(s => sireMap.set(s.id, s.tag));
+      }
+      return cwRows.map(cw => {
+        const proj = cw.project_id ? projectMap.get(cw.project_id) : null;
+        const wtArr = (proj?.work_types || []) as any[];
+        const typeCode = wtArr[0]?.work_type?.code || "";
+        const flex = (cw.flex_data || {}) as Record<string, any>;
+        return {
+          ...cw,
+          ...flex,
+          _typeCode: typeCode,
+          _projectName: proj?.name || "",
+          _projectDate: proj?.date || cw.date,
+          _sireTag: cw.breeding_sire_id ? sireMap.get(cw.breeding_sire_id) || "" : "",
+        };
+      });
     },
-    enabled: !!damLookup?.id && damFullHistory,
+    enabled: !!damLookup?.id && damHistoryTab === "work",
   });
 
   const TAG_HEX: Record<string, string> = {
