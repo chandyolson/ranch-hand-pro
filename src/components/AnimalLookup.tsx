@@ -21,6 +21,8 @@ interface AnimalLookupProps {
   onChange: (value: string) => void;
   onSelect: (animal: AnimalResult) => void;
   onNoMatch?: (search: string) => void;
+  /** Label for the no-match action button. Defaults to "+ Quick-Add Dam" */
+  noMatchLabel?: string;
   placeholder?: string;
   inputStyle?: React.CSSProperties;
   /** Filter to specific sexes, e.g. ["Cow","Spayed Heifer"] for dam lookup */
@@ -59,6 +61,7 @@ export default function AnimalLookup({
   onChange,
   onSelect,
   onNoMatch,
+  noMatchLabel = "Quick-Add Dam",
   placeholder = "Type tag or EID…",
   inputStyle,
   sexFilter,
@@ -281,7 +284,7 @@ export default function AnimalLookup({
                 color: "#55BAAA", cursor: "pointer",
               }}
             >
-              + Quick-Add Dam
+              + {noMatchLabel}
             </button>
           )}
         </div>

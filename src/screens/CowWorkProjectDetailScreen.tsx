@@ -544,6 +544,7 @@ export default function CowWorkProjectDetailScreen() {
                     setIsExpectedMatch(false);
                     setEditingRecord(null);
                   }}
+                  noMatchLabel="Add New Animal"
                   placeholder="Tag or EID…"
                   inputStyle={{ flex: 1, minWidth: 0, height: 48, borderRadius: 8, border: "2px solid #F3D12A", paddingLeft: 12, paddingRight: 12, fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 600, color: "#0E2646", outline: "none", backgroundColor: "white", boxSizing: "border-box" as const }}
                 />
