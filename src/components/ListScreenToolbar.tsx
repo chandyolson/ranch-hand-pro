@@ -40,7 +40,7 @@ interface ListScreenToolbarProps {
 const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
   title, addLabel, onAdd, searchValue, onSearchChange, searchPlaceholder = "Search…",
   filterChips, activeFilter, onFilterChange, sortOptions, activeSort, onSortChange,
-  onImport, onExport, onMassSelect, onMassEdit, resultCount, isFiltering,
+  onImport, onExport, onMassSelect, onMassEdit, onFilter, resultCount, isFiltering,
   hideTitle, compactAdd, hideSort, hideFilter, advancedFilter,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
