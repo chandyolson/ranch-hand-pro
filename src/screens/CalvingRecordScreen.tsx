@@ -657,15 +657,20 @@ export default function CalvingRecordScreen() {
                 <span style={{ fontSize: 12, color: "rgba(26,26,26,0.45)" }}>{damAnimal.type} · {damAnimal.breed || "—"} · {damAnimal.year_born || "—"}</span>
               </div>
               {damAllFlags && damAllFlags.length > 0 && (
-                <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+                <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 4, marginTop: 6 }}>
                   {damAllFlags.map((f: any, i: number) => {
-                    const fc: Record<string, { bg: string; text: string }> = {
-                      management: { bg: "rgba(85,186,170,0.12)", text: "#0F6E56" },
-                      production: { bg: "rgba(243,209,42,0.15)", text: "#B8860B" },
-                      cull: { bg: "rgba(155,35,53,0.12)", text: "#9B2335" },
+                    const fc: Record<string, { bg: string; text: string; dot: string }> = {
+                      management: { bg: "rgba(85,186,170,0.12)", text: "#0F6E56", dot: "#55BAAA" },
+                      production: { bg: "rgba(243,209,42,0.15)", text: "#B8860B", dot: "#F3D12A" },
+                      cull: { bg: "rgba(155,35,53,0.12)", text: "#9B2335", dot: "#9B2335" },
                     };
                     const c = fc[f.flag_tier] || fc.management;
-                    return <span key={i} style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.04em", padding: "2px 8px", borderRadius: 10, background: c.bg, color: c.text }}>{f.flag_tier?.toUpperCase()}: {f.reason || "Flag"}</span>;
+                    return (
+                      <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 10, background: c.bg, color: c.text }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.dot, flexShrink: 0 }} />
+                        {f.reason || f.flag_tier}
+                      </span>
+                    );
                   })}
                 </div>
               )}

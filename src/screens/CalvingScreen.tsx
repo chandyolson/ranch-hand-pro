@@ -49,15 +49,19 @@ export default function CalvingScreen() {
   const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_calving");
   const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_calving");
 
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
+
   const { data: rawRecords, isLoading } = useQuery({
-    queryKey: ["calving-list", operationId],
+    queryKey: ["calving-list", operationId, selectedYear],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("calving_records")
         .select("*, dam:animals!calving_records_dam_id_fkey(tag, tag_color), calf:animals!calving_records_calf_id_fkey(tag, tag_color)")
         .eq("operation_id", operationId)
-        .gte("calving_date", `${new Date().getFullYear()}-01-01`)
-        .lte("calving_date", `${new Date().getFullYear()}-12-31`)
+        .gte("calving_date", `${selectedYear}-01-01`)
+        .lte("calving_date", `${selectedYear}-12-31`)
         .order("calving_date", { ascending: false })
         .limit(5000);
       if (error) throw error;
@@ -149,6 +153,24 @@ export default function CalvingScreen() {
               <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.12)" }} />
             )}
           </div>
+        ))}
+      </div>
+
+      {/* Year picker */}
+      <div style={{ display: "flex", gap: 6, paddingTop: 2 }}>
+        {yearOptions.map(y => (
+          <button
+            key={y}
+            onClick={() => setSelectedYear(y)}
+            style={{
+              padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
+              border: selectedYear === y ? "none" : "1px solid #D4D4D0",
+              background: selectedYear === y ? "#0E2646" : "transparent",
+              color: selectedYear === y ? "#FFFFFF" : "rgba(26,26,26,0.5)",
+            }}
+          >
+            {y}
+          </button>
         ))}
       </div>
 
