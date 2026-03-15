@@ -90,19 +90,6 @@ export default function CowWorkProjectDetailScreen() {
     }
   }, [project?.project_status]);
 
-  // Apply field defaults on initial load
-  useEffect(() => {
-    if (!project) return;
-    const defaults = (project as any)?.field_defaults || {};
-    if (defaults.preg_stage) setPregResult(defaults.preg_stage);
-    if (defaults.bse_result) setBseResult(defaults.bse_result);
-    if (defaults.breeding_type) setBreedingType(defaults.breeding_type);
-    if (defaults.technician) setTechnician(defaults.technician);
-    if (defaults.breeding_sire) setBreedingSire(defaults.breeding_sire);
-    if (defaults.tag_color) setNewTagColor(defaults.tag_color);
-    if (defaults.estrus_status) setEstrusStatus(defaults.estrus_status);
-  }, [project?.id]); // Only on first load, not every re-render
-
   // Load worked animals
   const { data: workedAnimals, refetch: refetchWorked } = useQuery({
     queryKey: ["project-animals", id],
@@ -192,7 +179,6 @@ export default function CowWorkProjectDetailScreen() {
   const [editProductPickerOpen, setEditProductPickerOpen] = useState(false);
   const [editProductSearch, setEditProductSearch] = useState("");
   const [editFieldConfig, setEditFieldConfig] = useState<FieldVisibilityConfig | null>(null);
-  const [editFieldDefaults, setEditFieldDefaults] = useState<Record<string, string>>({});
   const [editSaving, setEditSaving] = useState(false);
 
   const startEditingProject = () => {
@@ -202,8 +188,7 @@ export default function CowWorkProjectDetailScreen() {
     setEditStatus(project?.project_status || "Pending");
     setEditHeadCount(project?.estimated_head ? String(project.estimated_head) : "");
     setEditMemo(project?.description || "");
-    setEditFieldConfig(resolveFieldConfig(project?.field_visibility as FieldVisibilityConfig | null));
-    setEditFieldDefaults((project as any)?.field_defaults || {});
+    setEditFieldConfig(resolveFieldConfig(project?.field_visibility as unknown as FieldVisibilityConfig | null));
     // Load current products into edit state
     setEditProducts((projectProducts || []).map((pp: any) => ({
       id: (pp.product as any)?.id || pp.product_id,
@@ -229,7 +214,6 @@ export default function CowWorkProjectDetailScreen() {
           estimated_head: editHeadCount ? parseInt(editHeadCount) : null,
           description: editMemo.trim() || null,
           field_visibility: editFieldConfig as any,
-          field_defaults: editFieldDefaults as any,
         })
         .eq("id", id!);
       if (error) throw error;
@@ -340,7 +324,7 @@ export default function CowWorkProjectDetailScreen() {
   const worked = workedAnimals || [];
 
   // Dynamic field configuration — read from project, fall back to defaults
-  const fieldConfig = resolveFieldConfig(project?.field_visibility as FieldVisibilityConfig | null);
+  const fieldConfig = resolveFieldConfig(project?.field_visibility as unknown as FieldVisibilityConfig | null);
   const lockedFields = getLockedFields(projectType);
   const enabledOptionalKeys = fieldConfig.optionalFields;
   const isFieldVisible = (key: string) => enabledOptionalKeys.includes(key);
@@ -501,15 +485,6 @@ export default function CowWorkProjectDetailScreen() {
     setDispositionField("");
     setSaleWeight("");
     setDisease("");
-    // Apply field defaults from project settings
-    const defaults = (project as any)?.field_defaults || {};
-    if (defaults.preg_stage) setPregResult(defaults.preg_stage);
-    if (defaults.bse_result) setBseResult(defaults.bse_result);
-    if (defaults.breeding_type) setBreedingType(defaults.breeding_type);
-    if (defaults.technician) setTechnician(defaults.technician);
-    if (defaults.breeding_sire) setBreedingSire(defaults.breeding_sire);
-    if (defaults.tag_color) setNewTagColor(defaults.tag_color);
-    if (defaults.estrus_status) setEstrusStatus(defaults.estrus_status);
     // Scroll to top and focus tag input
     setTimeout(() => {
       tagSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1479,29 +1454,6 @@ export default function CowWorkProjectDetailScreen() {
                     <div style={{ fontSize: 13, color: "rgba(26,26,26,0.60)", lineHeight: 1.5 }}>{project.description}</div>
                   </div>
                 )}
-                {/* Field Defaults display */}
-                {(() => {
-                  const defs = (project as any)?.field_defaults || {};
-                  const entries = Object.entries(defs).filter(([_, v]) => v);
-                  if (entries.length === 0) return null;
-                  const labelMap: Record<string, string> = {
-                    preg_stage: "Preg", bse_result: "BSE Result", breeding_type: "Method",
-                    technician: "Technician", breeding_sire: "Sire", tag_color: "Tag Color",
-                    estrus_status: "Estrus",
-                  };
-                  return (
-                    <div className="pt-1">
-                      <div style={{ ...SUB_LABEL, marginBottom: 4 }}>FIELD DEFAULTS</div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                        {entries.map(([key, val]) => (
-                          <span key={key} style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.10)", color: "#3D9A8B" }}>
-                            {labelMap[key] || key}: {val as string}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
               </>
             )}
 
@@ -1554,83 +1506,6 @@ export default function CowWorkProjectDetailScreen() {
                     />
                   </div>
                 )}
-
-                {/* Field Defaults */}
-                <div style={{ paddingTop: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#0E2646", marginBottom: 6 }}>Field Defaults</div>
-                  <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", marginBottom: 8 }}>Auto-fill these values for every animal. Override per animal as needed.</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {/* Show default inputs for key fields based on work type */}
-                    {projectType === "PREG" && (
-                      <FieldRow label="Preg Default">
-                        <select
-                          value={editFieldDefaults.preg_stage || ""}
-                          onChange={e => setEditFieldDefaults(prev => ({ ...prev, preg_stage: e.target.value }))}
-                          style={{ ...IS, appearance: "auto" as const }}
-                        >
-                          <option value="">No default</option>
-                          {(pregStages || []).map(s => <option key={s.id} value={s.stage_name}>{s.stage_name}</option>)}
-                        </select>
-                      </FieldRow>
-                    )}
-                    {(projectType === "AI" || projectType === "BREED" || projectType === "ET") && (
-                      <>
-                        <FieldRow label="Method Default">
-                          <select
-                            value={editFieldDefaults.breeding_type || ""}
-                            onChange={e => setEditFieldDefaults(prev => ({ ...prev, breeding_type: e.target.value }))}
-                            style={{ ...IS, appearance: "auto" as const }}
-                          >
-                            <option value="">No default</option>
-                            {BREEDING_METHODS.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        </FieldRow>
-                        <FieldRow label="Tech Default">
-                          <select
-                            value={editFieldDefaults.technician || ""}
-                            onChange={e => setEditFieldDefaults(prev => ({ ...prev, technician: e.target.value }))}
-                            style={{ ...IS, appearance: "auto" as const }}
-                          >
-                            <option value="">No default</option>
-                            {(technicians || []).map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
-                          </select>
-                        </FieldRow>
-                        <FieldRow label="Sire Default">
-                          <input
-                            type="text"
-                            value={editFieldDefaults.breeding_sire || ""}
-                            onChange={e => setEditFieldDefaults(prev => ({ ...prev, breeding_sire: e.target.value }))}
-                            placeholder="Bull tag…"
-                            style={IS}
-                          />
-                        </FieldRow>
-                      </>
-                    )}
-                    {projectType === "BSE" && (
-                      <FieldRow label="Result Default">
-                        <select
-                          value={editFieldDefaults.bse_result || ""}
-                          onChange={e => setEditFieldDefaults(prev => ({ ...prev, bse_result: e.target.value }))}
-                          style={{ ...IS, appearance: "auto" as const }}
-                        >
-                          <option value="">No default</option>
-                          {BSE_PASS_FAIL.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                      </FieldRow>
-                    )}
-                    {/* Universal defaults */}
-                    <FieldRow label="Tag Color">
-                      <select
-                        value={editFieldDefaults.tag_color || ""}
-                        onChange={e => setEditFieldDefaults(prev => ({ ...prev, tag_color: e.target.value }))}
-                        style={{ ...IS, appearance: "auto" as const }}
-                      >
-                        <option value="">No default</option>
-                        {TAG_COLOR_OPTIONS.filter(c => c !== "None").map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </FieldRow>
-                  </div>
-                </div>
               </>
             )}
 

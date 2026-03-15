@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import StatCard from "@/components/StatCard";
-import DataCard from "@/components/DataCard";
 import FlagIcon from "@/components/FlagIcon";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import { useChuteSideToast } from "@/components/ToastContext";
@@ -50,17 +50,18 @@ const DashboardScreen: React.FC = () => {
     },
   });
 
-  // ── Recent animals (last 5 updated) ──
-  const { data: recentAnimals } = useQuery({
-    queryKey: ["dashboard-recent-animals", operationId],
+  // ── Calving-per-day chart data (last 30 days) ──
+  const { data: calvingByDay } = useQuery({
+    queryKey: ["dashboard-calving-by-day", operationId],
     queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const { data, error } = await supabase
-        .from("animals")
-        .select("id, tag, tag_color, breed, sex, type, year_born, status, memo")
+        .from("calving_records")
+        .select("calving_date, calf_status")
         .eq("operation_id", operationId)
-        .eq("status", "Active")
-        .order("updated_at", { ascending: false })
-        .limit(5);
+        .gte("calving_date", thirtyDaysAgo.toISOString().split("T")[0])
+        .order("calving_date", { ascending: true });
       if (error) throw error;
       return data || [];
     },
@@ -142,13 +143,25 @@ const DashboardScreen: React.FC = () => {
 
   const fc = flagCounts || { management: 0, production: 0, cull: 0 };
   const openActions = actionItems || [];
-  const animals = recentAnimals || [];
   const work = upcomingWork || [];
   const activity = recentActivity || [];
 
-  const filteredAnimals = search
-    ? animals.filter((a) => a.tag.toLowerCase().includes(search.toLowerCase()) || (a.breed || "").toLowerCase().includes(search.toLowerCase()))
-    : animals;
+  // Build chart data from calving records
+  const chartData = useMemo(() => {
+    const raw = calvingByDay || [];
+    const counts: Record<string, { date: string; alive: number; dead: number }> = {};
+    raw.forEach((r) => {
+      if (!counts[r.calving_date]) counts[r.calving_date] = { date: r.calving_date, alive: 0, dead: 0 };
+      if (r.calf_status === "Dead") counts[r.calving_date].dead++;
+      else counts[r.calving_date].alive++;
+    });
+    return Object.values(counts)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((d) => ({
+        ...d,
+        label: new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      }));
+  }, [calvingByDay]);
 
   return (
     <div className="px-4 space-y-5">
@@ -320,7 +333,7 @@ const DashboardScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* SECTION 5 — Activity + Recent Animals */}
+      {/* SECTION 5 — Activity + Calving Chart */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Recent Activity */}
         <CollapsibleSection title="Recent Activity" defaultOpen>
@@ -347,32 +360,30 @@ const DashboardScreen: React.FC = () => {
           )}
         </CollapsibleSection>
 
-        {/* Recent Animals */}
+        {/* Calving Chart */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <SectionHeading text="Recent Animals" />
-            <span className="cursor-pointer" style={{ fontSize: 12, fontWeight: 600, color: "#55BAAA" }} onClick={() => navigate("/animals")}>
-              View All
-            </span>
-          </div>
-          <div className="space-y-2">
-            {filteredAnimals.map((animal) => (
-              <div
-                key={animal.id}
-                className="cursor-pointer active:scale-[0.99] transition-transform duration-100"
-                onClick={() => navigate(`/animals/${animal.id}`)}
-              >
-                <DataCard
-                  title={`Tag ${animal.tag}`}
-                  values={[animal.breed || "Unknown", animal.type || "", animal.year_born ? String(animal.year_born) : ""].filter(Boolean)}
-                  subtitle={animal.memo ? [animal.memo] : undefined}
-                />
-              </div>
-            ))}
-            {filteredAnimals.length === 0 && (
-              <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", padding: "8px 0", textAlign: "center" }}>No animals found</div>
-            )}
-          </div>
+          <SectionHeading text="Calves per Day (Last 30 Days)" />
+          {chartData.length > 0 ? (
+            <div className="rounded-xl bg-white p-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={chartData} barCategoryGap="20%">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,212,208,0.40)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: "rgba(26,26,26,0.40)" }} tickLine={false} axisLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "rgba(26,26,26,0.40)" }} tickLine={false} axisLine={false} width={24} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid rgba(212,212,208,0.60)" }}
+                    labelStyle={{ fontWeight: 600 }}
+                  />
+                  <Bar dataKey="alive" stackId="a" fill="#55BAAA" radius={[0, 0, 0, 0]} name="Alive" />
+                  <Bar dataKey="dead" stackId="a" fill="#9B2335" radius={[4, 4, 0, 0]} name="Dead" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-white px-4 py-6 text-center" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "rgba(26,26,26,0.35)" }}>No calving data in the last 30 days</div>
+            </div>
+          )}
         </div>
       </div>
     </div>
