@@ -320,7 +320,14 @@ export default function CowWorkNewProjectScreen() {
                 {recordIndividuals ? "Record individual animals" : "No individual records"}
               </span>
               <button
-                onClick={() => setRecordIndividuals(!recordIndividuals)}
+                onClick={() => {
+                  const newVal = !recordIndividuals;
+                  setRecordIndividuals(newVal);
+                  // When switching to no individual records, auto-fill head expected from group count
+                  if (!newVal && memberCount && !estimatedHead) {
+                    setEstimatedHead(memberCount);
+                  }
+                }}
                 className="relative shrink-0 cursor-pointer"
                 style={{
                   width: 40, height: 22, borderRadius: 11, border: "none",
@@ -350,8 +357,11 @@ export default function CowWorkNewProjectScreen() {
               inputMode="numeric"
               value={estimatedHead}
               onChange={e => setEstimatedHead(e.target.value ? parseInt(e.target.value, 10) : "")}
-              placeholder="Optional"
-              style={IS}
+              placeholder={group && memberCount ? `${memberCount} in group` : "Optional"}
+              style={{
+                ...IS,
+                borderColor: !recordIndividuals && !estimatedHead && group ? "#F3D12A" : "#D4D4D0",
+              }}
             />
           </FieldRow>
           <FieldRow label="Location">
