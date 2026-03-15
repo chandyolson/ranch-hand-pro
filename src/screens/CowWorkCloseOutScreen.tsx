@@ -67,7 +67,7 @@ export default function CowWorkCloseOutScreen() {
         ? await supabase.from("animals").select("id, tag, tag_color, sex, type, breed, year_born").in("id", animalIds)
         : { data: [] };
       const animalMap = new Map((anData || []).map(a => [a.id, a]));
-      return cwData.map(cw => ({ ...cw, animal: animalMap.get(cw.animal_id) || null }));
+      return cwData.map(cw => ({ ...cw, ...(cw.flex_data as Record<string, any> || {}), animal: animalMap.get(cw.animal_id) || null })) as any[];
     },
     enabled: !!id,
   });

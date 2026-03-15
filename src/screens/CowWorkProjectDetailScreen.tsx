@@ -117,7 +117,7 @@ export default function CowWorkProjectDetailScreen() {
         .select("id, tag, tag_color, sex, type, breed, year_born")
         .in("id", animalIds);
       const animalMap = new Map((animals || []).map(a => [a.id, a]));
-      return cwData.map(r => ({ ...r, animal: animalMap.get(r.animal_id) || null }));
+      return cwData.map(r => ({ ...r, ...(r.flex_data as Record<string, any> || {}), animal: animalMap.get(r.animal_id) || null })) as any[];
     },
     enabled: !!id,
   });
