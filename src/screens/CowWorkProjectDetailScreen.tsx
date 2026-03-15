@@ -105,7 +105,8 @@ export default function CowWorkProjectDetailScreen() {
       const { data: cwData, error: cwErr } = await supabase
         .from("cow_work")
         .select("*")
-        .eq("project_id", id!);
+        .eq("project_id", id!)
+        .order("created_at", { ascending: false });
       if (cwErr) { console.error("cow_work query error:", cwErr); throw cwErr; }
       if (!cwData || cwData.length === 0) return [];
       // Then get animals for those records
@@ -1473,6 +1474,7 @@ export default function CowWorkProjectDetailScreen() {
                     }}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(240,240,240,0.30)", minWidth: 16 }}>#{a.record_order || (worked.length - i)}</span>
                         <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(240,240,240,0.90)" }}>{animalTag}</span>
                         {a.is_new_animal && (
                           <span

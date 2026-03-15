@@ -57,7 +57,8 @@ export default function CowWorkCloseOutScreen() {
       const { data: cwData, error: cwErr } = await supabase
         .from("cow_work")
         .select("*")
-        .eq("project_id", id!);
+        .eq("project_id", id!)
+        .order("created_at", { ascending: false });
       if (cwErr) throw cwErr;
       if (!cwData || cwData.length === 0) return [];
       const animalIds = [...new Set(cwData.map(r => r.animal_id).filter(Boolean))];
