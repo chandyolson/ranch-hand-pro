@@ -1127,15 +1127,16 @@ export default function CowWorkProjectDetailScreen() {
                             if (w.weight) details.push(`${w.weight} lbs`);
                             if (w.preg_stage) details.push(`Preg: ${w.preg_stage}`);
                             if (w.days_of_gestation) details.push(`${w.days_of_gestation}d`);
-                            if (w.bse_result) details.push(`BSE: ${w.bse_result}`);
+                            const flex = (w.flex_data || {}) as Record<string, any>;
+                            if (flex.bse_result) details.push(`BSE: ${flex.bse_result}`);
                             if (w.scrotal) details.push(`SC: ${w.scrotal}cm`);
-                            if (w.breeding_sire) details.push(`Sire: ${w.breeding_sire}`);
-                            if (w.breeding_type) details.push(w.breeding_type);
+                            if (w.breeding_sire_id) details.push(`Sire`);
+                            if (flex.breeding_type) details.push(flex.breeding_type);
                             if (w.estrus_status) details.push(w.estrus_status);
-                            if (w.sale_weight) details.push(`Sale: ${w.sale_weight} lbs`);
-                            if (w.cull_reason) details.push(w.cull_reason);
-                            if (w.purchase_price) details.push(`$${w.purchase_price}`);
-                            if (w.disease) details.push(w.disease);
+                            if (flex.sale_weight) details.push(`Sale: ${flex.sale_weight} lbs`);
+                            if (flex.cull_reason) details.push(flex.cull_reason);
+                            if (flex.purchase_price) details.push(`$${flex.purchase_price}`);
+                            if (flex.disease) details.push(flex.disease);
                             const notes = Array.isArray(w.quick_notes) && w.quick_notes.length > 0 ? w.quick_notes : null;
                             return (
                               <div key={w.id} style={{ padding: "10px 0", borderBottom: idx < (animalWork || []).length - 1 ? "1px solid rgba(26,26,26,0.06)" : "none" }}>

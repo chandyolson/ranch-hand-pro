@@ -204,6 +204,21 @@ export default function CalvingNewScreen() {
     enabled: !!damLookup?.id,
   });
 
+  const { data: damFlags } = useQuery({
+    queryKey: ["dam-flags", damLookup?.id, operationId],
+    queryFn: async () => {
+      if (!damLookup?.id) return [];
+      const { data } = await supabase
+        .from("animal_flags")
+        .select("*")
+        .eq("animal_id", damLookup.id)
+        .eq("operation_id", operationId)
+        .is("resolved_at", null);
+      return data || [];
+    },
+    enabled: !!damLookup?.id,
+  });
+
   const { data: damWork } = useQuery({
     queryKey: ["dam-work", damLookup?.id],
     queryFn: async () => {
