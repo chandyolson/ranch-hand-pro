@@ -341,7 +341,9 @@ export default function CowWorkProjectDetailScreen() {
   const [motility, setMotility] = useState("");
   const [morphology, setMorphology] = useState("");
   const [semenDefects, setSemenDefects] = useState<string[]>([]);
+  const [semenDefectsOpen, setSemenDefectsOpen] = useState(false);
   const [physicalDefects, setPhysicalDefects] = useState<string[]>([]);
+  const [physicalDefectsOpen, setPhysicalDefectsOpen] = useState(false);
   // Breeding fields
   const [breedingSire, setBreedingSire] = useState("");
   const [breedingDate, setBreedingDate] = useState(new Date().toISOString().split("T")[0]);
@@ -475,7 +477,9 @@ export default function CowWorkProjectDetailScreen() {
     setMotility("");
     setMorphology("");
     setSemenDefects([]);
+    setSemenDefectsOpen(false);
     setPhysicalDefects([]);
+    setPhysicalDefectsOpen(false);
     setBreedingSire("");
     setBreedingDate(new Date().toISOString().split("T")[0]);
     setBreedingType("");
@@ -1017,46 +1021,88 @@ export default function CowWorkProjectDetailScreen() {
                     );
                     case "semen_defects": return (
                       <div key={f.key} style={{ paddingTop: 2 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1A1A", marginBottom: 4 }}>Semen Defects</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                          {BSE_SEMEN_DEFECTS.map(d => {
-                            const on = semenDefects.includes(d);
-                            return (
-                              <button key={d} type="button" onClick={() => {
-                                if (on) setSemenDefects(semenDefects.filter(x => x !== d));
-                                else setSemenDefects([...semenDefects, d]);
-                              }} style={{
-                                borderRadius: 9999, padding: "4px 10px", fontSize: 11, fontWeight: on ? 700 : 500,
-                                backgroundColor: on ? "#9B2335" : "rgba(26,26,26,0.05)",
-                                border: on ? "1.5px solid #9B2335" : "1px solid rgba(26,26,26,0.12)",
-                                color: on ? "#FFFFFF" : "rgba(26,26,26,0.60)",
-                                cursor: "pointer", transition: "all 100ms",
-                              }}>{d}</button>
-                            );
-                          })}
-                        </div>
+                        <button type="button" onClick={() => setSemenDefectsOpen(!semenDefectsOpen)}
+                          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#1A1A1A" }}>Semen Defects</span>
+                            {semenDefects.length > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#9B2335" }}>{semenDefects.length}</span>}
+                          </div>
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ transform: semenDefectsOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
+                            <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="rgba(26,26,26,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                        {!semenDefectsOpen && semenDefects.length > 0 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                            {semenDefects.map(d => (
+                              <span key={d} style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 9999, backgroundColor: "#9B2335", color: "#FFFFFF" }}>{d}</span>
+                            ))}
+                          </div>
+                        )}
+                        {!semenDefectsOpen && semenDefects.length === 0 && (
+                          <div style={{ fontSize: 11, color: "rgba(26,26,26,0.30)", marginTop: 2 }}>None</div>
+                        )}
+                        {semenDefectsOpen && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                            {BSE_SEMEN_DEFECTS.map(d => {
+                              const on = semenDefects.includes(d);
+                              return (
+                                <button key={d} type="button" onClick={() => {
+                                  if (on) setSemenDefects(semenDefects.filter(x => x !== d));
+                                  else setSemenDefects([...semenDefects, d]);
+                                }} style={{
+                                  borderRadius: 9999, padding: "4px 10px", fontSize: 11, fontWeight: on ? 700 : 500,
+                                  backgroundColor: on ? "#9B2335" : "rgba(26,26,26,0.05)",
+                                  border: on ? "1.5px solid #9B2335" : "1px solid rgba(26,26,26,0.12)",
+                                  color: on ? "#FFFFFF" : "rgba(26,26,26,0.60)",
+                                  cursor: "pointer", transition: "all 100ms",
+                                }}>{d}</button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                     case "physical_defects": return (
                       <div key={f.key} style={{ paddingTop: 2 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1A1A", marginBottom: 4 }}>Physical Defects</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                          {BSE_PHYSICAL_DEFECTS.map(d => {
-                            const on = physicalDefects.includes(d);
-                            return (
-                              <button key={d} type="button" onClick={() => {
-                                if (on) setPhysicalDefects(physicalDefects.filter(x => x !== d));
-                                else setPhysicalDefects([...physicalDefects, d]);
-                              }} style={{
-                                borderRadius: 9999, padding: "4px 10px", fontSize: 11, fontWeight: on ? 700 : 500,
-                                backgroundColor: on ? "#9B2335" : "rgba(26,26,26,0.05)",
-                                border: on ? "1.5px solid #9B2335" : "1px solid rgba(26,26,26,0.12)",
-                                color: on ? "#FFFFFF" : "rgba(26,26,26,0.60)",
-                                cursor: "pointer", transition: "all 100ms",
-                              }}>{d}</button>
-                            );
-                          })}
-                        </div>
+                        <button type="button" onClick={() => setPhysicalDefectsOpen(!physicalDefectsOpen)}
+                          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#1A1A1A" }}>Physical Defects</span>
+                            {physicalDefects.length > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#9B2335" }}>{physicalDefects.length}</span>}
+                          </div>
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ transform: physicalDefectsOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
+                            <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="rgba(26,26,26,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                        {!physicalDefectsOpen && physicalDefects.length > 0 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                            {physicalDefects.map(d => (
+                              <span key={d} style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 9999, backgroundColor: "#9B2335", color: "#FFFFFF" }}>{d}</span>
+                            ))}
+                          </div>
+                        )}
+                        {!physicalDefectsOpen && physicalDefects.length === 0 && (
+                          <div style={{ fontSize: 11, color: "rgba(26,26,26,0.30)", marginTop: 2 }}>None</div>
+                        )}
+                        {physicalDefectsOpen && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                            {BSE_PHYSICAL_DEFECTS.map(d => {
+                              const on = physicalDefects.includes(d);
+                              return (
+                                <button key={d} type="button" onClick={() => {
+                                  if (on) setPhysicalDefects(physicalDefects.filter(x => x !== d));
+                                  else setPhysicalDefects([...physicalDefects, d]);
+                                }} style={{
+                                  borderRadius: 9999, padding: "4px 10px", fontSize: 11, fontWeight: on ? 700 : 500,
+                                  backgroundColor: on ? "#9B2335" : "rgba(26,26,26,0.05)",
+                                  border: on ? "1.5px solid #9B2335" : "1px solid rgba(26,26,26,0.12)",
+                                  color: on ? "#FFFFFF" : "rgba(26,26,26,0.60)",
+                                  cursor: "pointer", transition: "all 100ms",
+                                }}>{d}</button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                     case "breeding_sire": return (
