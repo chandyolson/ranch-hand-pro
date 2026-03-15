@@ -41,6 +41,7 @@ export default function CowWorkProjectDetailScreen() {
   const [calfSex, setCalfSex] = useState("");
   const [weight, setWeight] = useState("");
   const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
+  const [quickNotesOpen, setQuickNotesOpen] = useState(false);
   const [sampleId, setSampleId] = useState("");
   const [memo, setMemo] = useState("");
   // Phase F: Additional Products state
@@ -420,6 +421,7 @@ export default function CowWorkProjectDetailScreen() {
     setCalfSex("");
     setWeight("");
     setSelectedNotes([]);
+    setQuickNotesOpen(false);
     setSampleId("");
     setMemo("");
     setAdditionalProducts([]);
@@ -1069,46 +1071,98 @@ export default function CowWorkProjectDetailScreen() {
                     );
                     case "quick_notes": return (
                       <div key={key} className="pt-1">
-                        <div style={{ ...SUB_LABEL, marginBottom: 6 }}>QUICK NOTES</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                          {QUICK_NOTES.filter(n => n.context === "all").map(n => {
-                            const active = selectedNotes.includes(n.label);
-                            const c = QUICK_NOTE_PILL_COLORS[n.flag || "none"];
-                            const solidActive: Record<string, { bg: string; border: string; text: string }> = {
-                              red: { bg: "#9B2335", border: "#9B2335", text: "#FFFFFF" },
-                              gold: { bg: "#B8860B", border: "#B8860B", text: "#FFFFFF" },
-                              teal: { bg: "#55BAAA", border: "#3D9A8B", text: "#FFFFFF" },
-                              none: { bg: "#717182", border: "#5A5A6A", text: "#FFFFFF" },
-                            };
-                            const tier = n.flag || "none";
-                            const s = active ? solidActive[tier] : null;
-                            return (
-                              <button
-                                key={n.label}
-                                type="button"
-                                onClick={() => {
-                                  if (active) setSelectedNotes(selectedNotes.filter(x => x !== n.label));
-                                  else setSelectedNotes([...selectedNotes, n.label]);
-                                }}
-                                style={{
-                                  borderRadius: 9999, padding: "4px 10px", fontSize: 11,
-                                  fontWeight: active ? 700 : 600,
-                                  backgroundColor: active ? s!.bg : c.bg,
-                                  border: `${active ? 2 : 1}px solid ${active ? s!.border : c.border}`,
-                                  color: active ? s!.text : c.text,
-                                  cursor: "pointer", display: "flex", alignItems: "center", gap: 3, transition: "all 100ms",
-                                }}
-                              >
-                                {active && (
-                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <button
+                          type="button"
+                          className="flex items-center justify-between w-full cursor-pointer"
+                          style={{ background: "none", border: "none", padding: 0 }}
+                          onClick={() => setQuickNotesOpen(!quickNotesOpen)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span style={{ ...SUB_LABEL, marginBottom: 0 }}>QUICK NOTES</span>
+                            {selectedNotes.length > 0 && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: "#55BAAA" }}>{selectedNotes.length}</span>
+                            )}
+                          </div>
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+                            style={{ transform: quickNotesOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
+                            <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="rgba(26,26,26,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+
+                        {/* Collapsed: show only selected pills */}
+                        {!quickNotesOpen && selectedNotes.length > 0 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                            {selectedNotes.map(label => {
+                              const n = QUICK_NOTES.find(q => q.label === label);
+                              const tier = n?.flag || "none";
+                              const solidActive: Record<string, { bg: string; border: string; text: string }> = {
+                                red: { bg: "#9B2335", border: "#9B2335", text: "#FFFFFF" },
+                                gold: { bg: "#B8860B", border: "#B8860B", text: "#FFFFFF" },
+                                teal: { bg: "#55BAAA", border: "#3D9A8B", text: "#FFFFFF" },
+                                none: { bg: "#717182", border: "#5A5A6A", text: "#FFFFFF" },
+                              };
+                              const s = solidActive[tier];
+                              return (
+                                <span key={label} style={{
+                                  borderRadius: 9999, padding: "3px 9px", fontSize: 10, fontWeight: 700,
+                                  backgroundColor: s.bg, border: `1.5px solid ${s.border}`, color: s.text,
+                                  display: "flex", alignItems: "center", gap: 3,
+                                }}>
+                                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
                                     <path d="M2 5L4 7L8 3" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                   </svg>
-                                )}
-                                {n.label}
-                              </button>
-                            );
-                          })}
-                        </div>
+                                  {label}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {!quickNotesOpen && selectedNotes.length === 0 && (
+                          <div style={{ fontSize: 11, color: "rgba(26,26,26,0.30)", marginTop: 4 }}>None selected</div>
+                        )}
+
+                        {/* Expanded: show all pills for toggling */}
+                        {quickNotesOpen && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 6 }}>
+                            {QUICK_NOTES.filter(n => n.context === "all").map(n => {
+                              const active = selectedNotes.includes(n.label);
+                              const c = QUICK_NOTE_PILL_COLORS[n.flag || "none"];
+                              const solidActive: Record<string, { bg: string; border: string; text: string }> = {
+                                red: { bg: "#9B2335", border: "#9B2335", text: "#FFFFFF" },
+                                gold: { bg: "#B8860B", border: "#B8860B", text: "#FFFFFF" },
+                                teal: { bg: "#55BAAA", border: "#3D9A8B", text: "#FFFFFF" },
+                                none: { bg: "#717182", border: "#5A5A6A", text: "#FFFFFF" },
+                              };
+                              const tier = n.flag || "none";
+                              const s = active ? solidActive[tier] : null;
+                              return (
+                                <button
+                                  key={n.label}
+                                  type="button"
+                                  onClick={() => {
+                                    if (active) setSelectedNotes(selectedNotes.filter(x => x !== n.label));
+                                    else setSelectedNotes([...selectedNotes, n.label]);
+                                  }}
+                                  style={{
+                                    borderRadius: 9999, padding: "4px 10px", fontSize: 11,
+                                    fontWeight: active ? 700 : 600,
+                                    backgroundColor: active ? s!.bg : c.bg,
+                                    border: `${active ? 2 : 1}px solid ${active ? s!.border : c.border}`,
+                                    color: active ? s!.text : c.text,
+                                    cursor: "pointer", display: "flex", alignItems: "center", gap: 3, transition: "all 100ms",
+                                  }}
+                                >
+                                  {active && (
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                      <path d="M2 5L4 7L8 3" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  )}
+                                  {n.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                     case "dna": return (
