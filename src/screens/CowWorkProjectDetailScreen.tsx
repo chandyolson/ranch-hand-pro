@@ -468,15 +468,6 @@ export default function CowWorkProjectDetailScreen() {
               <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="rgba(255,255,255,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          {projectStatus !== "Completed" && (
-            <button
-              className="w-full rounded-full py-2 mt-2.5 cursor-pointer active:scale-[0.98] transition-all"
-              style={{ fontSize: 12, fontWeight: 700, backgroundColor: "#F3D12A", color: "#1A1A1A", border: "none" }}
-              onClick={(e) => { e.stopPropagation(); navigate("/cow-work/" + id + "/close-out"); }}
-            >
-              Complete Project
-            </button>
-          )}
         </div>
 
         {headerOpen && (
@@ -1234,16 +1225,21 @@ export default function CowWorkProjectDetailScreen() {
 
             <div style={{ borderTop: "1px solid rgba(26,26,26,0.06)", margin: "8px 0" }} />
 
+            {projectStatus !== "Completed" && (
+              <button
+                className="w-full rounded-full py-3.5 mb-3 cursor-pointer active:scale-[0.98] transition-all"
+                style={{ fontSize: 14, fontWeight: 700, backgroundColor: "#F3D12A", color: "#1A1A1A", border: "none" }}
+                onClick={() => navigate("/cow-work/" + id + "/close-out")}
+              >
+                Complete Project
+              </button>
+            )}
+
             <div className="flex gap-2 flex-wrap">
               <button
                 className="rounded-full px-4 py-2 border border-[#D4D4D0] cursor-pointer active:scale-[0.97]"
                 style={{ fontSize: 13, fontWeight: 600, color: "#0E2646", backgroundColor: "transparent" }}
               >Edit Project</button>
-              <button
-                className="rounded-full px-4 py-2 cursor-pointer active:scale-[0.97]"
-                style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", backgroundColor: "#F3D12A", border: "none" }}
-                onClick={() => navigate("/cow-work/" + id + "/close-out")}
-              >Close Out</button>
               <button
                 className="rounded-full px-4 py-2 cursor-pointer active:scale-[0.97]"
                 style={{ fontSize: 13, color: "rgba(212,24,61,0.60)", border: "1px solid rgba(212,24,61,0.20)", backgroundColor: "transparent" }}
