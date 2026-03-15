@@ -13,7 +13,7 @@ export const LABEL_STYLE: React.CSSProperties = {
 export const INPUT_BASE: React.CSSProperties = {
   flex: 1,
   minWidth: 0,
-  height: 44,
+  height: 36,
   borderRadius: 8,
   border: "1px solid #D4D4D0",
   paddingLeft: 12,
@@ -44,7 +44,7 @@ export const SUB_LABEL: React.CSSProperties = {
 };
 
 export const INPUT_CLS =
-  "flex-1 h-11 min-w-0 rounded-lg border border-[#D4D4D0] bg-white px-3 text-base outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25";
+  "flex-1 h-9 min-w-0 rounded-lg border border-[#D4D4D0] bg-white px-3 text-base outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25";
 
 // Focus ring handler (use ONLY when Tailwind focus: classes aren't available)
 export const focusGold = (e: React.FocusEvent<HTMLElement>) => {
