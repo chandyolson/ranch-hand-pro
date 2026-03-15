@@ -99,18 +99,17 @@ export default function CowWorkProjectDetailScreen() {
 
   // Load worked animals
   const { data: workedAnimals, refetch: refetchWorked } = useQuery({
-    queryKey: ["project-animals", id, operationId],
+    queryKey: ["project-animals", id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cow_work")
         .select("*, animal:animals(id, tag, tag_color, sex, type, breed, year_born)")
         .eq("project_id", id!)
-        .eq("operation_id", operationId)
-        .order("record_order", { ascending: true });
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return data || [];
     },
-    enabled: !!id && !!operationId,
+    enabled: !!id,
   });
 
   // Load project products
