@@ -204,10 +204,17 @@ export default function AnimalDetailScreen() {
   };
 
   // ── Flag display ──
-  const activeFlag = flags?.[0];
-  const flagColor = activeFlag ? (activeFlag.flag_tier as FlagColor) : null;
-  const flagLabel = flagColor ? FLAG_OPTIONS.find((f) => f.color === flagColor)?.label : null;
-  const flagHex = flagColor ? FLAG_OPTIONS.find((f) => f.color === flagColor)?.hex : null;
+  const tierToColor: Record<string, FlagColor> = { management: "teal", production: "gold", cull: "red" };
+  const tierToHex: Record<string, string> = { management: "#55BAAA", production: "#F3D12A", cull: "#9B2335" };
+  const activeFlags = (flags || []).map((f: any) => ({
+    color: tierToColor[f.flag_tier] || "teal" as FlagColor,
+    hex: tierToHex[f.flag_tier] || "#55BAAA",
+    reason: f.reason || f.flag_tier,
+    tier: f.flag_tier,
+  }));
+  // Keep legacy single-flag references for the header icon
+  const flagColor = activeFlags.length > 0 ? activeFlags[0].color : null;
+  const flagHex = activeFlags.length > 0 ? activeFlags[0].hex : null;
 
   const displayedNotes = selectedQuickNotes.slice(0, 3);
   const moreCount = selectedQuickNotes.length - 3;
@@ -443,10 +450,14 @@ export default function AnimalDetailScreen() {
               </div>
             )}
           </div>
-          {flagColor && flagHex && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-              <FlagIcon color={flagColor} size="md" />
-              <span style={{ fontSize: 9, fontWeight: 600, color: flagHex }}>{flagLabel}</span>
+          {activeFlags.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              {activeFlags.map((f, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <FlagIcon color={f.color} size="sm" />
+                  <span style={{ fontSize: 10, fontWeight: 600, color: f.hex }}>{f.reason}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
