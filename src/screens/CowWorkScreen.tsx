@@ -12,6 +12,7 @@ export default function CowWorkScreen() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [yearFilter, setYearFilter] = useState<string>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const navigate = useNavigate();
   const { operationId } = useOperation();
@@ -65,11 +66,16 @@ export default function CowWorkScreen() {
   const typeCodeSet = new Set(mapped.map(p => p.typeCode).filter(Boolean));
   const typeCodes = Array.from(typeCodeSet).sort();
 
+  // Get unique years for the year filter
+  const yearSet = new Set(mapped.map(p => p.rawDate.substring(0, 4)).filter(Boolean));
+  const years = Array.from(yearSet).sort().reverse(); // newest first
+
   // Apply filters
   const filtered = mapped
     .filter(p => {
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
       if (typeFilter !== "all" && p.typeCode !== typeFilter) return false;
+      if (yearFilter !== "all" && !p.rawDate.startsWith(yearFilter)) return false;
       if (search) {
         const q = search.toLowerCase();
         if (!p.name.toLowerCase().includes(q) && !p.type.toLowerCase().includes(q) && !p.group.toLowerCase().includes(q) && !p.typeCode.toLowerCase().includes(q)) return false;
@@ -159,7 +165,7 @@ export default function CowWorkScreen() {
           Filters
         </button>
         {/* Show active filters as pills when collapsed */}
-        {!filtersOpen && (statusFilter !== "all" || typeFilter !== "all") && (
+        {!filtersOpen && (statusFilter !== "all" || typeFilter !== "all" || yearFilter !== "all") && (
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             {statusFilter !== "all" && (
               <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.12)", color: "#3D9A8B" }}>
@@ -171,6 +177,12 @@ export default function CowWorkScreen() {
               <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 9999, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>
                 {typeFilter}
                 <button onClick={() => setTypeFilter("all")} style={{ background: "none", border: "none", color: "#0E2646", marginLeft: 4, cursor: "pointer", fontSize: 12, padding: 0 }}>×</button>
+              </span>
+            )}
+            {yearFilter !== "all" && (
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 9999, backgroundColor: "rgba(243,209,42,0.12)", color: "#B8960F" }}>
+                {yearFilter}
+                <button onClick={() => setYearFilter("all")} style={{ background: "none", border: "none", color: "#B8960F", marginLeft: 4, cursor: "pointer", fontSize: 12, padding: 0 }}>×</button>
               </span>
             )}
           </div>
@@ -196,6 +208,17 @@ export default function CowWorkScreen() {
                 <button onClick={() => setTypeFilter("all")} style={pillOn(typeFilter === "all")}>All</button>
                 {typeCodes.map(code => (
                   <button key={code} onClick={() => setTypeFilter(code)} style={pillOn(typeFilter === code)}>{code}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {years.length > 1 && (
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 6 }}>YEAR</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <button onClick={() => setYearFilter("all")} style={pillOn(yearFilter === "all")}>All</button>
+                {years.map(yr => (
+                  <button key={yr} onClick={() => setYearFilter(yr)} style={pillOn(yearFilter === yr, "#B8960F")}>{yr}</button>
                 ))}
               </div>
             </div>
