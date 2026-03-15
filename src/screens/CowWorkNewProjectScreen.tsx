@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,12 +8,30 @@ import { useLocations } from "@/hooks/useLocations";
 import { useGroupMembers, useGroupMemberCount } from "@/hooks/useAnimalGroups";
 import { useChuteSideToast } from "../components/ToastContext";
 import FormFieldRow from "../components/FormFieldRow";
+import FieldRow from "../components/calving/FieldRow";
 import ConfigureFieldsSection from "../components/ConfigureFieldsSection";
 import LoadFromProtocolDrawer from "../components/LoadFromProtocolDrawer";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { getDefaultFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
 
 const cattleTypeOptions = ["Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
+
+const IS: React.CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  height: 36,
+  borderRadius: 8,
+  border: "1px solid #D4D4D0",
+  paddingLeft: 12,
+  paddingRight: 12,
+  fontFamily: "'Inter', sans-serif",
+  fontSize: 16,
+  fontWeight: 400,
+  color: "#1A1A1A",
+  outline: "none",
+  backgroundColor: "#FFFFFF",
+  boxSizing: "border-box" as const,
+};
 
 interface ProductRow {
   id: string;
@@ -293,92 +311,84 @@ export default function CowWorkNewProjectScreen() {
         </div>
       </div>
 
-      {/* All project fields in one card */}
-      <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-        <div className="flex items-center gap-2 min-w-0">
-          <label style={LABEL_STYLE}>Date</label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className={INPUT_CLS} />
-        </div>
-        <div className="flex items-center gap-2 min-w-0">
-          <label style={LABEL_STYLE}>Type</label>
-          <select value={processingType} onChange={e => setProcessingType(e.target.value)} className={INPUT_CLS}>
-            <option value="" disabled>Select type</option>
-            {(workTypes || []).map(wt => (
-              <option key={wt.id} value={wt.id}>{wt.code} — {wt.name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-center gap-2 min-w-0">
-          <label style={LABEL_STYLE}>Group</label>
-          <select value={group} onChange={e => setGroup(e.target.value)} className={INPUT_CLS}>
-            <option value="" disabled>Select group</option>
-            {(groups || []).map(g => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
-        </div>
-        {group && (
-          <div className="flex items-center justify-between pl-[105px]">
-            <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.50)" }}>
-              {recordIndividuals ? "Record individual animals" : "No individual records"}
-            </span>
-            <button
-              onClick={() => setRecordIndividuals(!recordIndividuals)}
-              className="relative shrink-0 cursor-pointer"
-              style={{
-                width: 40, height: 22, borderRadius: 11, border: "none",
-                backgroundColor: recordIndividuals ? "#55BAAA" : "#CBCED4",
-                transition: "background-color 200ms",
-              }}
-            >
-              <span style={{
-                position: "absolute", top: 2,
-                left: recordIndividuals ? 20 : 2,
-                width: 18, height: 18, borderRadius: 9,
-                backgroundColor: "#FFFFFF", transition: "left 200ms",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-              }} />
-            </button>
-          </div>
-        )}
-        <div className="flex items-center gap-2 min-w-0">
-          <label style={LABEL_STYLE}>Cattle Type</label>
-          <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={INPUT_CLS}>
-            <option value="" disabled>Optional</option>
-            {cattleTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </div>
-        <div className="flex items-center gap-2 min-w-0">
-          <label style={LABEL_STYLE}>Head Expected</label>
-          <input
-            type="number"
-            inputMode="numeric"
-            value={estimatedHead}
-            onChange={e => setEstimatedHead(e.target.value ? parseInt(e.target.value, 10) : "")}
-            placeholder="Optional"
-            className={INPUT_CLS}
-          />
-        </div>
-        <div className="flex items-center gap-2 min-w-0">
-          <label style={LABEL_STYLE}>Location</label>
-          <select value={location} onChange={e => setLocation(e.target.value)} className={INPUT_CLS}>
-            <option value="" disabled>Optional</option>
-            {(locations || []).map(l => (
-              <option key={l.id} value={l.id}>{l.name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="pt-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <label style={LABEL_STYLE}>Memo</label>
+      {/* All project fields in one card — uses same FieldRow + IS pattern as calving */}
+      <div style={{ borderRadius: 12, backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)", padding: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <FieldRow label="Date">
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={IS} />
+          </FieldRow>
+          <FieldRow label="Type">
+            <select value={processingType} onChange={e => setProcessingType(e.target.value)} style={{ ...IS, appearance: "auto" as const, color: processingType ? "#1A1A1A" : "rgba(26,26,26,0.35)" }}>
+              <option value="" disabled>Select type</option>
+              {(workTypes || []).map(wt => (
+                <option key={wt.id} value={wt.id}>{wt.code} — {wt.name}</option>
+              ))}
+            </select>
+          </FieldRow>
+          <FieldRow label="Group">
+            <select value={group} onChange={e => setGroup(e.target.value)} style={{ ...IS, appearance: "auto" as const, color: group ? "#1A1A1A" : "rgba(26,26,26,0.35)" }}>
+              <option value="" disabled>Select group</option>
+              {(groups || []).map(g => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </FieldRow>
+          {group && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingLeft: 93 }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.50)" }}>
+                {recordIndividuals ? "Record individual animals" : "No individual records"}
+              </span>
+              <button
+                onClick={() => setRecordIndividuals(!recordIndividuals)}
+                className="relative shrink-0 cursor-pointer"
+                style={{
+                  width: 40, height: 22, borderRadius: 11, border: "none",
+                  backgroundColor: recordIndividuals ? "#55BAAA" : "#CBCED4",
+                  transition: "background-color 200ms",
+                }}
+              >
+                <span style={{
+                  position: "absolute", top: 2,
+                  left: recordIndividuals ? 20 : 2,
+                  width: 18, height: 18, borderRadius: 9,
+                  backgroundColor: "#FFFFFF", transition: "left 200ms",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                }} />
+              </button>
+            </div>
+          )}
+          <FieldRow label="Cattle Type">
+            <select value={cattleType} onChange={e => setCattleType(e.target.value)} style={{ ...IS, appearance: "auto" as const, color: cattleType ? "#1A1A1A" : "rgba(26,26,26,0.35)" }}>
+              <option value="" disabled>Optional</option>
+              {cattleTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </FieldRow>
+          <FieldRow label="Head Expected">
+            <input
+              type="number"
+              inputMode="numeric"
+              value={estimatedHead}
+              onChange={e => setEstimatedHead(e.target.value ? parseInt(e.target.value, 10) : "")}
+              placeholder="Optional"
+              style={IS}
+            />
+          </FieldRow>
+          <FieldRow label="Location">
+            <select value={location} onChange={e => setLocation(e.target.value)} style={{ ...IS, appearance: "auto" as const, color: location ? "#1A1A1A" : "rgba(26,26,26,0.35)" }}>
+              <option value="" disabled>Optional</option>
+              {(locations || []).map(l => (
+                <option key={l.id} value={l.id}>{l.name}</option>
+              ))}
+            </select>
+          </FieldRow>
+          <FieldRow label="Memo">
             <textarea
               value={memo}
               onChange={e => setMemo(e.target.value)}
-              className="flex-1 min-w-0 resize-none rounded-lg px-3 py-2 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
-              style={{ minHeight: 44, backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16 }}
+              style={{ ...IS, height: "auto", minHeight: 36, paddingTop: 8, paddingBottom: 8, resize: "none" as const }}
               placeholder="Notes…"
             />
-          </div>
+          </FieldRow>
         </div>
       </div>
 
