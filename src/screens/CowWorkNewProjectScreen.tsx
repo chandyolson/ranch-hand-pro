@@ -32,8 +32,7 @@ export default function CowWorkNewProjectScreen() {
   const [location, setLocation] = useState("");
   const [memo, setMemo] = useState("");
   const [estimatedHead, setEstimatedHead] = useState<number | "">("");
-  const [preloadEnabled, setPreloadEnabled] = useState(false);
-  const [preloadMode, setPreloadMode] = useState<"expected" | "worked">("expected");
+  const [recordIndividuals, setRecordIndividuals] = useState(true);
   const [productsOpen, setProductsOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -50,7 +49,7 @@ export default function CowWorkNewProjectScreen() {
   const { data: groups } = useGroups();
   const { data: locations } = useLocations();
   const { data: memberCount } = useGroupMemberCount(group || undefined);
-  const { data: groupMembers } = useGroupMembers(preloadEnabled ? (group || undefined) : undefined);
+  const { data: groupMembers } = useGroupMembers(group || undefined);
   const { data: workTypes } = useQuery({
     queryKey: ["work-types"],
     queryFn: async () => {
@@ -166,9 +165,8 @@ export default function CowWorkNewProjectScreen() {
           group_id: group || null,
           location_id: location || null,
           description: memo.trim() || null,
-          record_individual_animals: true,
-          // Task 7+8: preload and estimated head
-          preload_mode: preloadEnabled ? preloadMode : "none",
+          record_individual_animals: recordIndividuals,
+          preload_mode: "none",
           estimated_head: estimatedHead || null,
           field_visibility: fieldConfig as any,
         })
@@ -205,40 +203,24 @@ export default function CowWorkNewProjectScreen() {
         }
       }
 
-      // Phase D: Pre-load animals from group
-      if (preloadEnabled && groupMembers && groupMembers.length > 0) {
+      // Always load group members as expected list for reconciliation at close-out
+      if (group && groupMembers && groupMembers.length > 0) {
         const animalIds = groupMembers.map((m: any) => m.animal_id);
-        const preloadStatus = preloadMode === "worked" ? "Worked" : "Expected";
-
-        // Insert project_expected_animals
         const expectedRows = animalIds.map((aid: string) => ({
           project_id: project.id,
           animal_id: aid,
-          status: preloadStatus,
+          status: "Expected",
         }));
         const { error: expErr } = await supabase
           .from("project_expected_animals")
           .insert(expectedRows);
         if (expErr) console.error("Failed to insert expected animals:", expErr);
 
-        // Mode 3 (Worked): also create lightweight cow_work records
-        if (preloadMode === "worked") {
-          const workRows = animalIds.map((aid: string, i: number) => ({
-            operation_id: operationId,
-            project_id: project.id,
-            animal_id: aid,
-            date: date,
-            record_order: i + 1,
-          }));
-          const { error: workErr } = await supabase
-            .from("cow_work")
-            .insert(workRows);
-          if (workErr) console.error("Failed to insert worked records:", workErr);
-
-          // Update project status to In Progress
+        // If not recording individuals, mark all as Worked and set In Progress
+        if (!recordIndividuals) {
           await supabase
             .from("projects")
-            .update({ project_status: "In Progress" })
+            .update({ project_status: "Completed" })
             .eq("id", project.id);
         }
       }
@@ -306,7 +288,7 @@ export default function CowWorkNewProjectScreen() {
         {/* Group */}
         <div className="flex items-center gap-2 min-w-0">
           <label style={LABEL_STYLE}>Group</label>
-          <select value={group} onChange={e => { setGroup(e.target.value); setPreloadEnabled(false); }} className={INPUT_CLS}>
+          <select value={group} onChange={e => setGroup(e.target.value)} className={INPUT_CLS}>
             <option value="" disabled>Select group</option>
             {(groups || []).map(g => (
               <option key={g.id} value={g.id}>{g.name}</option>
@@ -314,63 +296,36 @@ export default function CowWorkNewProjectScreen() {
           </select>
         </div>
 
-        {/* Pre-load toggle — appears inline when a group is selected */}
+        {/* Record individual animals toggle — only when a group is selected */}
         {group && (
-          <>
-            <div className="flex items-center justify-between pt-1">
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Pre-load animals from group</span>
-              <button
-                onClick={() => {
-                  setPreloadEnabled(!preloadEnabled);
-                  if (preloadEnabled) setPreloadMode("expected");
-                }}
-                className="relative shrink-0 cursor-pointer"
-                style={{
-                  width: 44, height: 24, borderRadius: 12, border: "none",
-                  backgroundColor: preloadEnabled ? "#55BAAA" : "#CBCED4",
-                  transition: "background-color 200ms",
-                }}
-              >
-                <span
-                  style={{
-                    position: "absolute", top: 2,
-                    left: preloadEnabled ? 22 : 2,
-                    width: 20, height: 20, borderRadius: 10,
-                    backgroundColor: "#FFFFFF",
-                    transition: "left 200ms",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-                  }}
-                />
-              </button>
-            </div>
-
-            {preloadEnabled && (
-              <div className="flex gap-4 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="preloadMode"
-                    value="expected"
-                    checked={preloadMode === "expected"}
-                    onChange={() => setPreloadMode("expected")}
-                    style={{ accentColor: "#55BAAA" }}
-                  />
-                  <span style={{ fontSize: 16, color: "#1A1A1A" }}>Check Off List</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="preloadMode"
-                    value="worked"
-                    checked={preloadMode === "worked"}
-                    onChange={() => setPreloadMode("worked")}
-                    style={{ accentColor: "#55BAAA" }}
-                  />
-                  <span style={{ fontSize: 16, color: "#1A1A1A" }}>Mark All Worked</span>
-                </label>
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Record individual animals</span>
+              <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 1 }}>
+                {recordIndividuals ? "Scan animals one at a time at the chute" : "No per-animal data — group marked as worked"}
               </div>
-            )}
-          </>
+            </div>
+            <button
+              onClick={() => setRecordIndividuals(!recordIndividuals)}
+              className="relative shrink-0 cursor-pointer"
+              style={{
+                width: 44, height: 24, borderRadius: 12, border: "none",
+                backgroundColor: recordIndividuals ? "#55BAAA" : "#CBCED4",
+                transition: "background-color 200ms",
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute", top: 2,
+                  left: recordIndividuals ? 22 : 2,
+                  width: 20, height: 20, borderRadius: 10,
+                  backgroundColor: "#FFFFFF",
+                  transition: "left 200ms",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                }}
+              />
+            </button>
+          </div>
         )}
 
         {/* Cattle Type */}
