@@ -16,6 +16,10 @@ export default function CowWorkCloseOutScreen() {
   const navigate = useNavigate();
   const [closing, setClosing] = useState(false);
   const [closingNotes, setClosingNotes] = useState("");
+  const [reconOpen, setReconOpen] = useState(false);
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   // Phase E: Review New Animals wizard state
   const [reviewIndex, setReviewIndex] = useState(0);
@@ -53,9 +57,33 @@ export default function CowWorkCloseOutScreen() {
   });
 
   const worked = workedAnimals || [];
-  const headCount = project?.head_count || 0;
+  const headCount = project?.estimated_head || project?.head_count || 0;
   const projectName = project?.name || "";
   const projectType = (project?.work_types as any)?.[0]?.work_type?.code || "";
+
+  // Expected animals (from group preload)
+  const { data: expectedAnimals } = useQuery({
+    queryKey: ["project-expected-closeout", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_expected_animals")
+        .select("*, animal:animals(id, tag, tag_color, sex, type, year_born)")
+        .eq("project_id", id!);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  const expected = expectedAnimals || [];
+  const hasExpected = expected.length > 0;
+
+  // Reconciliation buckets
+  const workedAnimalIds = new Set(worked.map(w => w.animal_id));
+  const expectedAnimalIds = new Set(expected.map((e: any) => e.animal_id));
+  const matched = expected.filter((e: any) => workedAnimalIds.has(e.animal_id));
+  const missing = expected.filter((e: any) => !workedAnimalIds.has(e.animal_id));
+  const extra = worked.filter(w => !expectedAnimalIds.has(w.animal_id));
   const projectDate = project
     ? new Date(project.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : "";
@@ -170,6 +198,31 @@ export default function CowWorkCloseOutScreen() {
     }
   };
 
+  const saveAsTemplate = async () => {
+    if (!templateName.trim()) { showToast("error", "Template name is required"); return; }
+    setSavingTemplate(true);
+    try {
+      const workTypeId = (project?.work_types as any)?.[0]?.work_type_id;
+      const { error } = await supabase.from("project_templates").insert({
+        operation_id: operationId,
+        name: templateName.trim(),
+        work_type_id: workTypeId || null,
+        default_cattle_type: null,
+        default_field_visibility: project?.field_visibility || {},
+        default_products: null,
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["project-templates"] });
+      showToast("success", `Template "${templateName.trim()}" saved`);
+      setTemplateOpen(false);
+      setTemplateName("");
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to save template");
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
   if (projectLoading) {
     return (
       <div className="px-4 pt-4 space-y-3">
@@ -243,6 +296,89 @@ export default function CowWorkCloseOutScreen() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Reconciliation (optional, expandable) */}
+      {hasExpected && (
+        <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+          <button
+            onClick={() => setReconOpen(!reconOpen)}
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "none", border: "none", cursor: "pointer" }}
+          >
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646" }}>Reconcile Animals</div>
+              <div style={{ fontSize: 12, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
+                {matched.length} matched · {missing.length} missing · {extra.length} extra
+              </div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: reconOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
+              <path d="M4 6L8 10L12 6" stroke="rgba(26,26,26,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {reconOpen && (
+            <div style={{ padding: "0 16px 16px", borderTop: "1px solid rgba(212,212,208,0.30)" }}>
+              {/* Matched bucket */}
+              <div style={{ paddingTop: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#55BAAA", flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#55BAAA" }}>Matched — {matched.length}</span>
+                </div>
+                {matched.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {matched.map((e: any) => (
+                      <span key={e.animal_id} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.10)", color: "#3D9A8B" }}>
+                        {(e.animal as any)?.tag || "?"}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Missing bucket — expanded by default */}
+              <div style={{ paddingTop: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#F3D12A", flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#B8960F" }}>Missing — {missing.length}</span>
+                </div>
+                {missing.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {missing.map((e: any) => (
+                      <div key={e.animal_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", borderRadius: 8, backgroundColor: "rgba(243,209,42,0.06)", border: "1px solid rgba(243,209,42,0.15)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          {(e.animal as any)?.tag_color && (
+                            <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TAG_COLOR_HEX[(e.animal as any).tag_color] || "#999", flexShrink: 0 }} />
+                          )}
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{(e.animal as any)?.tag || "?"}</span>
+                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{(e.animal as any)?.type || (e.animal as any)?.sex || ""}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>All expected animals were worked</div>
+                )}
+              </div>
+
+              {/* Extra bucket */}
+              {extra.length > 0 && (
+                <div style={{ paddingTop: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#E87461", flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#E87461" }}>Extra — {extra.length}</span>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {extra.map((w: any) => (
+                      <span key={w.id} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(232,116,97,0.10)", color: "#E87461" }}>
+                        {(w.animal as any)?.tag || "?"}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -459,6 +595,46 @@ export default function CowWorkCloseOutScreen() {
           <span style={{ fontSize: 13, fontWeight: 600, color: "#3D9A8B" }}>
             ✓ {newAnimals.length} new animal{newAnimals.length !== 1 ? "s" : ""} reviewed
           </span>
+        </div>
+      )}
+
+      {/* Save as Template */}
+      {!templateOpen ? (
+        <button
+          onClick={() => setTemplateOpen(true)}
+          style={{ width: "100%", padding: "10px 16px", borderRadius: 12, border: "1px solid #55BAAA", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#55BAAA", cursor: "pointer" }}
+        >
+          Save as Template
+        </button>
+      ) : (
+        <div style={{ borderRadius: 12, backgroundColor: "white", border: "2px solid #55BAAA", padding: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#55BAAA", letterSpacing: "0.04em", marginBottom: 8 }}>SAVE AS TEMPLATE</div>
+          <input
+            type="text"
+            value={templateName}
+            onChange={e => setTemplateName(e.target.value)}
+            placeholder="Template name…"
+            style={{ ...({ flex: 1, minWidth: 0, height: 36, borderRadius: 8, border: "1px solid #D4D4D0", paddingLeft: 12, paddingRight: 12, fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 400, color: "#1A1A1A", outline: "none", backgroundColor: "#FFFFFF", boxSizing: "border-box" as const, width: "100%" }) }}
+            autoFocus
+          />
+          <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", marginTop: 6 }}>
+            Saves work type, field config, and products from this project
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button
+              onClick={() => { setTemplateOpen(false); setTemplateName(""); }}
+              style={{ flex: 1, padding: "8px 0", borderRadius: 9999, border: "1px solid #D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "rgba(26,26,26,0.50)", cursor: "pointer" }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveAsTemplate}
+              disabled={savingTemplate}
+              style={{ flex: 1, padding: "8px 0", borderRadius: 9999, border: "none", backgroundColor: "#55BAAA", fontSize: 13, fontWeight: 700, color: "white", cursor: "pointer", opacity: savingTemplate ? 0.5 : 1 }}
+            >
+              {savingTemplate ? "Saving…" : "Save Template"}
+            </button>
+          </div>
         </div>
       )}
 
