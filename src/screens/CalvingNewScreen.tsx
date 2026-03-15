@@ -812,6 +812,8 @@ export default function CalvingNewScreen() {
               </>
             );
           })()}
+        </div>
+
         {/* ═══ 3. CALF CARD ═══ */}
         <div style={{ borderRadius: 12, overflow: "hidden" }}>
           <div
