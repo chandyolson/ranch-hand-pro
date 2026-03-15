@@ -38,6 +38,7 @@ export default function CowWorkNewProjectScreen() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
   const [protocolDrawerOpen, setProtocolDrawerOpen] = useState(false);
   const [fieldConfig, setFieldConfig] = useState<FieldVisibilityConfig>(getDefaultFieldConfig());
   const [saving, setSaving] = useState(false);
@@ -536,52 +537,100 @@ export default function CowWorkNewProjectScreen() {
               </div>
             ) : (
               <div className="mt-2 space-y-1.5">
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>SELECT PRODUCT</div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>SELECT PRODUCTS</div>
+                {/* Search input */}
+                <div className="flex items-center gap-2 bg-white rounded-lg px-3 h-10" style={{ border: "1px solid #D4D4D0" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,26,0.30)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={productSearch}
+                    onChange={e => setProductSearch(e.target.value)}
+                    placeholder="Search products…"
+                    className="flex-1 outline-none bg-transparent"
+                    style={{ fontSize: 16, color: "#1A1A1A" }}
+                  />
+                  {productSearch && (
+                    <button
+                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 cursor-pointer"
+                      style={{ backgroundColor: "rgba(26,26,26,0.08)", fontSize: 11, color: "rgba(26,26,26,0.50)", border: "none" }}
+                      onClick={() => setProductSearch("")}
+                    >×</button>
+                  )}
+                </div>
                 {(allProducts || []).length === 0 ? (
                   <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)", padding: "8px 0" }}>
                     No products available
                   </div>
                 ) : (
-                  <div className="max-h-48 overflow-y-auto space-y-0 rounded-lg" style={{ border: "1px solid #D4D4D0" }}>
-                    {(allProducts || []).map(prod => {
-                      const alreadyAdded = products.some(p => p.id === prod.id);
-                      return (
-                        <button
-                          key={prod.id}
-                          className="flex items-center justify-between w-full px-3 py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.03)]"
-                          style={{
-                            background: alreadyAdded ? "rgba(85,186,170,0.06)" : "white",
-                            border: "none",
-                            borderBottom: "1px solid rgba(26,26,26,0.06)",
-                            opacity: alreadyAdded ? 0.5 : 1,
-                          }}
-                          disabled={alreadyAdded}
-                          onClick={() => {
-                            setProducts(prev => [...prev, {
-                              id: prod.id,
-                              name: prod.name,
-                              dosage: prod.dosage || "",
-                              route: prod.route || "",
-                              source: "manual",
-                            }]);
-                          }}
-                        >
-                          <span className="truncate" style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{prod.name}</span>
-                          <span className="shrink-0 ml-2" style={{ fontSize: 12, color: "rgba(26,26,26,0.40)" }}>
-                            {alreadyAdded ? "Added" : [prod.dosage, prod.route].filter(Boolean).join(" · ")}
-                          </span>
-                        </button>
-                      );
-                    })}
+                  <div className="max-h-56 overflow-y-auto space-y-0 rounded-lg" style={{ border: "1px solid #D4D4D0" }}>
+                    {(allProducts || [])
+                      .filter(p => !productSearch || p.name.toLowerCase().includes(productSearch.toLowerCase()) || (p.product_type || "").toLowerCase().includes(productSearch.toLowerCase()))
+                      .map(prod => {
+                        const isSelected = products.some(p => p.id === prod.id);
+                        return (
+                          <button
+                            key={prod.id}
+                            className="flex items-center gap-2.5 w-full px-3 py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.03)]"
+                            style={{
+                              background: isSelected ? "rgba(85,186,170,0.08)" : "white",
+                              border: "none",
+                              borderBottom: "1px solid rgba(26,26,26,0.06)",
+                              textAlign: "left" as const,
+                            }}
+                            onClick={() => {
+                              if (isSelected) {
+                                setProducts(prev => prev.filter(p => p.id !== prod.id));
+                              } else {
+                                setProducts(prev => [...prev, {
+                                  id: prod.id,
+                                  name: prod.name,
+                                  dosage: prod.dosage || "",
+                                  route: prod.route || "",
+                                  source: "manual",
+                                }]);
+                              }
+                            }}
+                          >
+                            {/* Checkbox */}
+                            <div
+                              className="shrink-0 rounded flex items-center justify-center"
+                              style={{
+                                width: 20, height: 20,
+                                border: isSelected ? "none" : "2px solid #D4D4D0",
+                                backgroundColor: isSelected ? "#55BAAA" : "white",
+                              }}
+                            >
+                              {isSelected && (
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                  <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="truncate block" style={{ fontSize: 14, fontWeight: isSelected ? 700 : 500, color: "#1A1A1A" }}>{prod.name}</span>
+                              <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
+                                {[prod.product_type, prod.dosage, prod.route].filter(Boolean).join(" · ")}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
                   </div>
                 )}
-                <button
-                  className="rounded-full px-4 py-1.5 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
-                  style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.50)" }}
-                  onClick={() => setProductPickerOpen(false)}
-                >
-                  Done
-                </button>
+                <div className="flex items-center justify-between">
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#55BAAA" }}>
+                    {products.length} selected
+                  </span>
+                  <button
+                    className="rounded-full px-4 py-1.5 bg-[#0E2646] cursor-pointer active:scale-[0.97]"
+                    style={{ fontSize: 12, fontWeight: 700, color: "white", border: "none" }}
+                    onClick={() => { setProductPickerOpen(false); setProductSearch(""); }}
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             )}
           </div>
