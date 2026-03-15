@@ -7,6 +7,7 @@ import { useChuteSideToast } from "@/components/ToastContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SUB_LABEL, INPUT_CLS, LABEL_STYLE } from "@/lib/styles";
 import { ANIMAL_TYPE_OPTIONS, SEX_OPTIONS, BREED_OPTIONS, TAG_COLOR_HEX } from "@/lib/constants";
+import { generateProjectReportPDF, type ReportAnimal, type ReportProduct, type ReportRecon } from "@/lib/project-report-pdf";
 
 export default function CowWorkCloseOutScreen() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +24,12 @@ export default function CowWorkCloseOutScreen() {
   const [actionedMissing, setActionedMissing] = useState<Record<string, string>>({});
   const [reconSource, setReconSource] = useState<"group" | "project" | null>(hasExpected ? "group" : null);
   const [reconProjectId, setReconProjectId] = useState("");
+  // Report builder toggles
+  const [rptSummary, setRptSummary] = useState(true);
+  const [rptMetrics, setRptMetrics] = useState(true);
+  const [rptAnimalDetail, setRptAnimalDetail] = useState(true);
+  const [rptRecon, setRptRecon] = useState(true);
+  const [rptProducts, setRptProducts] = useState(true);
 
   // Phase E: Review New Animals wizard state
   const [reviewIndex, setReviewIndex] = useState(0);
@@ -84,6 +91,20 @@ export default function CowWorkCloseOutScreen() {
 
   const expected = expectedAnimals || [];
   const hasExpected = expected.length > 0;
+
+  // Load project products
+  const { data: projectProducts } = useQuery({
+    queryKey: ["project-products-closeout", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_products")
+        .select("*, product:products(name, dosage, route)")
+        .eq("project_id", id!);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
 
   // Past completed projects (for reconciliation source picker)
   const { data: pastProjects } = useQuery({
@@ -816,6 +837,94 @@ export default function CowWorkCloseOutScreen() {
           onClick={handleCloseOut}
         >
           {closing ? "Closing…" : hasNewAnimals ? "Review New Animals First" : "Complete Project"}
+        </button>
+      </div>
+
+      {/* Report Builder */}
+      <div style={{ borderRadius: 12, backgroundColor: "white", padding: 14, border: "1px solid rgba(212,212,208,0.60)" }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646", marginBottom: 4 }}>Project Report</div>
+        <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", marginBottom: 12 }}>Choose sections to include in the PDF</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {[
+            { label: "Summary", desc: "Project details and metadata", val: rptSummary, set: setRptSummary },
+            { label: "Metrics", desc: "Work-type stats and breakdowns", val: rptMetrics, set: setRptMetrics },
+            { label: "Animal Detail", desc: `Table of all ${worked.length} animals`, val: rptAnimalDetail, set: setRptAnimalDetail },
+            { label: "Reconciliation", desc: "Matched/missing/extra results", val: rptRecon, set: setRptRecon, disabled: !reconSource },
+            { label: "Products Used", desc: `${(projectProducts || []).length} products`, val: rptProducts, set: setRptProducts, disabled: !(projectProducts || []).length },
+          ].map(item => (
+            <div key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", opacity: item.disabled ? 0.4 : 1 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{item.label}</div>
+                <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{item.desc}</div>
+              </div>
+              <button
+                type="button"
+                disabled={item.disabled}
+                onClick={() => item.set(!item.val)}
+                style={{
+                  position: "relative", width: 40, height: 22, borderRadius: 11, border: "none",
+                  cursor: item.disabled ? "default" : "pointer",
+                  backgroundColor: item.val && !item.disabled ? "#55BAAA" : "#CBCED4",
+                  transition: "background-color 200ms",
+                }}
+              >
+                <span style={{
+                  position: "absolute", top: 2, left: item.val && !item.disabled ? 20 : 2,
+                  width: 18, height: 18, borderRadius: 9, backgroundColor: "#FFFFFF",
+                  transition: "left 200ms", boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                }} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={() => {
+            const reportAnimals: ReportAnimal[] = worked.map((w: any) => ({
+              tag: (w.animal as any)?.tag || "?",
+              tag_color: (w.animal as any)?.tag_color || "",
+              sex: (w.animal as any)?.sex || "",
+              type: (w.animal as any)?.type || "",
+              breed: (w.animal as any)?.breed || "",
+              year_born: (w.animal as any)?.year_born || "",
+              weight: w.weight,
+              preg_stage: w.preg_stage,
+              bse_result: w.bse_result,
+              breeding_sire: w.breeding_sire,
+              breeding_type: w.breeding_type,
+              estrus_status: w.estrus_status,
+              scrotal: w.scrotal,
+              sale_weight: w.sale_weight,
+              purchase_price: w.purchase_price,
+              purchase_source: w.purchase_source,
+              memo: w.memo,
+              is_new_animal: w.is_new_animal,
+            }));
+            const reportProducts: ReportProduct[] = (projectProducts || []).map((pp: any) => ({
+              name: (pp.product as any)?.name || "Unknown",
+              dosage: (pp.product as any)?.dosage || pp.dosage || "",
+              route: (pp.product as any)?.route || pp.route || "",
+            }));
+            const reportRecon: ReportRecon | null = reconSource && reconList.length > 0 ? {
+              matched: matched.length,
+              missing: missing.length,
+              extra: extra.length,
+              missingTags: missing.map((e: any) => (e.animal as any)?.tag || "?"),
+              extraTags: extra.map((w: any) => (w.animal as any)?.tag || "?"),
+            } : null;
+            generateProjectReportPDF({
+              projectName, projectDate, projectType, group: projectGroup,
+              location: projectLocation, headExpected: headCount, headWorked: worked.length,
+              operationName: operationId, animals: reportAnimals, products: reportProducts,
+              recon: reportRecon, closingNotes: closingNotes || undefined,
+              includeSummary: rptSummary, includeMetrics: rptMetrics,
+              includeAnimalDetail: rptAnimalDetail, includeRecon: rptRecon && !!reportRecon,
+              includeProducts: rptProducts,
+            });
+            showToast("success", "PDF report generated");
+          }}
+          style={{ width: "100%", marginTop: 12, padding: "12px 0", borderRadius: 9999, border: "none", backgroundColor: "#0E2646", fontSize: 14, fontWeight: 700, color: "white", cursor: "pointer" }}
+        >
+          Generate PDF Report
         </button>
       </div>
 
