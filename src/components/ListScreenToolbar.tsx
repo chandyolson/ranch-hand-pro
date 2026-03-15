@@ -317,5 +317,10 @@ const EditIcon = () => (
     <path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+const FilterMenuIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M2 3h12L9 8.5V13l-2-1V8.5L2 3z" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 export default ListScreenToolbar;
