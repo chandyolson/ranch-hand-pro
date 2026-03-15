@@ -38,6 +38,10 @@ export default function CowWorkProjectDetailScreen() {
   const [quickNote, setQuickNote] = useState("");
   const [sampleId, setSampleId] = useState("");
   const [memo, setMemo] = useState("");
+  // Phase F: Additional Products state
+  const [additionalProductsOpen, setAdditionalProductsOpen] = useState(false);
+  const [additionalProducts, setAdditionalProducts] = useState<{ product_id: string; product_name: string; dosage: string; route: string; reason: string }[]>([]);
+  const [addProdPickerOpen, setAddProdPickerOpen] = useState(false);
 
   // Load project
   const { data: project, isLoading: projectLoading } = useQuery({
@@ -68,6 +72,33 @@ export default function CowWorkProjectDetailScreen() {
       return data || [];
     },
     enabled: !!id,
+  });
+
+  // Load project products
+  const { data: projectProducts } = useQuery({
+    queryKey: ["project-products", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_products")
+        .select("*, product:products(id, name, dosage, route)")
+        .eq("project_id", id!);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  // Load operation products (for additional product picker)
+  const { data: opProducts } = useQuery({
+    queryKey: ["operation-products", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("operation_products")
+        .select("*, product:products(id, name, dosage, route)")
+        .eq("operation_id", operationId);
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   // Load expected animals (Phase D)
@@ -161,6 +192,13 @@ export default function CowWorkProjectDetailScreen() {
         setQuickNote(existingRecord.quick_notes?.[0] || "");
         setSampleId(existingRecord.dna || "");
         setMemo(existingRecord.memo || "");
+        // Phase F: Load existing additional products
+        if (existingRecord.additional_products && Array.isArray(existingRecord.additional_products)) {
+          setAdditionalProducts(existingRecord.additional_products as any[]);
+          if ((existingRecord.additional_products as any[]).length > 0) setAdditionalProductsOpen(true);
+        } else {
+          setAdditionalProducts([]);
+        }
       } else {
         setIsDuplicate(false);
         setEditingRecord(null);
@@ -192,6 +230,9 @@ export default function CowWorkProjectDetailScreen() {
     setQuickNote("");
     setSampleId("");
     setMemo("");
+    setAdditionalProducts([]);
+    setAdditionalProductsOpen(false);
+    setAddProdPickerOpen(false);
   };
 
   const saveAndNext = async () => {
@@ -227,6 +268,7 @@ export default function CowWorkProjectDetailScreen() {
         quick_notes: quickNote ? [quickNote] : null,
         memo: memo.trim() || null,
         dna: sampleId.trim() || null,
+        additional_products: additionalProducts.length > 0 ? additionalProducts : null,
       };
 
       // Phase D: Update existing record (edit mode) vs insert new
@@ -660,16 +702,161 @@ export default function CowWorkProjectDetailScreen() {
               </div>
             </div>
 
-            {/* Products given — placeholder for now */}
+            {/* Products given (project-level) */}
             <div className="rounded-xl bg-white px-3 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.40)", textTransform: "uppercase" }}>PRODUCTS GIVEN</span>
-                <span className="cursor-pointer" style={{ fontSize: 11, fontWeight: 600, color: "#55BAAA" }}>Edit</span>
+                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.35)" }}>
+                  {(projectProducts || []).length} product{(projectProducts || []).length !== 1 ? "s" : ""}
+                </span>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
-                <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>No products configured</span>
+                {(projectProducts || []).length === 0 ? (
+                  <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>No products configured</span>
+                ) : (
+                  (projectProducts || []).map((pp: any, i: number) => (
+                    <span
+                      key={pp.id || i}
+                      className="rounded-full"
+                      style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", backgroundColor: "rgba(14,38,70,0.06)", color: "#0E2646" }}
+                    >
+                      {(pp.product as any)?.name || pp.product_name || "Unknown"}
+                    </span>
+                  ))
+                )}
               </div>
             </div>
+
+            {/* Phase F: Additional Products (per-animal exceptions) — only when animal loaded */}
+            {(isMatched || isNewAnimal || editingRecord) && (
+              <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+                <button
+                  className="flex items-center justify-between w-full px-3 py-3 cursor-pointer"
+                  style={{ background: "none", border: "none" }}
+                  onClick={() => setAdditionalProductsOpen(!additionalProductsOpen)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.40)", textTransform: "uppercase" }}>
+                      ADDITIONAL PRODUCTS
+                    </span>
+                    {additionalProducts.length > 0 && (
+                      <span
+                        className="rounded-full"
+                        style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", backgroundColor: "rgba(85,186,170,0.15)", color: "#55BAAA" }}
+                      >
+                        {additionalProducts.length}
+                      </span>
+                    )}
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+                    style={{ transform: additionalProductsOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
+                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="rgba(26,26,26,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+
+                {additionalProductsOpen && (
+                  <div className="px-3 pb-3 space-y-2" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
+                    {additionalProducts.length === 0 && (
+                      <div className="pt-2" style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>
+                        Add products given only to this animal
+                      </div>
+                    )}
+                    {additionalProducts.map((ap, i) => (
+                      <div key={`${ap.product_id}-${i}`} className="rounded-lg px-3 py-2.5 mt-1" style={{ backgroundColor: "rgba(85,186,170,0.04)", border: "1px solid rgba(85,186,170,0.15)" }}>
+                        <div className="flex items-center justify-between">
+                          <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{ap.product_name}</span>
+                          <button
+                            className="cursor-pointer"
+                            style={{ background: "none", border: "none", fontSize: 16, color: "rgba(26,26,26,0.30)", lineHeight: 1 }}
+                            onClick={() => setAdditionalProducts(prev => prev.filter((_, idx) => idx !== i))}
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="flex gap-1 mt-0.5">
+                          {ap.dosage && <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{ap.dosage}</span>}
+                          {ap.dosage && ap.route && <span style={{ fontSize: 11, color: "rgba(26,26,26,0.25)" }}>·</span>}
+                          {ap.route && <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{ap.route}</span>}
+                        </div>
+                        <input
+                          className="w-full mt-1.5 rounded-md px-2.5 py-1.5 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
+                          style={{ fontSize: 14, border: "1px solid rgba(212,212,208,0.60)", backgroundColor: "white" }}
+                          placeholder="Reason (e.g. foot rot treatment)"
+                          value={ap.reason}
+                          onChange={e => {
+                            const updated = [...additionalProducts];
+                            updated[i] = { ...updated[i], reason: e.target.value };
+                            setAdditionalProducts(updated);
+                          }}
+                        />
+                      </div>
+                    ))}
+
+                    {/* Add product button / picker */}
+                    <div className="pt-1 relative">
+                      <button
+                        className="flex items-center gap-1 cursor-pointer active:scale-[0.97]"
+                        style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#55BAAA" }}
+                        onClick={() => setAddProdPickerOpen(!addProdPickerOpen)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M7 3V11M3 7H11" stroke="#55BAAA" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                        Add Product
+                      </button>
+
+                      {addProdPickerOpen && (
+                        <div
+                          className="absolute left-0 right-0 mt-1 rounded-lg bg-white shadow-lg overflow-y-auto z-10"
+                          style={{ maxHeight: 200, border: "1px solid rgba(212,212,208,0.60)" }}
+                        >
+                          {(opProducts || []).length === 0 ? (
+                            <div className="px-3 py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products available</div>
+                          ) : (
+                            (opProducts || []).map((op: any) => {
+                              const prod = op.product as any;
+                              if (!prod) return null;
+                              const alreadyAdded = additionalProducts.some(ap => ap.product_id === prod.id);
+                              return (
+                                <button
+                                  key={op.id}
+                                  className="w-full text-left px-3 py-2.5 cursor-pointer"
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    borderBottom: "1px solid rgba(26,26,26,0.06)",
+                                    opacity: alreadyAdded ? 0.4 : 1,
+                                  }}
+                                  disabled={alreadyAdded}
+                                  onClick={() => {
+                                    setAdditionalProducts(prev => [
+                                      ...prev,
+                                      {
+                                        product_id: prod.id,
+                                        product_name: prod.name,
+                                        dosage: prod.dosage || "",
+                                        route: prod.route || "",
+                                        reason: "",
+                                      },
+                                    ]);
+                                    setAddProdPickerOpen(false);
+                                  }}
+                                >
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{prod.name}</div>
+                                  <div style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>
+                                    {[prod.dosage, prod.route].filter(Boolean).join(" · ")}
+                                  </div>
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Action buttons */}
             <div className="flex gap-3 pt-1">
@@ -737,6 +924,20 @@ export default function CowWorkProjectDetailScreen() {
                     {(a.weight || a.memo) && (
                       <div style={{ fontSize: 12, color: "rgba(240,240,240,0.45)", marginTop: 4 }}>
                         {a.weight && `${a.weight} lbs`}{a.weight && a.memo ? " · " : ""}{a.memo || ""}
+                      </div>
+                    )}
+                    {/* Phase F: Show additional products if any */}
+                    {a.additional_products && Array.isArray(a.additional_products) && (a.additional_products as any[]).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {(a.additional_products as any[]).map((ap: any, j: number) => (
+                          <span
+                            key={j}
+                            className="rounded-full"
+                            style={{ fontSize: 9, fontWeight: 600, padding: "2px 7px", backgroundColor: "rgba(85,186,170,0.15)", color: "#A8E6DA" }}
+                          >
+                            + {ap.product_name}
+                          </span>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -852,7 +1053,20 @@ export default function CowWorkProjectDetailScreen() {
             <div style={{ borderTop: "1px solid rgba(26,26,26,0.06)", margin: "8px 0" }} />
 
             <div style={SUB_LABEL}>PRODUCTS GIVEN</div>
-            <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products configured</div>
+            {(projectProducts || []).length === 0 ? (
+              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products configured</div>
+            ) : (
+              <div className="space-y-1">
+                {(projectProducts || []).map((pp: any, i: number) => (
+                  <div key={pp.id || i} className="flex items-center gap-2">
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{(pp.product as any)?.name || pp.product_name || "Unknown"}</span>
+                    <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>
+                      {[(pp.product as any)?.dosage, (pp.product as any)?.route].filter(Boolean).join(" · ")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div style={{ borderTop: "1px solid rgba(26,26,26,0.06)", margin: "8px 0" }} />
 
