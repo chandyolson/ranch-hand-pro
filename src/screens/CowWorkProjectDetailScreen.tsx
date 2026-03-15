@@ -276,6 +276,22 @@ export default function CowWorkProjectDetailScreen() {
     enabled: !!matchedAnimal?.id,
   });
 
+  // Load active flags for matched animal
+  const { data: animalActiveFlags, refetch: refetchAnimalFlags } = useQuery({
+    queryKey: ["animal-flags-cw", matchedAnimal?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("animal_flags")
+        .select("id, flag_tier, flag_name, flag_note, created_at")
+        .eq("animal_id", matchedAnimal.id)
+        .eq("operation_id", operationId)
+        .is("resolved_at", null)
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+    enabled: !!matchedAnimal?.id,
+  });
+
   const projectType = (project?.work_types as any)?.[0]?.work_type?.code || "";
   const projectName = project?.name || "";
   const projectDate = project ? new Date(project.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
@@ -545,7 +561,6 @@ export default function CowWorkProjectDetailScreen() {
         const flagNotes = QUICK_NOTES.filter(n => n.flag && selectedNotes.includes(n.label));
         for (const note of flagNotes) {
           const tier = flagTierMap[note.flag!] || note.flag!;
-          // Insert flag — allows multiple flags per animal (different tiers or same tier different reasons)
           await supabase.from("animal_flags").insert({
             operation_id: operationId,
             animal_id: animalId,
@@ -556,8 +571,24 @@ export default function CowWorkProjectDetailScreen() {
         }
         if (flagNotes.length > 0) {
           queryClient.invalidateQueries({ queryKey: ["animal-flags"] });
+          queryClient.invalidateQueries({ queryKey: ["animal-flags-cw", animalId] });
           queryClient.invalidateQueries({ queryKey: ["dashboard-flag-samples"] });
         }
+
+        // Sync quick notes to the animal record (merge with existing)
+        const { data: currentAnimal } = await supabase
+          .from("animals")
+          .select("quick_notes")
+          .eq("id", animalId)
+          .single();
+        const existingNotes: string[] = (currentAnimal?.quick_notes as string[]) || [];
+        const merged = [...new Set([...existingNotes, ...selectedNotes])];
+        await supabase
+          .from("animals")
+          .update({ quick_notes: merged })
+          .eq("id", animalId);
+        queryClient.invalidateQueries({ queryKey: ["animal", animalId] });
+        queryClient.invalidateQueries({ queryKey: ["animals"] });
       }
 
       const msg = editingRecord
@@ -778,6 +809,14 @@ export default function CowWorkProjectDetailScreen() {
                   <div className="flex items-center gap-1">
                     <span style={{ fontSize: 14, fontWeight: 700, color: "#55BAAA" }}>{matchedAnimal.tag}</span>
                     <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(26,26,26,0.50)" }}>· {matchedAnimal.type || matchedAnimal.sex} · {matchedAnimal.year_born || ""}</span>
+                    {/* Active flags */}
+                    {(animalActiveFlags || []).length > 0 && (
+                      <div className="flex items-center gap-1 ml-1">
+                        {(animalActiveFlags || []).some((f: any) => f.flag_tier === "cull") && <FlagIcon color="red" size="sm" />}
+                        {(animalActiveFlags || []).some((f: any) => f.flag_tier === "production") && <FlagIcon color="gold" size="sm" />}
+                        {(animalActiveFlags || []).some((f: any) => f.flag_tier === "management") && <FlagIcon color="teal" size="sm" />}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>History</span>
@@ -1060,7 +1099,6 @@ export default function CowWorkProjectDetailScreen() {
             {/* ── OPTIONAL FIELDS (from field_visibility config, in order) ── */}
             {enabledOptionalKeys.length > 0 && (
               <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-                <div style={SUB_LABEL}>PROJECT FIELDS</div>
                 {enabledOptionalKeys.map(key => {
                   switch (key) {
                     case "weight": return (
