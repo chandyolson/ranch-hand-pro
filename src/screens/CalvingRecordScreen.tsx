@@ -296,8 +296,7 @@ export default function CalvingRecordScreen() {
           <button
             key={tab.key}
             onClick={() => {
-              if (tab.key === "dam" && dbRecord?.dam_id) navigate("/animals/" + dbRecord.dam_id);
-              else setActiveTab("record");
+              setActiveTab(tab.key as "record" | "dam");
             }}
             className="px-4 py-2.5 cursor-pointer transition-all active:scale-[0.97]"
             style={{
