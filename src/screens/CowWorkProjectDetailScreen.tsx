@@ -1414,7 +1414,38 @@ export default function CowWorkProjectDetailScreen() {
                 const animalTag = (a.animal as any)?.tag || "Unknown";
                 return (
                   <div key={a.id || i} className="rounded-xl px-3 py-3.5 bg-[#0E2646] cursor-pointer active:scale-[0.98] transition-all"
-                    onClick={() => (a.animal as any)?.id && navigate("/animals/" + (a.animal as any).id)}>
+                    onClick={() => {
+                      // Load this cow_work record into the Add tab for editing
+                      const animal = a.animal as any;
+                      if (animal) {
+                        setTagField(animal.tag || "");
+                        setMatchedAnimal(animal);
+                        setIsMatched(true);
+                        setIsNewAnimal(false);
+                        setEditingRecord(a);
+                        // Load record data into form fields
+                        setPregResult(a.preg_stage || "");
+                        setPregDays(a.days_of_gestation ? String(a.days_of_gestation) : "");
+                        setCalfSex(a.fetal_sex || "");
+                        setWeight(a.weight ? String(a.weight) : "");
+                        setSelectedNotes(Array.isArray(a.quick_notes) ? a.quick_notes : []);
+                        setMemo(a.memo || "");
+                        setSampleId(a.dna || "");
+                        setBseResult(a.bse_result || "");
+                        setScrotal(a.scrotal ? String(a.scrotal) : "");
+                        setBreedingSire(a.breeding_sire || "");
+                        setBreedingType(a.breeding_type || "");
+                        setEstrusStatus(a.estrus_status || "");
+                        setTechnician(a.technician || "");
+                        setCullReason(a.cull_reason || "");
+                        setDispositionField(a.disposition || "");
+                        setSaleWeight(a.sale_weight ? String(a.sale_weight) : "");
+                        setDisease(a.disease || "");
+                        setPurchasePrice(a.purchase_price ? String(a.purchase_price) : "");
+                        setPurchaseSource(a.purchase_source || "");
+                      }
+                      setActiveTab("input");
+                    }}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
                         <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(240,240,240,0.90)" }}>{animalTag}</span>
