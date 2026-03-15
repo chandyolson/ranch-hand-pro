@@ -1,15 +1,13 @@
 import { COLORS } from "./constants";
 
 export const LABEL_STYLE: React.CSSProperties = {
-  width: 85,
+  width: 105,
   flexShrink: 0,
   fontSize: 14,
   fontWeight: 600,
   color: COLORS.textOnLight,
   fontFamily: "'Inter', sans-serif",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
+  lineHeight: 1.3,
 };
 
 export const INPUT_BASE: React.CSSProperties = {
