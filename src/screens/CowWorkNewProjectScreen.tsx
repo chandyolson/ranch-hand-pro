@@ -132,7 +132,13 @@ export default function CowWorkNewProjectScreen() {
   const selectedWorkType = (workTypes || []).find(w => w.id === processingType);
   const selectedGroup = (groups || []).find(g => g.id === group);
   const previewParts = [
-    date ? new Date(date + "T12:00:00").toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" }).replace(/ /g, "") : null,
+    date ? (() => {
+      const d = new Date(date + "T12:00:00");
+      const day = String(d.getDate()).padStart(2, "0");
+      const mon = d.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+      const yr = d.getFullYear();
+      return `${day}${mon}${yr}`;
+    })() : null,
     selectedGroup?.name || null,
     selectedWorkType?.code || null,
   ].filter(Boolean);
