@@ -27,13 +27,13 @@ export const ALL_FIELDS: FieldDef[] = [
   { key: "estrus_status",     label: "Estrus Status",      lockedFor: ["AI", "BREED"],       defaultOn: true, inputType: "select" },
   { key: "technician",        label: "Technician",         lockedFor: ["AI", "ET"],          defaultOn: true, inputType: "text" },
 
-  // ── BSE locked fields ──
-  { key: "bse_result",        label: "Pass / Fail",        lockedFor: ["BSE"],   defaultOn: true, inputType: "select" },
+  // ── BSE locked fields (order: scrotal → motility% → morphology% → defects → pass/fail last) ──
   { key: "scrotal",           label: "Scrotal Circ.",      lockedFor: ["BSE"],   defaultOn: true, inputType: "number" },
-  { key: "motility",          label: "Motility %",         lockedFor: ["BSE"],   defaultOn: true, inputType: "number" },
+  { key: "motility_pct",      label: "Motility %",         lockedFor: ["BSE"],   defaultOn: true, inputType: "number" },
   { key: "morphology",        label: "Morphology %",       lockedFor: ["BSE"],   defaultOn: true, inputType: "number" },
   { key: "semen_defects",     label: "Semen Defects",      lockedFor: ["BSE"],   defaultOn: true, inputType: "text" },
   { key: "physical_defects",  label: "Physical Defects",   lockedFor: ["BSE"],   defaultOn: true, inputType: "text" },
+  { key: "bse_result",        label: "Pass / Fail",        lockedFor: ["BSE"],   defaultOn: true, inputType: "select" },
 
   // ── Sale/Cull locked fields ──
   { key: "cull_reason",       label: "Cull Reason",        lockedFor: ["SALE"],  defaultOn: true, inputType: "select" },
@@ -54,6 +54,8 @@ export const ALL_FIELDS: FieldDef[] = [
   { key: "pen",               label: "Pen",                lockedFor: [],        defaultOn: false, inputType: "select" },
   { key: "data1",             label: "Data 1",             lockedFor: [],        defaultOn: false, inputType: "text" },
   { key: "data2",             label: "Data 2",             lockedFor: [],        defaultOn: false, inputType: "text" },
+  { key: "motility_desc",     label: "Motility (Qual.)",   lockedFor: [],        defaultOn: false, inputType: "select" },
+  { key: "morphology_desc",   label: "Morphology (Qual.)", lockedFor: [],        defaultOn: false, inputType: "select" },
   { key: "traits",            label: "Traits",             lockedFor: [],        defaultOn: false, inputType: "select" },
 ];
 

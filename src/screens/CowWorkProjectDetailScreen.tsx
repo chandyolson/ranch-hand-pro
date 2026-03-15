@@ -338,8 +338,10 @@ export default function CowWorkProjectDetailScreen() {
   // BSE fields
   const [bseResult, setBseResult] = useState("");
   const [scrotal, setScrotal] = useState("");
-  const [motility, setMotility] = useState("");
+  const [motilityPct, setMotilityPct] = useState("");
   const [morphology, setMorphology] = useState("");
+  const [motilityDesc, setMotilityDesc] = useState("");
+  const [morphologyDesc, setMorphologyDesc] = useState("");
   const [semenDefects, setSemenDefects] = useState<string[]>([]);
   const [semenDefectsOpen, setSemenDefectsOpen] = useState(false);
   const [physicalDefects, setPhysicalDefects] = useState<string[]>([]);
@@ -474,8 +476,10 @@ export default function CowWorkProjectDetailScreen() {
     setPen("");
     setBseResult("");
     setScrotal("");
-    setMotility("");
+    setMotilityPct("");
     setMorphology("");
+    setMotilityDesc("");
+    setMorphologyDesc("");
     setSemenDefects([]);
     setSemenDefectsOpen(false);
     setPhysicalDefects([]);
@@ -1003,20 +1007,23 @@ export default function CowWorkProjectDetailScreen() {
                     );
                     case "scrotal": return (
                       <FieldRow key={f.key} label="Scrotal">
-                        <input type="number" value={scrotal} onChange={e => setScrotal(e.target.value)} placeholder="cm" style={IS} />
+                        <input type="number" value={scrotal}
+                          onChange={e => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 70)) setScrotal(v); }}
+                          placeholder="cm (max 70)" inputMode="decimal" style={IS} />
                       </FieldRow>
                     );
-                    case "motility": return (
-                      <FieldRow key={f.key} label="Motility">
-                        <select value={motility} onChange={e => setMotility(e.target.value)} style={{...IS, appearance: "auto" as const}}>
-                          <option value="" disabled>Select…</option>
-                          {BSE_MOTILITY.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
+                    case "motility_pct": return (
+                      <FieldRow key={f.key} label="Motility %">
+                        <input type="number" value={motilityPct}
+                          onChange={e => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 100)) setMotilityPct(v); }}
+                          placeholder="0–100" inputMode="numeric" style={IS} />
                       </FieldRow>
                     );
                     case "morphology": return (
-                      <FieldRow key={f.key} label="Morphology">
-                        <input type="number" value={morphology} onChange={e => setMorphology(e.target.value)} placeholder="%" style={IS} />
+                      <FieldRow key={f.key} label="Morphology %">
+                        <input type="number" value={morphology}
+                          onChange={e => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 100)) setMorphology(v); }}
+                          placeholder="0–100" inputMode="numeric" style={IS} />
                       </FieldRow>
                     );
                     case "semen_defects": return (
@@ -1244,6 +1251,22 @@ export default function CowWorkProjectDetailScreen() {
                     case "pen": return (
                       <FieldRow key={key} label="Pen">
                         <input type="text" value={pen} onChange={e => setPen(e.target.value)} placeholder="Pen #" style={IS} />
+                      </FieldRow>
+                    );
+                    case "motility_desc": return (
+                      <FieldRow key={key} label="Motility Qual.">
+                        <select value={motilityDesc} onChange={e => setMotilityDesc(e.target.value)} style={{...IS, appearance: "auto" as const}}>
+                          <option value="" disabled>Select…</option>
+                          {BSE_MOTILITY.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </FieldRow>
+                    );
+                    case "morphology_desc": return (
+                      <FieldRow key={key} label="Morphology Qual.">
+                        <select value={morphologyDesc} onChange={e => setMorphologyDesc(e.target.value)} style={{...IS, appearance: "auto" as const}}>
+                          <option value="" disabled>Select…</option>
+                          {BSE_MOTILITY.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
                       </FieldRow>
                     );
                     default: return null;
