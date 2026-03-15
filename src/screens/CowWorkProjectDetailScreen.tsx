@@ -190,6 +190,8 @@ export default function CowWorkProjectDetailScreen() {
 
   // Edit mode state for Project Details tab
   const [isEditingProject, setIsEditingProject] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editDate, setEditDate] = useState("");
   const [editGroupId, setEditGroupId] = useState("");
   const [editLocationId, setEditLocationId] = useState("");
@@ -1514,13 +1516,7 @@ export default function CowWorkProjectDetailScreen() {
                     <button
                       className="rounded-lg px-3 py-1.5 cursor-pointer active:scale-[0.97]"
                       style={{ fontSize: 12, fontWeight: 600, color: "#D4183D", backgroundColor: "rgba(212,24,61,0.06)", border: "none" }}
-                      onClick={async () => {
-                        if (!confirm("Delete this project? This cannot be undone.")) return;
-                        const { error } = await supabase.from("projects").delete().eq("id", id!);
-                        if (error) { showToast("error", error.message); return; }
-                        showToast("success", "Project deleted");
-                        navigate("/cow-work");
-                      }}
+                      onClick={() => setShowDeleteConfirm(true)}
                     >
                       Delete
                     </button>
@@ -1649,48 +1645,73 @@ export default function CowWorkProjectDetailScreen() {
                 <div style={{ paddingTop: 8 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#0E2646", marginBottom: 4 }}>Field Defaults</div>
                   <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", marginBottom: 8 }}>Auto-fill values for every animal. Override per animal as needed.</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {(projectType === "PREG") && (
-                      <FieldRow label="Preg Default">
-                        <select value={editFieldDefaults.preg_stage || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, preg_stage: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
-                          <option value="">No default</option>
-                          {(pregStages || []).map(s => <option key={s.id} value={s.stage_name}>{s.stage_name}</option>)}
-                        </select>
-                      </FieldRow>
+                      <div>
+                        <FieldRow label="Preg Default">
+                          <select value={editFieldDefaults.preg_stage || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, preg_stage: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
+                            <option value="">No default</option>
+                            {(pregStages || []).map(s => <option key={s.id} value={s.stage_name}>{s.stage_name}</option>)}
+                          </select>
+                        </FieldRow>
+                        <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", paddingLeft: 93, marginTop: 2 }}>
+                          Options: {(pregStages || []).map(s => s.stage_name).join(", ") || "None configured"}
+                        </div>
+                      </div>
                     )}
                     {(projectType === "AI" || projectType === "BREED" || projectType === "ET") && (
                       <>
-                        <FieldRow label="Method">
-                          <select value={editFieldDefaults.breeding_type || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, breeding_type: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
-                            <option value="">No default</option>
-                            {BREEDING_METHODS.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        </FieldRow>
-                        <FieldRow label="Technician">
-                          <select value={editFieldDefaults.technician || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, technician: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
-                            <option value="">No default</option>
-                            {(technicians || []).map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
-                          </select>
-                        </FieldRow>
+                        <div>
+                          <FieldRow label="Method">
+                            <select value={editFieldDefaults.breeding_type || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, breeding_type: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
+                              <option value="">No default</option>
+                              {BREEDING_METHODS.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                          </FieldRow>
+                          <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", paddingLeft: 93, marginTop: 2 }}>
+                            Options: {BREEDING_METHODS.join(", ")}
+                          </div>
+                        </div>
+                        <div>
+                          <FieldRow label="Technician">
+                            <select value={editFieldDefaults.technician || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, technician: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
+                              <option value="">No default</option>
+                              {(technicians || []).map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                            </select>
+                          </FieldRow>
+                          <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", paddingLeft: 93, marginTop: 2 }}>
+                            Available: {(technicians || []).map(t => t.name).join(", ") || "None in system"}
+                          </div>
+                        </div>
                         <FieldRow label="Sire">
                           <input type="text" value={editFieldDefaults.breeding_sire || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, breeding_sire: e.target.value }))} placeholder="Bull tag…" style={IS} />
                         </FieldRow>
                       </>
                     )}
                     {projectType === "BSE" && (
-                      <FieldRow label="Result">
-                        <select value={editFieldDefaults.bse_result || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, bse_result: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
+                      <div>
+                        <FieldRow label="Result">
+                          <select value={editFieldDefaults.bse_result || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, bse_result: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
+                            <option value="">No default</option>
+                            {BSE_PASS_FAIL.map(o => <option key={o} value={o}>{o}</option>)}
+                          </select>
+                        </FieldRow>
+                        <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", paddingLeft: 93, marginTop: 2 }}>
+                          Options: {BSE_PASS_FAIL.join(", ")}
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <FieldRow label="Tag Color">
+                        <select value={editFieldDefaults.tag_color || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, tag_color: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
                           <option value="">No default</option>
-                          {BSE_PASS_FAIL.map(o => <option key={o} value={o}>{o}</option>)}
+                          {TAG_COLOR_OPTIONS.filter(c => c !== "None").map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </FieldRow>
-                    )}
-                    <FieldRow label="Tag Color">
-                      <select value={editFieldDefaults.tag_color || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, tag_color: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
-                        <option value="">No default</option>
-                        {TAG_COLOR_OPTIONS.filter(c => c !== "None").map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </FieldRow>
+                      <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", paddingLeft: 93, marginTop: 2 }}>
+                        Options: {TAG_COLOR_OPTIONS.filter(c => c !== "None").join(", ")}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </>
@@ -1814,6 +1835,37 @@ export default function CowWorkProjectDetailScreen() {
               >
                 Complete Project
               </button>
+            )}
+
+            {/* Delete confirmation */}
+            {showDeleteConfirm && (
+              <div style={{ borderRadius: 12, border: "2px solid #D4183D", padding: 14, backgroundColor: "rgba(212,24,61,0.03)" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#D4183D", marginBottom: 4 }}>Delete this project?</div>
+                <div style={{ fontSize: 12, color: "rgba(26,26,26,0.50)", marginBottom: 12 }}>
+                  This will permanently remove the project and all its animal records. This cannot be undone.
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    style={{ flex: 1, padding: "10px 0", borderRadius: 9999, border: "1px solid #D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646", cursor: "pointer" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setDeleting(true);
+                      const { error } = await supabase.from("projects").delete().eq("id", id!);
+                      if (error) { showToast("error", error.message); setDeleting(false); return; }
+                      showToast("success", "Project deleted");
+                      navigate("/cow-work");
+                    }}
+                    disabled={deleting}
+                    style={{ flex: 1, padding: "10px 0", borderRadius: 9999, border: "none", backgroundColor: "#D4183D", fontSize: 13, fontWeight: 700, color: "white", cursor: "pointer", opacity: deleting ? 0.5 : 1 }}
+                  >
+                    {deleting ? "Deleting…" : "Delete Project"}
+                  </button>
+                </div>
+              </div>
             )}
 
           </div>
