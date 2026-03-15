@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import AnimalLookup from "../components/AnimalLookup";
 import CollapsibleQuickNotes from "../components/CollapsibleQuickNotes";
 import ConfigureFieldsSection from "../components/ConfigureFieldsSection";
 import FormFieldRow from "../components/FormFieldRow";
+import FieldRow from "../components/calving/FieldRow";
 import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
 import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, type FlagColor } from "@/lib/constants";
@@ -17,6 +18,23 @@ import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Tab = "input" | "worked" | "stats" | "details";
+
+const IS: React.CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  height: 36,
+  borderRadius: 8,
+  border: "1px solid #D4D4D0",
+  paddingLeft: 12,
+  paddingRight: 12,
+  fontFamily: "'Inter', sans-serif",
+  fontSize: 16,
+  fontWeight: 400,
+  color: "#1A1A1A",
+  outline: "none",
+  backgroundColor: "#FFFFFF",
+  boxSizing: "border-box" as const,
+};
 
 export default function CowWorkProjectDetailScreen() {
   const { id } = useParams<{ id: string }>();
@@ -941,82 +959,71 @@ export default function CowWorkProjectDetailScreen() {
               </div>
             )}
 
-            {/* ── LOCKED FIELDS (work-type-specific) ── */}
-            {lockedFields.length > 0 && (
-              <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#55BAAA", textTransform: "uppercase" }}>
-                  {projectType} FIELDS
-                </div>
+            {/* ── ALL DATA ENTRY FIELDS (locked + optional in one card) ── */}
+            {(lockedFields.length > 0 || enabledOptionalKeys.length > 0) && (
+              <div style={{ borderRadius: 12, backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)", padding: 12 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {/* Locked fields (work-type-specific) */}
                 {lockedFields.map(f => {
                   switch (f.key) {
                     case "preg_stage": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Preg</label>
-                        <select value={pregResult} onChange={e => setPregResult(e.target.value)} className={INPUT_CLS}>
+                      <FieldRow key={f.key} label="Preg">
+                        <select value={pregResult} onChange={e => setPregResult(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
                           {(pregStages || []).map(s => (
                             <option key={s.id} value={s.stage_name}>{s.stage_name}</option>
                           ))}
                         </select>
-                      </div>
+                      </FieldRow>
                     );
                     case "days_of_gestation": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Days Gest.</label>
-                        <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={f.key} label="Days Gest.">
+                        <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" style={IS} />
+                      </FieldRow>
                     );
                     case "fetal_sex": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Calf Sex</label>
-                        <select value={calfSex} onChange={e => setCalfSex(e.target.value)} className={INPUT_CLS}>
+                      <FieldRow key={f.key} label="Calf Sex">
+                        <select value={calfSex} onChange={e => setCalfSex(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
                           {PREG_CALF_SEX_OPTIONS.filter(o => o !== "None").map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
-                      </div>
+                      </FieldRow>
                     );
                     case "bse_result": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Result</label>
-                        <select value={bseResult} onChange={e => setBseResult(e.target.value)} className={INPUT_CLS}>
+                      <FieldRow key={f.key} label="Result">
+                        <select value={bseResult} onChange={e => setBseResult(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
                           <option>Pass</option><option>Fail</option><option>Defer</option>
                         </select>
-                      </div>
+                      </FieldRow>
                     );
                     case "scrotal": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Scrotal</label>
-                        <input type="number" value={scrotal} onChange={e => setScrotal(e.target.value)} placeholder="cm" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={f.key} label="Scrotal">
+                        <input type="number" value={scrotal} onChange={e => setScrotal(e.target.value)} placeholder="cm" style={IS} />
+                      </FieldRow>
                     );
                     case "motility": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Motility</label>
-                        <input type="number" value={motility} onChange={e => setMotility(e.target.value)} placeholder="%" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={f.key} label="Motility">
+                        <input type="number" value={motility} onChange={e => setMotility(e.target.value)} placeholder="%" style={IS} />
+                      </FieldRow>
                     );
                     case "morphology": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Morphology</label>
-                        <input type="number" value={morphology} onChange={e => setMorphology(e.target.value)} placeholder="%" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={f.key} label="Morphology">
+                        <input type="number" value={morphology} onChange={e => setMorphology(e.target.value)} placeholder="%" style={IS} />
+                      </FieldRow>
                     );
                     case "semen_defects": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Semen Def.</label>
-                        <input type="text" value={semenDefects} onChange={e => setSemenDefects(e.target.value)} placeholder="Defects…" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={f.key} label="Semen Def.">
+                        <input type="text" value={semenDefects} onChange={e => setSemenDefects(e.target.value)} placeholder="Defects…" style={IS} />
+                      </FieldRow>
                     );
                     case "physical_defects": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Physical Def.</label>
-                        <input type="text" value={physicalDefects} onChange={e => setPhysicalDefects(e.target.value)} placeholder="Defects…" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={f.key} label="Physical Def.">
+                        <input type="text" value={physicalDefects} onChange={e => setPhysicalDefects(e.target.value)} placeholder="Defects…" style={IS} />
+                      </FieldRow>
                     );
                     case "breeding_sire": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Sire</label>
+                      <FieldRow key={f.key} label="Sire">
                         <AnimalLookup
                           value={breedingSire}
                           onChange={(v) => setBreedingSire(v)}
@@ -1024,92 +1031,79 @@ export default function CowWorkProjectDetailScreen() {
                           placeholder="Bull tag…"
                           sexFilter={["Bull"]}
                         />
-                      </div>
+                      </FieldRow>
                     );
                     case "breeding_date": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Breed Date</label>
-                        <input type="date" value={breedingDate} onChange={e => setBreedingDate(e.target.value)} className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={f.key} label="Breed Date">
+                        <input type="date" value={breedingDate} onChange={e => setBreedingDate(e.target.value)} style={IS} />
+                      </FieldRow>
                     );
                     case "breeding_type": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Method</label>
-                        <select value={breedingType} onChange={e => setBreedingType(e.target.value)} className={INPUT_CLS}>
+                      <FieldRow key={f.key} label="Method">
+                        <select value={breedingType} onChange={e => setBreedingType(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
                           <option>AI</option><option>IVF</option><option>Natural</option>
                         </select>
-                      </div>
+                      </FieldRow>
                     );
                     case "estrus_status": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Estrus Status</label>
-                        <select value={estrusStatus} onChange={e => setEstrusStatus(e.target.value)} className={INPUT_CLS}>
+                      <FieldRow key={f.key} label="Estrus Status">
+                        <select value={estrusStatus} onChange={e => setEstrusStatus(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
                           <option>Heat</option>
                           <option>Estrus</option>
                           <option>FTAI</option>
                           <option>Unknown</option>
                         </select>
-                      </div>
+                      </FieldRow>
                     );
                     case "technician": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Technician</label>
-                        <select value={technician} onChange={e => setTechnician(e.target.value)} className={INPUT_CLS}>
+                      <FieldRow key={f.key} label="Technician">
+                        <select value={technician} onChange={e => setTechnician(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
                           {(technicians || []).map(t => (
                             <option key={t.id} value={t.name}>{t.name}</option>
                           ))}
                         </select>
-                      </div>
+                      </FieldRow>
                     );
                     case "cull_reason": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Cull Reason</label>
-                        <select value={cullReason} onChange={e => setCullReason(e.target.value)} className={INPUT_CLS}>
+                      <FieldRow key={f.key} label="Cull Reason">
+                        <select value={cullReason} onChange={e => setCullReason(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
                           <option>Age</option><option>Udder</option><option>Feet</option><option>Disposition</option><option>Open</option><option>Health</option><option>Body Condition</option><option>Other</option>
                         </select>
-                      </div>
+                      </FieldRow>
                     );
                     case "disposition": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Disposition</label>
-                        <select value={dispositionField} onChange={e => setDispositionField(e.target.value)} className={INPUT_CLS}>
+                      <FieldRow key={f.key} label="Disposition">
+                        <select value={dispositionField} onChange={e => setDispositionField(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
                           <option>Sold</option><option>Kept</option><option>Dead</option><option>Shipped</option>
                         </select>
-                      </div>
+                      </FieldRow>
                     );
                     case "sale_weight": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Sale Wt</label>
-                        <input type="number" value={saleWeight} onChange={e => setSaleWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={f.key} label="Sale Wt">
+                        <input type="number" value={saleWeight} onChange={e => setSaleWeight(e.target.value)} placeholder="lbs" style={IS} />
+                      </FieldRow>
                     );
                     case "disease": return (
-                      <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Disease</label>
-                        <input type="text" value={disease} onChange={e => setDisease(e.target.value)} placeholder="Disease…" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={f.key} label="Disease">
+                        <input type="text" value={disease} onChange={e => setDisease(e.target.value)} placeholder="Disease…" style={IS} />
+                      </FieldRow>
                     );
                     default: return null;
                   }
                 })}
-              </div>
-            )}
 
-            {/* ── OPTIONAL FIELDS (from field_visibility config, in order) ── */}
-            {enabledOptionalKeys.length > 0 && (
-              <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+                {/* Optional fields (from field_visibility config) */}
                 {enabledOptionalKeys.map(key => {
                   switch (key) {
                     case "weight": return (
-                      <div key={key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Weight</label>
-                        <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={key} label="Weight">
+                        <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" style={IS} />
+                      </FieldRow>
                     );
                     case "quick_notes": return (
                       <div key={key} className="pt-1">
@@ -1123,63 +1117,56 @@ export default function CowWorkProjectDetailScreen() {
                       </div>
                     );
                     case "dna": return (
-                      <div key={key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>DNA</label>
-                        <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={key} label="DNA">
+                        <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" style={IS} />
+                      </FieldRow>
                     );
                     case "memo": return (
-                      <div key={key} className="pt-2">
-                        <div style={{ ...SUB_LABEL, marginBottom: 6 }}>NOTES</div>
+                      <FieldRow key={key} label="Notes">
                         <textarea
                           value={memo} onChange={e => setMemo(e.target.value)}
-                          className="w-full resize-none rounded-lg px-3 py-2.5 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
-                          style={{ minHeight: 56, backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16 }}
+                          style={{ ...IS, height: "auto", minHeight: 36, paddingTop: 8, paddingBottom: 8, resize: "none" as const }}
+                          placeholder="Notes…"
                         />
-                      </div>
+                      </FieldRow>
                     );
                     case "tag_color": return (
-                      <div key={key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Tag Color</label>
-                        <select value={newTagColor} onChange={e => setNewTagColor(e.target.value)} className={INPUT_CLS}>
+                      <FieldRow key={key} label="Tag Color">
+                        <select value={newTagColor} onChange={e => setNewTagColor(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="">Select…</option>
                           {TAG_COLOR_OPTIONS.map(c => <option key={c} value={c === "None" ? "" : c}>{c}</option>)}
                         </select>
-                      </div>
+                      </FieldRow>
                     );
                     case "data1": return (
-                      <div key={key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Data 1</label>
-                        <input type="text" value={data1} onChange={e => setData1(e.target.value)} placeholder="Custom…" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={key} label="Data 1">
+                        <input type="text" value={data1} onChange={e => setData1(e.target.value)} placeholder="Custom…" style={IS} />
+                      </FieldRow>
                     );
                     case "data2": return (
-                      <div key={key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Data 2</label>
-                        <input type="text" value={data2} onChange={e => setData2(e.target.value)} placeholder="Custom…" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={key} label="Data 2">
+                        <input type="text" value={data2} onChange={e => setData2(e.target.value)} placeholder="Custom…" style={IS} />
+                      </FieldRow>
                     );
                     case "lot": return (
-                      <div key={key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Lot</label>
-                        <input type="text" value={lot} onChange={e => setLot(e.target.value)} placeholder="Lot #" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={key} label="Lot">
+                        <input type="text" value={lot} onChange={e => setLot(e.target.value)} placeholder="Lot #" style={IS} />
+                      </FieldRow>
                     );
                     case "sample": return (
-                      <div key={key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Sample</label>
-                        <input type="text" value={sampleField} onChange={e => setSampleField(e.target.value)} placeholder="Sample ID" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={key} label="Sample">
+                        <input type="text" value={sampleField} onChange={e => setSampleField(e.target.value)} placeholder="Sample ID" style={IS} />
+                      </FieldRow>
                     );
                     case "pen": return (
-                      <div key={key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Pen</label>
-                        <input type="text" value={pen} onChange={e => setPen(e.target.value)} placeholder="Pen #" className={INPUT_CLS} />
-                      </div>
+                      <FieldRow key={key} label="Pen">
+                        <input type="text" value={pen} onChange={e => setPen(e.target.value)} placeholder="Pen #" style={IS} />
+                      </FieldRow>
                     );
                     default: return null;
                   }
                 })}
+                </div>
               </div>
             )}
 
@@ -1436,48 +1423,41 @@ export default function CowWorkProjectDetailScreen() {
             {/* EDIT MODE */}
             {isEditingProject && (
               <>
-                <div className="flex items-center gap-2 min-w-0">
-                  <label style={LABEL_STYLE}>Date</label>
-                  <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className={INPUT_CLS} />
-                </div>
-                <div className="flex items-center gap-2 min-w-0">
-                  <label style={LABEL_STYLE}>Type</label>
+                      <FieldRow label="Date">
+                  <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} style={IS} />
+                </FieldRow>
+                      <FieldRow label="Type">
                   <span style={{ fontSize: 14, color: "rgba(26,26,26,0.40)" }}>{projectType} (locked)</span>
-                </div>
-                <div className="flex items-center gap-2 min-w-0">
-                  <label style={LABEL_STYLE}>Group</label>
-                  <select value={editGroupId} onChange={e => setEditGroupId(e.target.value)} className={INPUT_CLS}>
+                </FieldRow>
+                      <FieldRow label="Group">
+                  <select value={editGroupId} onChange={e => setEditGroupId(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                     <option value="">None</option>
                     {(groups || []).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                   </select>
-                </div>
-                <div className="flex items-center gap-2 min-w-0">
-                  <label style={LABEL_STYLE}>Location</label>
-                  <select value={editLocationId} onChange={e => setEditLocationId(e.target.value)} className={INPUT_CLS}>
+                </FieldRow>
+                      <FieldRow label="Location">
+                  <select value={editLocationId} onChange={e => setEditLocationId(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                     <option value="">None</option>
                     {(locations || []).map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                   </select>
-                </div>
-                <div className="flex items-center gap-2 min-w-0">
-                  <label style={LABEL_STYLE}>Status</label>
-                  <select value={editStatus} onChange={e => setEditStatus(e.target.value)} className={INPUT_CLS}>
+                </FieldRow>
+                      <FieldRow label="Status">
+                  <select value={editStatus} onChange={e => setEditStatus(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                     <option>Pending</option>
                     <option>In Progress</option>
                     <option>Completed</option>
                   </select>
-                </div>
-                <div className="flex items-center gap-2 min-w-0">
-                  <label style={LABEL_STYLE}>Head Expected</label>
-                  <input type="number" value={editHeadCount} onChange={e => setEditHeadCount(e.target.value)} placeholder="Optional" className={INPUT_CLS} />
-                </div>
-                <div className="pt-1">
-                  <div style={{ ...SUB_LABEL, marginBottom: 4 }}>MEMO</div>
+                </FieldRow>
+                      <FieldRow label="Head Expected">
+                  <input type="number" value={editHeadCount} onChange={e => setEditHeadCount(e.target.value)} placeholder="Optional" style={IS} />
+                </FieldRow>
+                <FieldRow label="Memo">
                   <textarea
                     value={editMemo} onChange={e => setEditMemo(e.target.value)}
-                    className="w-full resize-none rounded-lg px-3 py-2.5 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
-                    style={{ minHeight: 56, backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16 }}
+                    style={{ ...IS, height: "auto", minHeight: 36, paddingTop: 8, paddingBottom: 8, resize: "none" as const }}
+                    placeholder="Notes…"
                   />
-                </div>
+                </FieldRow>
 
                 {/* Field Configuration */}
                 {editFieldConfig && (
