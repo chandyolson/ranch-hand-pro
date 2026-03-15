@@ -196,9 +196,10 @@ export default function CowWorkProjectDetailScreen() {
       if (error) throw error;
 
       // Sync products: delete existing, insert new set
-      await supabase.from("project_products").delete().eq("project_id", id!);
+      const { error: delErr } = await supabase.from("project_products").delete().eq("project_id", id!);
+      if (delErr) console.error("Failed to delete old products:", delErr);
       if (editProducts.length > 0) {
-        await supabase.from("project_products").insert(
+        const { error: insErr } = await supabase.from("project_products").insert(
           editProducts.map(p => ({
             project_id: id!,
             product_id: p.id,
@@ -207,6 +208,10 @@ export default function CowWorkProjectDetailScreen() {
             source: "manual",
           }))
         );
+        if (insErr) {
+          console.error("Failed to save products:", insErr);
+          showToast("error", "Products failed to save: " + insErr.message);
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ["project", id] });

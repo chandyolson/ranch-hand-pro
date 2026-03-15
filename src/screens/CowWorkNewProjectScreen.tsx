@@ -199,7 +199,10 @@ export default function CowWorkNewProjectScreen() {
           .from("project_products")
           .insert(productRows);
 
-        if (prodError) console.error("Failed to save products:", prodError);
+        if (prodError) {
+          console.error("Failed to save products:", prodError);
+          showToast("error", "Products failed to save: " + prodError.message);
+        }
       }
 
       // Phase D: Pre-load animals from group
@@ -299,60 +302,6 @@ export default function CowWorkNewProjectScreen() {
             ))}
           </select>
         </div>
-      </div>
-
-      {/* Step 2: Template — do you want to use a saved setup? */}
-      <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-        <button
-          className="flex items-center justify-between w-full px-3 py-3.5 cursor-pointer active:scale-[0.99]"
-          onClick={() => setTemplateOpen(!templateOpen)}
-        >
-          <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>Load from Template</span>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
-            style={{ transform: templateOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
-            <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="rgba(26,26,26,0.40)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-
-        {templateOpen && (
-          <div className="px-3 pb-2" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
-            {(templates || []).length === 0 ? (
-              <div className="text-center py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No templates</div>
-            ) : (
-              (templates || []).map(t => {
-                const tProducts = Array.isArray(t.default_products) ? (t.default_products as any[]) : [];
-                return (
-                  <button
-                    key={t.id}
-                    className="flex items-center justify-between w-full py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.02)]"
-                    style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", background: "none", border: "none", borderBottomStyle: "solid", borderBottomWidth: 1, borderBottomColor: "rgba(26,26,26,0.06)" }}
-                    onClick={() => handleTemplateSelect(t)}
-                  >
-                    <div className="text-left min-w-0">
-                      <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{t.name}</span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {t.default_cattle_type && (
-                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{t.default_cattle_type}</span>
-                        )}
-                        {tProducts.length > 0 && (
-                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
-                            {tProducts.length} product{tProducts.length !== 1 ? "s" : ""}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span
-                      className="rounded-full shrink-0"
-                      style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.15)", color: "#C4A600" }}
-                    >
-                      {(t.work_type as any)?.code || ""}
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        )}
       </div>
 
       {/* Step 3: Group & Pre-load — which group, and how to load them? */}
@@ -472,7 +421,63 @@ export default function CowWorkNewProjectScreen() {
         </div>
       </div>
 
-      {/* Step 4: Configure Fields — what fields show on the Add tab? */}
+      {/* Step 4: Template + Configure Fields */}
+      <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+        {/* Load from Template — collapsible inside this card */}
+        <button
+          className="flex items-center justify-between w-full px-3 py-3 cursor-pointer active:scale-[0.99]"
+          style={{ background: "none", border: "none", borderBottom: "1px solid rgba(212,212,208,0.30)" }}
+          onClick={() => setTemplateOpen(!templateOpen)}
+        >
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Load from Template</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+            style={{ transform: templateOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
+            <path d="M4 6L8 10L12 6" stroke="rgba(26,26,26,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {templateOpen && (
+          <div className="px-3 pb-2" style={{ borderBottom: "1px solid rgba(212,212,208,0.30)" }}>
+            {(templates || []).length === 0 ? (
+              <div className="text-center py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No templates</div>
+            ) : (
+              (templates || []).map(t => {
+                const tProducts = Array.isArray(t.default_products) ? (t.default_products as any[]) : [];
+                return (
+                  <button
+                    key={t.id}
+                    className="flex items-center justify-between w-full py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.02)]"
+                    style={{ background: "none", border: "none", borderBottom: "1px solid rgba(26,26,26,0.06)" }}
+                    onClick={() => handleTemplateSelect(t)}
+                  >
+                    <div className="text-left min-w-0">
+                      <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{t.name}</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {t.default_cattle_type && (
+                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{t.default_cattle_type}</span>
+                        )}
+                        {tProducts.length > 0 && (
+                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
+                            {tProducts.length} product{tProducts.length !== 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span
+                      className="rounded-full shrink-0"
+                      style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.15)", color: "#C4A600" }}
+                    >
+                      {(t.work_type as any)?.code || ""}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Configure Fields — what fields show on the Add tab? */}
       <ConfigureFieldsSection
         workTypeCode={selectedWorkType?.code || ""}
         config={fieldConfig}
