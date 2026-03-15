@@ -45,14 +45,18 @@ export default function CowWorkCloseOutScreen() {
   const { data: workedAnimals } = useQuery({
     queryKey: ["project-animals", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: cwData, error: cwErr } = await supabase
         .from("cow_work")
-        .select("*, animal:animals(tag, tag_color, sex, type, year_born)")
-        .eq("project_id", id!)
-        .eq("operation_id", operationId)
-        .order("record_order", { ascending: true });
-      if (error) throw error;
-      return data || [];
+        .select("*")
+        .eq("project_id", id!);
+      if (cwErr) throw cwErr;
+      if (!cwData || cwData.length === 0) return [];
+      const animalIds = [...new Set(cwData.map(r => r.animal_id).filter(Boolean))];
+      const { data: anData } = animalIds.length > 0
+        ? await supabase.from("animals").select("id, tag, tag_color, sex, type, breed, year_born").in("id", animalIds)
+        : { data: [] };
+      const animalMap = new Map((anData || []).map(a => [a.id, a]));
+      return cwData.map(cw => ({ ...cw, animal: animalMap.get(cw.animal_id) || null }));
     },
     enabled: !!id,
   });
@@ -255,26 +259,40 @@ export default function CowWorkCloseOutScreen() {
         </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { value: worked.length, label: "WORKED", sub: `of ${headCount} head` },
-          { value: headCount - worked.length, label: "REMAINING", sub: headCount - worked.length === 0 ? "All done ✓" : "not processed" },
-          { value: confirmedCount, label: "CONFIRMED", sub: worked.length > 0 ? `${Math.round((confirmedCount / worked.length) * 100)}%` : "—" },
-          { value: `${avgWeight}`, label: "AVG WEIGHT", sub: weighedAnimals.length > 0 ? `${weighedAnimals.length} weighed` : "No weights" },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="rounded-xl bg-white px-4 py-3.5"
-            style={{ border: "1px solid rgba(212,212,208,0.60)" }}
-          >
-            <div style={{ fontSize: 28, fontWeight: 800, color: "#0E2646", lineHeight: 1 }}>{s.value}</div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginTop: 4 }}>
-              {s.label}
+      {/* Summary Stats — work-type-aware */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {(() => {
+          const cards: { value: string | number; label: string; sub: string }[] = [
+            { value: worked.length, label: "WORKED", sub: `of ${headCount} expected` },
+            { value: Math.max(0, headCount - worked.length), label: "REMAINING", sub: headCount - worked.length <= 0 ? "All done" : "not processed" },
+          ];
+          if (projectType === "PREG") {
+            cards.push({ value: confirmedCount, label: "CONFIRMED", sub: worked.length > 0 ? `${Math.round((confirmedCount / worked.length) * 100)}%` : "—" });
+            cards.push({ value: openCount, label: "OPEN", sub: worked.length > 0 ? `${Math.round((openCount / worked.length) * 100)}%` : "—" });
+          } else if (projectType === "BSE") {
+            const passC = worked.filter(a => a.bse_result === "Pass").length;
+            const failC = worked.filter(a => a.bse_result === "Fail" || a.bse_result === "Permanent Fail").length;
+            cards.push({ value: passC, label: "PASS", sub: worked.length > 0 ? `${Math.round((passC / worked.length) * 100)}%` : "—" });
+            cards.push({ value: failC, label: "FAIL", sub: worked.length > 0 ? `${Math.round((failC / worked.length) * 100)}%` : "—" });
+          } else if (["AI", "BREED", "ET", "TO"].includes(projectType)) {
+            const sires = new Set(worked.map(a => a.breeding_sire).filter(Boolean));
+            cards.push({ value: worked.filter(a => a.breeding_sire || a.breeding_type).length, label: "BRED", sub: `${sires.size} sire${sires.size !== 1 ? "s" : ""}` });
+          } else if (projectType === "PURCH") {
+            const prices = worked.filter(a => a.purchase_price);
+            const total = prices.reduce((s, a) => s + Number(a.purchase_price), 0);
+            cards.push({ value: prices.length > 0 ? `$${Math.round(total / prices.length)}` : "—", label: "AVG PRICE", sub: prices.length > 0 ? `$${total.toLocaleString()} total` : "—" });
+          }
+          if (weighedAnimals.length > 0) {
+            cards.push({ value: `${avgWeight}`, label: "AVG WEIGHT", sub: `${weighedAnimals.length} weighed` });
+          }
+          return cards.map(s => (
+            <div key={s.label} style={{ borderRadius: 12, backgroundColor: "white", padding: "14px 16px", border: "1px solid rgba(212,212,208,0.60)" }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#0E2646", lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginTop: 4 }}>{s.label}</div>
+              <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>{s.sub}</div>
             </div>
-            <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>{s.sub}</div>
-          </div>
-        ))}
+          ));
+        })()}
       </div>
 
       {/* Preg Breakdown (only for PREG projects) */}
