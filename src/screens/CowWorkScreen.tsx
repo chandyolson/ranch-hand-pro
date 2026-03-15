@@ -22,6 +22,7 @@ const COWWORK_FILTER_FIELDS: FilterFieldConfig[] = [
 export default function CowWorkScreen() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
+  const [filterOpen, setFilterOpen] = useState(false);
   const navigate = useNavigate();
   const { operationId } = useOperation();
   const { showToast } = useChuteSideToast();
