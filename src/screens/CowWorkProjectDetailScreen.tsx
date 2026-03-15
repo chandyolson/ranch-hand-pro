@@ -755,45 +755,44 @@ export default function CowWorkProjectDetailScreen() {
         </div>
 
         {headerOpen && (
-          <>
-            <div className="px-3.5 pt-3 pb-1" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-              <div style={{ fontSize: 10, fontWeight: 500, color: "rgba(168,230,218,0.50)", marginBottom: 8 }}>{projectStatus}</div>
-              <div className="flex gap-5">
-                {[
-                  { label: "HEAD", value: headCount },
-                  { label: "WORKED", value: worked.length },
-                  { label: "REMAINING", value: Math.max(0, headCount - worked.length) },
-                ].map(s => (
-                  <div key={s.label}>
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>{s.label}</div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: "white", lineHeight: 1, marginTop: 2 }}>{s.value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex px-3.5 mt-3" style={{ backgroundColor: "rgba(0,0,0,0.15)", borderRadius: "0 0 12px 12px" }}>
-              {(["input", "worked", "stats", "details"] as Tab[]).map(tab => (
-                <button
-                  key={tab}
-                  className="flex-1 py-2.5 cursor-pointer relative"
-                  style={{
-                    fontSize: 12,
-                    fontWeight: activeTab === tab ? 700 : 500,
-                    color: activeTab === tab ? "#F3D12A" : "rgba(255,255,255,0.40)",
-                    background: "none", border: "none",
-                  }}
-                  onClick={() => { setActiveTab(tab); setHeaderOpen(false); }}
-                >
-                  {tabLabels[tab]}
-                  {activeTab === tab && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full" style={{ width: 36, height: 2, backgroundColor: "#F3D12A" }} />
-                  )}
-                </button>
+          <div className="px-3.5 pt-3 pb-1" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ fontSize: 10, fontWeight: 500, color: "rgba(168,230,218,0.50)", marginBottom: 8 }}>{projectStatus}</div>
+            <div className="flex gap-5">
+              {[
+                { label: "HEAD", value: headCount },
+                { label: "WORKED", value: worked.length },
+                { label: "REMAINING", value: Math.max(0, headCount - worked.length) },
+              ].map(s => (
+                <div key={s.label}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>{s.label}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "white", lineHeight: 1, marginTop: 2 }}>{s.value}</div>
+                </div>
               ))}
             </div>
-          </>
+          </div>
         )}
+
+        {/* Tabs — always visible */}
+        <div className="flex px-3.5" style={{ backgroundColor: "rgba(0,0,0,0.15)", borderRadius: "0 0 12px 12px" }}>
+          {(["input", "worked", "stats", "details"] as Tab[]).map(tab => (
+            <button
+              key={tab}
+              className="flex-1 py-2.5 cursor-pointer relative"
+              style={{
+                fontSize: 12,
+                fontWeight: activeTab === tab ? 700 : 500,
+                color: activeTab === tab ? "#F3D12A" : "rgba(255,255,255,0.40)",
+                background: "none", border: "none",
+              }}
+              onClick={() => { setActiveTab(tab); setHeaderOpen(false); }}
+            >
+              {tabLabels[tab]}
+              {activeTab === tab && (
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full" style={{ width: 36, height: 2, backgroundColor: "#F3D12A" }} />
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* TAB CONTENT */}
