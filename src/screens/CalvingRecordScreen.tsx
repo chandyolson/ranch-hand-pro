@@ -97,6 +97,59 @@ export default function CalvingRecordScreen() {
     enabled: !!damId,
   });
 
+  // Dam full animal record
+  const { data: damAnimal } = useQuery({
+    queryKey: ["dam-animal-detail", damId],
+    queryFn: async () => {
+      if (!damId) return null;
+      const { data } = await supabase.from("animals").select("*").eq("id", damId).maybeSingle();
+      return data;
+    },
+    enabled: !!damId,
+  });
+
+  // Dam's calving history
+  const { data: damCalvings } = useQuery({
+    queryKey: ["dam-calvings-detail", damId],
+    queryFn: async () => {
+      if (!damId) return [];
+      const { data } = await supabase.from("calving_records").select("*").eq("dam_id", damId).eq("operation_id", operationId).order("calving_date", { ascending: false });
+      return data || [];
+    },
+    enabled: !!damId,
+  });
+
+  // Dam's all active flags
+  const { data: damAllFlags } = useQuery({
+    queryKey: ["dam-all-flags-detail", damId],
+    queryFn: async () => {
+      if (!damId) return [];
+      const { data } = await supabase.from("animal_flags").select("*").eq("animal_id", damId).eq("operation_id", operationId).is("resolved_at", null);
+      return data || [];
+    },
+    enabled: !!damId,
+  });
+
+  // Dam's work history (two-step: cow_work then projects)
+  const [damSubTab, setDamSubTab] = useState<"info" | "calving" | "work">("info");
+  const { data: damWorkRecords } = useQuery({
+    queryKey: ["dam-work-detail", damId],
+    queryFn: async () => {
+      if (!damId) return [];
+      const { data: workRows } = await supabase.from("cow_work").select("*").eq("animal_id", damId).eq("operation_id", operationId);
+      if (!workRows?.length) return [];
+      const projectIds = [...new Set(workRows.map(w => w.project_id))];
+      const { data: projects } = await supabase.from("projects").select("id, name, project_date, work_types:project_work_types(work_type:work_types(code, name))").in("id", projectIds);
+      const projMap = new Map((projects || []).map(p => [p.id, p]));
+      return workRows.map(w => ({ ...w, project: projMap.get(w.project_id) })).sort((a, b) => {
+        const da = a.project?.project_date || "";
+        const db = b.project?.project_date || "";
+        return db.localeCompare(da);
+      });
+    },
+    enabled: !!damId && damSubTab === "work",
+  });
+
   const flagTierToColor: Record<string, FlagColor> = { management: "teal", production: "gold", cull: "red" };
   const damFlagTier = damFlagData ? (flagTierToColor[damFlagData as string] || null) : null;
 
@@ -315,6 +368,8 @@ export default function CalvingRecordScreen() {
 
       {/* CONTENT */}
       <div className="mt-3 space-y-3">
+        {activeTab === "record" && (
+        <>
         {/* CALVING INFO */}
         <div className="rounded-xl border" style={{ borderColor: "rgba(212,212,208,0.60)", backgroundColor: "white", padding: "14px 10px" }}>
           <div className="flex items-center justify-between mb-2">
@@ -589,6 +644,188 @@ export default function CalvingRecordScreen() {
             Save &amp; New
           </button>
         </div>
+        </>
+        )}
+
+        {/* ═══ DAM HISTORY PANEL ═══ */}
+        {activeTab === "dam" && damAnimal && (
+          <div style={{ background: "#FFFFFF", border: "1px solid #D4D4D0", borderRadius: 12, overflow: "hidden" }}>
+            {/* Header */}
+            <div style={{ padding: "12px 14px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: "#0E2646" }}>{damAnimal.tag}</span>
+                <span style={{ fontSize: 12, color: "rgba(26,26,26,0.45)" }}>{damAnimal.type} · {damAnimal.breed || "—"} · {damAnimal.year_born || "—"}</span>
+              </div>
+              {damAllFlags && damAllFlags.length > 0 && (
+                <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+                  {damAllFlags.map((f: any, i: number) => {
+                    const fc: Record<string, { bg: string; text: string }> = {
+                      management: { bg: "rgba(85,186,170,0.12)", text: "#0F6E56" },
+                      production: { bg: "rgba(243,209,42,0.15)", text: "#B8860B" },
+                      cull: { bg: "rgba(155,35,53,0.12)", text: "#9B2335" },
+                    };
+                    const c = fc[f.flag_tier] || fc.management;
+                    return <span key={i} style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.04em", padding: "2px 8px", borderRadius: 10, background: c.bg, color: c.text }}>{f.flag_tier?.toUpperCase()}: {f.reason || "Flag"}</span>;
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Sub-tabs */}
+            <div style={{ display: "flex", margin: "12px 14px 0", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+              {(["info", "calving", "work"] as const).map(t => (
+                <button key={t} onClick={() => setDamSubTab(t)} style={{
+                  flex: 1, textAlign: "center" as const, padding: "8px 0", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  color: damSubTab === t ? "#0E2646" : "rgba(26,26,26,0.35)", background: "transparent", border: "none",
+                  borderBottom: damSubTab === t ? "2px solid #F3D12A" : "2px solid transparent",
+                }}>{t === "info" ? "Info" : t === "calving" ? "Calving" : "Work"}</button>
+              ))}
+            </div>
+
+            {/* Tab content */}
+            <div style={{ padding: "10px 14px 14px" }}>
+
+              {/* INFO */}
+              {damSubTab === "info" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px" }}>
+                  {([
+                    ["Type", damAnimal.type], ["Breed", damAnimal.breed],
+                    ["Year Born", damAnimal.year_born], ["Sex", damAnimal.sex],
+                    ["Tag Color", damAnimal.tag_color || "None"], ["Status", damAnimal.status],
+                    ["EID", damAnimal.eid ? damAnimal.eid.slice(0, 12) + "..." : "—"],
+                    ["Group", "—"], ["Location", "—"], ["Sire", "—"],
+                  ] as [string, any][]).map(([label, value]) => (
+                    <div key={label}>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.35)", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: "#1A1A1A", marginTop: 1 }}>{value || "—"}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* CALVING */}
+              {damSubTab === "calving" && (
+                <div>
+                  {(!damCalvings || damCalvings.length === 0) ? (
+                    <p style={{ fontSize: 13, color: "rgba(26,26,26,0.35)", padding: "20px 0", textAlign: "center" as const }}>No calving history</p>
+                  ) : damCalvings.map((c: any) => {
+                    const isHardPull = c.assistance && parseInt(c.assistance) >= 3;
+                    const isDead = c.calf_status === "Dead";
+                    const isProblem = isHardPull || isDead;
+                    const assistLabels: Record<string, string> = { "1": "No Assist", "2": "Easy", "3": "Hard Pull", "4": "Surgery", "5": "Malpresentation" };
+                    const vigorLabels: Record<string, string> = { "1": "Dead", "2": "Weak", "3": "Average", "4": "Good", "5": "Vigorous" };
+                    const sexLabel = c.calf_sex === "M" || c.calf_sex === "Bull" ? "Bull" : c.calf_sex === "F" || c.calf_sex === "Heifer" ? "Heifer" : c.calf_sex || "—";
+                    const isBull = sexLabel === "Bull";
+                    return (
+                      <div key={c.id} style={{
+                        background: "rgba(26,26,26,0.03)", border: "1px solid rgba(26,26,26,0.06)", borderRadius: 8,
+                        padding: "10px 12px", marginBottom: 6,
+                        borderLeft: isDead ? "3px solid #9B2335" : isProblem ? "3px solid #D4606E" : undefined,
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{
+                              fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, letterSpacing: "0.04em",
+                              background: isBull ? "rgba(85,186,170,0.15)" : "rgba(232,160,191,0.2)",
+                              color: isBull ? "#0F6E56" : "#993556",
+                            }}>{sexLabel}</span>
+                            <span style={{ color: "rgba(26,26,26,0.25)", fontSize: 11 }}>→</span>
+                            {isDead ? (
+                              <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,26,0.3)" }}>—</span>
+                            ) : (
+                              <span style={{ fontSize: 14, fontWeight: 700, color: "#0E2646" }}>{c.calf_tag || "—"}</span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{c.calving_date ? formatDate(c.calving_date) : "—"}</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: "rgba(26,26,26,0.5)", marginTop: 5 }}>
+                          <span style={{ fontWeight: 600, color: "#1A1A1A" }}>{c.birth_weight ? `${c.birth_weight} lb` : "— lb"}</span>
+                          {c.assistance && <><span style={{ margin: "0 6px", color: "rgba(26,26,26,0.2)" }}>·</span>{assistLabels[c.assistance] || c.assistance}</>}
+                          {c.calf_vigor && <><span style={{ margin: "0 6px", color: "rgba(26,26,26,0.2)" }}>·</span>{vigorLabels[c.calf_vigor] || ""} vigor</>}
+                        </div>
+                        {isProblem && (
+                          <div style={{ fontSize: 10, fontWeight: 600, color: "#9B2335", background: "rgba(155,35,53,0.08)", padding: "2px 8px", borderRadius: 8, marginTop: 5, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                            {isDead ? `Dead${c.assistance ? " · " + (assistLabels[c.assistance] || "") : ""}` : `⚠ ${assistLabels[c.assistance] || "Problem"}`}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* WORK */}
+              {damSubTab === "work" && (
+                <div>
+                  {(!damWorkRecords || damWorkRecords.length === 0) ? (
+                    <p style={{ fontSize: 13, color: "rgba(26,26,26,0.35)", padding: "20px 0", textAlign: "center" as const }}>No work history</p>
+                  ) : (() => {
+                    const workTypeCode = (r: any) => r.project?.work_types?.[0]?.work_type?.code || "WORK";
+                    const pregBreed = damWorkRecords.filter((r: any) => ["PREG", "BREED"].includes(workTypeCode(r)));
+                    const other = damWorkRecords.filter((r: any) => !["PREG", "BREED"].includes(workTypeCode(r)));
+                    const badgeColors: Record<string, { bg: string; text: string }> = {
+                      PREG: { bg: "rgba(85,186,170,0.12)", text: "#0F6E56" },
+                      BREED: { bg: "rgba(232,160,191,0.12)", text: "#993556" },
+                      VAX: { bg: "rgba(243,209,42,0.12)", text: "#B8860B" },
+                    };
+                    const defaultBadge = { bg: "rgba(26,26,26,0.06)", text: "rgba(26,26,26,0.45)" };
+                    const renderWorkCard = (r: any, i: number) => {
+                      const code = workTypeCode(r);
+                      const bc = badgeColors[code] || defaultBadge;
+                      const projDate = r.project?.project_date ? formatDate(r.project.project_date) : "—";
+                      return (
+                        <div key={r.id || i} style={{ background: "rgba(26,26,26,0.03)", border: "1px solid rgba(26,26,26,0.06)", borderRadius: 8, padding: "10px 12px", marginBottom: 6 }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 8, letterSpacing: "0.04em", background: bc.bg, color: bc.text }}>{code}</span>
+                            <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{projDate}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: "rgba(26,26,26,0.55)", marginTop: 4 }}>
+                            {code === "PREG" && (<>
+                              <span style={{ fontWeight: 600, color: "#1A1A1A" }}>{r.preg_status || "Checked"}</span>
+                              {r.days_gestation && <> · {r.days_gestation} days</>}
+                              {r.calf_sex && <> · {r.calf_sex}</>}
+                              {r.weight && <> · {r.weight} lb</>}
+                              {r.breeding_sire && (
+                                <div style={{ fontSize: 11, fontWeight: 600, color: "#0F6E56", background: "rgba(85,186,170,0.1)", padding: "2px 8px", borderRadius: 8, display: "inline-block", marginTop: 4 }}>
+                                  Sire: {r.breeding_sire}{r.breeding_type ? ` (${r.breeding_type})` : ""}
+                                </div>
+                              )}
+                            </>)}
+                            {code === "BREED" && (<>
+                              <span style={{ fontWeight: 600, color: "#1A1A1A" }}>{r.breeding_sire || "—"}</span>
+                              {r.breeding_type && <> · {r.breeding_type}</>}
+                              {r.estrus_status && <> · Estrus: {r.estrus_status}</>}
+                            </>)}
+                            {code !== "PREG" && code !== "BREED" && (<>
+                              {r.project?.name || "Project"}{r.weight ? ` · ${r.weight} lb` : ""}
+                            </>)}
+                          </div>
+                        </div>
+                      );
+                    };
+                    return (<>
+                      {pregBreed.map(renderWorkCard)}
+                      {other.length > 0 && pregBreed.length > 0 && (
+                        <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.25)", textTransform: "uppercase" as const, letterSpacing: "0.08em", margin: "10px 0 6px", textAlign: "center" as const }}>
+                          Treatments & Processing
+                        </div>
+                      )}
+                      {other.map(renderWorkCard)}
+                    </>);
+                  })()}
+                </div>
+              )}
+
+            </div>
+          </div>
+        )}
+
+        {activeTab === "dam" && !damAnimal && (
+          <div style={{ padding: "30px 0", textAlign: "center" as const }}>
+            <p style={{ fontSize: 13, color: "rgba(26,26,26,0.35)" }}>No dam linked to this calving record</p>
+          </div>
+        )}
+
       </div>
     </div>
   );
