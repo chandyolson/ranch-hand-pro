@@ -114,14 +114,25 @@ export default function CowWorkNewProjectScreen() {
     }
   }, [memberCount]);
 
+  // Update field config defaults when work type changes
+  useEffect(() => {
+    const code = (workTypes || []).find(w => w.id === processingType)?.code || "";
+    setFieldConfig(getDefaultFieldConfig(code));
+  }, [processingType]);
+
   // Task 4: Template load handler — now includes products and field config
   const handleTemplateSelect = (t: any) => {
     if (t.work_type_id) setProcessingType(t.work_type_id);
     if (t.default_cattle_type) setCattleType(t.default_cattle_type);
 
     // Load template field visibility config
-    if (t.default_field_visibility && typeof t.default_field_visibility === "object" && t.default_field_visibility.optionalFields) {
-      setFieldConfig(t.default_field_visibility as FieldVisibilityConfig);
+    if (t.default_field_visibility && typeof t.default_field_visibility === "object") {
+      const fv = t.default_field_visibility;
+      if (fv.enabledFields) {
+        setFieldConfig(fv as FieldVisibilityConfig);
+      } else if (fv.optionalFields) {
+        setFieldConfig({ enabledFields: fv.optionalFields });
+      }
     }
 
     // Load template products (append, don't replace)
