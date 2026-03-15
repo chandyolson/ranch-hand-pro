@@ -451,32 +451,32 @@ export default function CowWorkProjectDetailScreen() {
       >
         {/* Collapsed row */}
         <div
-          className="flex items-center justify-between px-3.5 py-2.5"
+          className="px-3.5 py-2.5"
           onClick={() => setHeaderOpen(!headerOpen)}
         >
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <span style={{ fontSize: 22, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>
-              {worked.length}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.50)" }}>worked</span>
-            <span className="shrink-0" style={{ width: 1, height: 16, backgroundColor: "rgba(255,255,255,0.15)" }} />
-            <span className="truncate" style={{ fontSize: 11, fontWeight: 600, color: "#A8E6DA" }}>{projectName}</span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {projectStatus !== "Completed" && (
-              <button
-                className="rounded-full py-1.5 px-4 cursor-pointer active:scale-[0.97] transition-all"
-                style={{ fontSize: 11, fontWeight: 700, backgroundColor: "#F3D12A", color: "#1A1A1A", border: "none" }}
-                onClick={(e) => { e.stopPropagation(); navigate("/cow-work/" + id + "/close-out"); }}
-              >
-                Complete Project
-              </button>
-            )}
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span style={{ fontSize: 22, fontWeight: 800, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>
+                {worked.length}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.50)" }}>worked</span>
+              <span className="shrink-0" style={{ width: 1, height: 16, backgroundColor: "rgba(255,255,255,0.15)" }} />
+              <span className="truncate" style={{ fontSize: 11, fontWeight: 600, color: "#A8E6DA" }}>{projectName}</span>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 ml-2"
               style={{ transform: headerOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
               <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="rgba(255,255,255,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
+          {projectStatus !== "Completed" && (
+            <button
+              className="w-full rounded-full py-2 mt-2.5 cursor-pointer active:scale-[0.98] transition-all"
+              style={{ fontSize: 12, fontWeight: 700, backgroundColor: "#F3D12A", color: "#1A1A1A", border: "none" }}
+              onClick={(e) => { e.stopPropagation(); navigate("/cow-work/" + id + "/close-out"); }}
+            >
+              Complete Project
+            </button>
+          )}
         </div>
 
         {headerOpen && (
