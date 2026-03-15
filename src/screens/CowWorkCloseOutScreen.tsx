@@ -20,6 +20,7 @@ export default function CowWorkCloseOutScreen() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [savingTemplate, setSavingTemplate] = useState(false);
+  const [actionedMissing, setActionedMissing] = useState<Record<string, string>>({});
 
   // Phase E: Review New Animals wizard state
   const [reviewIndex, setReviewIndex] = useState(0);
@@ -179,6 +180,7 @@ export default function CowWorkCloseOutScreen() {
         .from("projects")
         .update({
           project_status: "Completed",
+          head_count: worked.length, // Lock final worked count
           description: closingNotes.trim()
             ? `${project?.description || ""}\n\n--- Close-out Notes ---\n${closingNotes.trim()}`.trim()
             : project?.description || null,
@@ -189,7 +191,7 @@ export default function CowWorkCloseOutScreen() {
       queryClient.invalidateQueries({ queryKey: ["project", id] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["project-work-counts"] });
-      showToast("success", `${projectName} completed`);
+      showToast("success", `${projectName} completed — ${worked.length} head`);
       navigate("/cow-work");
     } catch (err: any) {
       showToast("error", err.message || "Failed to close out");
@@ -344,21 +346,65 @@ export default function CowWorkCloseOutScreen() {
                 </div>
                 {missing.length > 0 ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {missing.map((e: any) => (
-                      <div key={e.animal_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", borderRadius: 8, backgroundColor: "rgba(243,209,42,0.06)", border: "1px solid rgba(243,209,42,0.15)" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          {(e.animal as any)?.tag_color && (
-                            <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TAG_COLOR_HEX[(e.animal as any).tag_color] || "#999", flexShrink: 0 }} />
+                    {missing.map((e: any) => {
+                      const animalId = e.animal_id;
+                      const tag = (e.animal as any)?.tag || "?";
+                      const actioned = actionedMissing[animalId];
+                      return (
+                        <div key={animalId} style={{ borderRadius: 8, backgroundColor: actioned ? "rgba(85,186,170,0.06)" : "rgba(243,209,42,0.06)", border: `1px solid ${actioned ? "rgba(85,186,170,0.20)" : "rgba(243,209,42,0.15)"}`, padding: "8px 10px" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              {(e.animal as any)?.tag_color && (
+                                <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TAG_COLOR_HEX[(e.animal as any).tag_color] || "#999", flexShrink: 0 }} />
+                              )}
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{tag}</span>
+                              <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{(e.animal as any)?.type || (e.animal as any)?.sex || ""}</span>
+                            </div>
+                            {actioned && (
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.15)", color: "#3D9A8B" }}>{actioned}</span>
+                            )}
+                          </div>
+                          {!actioned && (
+                            <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                              <button
+                                onClick={async () => {
+                                  await supabase.from("animal_flags").insert({
+                                    operation_id: operationId, animal_id: animalId,
+                                    flag_tier: "management", flag_name: "Missing from project",
+                                    flag_note: `Missing from ${projectName} close-out`,
+                                  });
+                                  setActionedMissing(prev => ({ ...prev, [animalId]: "Flagged" }));
+                                  showToast("success", `${tag} flagged`);
+                                }}
+                                style={{ padding: "5px 12px", borderRadius: 9999, border: "1px solid rgba(85,186,170,0.30)", backgroundColor: "white", fontSize: 11, fontWeight: 600, color: "#55BAAA", cursor: "pointer" }}
+                              >
+                                Flag
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  await supabase.from("animals").update({ status: "Sold" }).eq("id", animalId);
+                                  setActionedMissing(prev => ({ ...prev, [animalId]: "Sold" }));
+                                  showToast("success", `${tag} marked Sold`);
+                                }}
+                                style={{ padding: "5px 12px", borderRadius: 9999, border: "1px solid rgba(232,116,97,0.30)", backgroundColor: "white", fontSize: 11, fontWeight: 600, color: "#E87461", cursor: "pointer" }}
+                              >
+                                Mark Sold
+                              </button>
+                              <button
+                                onClick={() => setActionedMissing(prev => ({ ...prev, [animalId]: "Skipped" }))}
+                                style={{ padding: "5px 12px", borderRadius: 9999, border: "none", backgroundColor: "rgba(26,26,26,0.04)", fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.40)", cursor: "pointer" }}
+                              >
+                                Skip
+                              </button>
+                            </div>
                           )}
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{(e.animal as any)?.tag || "?"}</span>
-                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{(e.animal as any)?.type || (e.animal as any)?.sex || ""}</span>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>All expected animals were worked</div>
-                )}
+                )}}
               </div>
 
               {/* Extra bucket */}
@@ -663,6 +709,84 @@ export default function CowWorkCloseOutScreen() {
         >
           {closing ? "Closing…" : hasNewAnimals ? "Review New Animals First" : "Complete Project"}
         </button>
+      </div>
+
+      {/* Export section */}
+      <div style={{ borderRadius: 12, backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)", padding: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 8 }}>EXPORT</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={async () => {
+              try {
+                const XLSX = await import("xlsx");
+                const rows = worked.map((w: any, i: number) => ({
+                  "#": i + 1,
+                  "Tag": (w.animal as any)?.tag || "",
+                  "Tag Color": (w.animal as any)?.tag_color || "",
+                  "Sex": (w.animal as any)?.sex || "",
+                  "Type": (w.animal as any)?.type || "",
+                  "Year Born": (w.animal as any)?.year_born || "",
+                  "Weight": w.weight || "",
+                  "Preg Stage": w.preg_stage || "",
+                  "Days Gest.": w.days_of_gestation || "",
+                  "Fetal Sex": w.fetal_sex || "",
+                  "Memo": w.memo || "",
+                  "Quick Notes": Array.isArray(w.quick_notes) ? w.quick_notes.join(", ") : "",
+                  "New Animal": w.is_new_animal ? "Yes" : "",
+                }));
+                const ws = XLSX.utils.json_to_sheet(rows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Animals");
+                // Summary sheet
+                const summary = [
+                  { Field: "Project", Value: projectName },
+                  { Field: "Date", Value: projectDate },
+                  { Field: "Type", Value: projectType },
+                  { Field: "Group", Value: projectGroup },
+                  { Field: "Location", Value: projectLocation },
+                  { Field: "Head Expected", Value: headCount },
+                  { Field: "Head Worked", Value: worked.length },
+                  { Field: "Avg Weight", Value: avgWeight || "N/A" },
+                ];
+                const ws2 = XLSX.utils.json_to_sheet(summary);
+                XLSX.utils.book_append_sheet(wb, ws2, "Summary");
+                XLSX.writeFile(wb, `${projectName.replace(/[^a-zA-Z0-9]/g, "_")}_export.xlsx`);
+                showToast("success", "Excel exported");
+              } catch (err: any) {
+                showToast("error", "Export failed: " + err.message);
+              }
+            }}
+            style={{ flex: 1, padding: "10px 0", borderRadius: 9999, border: "1px solid #0E2646", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646", cursor: "pointer" }}
+          >
+            Excel (.xlsx)
+          </button>
+          <button
+            onClick={() => {
+              const rows = worked.map((w: any) => [
+                (w.animal as any)?.tag || "",
+                (w.animal as any)?.tag_color || "",
+                (w.animal as any)?.sex || "",
+                (w.animal as any)?.type || "",
+                w.weight || "",
+                w.preg_stage || "",
+                w.memo || "",
+              ].join(","));
+              const header = "Tag,Tag Color,Sex,Type,Weight,Preg Stage,Memo";
+              const csv = [header, ...rows].join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${projectName.replace(/[^a-zA-Z0-9]/g, "_")}_export.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+              showToast("success", "CSV exported");
+            }}
+            style={{ flex: 1, padding: "10px 0", borderRadius: 9999, border: "1px solid rgba(26,26,26,0.20)", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "rgba(26,26,26,0.60)", cursor: "pointer" }}
+          >
+            CSV (.csv)
+          </button>
+        </div>
       </div>
     </div>
   );
