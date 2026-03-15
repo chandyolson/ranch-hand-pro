@@ -194,7 +194,7 @@ export default function CowWorkProjectDetailScreen() {
       }
 
       queryClient.invalidateQueries({ queryKey: ["project", id] });
-      queryClient.invalidateQueries({ queryKey: ["project-products", id] });
+      await queryClient.refetchQueries({ queryKey: ["project-products", id] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       showToast("success", "Project updated");
       setIsEditingProject(false);
@@ -404,6 +404,27 @@ export default function CowWorkProjectDetailScreen() {
     setAdditionalProducts([]);
     setAdditionalProductsOpen(false);
     setAddProdPickerOpen(false);
+    // Dynamic field resets
+    setData1("");
+    setData2("");
+    setLot("");
+    setSampleField("");
+    setPen("");
+    setBseResult("");
+    setScrotal("");
+    setMotility("");
+    setMorphology("");
+    setSemenDefects("");
+    setPhysicalDefects("");
+    setBreedingSire("");
+    setBreedingDate(new Date().toISOString().split("T")[0]);
+    setBreedingType("");
+    setEstrusStatus("");
+    setTechnician("");
+    setCullReason("");
+    setDispositionField("");
+    setSaleWeight("");
+    setDisease("");
   };
 
   const saveAndNext = async () => {

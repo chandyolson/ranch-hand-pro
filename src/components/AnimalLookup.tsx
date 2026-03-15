@@ -72,6 +72,14 @@ export default function AnimalLookup({
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalResult | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
+  // Reset internal state when parent clears the value
+  useEffect(() => {
+    if (!value) {
+      setSelected(false);
+      setSelectedAnimal(null);
+    }
+  }, [value]);
+
   const search = value.trim();
   const shouldSearch = search.length >= 1 && !selected;
 
