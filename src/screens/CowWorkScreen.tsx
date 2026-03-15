@@ -105,6 +105,48 @@ export default function CowWorkScreen() {
 
   return (
     <div className="px-4 pt-1 pb-10 space-y-2">
+      {/* Toolbar (search + menu + add) */}
+      <ListScreenToolbar
+        title="Cow Work"
+        addLabel="New Project"
+        hideTitle
+        compactAdd
+        onAdd={() => navigate("/cow-work/new")}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search projects, types, groups…"
+        filterChips={[]}
+        activeFilter=""
+        onFilterChange={() => {}}
+        sortOptions={[
+          { value: "newest", label: "Newest" },
+          { value: "oldest", label: "Oldest" },
+          { value: "name", label: "Name" },
+        ]}
+        activeSort={sort}
+        onSortChange={setSort}
+        onFilter={() => setFilterOpen(!filterOpen)}
+        onImport={() => showToast("info", "Import — coming soon")}
+        onExport={() => showToast("info", "Export — coming soon")}
+        onMassSelect={() => showToast("info", "Mass Select — coming soon")}
+        onMassEdit={() => showToast("info", "Mass Edit — coming soon")}
+        resultCount={filtered.length}
+        isFiltering={isFiltering}
+      />
+
+      {/* Advanced filter panel (toggled from menu) */}
+      {filterOpen && (
+        <AdvancedSearchPanel
+          fields={COWWORK_FILTER_FIELDS}
+          filters={filters}
+          onFiltersChange={setFilters}
+          presets={presets}
+          onAddPreset={addPreset}
+          onDeletePreset={deletePreset}
+          onClearAll={clearFilters}
+        />
+      )}
+
       {/* Stats bar */}
       <div
         className="rounded-xl px-3 py-2.5 flex items-center justify-between"
@@ -131,44 +173,6 @@ export default function CowWorkScreen() {
           </div>
         ))}
       </div>
-
-      <ListScreenToolbar
-        title="Cow Work"
-        addLabel="New Project"
-        hideTitle
-        compactAdd
-        onAdd={() => navigate("/cow-work/new")}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search projects, types, groups…"
-        filterChips={[]}
-        activeFilter=""
-        onFilterChange={() => {}}
-        sortOptions={[
-          { value: "newest", label: "Newest" },
-          { value: "oldest", label: "Oldest" },
-          { value: "name", label: "Name" },
-        ]}
-        activeSort={sort}
-        onSortChange={setSort}
-        onImport={() => showToast("info", "Import — coming soon")}
-        onExport={() => showToast("info", "Export — coming soon")}
-        onMassSelect={() => showToast("info", "Mass Select — coming soon")}
-        onMassEdit={() => showToast("info", "Mass Edit — coming soon")}
-        resultCount={filtered.length}
-        isFiltering={isFiltering}
-        advancedFilter={
-          <AdvancedSearchPanel
-            fields={COWWORK_FILTER_FIELDS}
-            filters={filters}
-            onFiltersChange={setFilters}
-            presets={presets}
-            onAddPreset={addPreset}
-            onDeletePreset={deletePreset}
-            onClearAll={clearFilters}
-          />
-        }
-      />
 
       {/* Project list */}
       {isLoading && (
