@@ -12,6 +12,7 @@ export default function CowWorkScreen() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const navigate = useNavigate();
   const { operationId } = useOperation();
 
@@ -142,23 +143,63 @@ export default function CowWorkScreen() {
         ))}
       </div>
 
-      {/* Quick filter pills: Status */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <button onClick={() => setStatusFilter("all")} style={pillOn(statusFilter === "all")}>All</button>
-        <button onClick={() => setStatusFilter("in-progress")} style={pillOn(statusFilter === "in-progress", "#55BAAA")}>In Progress</button>
-        <button onClick={() => setStatusFilter("pending")} style={pillOn(statusFilter === "pending", "#717182")}>Pending</button>
-        <button onClick={() => setStatusFilter("completed")} style={pillOn(statusFilter === "completed", "#B8960F")}>Completed</button>
+      {/* Filter toggle + active filter pills */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button
+          onClick={() => setFiltersOpen(!filtersOpen)}
+          style={{
+            display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
+            borderRadius: 9999, border: "1px solid #D4D4D0", backgroundColor: filtersOpen ? "rgba(14,38,70,0.06)" : "white",
+            fontSize: 12, fontWeight: 600, color: "#0E2646", cursor: "pointer",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+          </svg>
+          Filters
+        </button>
+        {/* Show active filters as pills when collapsed */}
+        {!filtersOpen && (statusFilter !== "all" || typeFilter !== "all") && (
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {statusFilter !== "all" && (
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.12)", color: "#3D9A8B" }}>
+                {statusFilter === "in-progress" ? "In Progress" : statusFilter === "pending" ? "Pending" : "Completed"}
+                <button onClick={() => setStatusFilter("all")} style={{ background: "none", border: "none", color: "#3D9A8B", marginLeft: 4, cursor: "pointer", fontSize: 12, padding: 0 }}>×</button>
+              </span>
+            )}
+            {typeFilter !== "all" && (
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 9999, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>
+                {typeFilter}
+                <button onClick={() => setTypeFilter("all")} style={{ background: "none", border: "none", color: "#0E2646", marginLeft: 4, cursor: "pointer", fontSize: 12, padding: 0 }}>×</button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Quick filter pills: Work Type */}
-      {typeCodes.length > 1 && (
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          <button onClick={() => setTypeFilter("all")} style={pillOn(typeFilter === "all")}>All Types</button>
-          {typeCodes.map(code => (
-            <button key={code} onClick={() => setTypeFilter(code)} style={pillOn(typeFilter === code)}>
-              {code}
-            </button>
-          ))}
+      {/* Expanded filter pills */}
+      {filtersOpen && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 12px", borderRadius: 12, backgroundColor: "rgba(26,26,26,0.02)", border: "1px solid rgba(212,212,208,0.40)" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 6 }}>STATUS</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <button onClick={() => setStatusFilter("all")} style={pillOn(statusFilter === "all")}>All</button>
+              <button onClick={() => setStatusFilter("in-progress")} style={pillOn(statusFilter === "in-progress", "#55BAAA")}>In Progress</button>
+              <button onClick={() => setStatusFilter("pending")} style={pillOn(statusFilter === "pending", "#717182")}>Pending</button>
+              <button onClick={() => setStatusFilter("completed")} style={pillOn(statusFilter === "completed", "#B8960F")}>Completed</button>
+            </div>
+          </div>
+          {typeCodes.length > 1 && (
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 6 }}>WORK TYPE</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <button onClick={() => setTypeFilter("all")} style={pillOn(typeFilter === "all")}>All</button>
+                {typeCodes.map(code => (
+                  <button key={code} onClick={() => setTypeFilter(code)} style={pillOn(typeFilter === code)}>{code}</button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
