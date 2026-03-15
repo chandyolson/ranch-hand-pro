@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
-import { useGroupMemberCount } from "@/hooks/useAnimalGroups";
+import { useGroupMembers, useGroupMemberCount } from "@/hooks/useAnimalGroups";
 import { useChuteSideToast } from "../components/ToastContext";
 import FormFieldRow from "../components/FormFieldRow";
 import LoadFromProtocolDrawer from "../components/LoadFromProtocolDrawer";
@@ -46,6 +46,7 @@ export default function CowWorkNewProjectScreen() {
   const { data: groups } = useGroups();
   const { data: locations } = useLocations();
   const { data: memberCount } = useGroupMemberCount(group || undefined);
+  const { data: groupMembers } = useGroupMembers(preloadEnabled ? (group || undefined) : undefined);
   const { data: workTypes } = useQuery({
     queryKey: ["work-types"],
     queryFn: async () => {
@@ -177,6 +178,44 @@ export default function CowWorkNewProjectScreen() {
           .insert(productRows);
 
         if (prodError) console.error("Failed to save products:", prodError);
+      }
+
+      // Phase D: Pre-load animals from group
+      if (preloadEnabled && groupMembers && groupMembers.length > 0) {
+        const animalIds = groupMembers.map((m: any) => m.animal_id);
+        const preloadStatus = preloadMode === "worked" ? "Worked" : "Expected";
+
+        // Insert project_expected_animals
+        const expectedRows = animalIds.map((aid: string) => ({
+          project_id: project.id,
+          animal_id: aid,
+          status: preloadStatus,
+        }));
+        const { error: expErr } = await supabase
+          .from("project_expected_animals")
+          .insert(expectedRows);
+        if (expErr) console.error("Failed to insert expected animals:", expErr);
+
+        // Mode 3 (Worked): also create lightweight cow_work records
+        if (preloadMode === "worked") {
+          const workRows = animalIds.map((aid: string, i: number) => ({
+            operation_id: operationId,
+            project_id: project.id,
+            animal_id: aid,
+            date: date,
+            record_order: i + 1,
+          }));
+          const { error: workErr } = await supabase
+            .from("cow_work")
+            .insert(workRows);
+          if (workErr) console.error("Failed to insert worked records:", workErr);
+
+          // Update project status to In Progress
+          await supabase
+            .from("projects")
+            .update({ project_status: "In Progress" })
+            .eq("id", project.id);
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ["projects"] });

@@ -70,6 +70,24 @@ export default function CowWorkProjectDetailScreen() {
     enabled: !!id,
   });
 
+  // Load expected animals (Phase D)
+  const { data: expectedAnimals, refetch: refetchExpected } = useQuery({
+    queryKey: ["project-expected", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_expected_animals")
+        .select("*, animal:animals(id, tag, tag_color, sex, type, breed, year_born)")
+        .eq("project_id", id!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  const expected = expectedAnimals || [];
+  const stillExpected = expected.filter(e => e.status === "Expected");
+
   // Animal history queries
   const { data: animalCalvings } = useQuery({
     queryKey: ["animal-calvings-cw", matchedAnimal?.id],
@@ -107,11 +125,14 @@ export default function CowWorkProjectDetailScreen() {
   const projectGroup = (project?.group as any)?.name || "";
   const projectLocation = (project?.location as any)?.name || "";
   const projectStatus = project?.project_status || "Pending";
-  const headCount = project?.head_count || 0;
+  const headCount = project?.estimated_head || project?.head_count || 0;
   const worked = workedAnimals || [];
 
+  const [isExpectedMatch, setIsExpectedMatch] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<any>(null);
+
   const lookupTag = async (tag: string) => {
-    if (!tag.trim()) { setMatchedAnimal(null); setIsMatched(false); setIsDuplicate(false); setIsNewAnimal(false); return; }
+    if (!tag.trim()) { setMatchedAnimal(null); setIsMatched(false); setIsDuplicate(false); setIsNewAnimal(false); setIsExpectedMatch(false); setEditingRecord(null); return; }
     const { data } = await supabase
       .from("animals")
       .select("*")
@@ -122,13 +143,35 @@ export default function CowWorkProjectDetailScreen() {
       setIsMatched(true);
       setMatchedAnimal(data);
       setIsNewAnimal(false);
-      const isDup = worked.some(w => w.animal_id === data.id);
-      setIsDuplicate(isDup);
+
+      // Phase D: Check if this animal was Expected
+      const expectedMatch = stillExpected.find(e => e.animal_id === data.id);
+      setIsExpectedMatch(!!expectedMatch);
+
+      // Phase D: If already worked, load existing record for editing (replaces duplicate warning)
+      const existingRecord = worked.find(w => w.animal_id === data.id);
+      if (existingRecord) {
+        setIsDuplicate(false);
+        setEditingRecord(existingRecord);
+        // Populate form fields from existing record
+        setWeight(existingRecord.weight ? String(existingRecord.weight) : "");
+        setPregResult(existingRecord.preg_stage || "");
+        setPregDays(existingRecord.days_of_gestation ? String(existingRecord.days_of_gestation) : "");
+        setCalfSex(existingRecord.fetal_sex || "");
+        setQuickNote(existingRecord.quick_notes?.[0] || "");
+        setSampleId(existingRecord.dna || "");
+        setMemo(existingRecord.memo || "");
+      } else {
+        setIsDuplicate(false);
+        setEditingRecord(null);
+      }
     } else {
       setIsMatched(false);
       setMatchedAnimal(null);
       setIsDuplicate(false);
       setIsNewAnimal(true);
+      setIsExpectedMatch(false);
+      setEditingRecord(null);
     }
   };
 
@@ -138,6 +181,8 @@ export default function CowWorkProjectDetailScreen() {
     setIsDuplicate(false);
     setMatchedAnimal(null);
     setIsNewAnimal(false);
+    setIsExpectedMatch(false);
+    setEditingRecord(null);
     setNewTagColor("");
     setHistoryOpen(false);
     setPregResult("");
@@ -174,28 +219,58 @@ export default function CowWorkProjectDetailScreen() {
         createdNew = true;
       }
 
-      const recordOrder = worked.length + 1;
-      const { error } = await supabase
-        .from("cow_work")
-        .insert({
-          operation_id: operationId,
-          project_id: id,
-          animal_id: animalId,
-          date: project?.date || new Date().toISOString().split("T")[0],
-          record_order: recordOrder,
-          weight: weight ? parseFloat(weight) : null,
-          preg_stage: pregResult || null,
-          days_of_gestation: pregDays ? parseInt(pregDays) : null,
-          fetal_sex: calfSex || null,
-          quick_notes: quickNote ? [quickNote] : null,
-          memo: memo.trim() || null,
-          dna: sampleId.trim() || null,
-          is_new_animal: createdNew,
-        });
-      if (error) throw error;
+      const recordData = {
+        weight: weight ? parseFloat(weight) : null,
+        preg_stage: pregResult || null,
+        days_of_gestation: pregDays ? parseInt(pregDays) : null,
+        fetal_sex: calfSex || null,
+        quick_notes: quickNote ? [quickNote] : null,
+        memo: memo.trim() || null,
+        dna: sampleId.trim() || null,
+      };
+
+      // Phase D: Update existing record (edit mode) vs insert new
+      if (editingRecord) {
+        const { error } = await supabase
+          .from("cow_work")
+          .update(recordData)
+          .eq("id", editingRecord.id);
+        if (error) throw error;
+      } else {
+        const recordOrder = worked.length + 1;
+        const { error } = await supabase
+          .from("cow_work")
+          .insert({
+            operation_id: operationId,
+            project_id: id,
+            animal_id: animalId,
+            date: project?.date || new Date().toISOString().split("T")[0],
+            record_order: recordOrder,
+            ...recordData,
+            is_new_animal: createdNew,
+          });
+        if (error) throw error;
+      }
+
+      // Phase D: Flip Expected → Worked in project_expected_animals
+      if (isExpectedMatch && animalId) {
+        await supabase
+          .from("project_expected_animals")
+          .update({ status: "Worked" })
+          .eq("project_id", id)
+          .eq("animal_id", animalId)
+          .eq("status", "Expected");
+        refetchExpected();
+      }
+
       await refetchWorked();
       queryClient.invalidateQueries({ queryKey: ["project-work-counts"] });
-      showToast("success", createdNew ? `New animal ${tagField} created & saved` : `Tag ${tagField} saved`);
+      const msg = editingRecord
+        ? `Tag ${tagField} updated`
+        : createdNew
+          ? `New animal ${tagField} created & saved`
+          : `Tag ${tagField} saved`;
+      showToast("success", msg);
       clearForm();
     } catch (err: any) {
       showToast("error", err.message || "Failed to save");
@@ -322,7 +397,7 @@ export default function CowWorkProjectDetailScreen() {
                   style={{ fontSize: 16, fontWeight: 600, color: "#0E2646", border: "2px solid #F3D12A", backgroundColor: "white" }}
                   placeholder="Tag or EID…"
                   value={tagField}
-                  onChange={e => { setTagField(e.target.value); setIsMatched(false); setMatchedAnimal(null); setIsDuplicate(false); setIsNewAnimal(false); }}
+                  onChange={e => { setTagField(e.target.value); setIsMatched(false); setMatchedAnimal(null); setIsDuplicate(false); setIsNewAnimal(false); setIsExpectedMatch(false); setEditingRecord(null); }}
                   onBlur={() => lookupTag(tagField)}
                   onKeyDown={e => { if (e.key === "Enter") lookupTag(tagField); }}
                 />
@@ -348,11 +423,20 @@ export default function CowWorkProjectDetailScreen() {
                   <span style={{ fontSize: 13, fontWeight: 600, color: "#55BAAA" }}>
                     Tag {matchedAnimal.tag} — {matchedAnimal.tag_color || ""} {matchedAnimal.type || matchedAnimal.sex} {matchedAnimal.year_born || ""}
                   </span>
+                  {isExpectedMatch && (
+                    <span
+                      className="rounded-full"
+                      style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(85,186,170,0.15)", color: "#55BAAA" }}
+                    >
+                      ✓ Expected
+                    </span>
+                  )}
                 </div>
               )}
-              {isDuplicate && (
-                <div className="rounded-lg px-3 py-2 mt-1" style={{ backgroundColor: "rgba(243,209,42,0.12)", border: "1px solid rgba(243,209,42,0.30)" }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#B8960F" }}>Already in project · View record</span>
+              {/* Phase D: Editing existing record indicator */}
+              {editingRecord && (
+                <div className="rounded-lg px-3 py-2 mt-1" style={{ backgroundColor: "rgba(85,186,170,0.08)", border: "1px solid rgba(85,186,170,0.20)" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#3D9A8B" }}>Editing existing record — data loaded below</span>
                 </div>
               )}
               {/* Phase C: New animal — will be created on save */}
@@ -602,7 +686,7 @@ export default function CowWorkProjectDetailScreen() {
                 disabled={saving}
                 onClick={saveAndNext}
               >
-                {saving ? "Saving..." : "Save & Next"}
+                {saving ? "Saving..." : editingRecord ? "Update" : "Save & Next"}
               </button>
             </div>
           </>
@@ -662,6 +746,47 @@ export default function CowWorkProjectDetailScreen() {
                 <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)", textAlign: "center", padding: 24 }}>No animals worked yet</div>
               )}
             </div>
+
+            {/* Phase D: Expected animals section */}
+            {stillExpected.length > 0 && (
+              <>
+                <div style={{ ...SUB_LABEL, marginTop: 16 }}>
+                  EXPECTED · {stillExpected.length}
+                </div>
+                <div className="space-y-1">
+                  {stillExpected.map(e => {
+                    const animal = e.animal as any;
+                    if (!animal) return null;
+                    return (
+                      <div
+                        key={e.id}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer active:bg-[rgba(26,26,26,0.02)]"
+                        style={{ border: "1px solid rgba(212,212,208,0.40)" }}
+                        onClick={() => {
+                          setTagField(animal.tag);
+                          lookupTag(animal.tag);
+                          setActiveTab("input");
+                        }}
+                      >
+                        {animal.tag_color && (
+                          <span
+                            className="shrink-0 rounded-full"
+                            style={{ width: 8, height: 8, backgroundColor: TAG_COLOR_HEX[animal.tag_color] || "#999" }}
+                          />
+                        )}
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{animal.tag}</span>
+                        <span style={{ fontSize: 12, color: "rgba(26,26,26,0.40)" }}>
+                          {[animal.type, animal.breed].filter(Boolean).join(" · ")}
+                        </span>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="ml-auto shrink-0">
+                          <path d="M5.25 3.5L8.75 7L5.25 10.5" stroke="rgba(26,26,26,0.25)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </>
         )}
 
