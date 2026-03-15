@@ -243,8 +243,10 @@ export default function CowWorkNewProjectScreen() {
       queryClient.invalidateQueries({ queryKey: ["project-counts"] });
       showToast("success", saveName + " created");
 
+      // Navigate BEFORE any potential secondary failures block it
+      const projectId = project.id;
       if (startWorking) {
-        navigate("/cow-work/" + project.id);
+        navigate("/cow-work/" + projectId);
       } else {
         navigate("/cow-work");
       }

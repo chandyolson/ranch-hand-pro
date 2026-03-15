@@ -1190,7 +1190,31 @@ export default function CowWorkProjectDetailScreen() {
         {/* =================== DETAILS TAB =================== */}
         {activeTab === "details" && (
           <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-            <div style={SUB_LABEL}>PROJECT DETAILS</div>
+            <div className="flex items-center justify-between">
+              <div style={SUB_LABEL}>PROJECT DETAILS</div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="rounded-lg px-3 py-1.5 cursor-pointer active:scale-[0.97]"
+                  style={{ fontSize: 12, fontWeight: 600, color: "#0E2646", backgroundColor: "rgba(14,38,70,0.06)", border: "none" }}
+                  onClick={() => showToast("info", "Edit Project — coming soon")}
+                >
+                  Edit
+                </button>
+                <button
+                  className="rounded-lg px-3 py-1.5 cursor-pointer active:scale-[0.97]"
+                  style={{ fontSize: 12, fontWeight: 600, color: "#D4183D", backgroundColor: "rgba(212,24,61,0.06)", border: "none" }}
+                  onClick={async () => {
+                    if (!confirm("Delete this project? This cannot be undone.")) return;
+                    const { error } = await supabase.from("projects").delete().eq("id", id!);
+                    if (error) { showToast("error", error.message); return; }
+                    showToast("success", "Project deleted");
+                    navigate("/cow-work");
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
             {[
               ["Date", projectDate],
               ["Type", projectType],
@@ -1235,16 +1259,6 @@ export default function CowWorkProjectDetailScreen() {
               </button>
             )}
 
-            <div className="flex gap-2 flex-wrap">
-              <button
-                className="rounded-full px-4 py-2 border border-[#D4D4D0] cursor-pointer active:scale-[0.97]"
-                style={{ fontSize: 13, fontWeight: 600, color: "#0E2646", backgroundColor: "transparent" }}
-              >Edit Project</button>
-              <button
-                className="rounded-full px-4 py-2 cursor-pointer active:scale-[0.97]"
-                style={{ fontSize: 13, color: "rgba(212,24,61,0.60)", border: "1px solid rgba(212,24,61,0.20)", backgroundColor: "transparent" }}
-              >Delete</button>
-            </div>
           </div>
         )}
       </div>
