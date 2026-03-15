@@ -27,6 +27,7 @@ interface ListScreenToolbarProps {
   onExport?: () => void;
   onMassSelect?: () => void;
   onMassEdit?: () => void;
+  onFilter?: () => void;
   resultCount?: number;
   isFiltering?: boolean;
   hideTitle?: boolean;
@@ -39,7 +40,7 @@ interface ListScreenToolbarProps {
 const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
   title, addLabel, onAdd, searchValue, onSearchChange, searchPlaceholder = "Search…",
   filterChips, activeFilter, onFilterChange, sortOptions, activeSort, onSortChange,
-  onImport, onExport, onMassSelect, onMassEdit, resultCount, isFiltering,
+  onImport, onExport, onMassSelect, onMassEdit, onFilter, resultCount, isFiltering,
   hideTitle, compactAdd, hideSort, hideFilter, advancedFilter,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -49,7 +50,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
   const sortRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
-  const hasMenu = !!(onImport || onExport || onMassSelect || onMassEdit);
+  const hasMenu = !!(onImport || onExport || onMassSelect || onMassEdit || onFilter);
   const activeFilterLabel = filterChips.find(c => c.value === activeFilter)?.label || "Filter";
 
   useEffect(() => {
@@ -65,12 +66,13 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
   const activeSortLabel = sortOptions?.find(s => s.value === activeSort)?.label || "Sort";
 
   const menuItems: { icon: React.ReactNode; label: string; onClick: () => void }[] = [];
+  if (onFilter) menuItems.push({ icon: <FilterMenuIcon />, label: "Filter", onClick: () => { onFilter(); setMenuOpen(false); } });
   if (onImport) menuItems.push({ icon: <ImportIcon />, label: "Import", onClick: () => { onImport(); setMenuOpen(false); } });
   if (onExport) menuItems.push({ icon: <ExportIcon />, label: "Export", onClick: () => { onExport(); setMenuOpen(false); } });
-  const hasDivider = menuItems.length > 0 && !!(onMassSelect || onMassEdit);
+  const hasDivider = (onImport || onExport) && !!(onMassSelect || onMassEdit);
+  const dividerAfterIdx = hasDivider ? menuItems.length - 1 : -1;
   if (onMassSelect) menuItems.push({ icon: <CheckSquareIcon />, label: "Mass Select", onClick: () => { onMassSelect(); setMenuOpen(false); } });
   if (onMassEdit) menuItems.push({ icon: <EditIcon />, label: "Mass Edit", onClick: () => { onMassEdit(); setMenuOpen(false); } });
-  const dividerAfterIdx = hasDivider ? (onImport && onExport ? 1 : 0) : -1;
 
   return (
     <div className="space-y-3">
@@ -313,6 +315,11 @@ const CheckSquareIcon = () => (
 const EditIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const FilterMenuIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M2 3h12L9 8.5V13l-2-1V8.5L2 3z" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
