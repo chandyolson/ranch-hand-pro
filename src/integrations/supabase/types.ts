@@ -70,33 +70,33 @@ export type Database = {
       }
       animal_groups: {
         Row: {
-          created_at: string
+          animal_id: string
+          created_at: string | null
           end_date: string | null
           group_id: string
           id: string
-          animal_id: string
           operation_id: string
           source: string | null
           source_ref: string | null
           start_date: string
         }
         Insert: {
-          created_at?: string
+          animal_id: string
+          created_at?: string | null
           end_date?: string | null
           group_id: string
           id?: string
-          animal_id: string
           operation_id: string
           source?: string | null
           source_ref?: string | null
           start_date?: string
         }
         Update: {
-          created_at?: string
+          animal_id?: string
+          created_at?: string | null
           end_date?: string | null
           group_id?: string
           id?: string
-          animal_id?: string
           operation_id?: string
           source?: string | null
           source_ref?: string | null
@@ -1432,25 +1432,25 @@ export type Database = {
       }
       project_expected_animals: {
         Row: {
-          created_at: string
-          id: string
           animal_id: string
+          created_at: string | null
+          id: string
           project_id: string
           status: string
           worked_record_id: string | null
         }
         Insert: {
-          created_at?: string
-          id?: string
           animal_id: string
+          created_at?: string | null
+          id?: string
           project_id: string
           status?: string
           worked_record_id?: string | null
         }
         Update: {
-          created_at?: string
-          id?: string
           animal_id?: string
+          created_at?: string | null
+          id?: string
           project_id?: string
           status?: string
           worked_record_id?: string | null

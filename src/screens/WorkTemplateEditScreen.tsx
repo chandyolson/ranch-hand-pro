@@ -78,7 +78,7 @@ export default function WorkTemplateEditScreen() {
       setWorkTypeId(existing.work_type_id || "");
       setCattleType(existing.default_cattle_type || "");
       if (Array.isArray(existing.default_products)) {
-        setProducts(existing.default_products as TemplateProduct[]);
+        setProducts(existing.default_products as unknown as TemplateProduct[]);
       }
     }
   }, [existing]);

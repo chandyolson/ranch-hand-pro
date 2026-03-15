@@ -251,8 +251,9 @@ export default function CowWorkProjectDetailScreen() {
             operation_id: operationId,
             tag: tagField.trim(),
             tag_color: newTagColor || null,
+            sex: "F",
             status: "Active",
-          })
+          } as any)
           .select()
           .single();
         if (createErr) throw createErr;
