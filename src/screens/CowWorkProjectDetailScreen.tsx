@@ -7,6 +7,8 @@ import { useChuteSideToast } from "../components/ToastContext";
 import FlagIcon from "../components/FlagIcon";
 import AnimalLookup from "../components/AnimalLookup";
 import FormFieldRow from "../components/FormFieldRow";
+import { useGroups } from "@/hooks/useGroups";
+import { useLocations } from "@/hooks/useLocations";
 import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, type FlagColor } from "@/lib/constants";
 import { getLockedFields, getOptionalFields, resolveFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
@@ -109,6 +111,56 @@ export default function CowWorkProjectDetailScreen() {
       return data || [];
     },
   });
+
+  // Reference data for edit mode
+  const { data: groups } = useGroups();
+  const { data: locations } = useLocations();
+
+  // Edit mode state for Project Details tab
+  const [isEditingProject, setIsEditingProject] = useState(false);
+  const [editDate, setEditDate] = useState("");
+  const [editGroupId, setEditGroupId] = useState("");
+  const [editLocationId, setEditLocationId] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+  const [editHeadCount, setEditHeadCount] = useState("");
+  const [editMemo, setEditMemo] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
+  const startEditingProject = () => {
+    setEditDate(project?.date || "");
+    setEditGroupId(project?.group_id || "");
+    setEditLocationId(project?.location_id || "");
+    setEditStatus(project?.project_status || "Pending");
+    setEditHeadCount(project?.estimated_head ? String(project.estimated_head) : "");
+    setEditMemo(project?.description || "");
+    setIsEditingProject(true);
+  };
+
+  const saveProjectEdits = async () => {
+    setEditSaving(true);
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({
+          date: editDate,
+          group_id: editGroupId || null,
+          location_id: editLocationId || null,
+          project_status: editStatus,
+          estimated_head: editHeadCount ? parseInt(editHeadCount) : null,
+          description: editMemo.trim() || null,
+        })
+        .eq("id", id!);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["project", id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      showToast("success", "Project updated");
+      setIsEditingProject(false);
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to update");
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   // Load expected animals (Phase D)
   const { data: expectedAnimals, refetch: refetchExpected } = useQuery({
@@ -1189,45 +1241,127 @@ export default function CowWorkProjectDetailScreen() {
 
         {/* =================== DETAILS TAB =================== */}
         {activeTab === "details" && (
-          <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+          <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: isEditingProject ? "2px solid #F3D12A" : "1px solid rgba(212,212,208,0.60)" }}>
             <div className="flex items-center justify-between">
-              <div style={SUB_LABEL}>PROJECT DETAILS</div>
+              <div style={SUB_LABEL}>{isEditingProject ? "EDITING PROJECT" : "PROJECT DETAILS"}</div>
               <div className="flex items-center gap-2">
-                <button
-                  className="rounded-lg px-3 py-1.5 cursor-pointer active:scale-[0.97]"
-                  style={{ fontSize: 12, fontWeight: 600, color: "#0E2646", backgroundColor: "rgba(14,38,70,0.06)", border: "none" }}
-                  onClick={() => showToast("info", "Edit Project — coming soon")}
-                >
-                  Edit
-                </button>
-                <button
-                  className="rounded-lg px-3 py-1.5 cursor-pointer active:scale-[0.97]"
-                  style={{ fontSize: 12, fontWeight: 600, color: "#D4183D", backgroundColor: "rgba(212,24,61,0.06)", border: "none" }}
-                  onClick={async () => {
-                    if (!confirm("Delete this project? This cannot be undone.")) return;
-                    const { error } = await supabase.from("projects").delete().eq("id", id!);
-                    if (error) { showToast("error", error.message); return; }
-                    showToast("success", "Project deleted");
-                    navigate("/cow-work");
-                  }}
-                >
-                  Delete
-                </button>
+                {!isEditingProject ? (
+                  <>
+                    <button
+                      className="rounded-lg px-3 py-1.5 cursor-pointer active:scale-[0.97]"
+                      style={{ fontSize: 12, fontWeight: 600, color: "#0E2646", backgroundColor: "rgba(14,38,70,0.06)", border: "none" }}
+                      onClick={startEditingProject}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="rounded-lg px-3 py-1.5 cursor-pointer active:scale-[0.97]"
+                      style={{ fontSize: 12, fontWeight: 600, color: "#D4183D", backgroundColor: "rgba(212,24,61,0.06)", border: "none" }}
+                      onClick={async () => {
+                        if (!confirm("Delete this project? This cannot be undone.")) return;
+                        const { error } = await supabase.from("projects").delete().eq("id", id!);
+                        if (error) { showToast("error", error.message); return; }
+                        showToast("success", "Project deleted");
+                        navigate("/cow-work");
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className="rounded-lg px-3 py-1.5 cursor-pointer active:scale-[0.97]"
+                      style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.50)", backgroundColor: "rgba(26,26,26,0.06)", border: "none" }}
+                      onClick={() => setIsEditingProject(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="rounded-lg px-3 py-1.5 cursor-pointer active:scale-[0.97]"
+                      style={{ fontSize: 12, fontWeight: 700, color: "#1A1A1A", backgroundColor: "#F3D12A", border: "none", opacity: editSaving ? 0.5 : 1 }}
+                      disabled={editSaving}
+                      onClick={saveProjectEdits}
+                    >
+                      {editSaving ? "Saving…" : "Save"}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
-            {[
-              ["Date", projectDate],
-              ["Type", projectType],
-              ["Group", projectGroup],
-              ["Location", projectLocation],
-              ["Status", projectStatus],
-              ["Head Count", String(headCount)],
-            ].map(([label, value]) => (
-              <div key={label} className="flex items-center gap-2 min-w-0">
-                <span style={LABEL_STYLE}>{label}</span>
-                <span style={{ fontSize: 14, color: "rgba(26,26,26,0.70)" }}>{value || "—"}</span>
-              </div>
-            ))}
+
+            {/* VIEW MODE */}
+            {!isEditingProject && (
+              <>
+                {[
+                  ["Date", projectDate],
+                  ["Type", projectType],
+                  ["Group", projectGroup],
+                  ["Location", projectLocation],
+                  ["Status", projectStatus],
+                  ["Head Count", String(headCount)],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex items-center gap-2 min-w-0">
+                    <span style={LABEL_STYLE}>{label}</span>
+                    <span style={{ fontSize: 14, color: "rgba(26,26,26,0.70)" }}>{value || "—"}</span>
+                  </div>
+                ))}
+                {project?.description && (
+                  <div className="pt-1">
+                    <div style={{ ...SUB_LABEL, marginBottom: 4 }}>MEMO</div>
+                    <div style={{ fontSize: 13, color: "rgba(26,26,26,0.60)", lineHeight: 1.5 }}>{project.description}</div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* EDIT MODE */}
+            {isEditingProject && (
+              <>
+                <div className="flex items-center gap-2 min-w-0">
+                  <label style={LABEL_STYLE}>Date</label>
+                  <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className={INPUT_CLS} />
+                </div>
+                <div className="flex items-center gap-2 min-w-0">
+                  <label style={LABEL_STYLE}>Type</label>
+                  <span style={{ fontSize: 14, color: "rgba(26,26,26,0.40)" }}>{projectType} (locked)</span>
+                </div>
+                <div className="flex items-center gap-2 min-w-0">
+                  <label style={LABEL_STYLE}>Group</label>
+                  <select value={editGroupId} onChange={e => setEditGroupId(e.target.value)} className={INPUT_CLS}>
+                    <option value="">None</option>
+                    {(groups || []).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 min-w-0">
+                  <label style={LABEL_STYLE}>Location</label>
+                  <select value={editLocationId} onChange={e => setEditLocationId(e.target.value)} className={INPUT_CLS}>
+                    <option value="">None</option>
+                    {(locations || []).map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 min-w-0">
+                  <label style={LABEL_STYLE}>Status</label>
+                  <select value={editStatus} onChange={e => setEditStatus(e.target.value)} className={INPUT_CLS}>
+                    <option>Pending</option>
+                    <option>In Progress</option>
+                    <option>Completed</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 min-w-0">
+                  <label style={LABEL_STYLE}>Expected Hd</label>
+                  <input type="number" value={editHeadCount} onChange={e => setEditHeadCount(e.target.value)} placeholder="Optional" className={INPUT_CLS} />
+                </div>
+                <div className="pt-1">
+                  <div style={{ ...SUB_LABEL, marginBottom: 4 }}>MEMO</div>
+                  <textarea
+                    value={editMemo} onChange={e => setEditMemo(e.target.value)}
+                    className="w-full resize-none rounded-lg px-3 py-2.5 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
+                    style={{ minHeight: 56, backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16 }}
+                  />
+                </div>
+              </>
+            )}
 
             <div style={{ borderTop: "1px solid rgba(26,26,26,0.06)", margin: "8px 0" }} />
 
@@ -1249,7 +1383,7 @@ export default function CowWorkProjectDetailScreen() {
 
             <div style={{ borderTop: "1px solid rgba(26,26,26,0.06)", margin: "8px 0" }} />
 
-            {projectStatus !== "Completed" && (
+            {projectStatus !== "Completed" && !isEditingProject && (
               <button
                 className="w-full rounded-full py-3.5 mb-3 cursor-pointer active:scale-[0.98] transition-all"
                 style={{ fontSize: 14, fontWeight: 700, backgroundColor: "#F3D12A", color: "#1A1A1A", border: "none" }}
