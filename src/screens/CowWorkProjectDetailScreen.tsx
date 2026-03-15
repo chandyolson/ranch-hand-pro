@@ -1870,10 +1870,23 @@ export default function CowWorkProjectDetailScreen() {
                   <button
                     onClick={async () => {
                       setDeleting(true);
-                      const { error } = await supabase.from("projects").delete().eq("id", id!);
-                      if (error) { showToast("error", error.message); setDeleting(false); return; }
-                      showToast("success", "Project deleted");
-                      navigate("/cow-work");
+                      try {
+                        // Delete child records first (FK constraints)
+                        await supabase.from("cow_work").delete().eq("project_id", id!);
+                        await supabase.from("project_products").delete().eq("project_id", id!);
+                        await supabase.from("project_expected_animals").delete().eq("project_id", id!);
+                        await supabase.from("project_work_types").delete().eq("project_id", id!);
+                        // Then delete the project
+                        const { error } = await supabase.from("projects").delete().eq("id", id!);
+                        if (error) throw error;
+                        queryClient.invalidateQueries({ queryKey: ["projects"] });
+                        queryClient.invalidateQueries({ queryKey: ["project-work-counts"] });
+                        showToast("success", "Project deleted");
+                        navigate("/cow-work");
+                      } catch (err: any) {
+                        showToast("error", err.message || "Failed to delete");
+                        setDeleting(false);
+                      }
                     }}
                     disabled={deleting}
                     style={{ flex: 1, padding: "10px 0", borderRadius: 9999, border: "none", backgroundColor: "#D4183D", fontSize: 13, fontWeight: 700, color: "white", cursor: "pointer", opacity: deleting ? 0.5 : 1 }}

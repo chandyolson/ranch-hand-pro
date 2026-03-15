@@ -153,16 +153,24 @@ export default function ConfigureFieldsSection({ workTypeCode, config, onChange 
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#55BAAA", textTransform: "uppercase", marginBottom: 4 }}>
                 RECOMMENDED
               </div>
-              {recommended.map(f => renderFieldRow(f, "recommended"))}
+              {[...recommended].sort((a, b) => {
+                const aOn = isOn(a.key) ? 0 : 1;
+                const bOn = isOn(b.key) ? 0 : 1;
+                return aOn - bOn;
+              }).map(f => renderFieldRow(f, "recommended"))}
             </div>
           )}
 
-          {/* Other fields */}
+          {/* Other fields — enabled ones first */}
           <div style={{ marginTop: recommended.length > 0 ? 10 : 8 }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 4 }}>
               OTHER FIELDS
             </div>
-            {other.map(f => renderFieldRow(f, "other"))}
+            {[...other].sort((a, b) => {
+              const aOn = isOn(a.key) ? 0 : 1;
+              const bOn = isOn(b.key) ? 0 : 1;
+              return aOn - bOn;
+            }).map(f => renderFieldRow(f, "other"))}
           </div>
         </div>
       )}
