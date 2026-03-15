@@ -136,7 +136,7 @@ export default function CowWorkProjectDetailScreen() {
 
   // Load worked animals
   const { data: workedAnimals, refetch: refetchWorked } = useQuery({
-    queryKey: ["project-animals", id],
+    queryKey: ["project-animals", id, operationId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cow_work")
@@ -147,7 +147,7 @@ export default function CowWorkProjectDetailScreen() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!id,
+    enabled: !!id && !!operationId,
   });
 
   // Load project products
