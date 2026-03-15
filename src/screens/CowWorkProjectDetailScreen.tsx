@@ -291,6 +291,9 @@ export default function CowWorkProjectDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       showToast("success", "Project updated");
       setIsEditingProject(false);
+      setDefaultsApplied(false);
+      // Apply the just-saved defaults immediately
+      applyFieldDefaults(editFieldDefaults);
     } catch (err: any) {
       showToast("error", err.message || "Failed to update");
     } finally {
