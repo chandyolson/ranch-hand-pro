@@ -666,7 +666,7 @@ export default function CalvingRecordScreen() {
                     return (
                       <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, color: hex }}>
                         <FlagIcon color={fc} size="sm" />
-                        {f.reason || f.flag_tier}
+                        {f.flag_name || ""}
                       </span>
                     );
                   })}

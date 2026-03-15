@@ -209,7 +209,7 @@ export default function AnimalDetailScreen() {
   const activeFlags = (flags || []).map((f: any) => ({
     color: tierToColor[f.flag_tier] || "teal" as FlagColor,
     hex: tierToHex[f.flag_tier] || "#55BAAA",
-    reason: f.reason || f.flag_tier,
+    name: f.flag_name || "",
     tier: f.flag_tier,
   }));
   // Keep legacy single-flag references for the header icon
@@ -455,7 +455,7 @@ export default function AnimalDetailScreen() {
               {activeFlags.map((f, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   <FlagIcon color={f.color} size="sm" />
-                  <span style={{ fontSize: 10, fontWeight: 600, color: f.hex }}>{f.reason}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: f.hex }}>{f.name}</span>
                 </div>
               ))}
             </div>
