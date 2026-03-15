@@ -66,12 +66,13 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
   const activeSortLabel = sortOptions?.find(s => s.value === activeSort)?.label || "Sort";
 
   const menuItems: { icon: React.ReactNode; label: string; onClick: () => void }[] = [];
+  if (onFilter) menuItems.push({ icon: <FilterMenuIcon />, label: "Filter", onClick: () => { onFilter(); setMenuOpen(false); } });
   if (onImport) menuItems.push({ icon: <ImportIcon />, label: "Import", onClick: () => { onImport(); setMenuOpen(false); } });
   if (onExport) menuItems.push({ icon: <ExportIcon />, label: "Export", onClick: () => { onExport(); setMenuOpen(false); } });
-  const hasDivider = menuItems.length > 0 && !!(onMassSelect || onMassEdit);
+  const hasDivider = (onImport || onExport) && !!(onMassSelect || onMassEdit);
+  const dividerAfterIdx = hasDivider ? menuItems.length - 1 : -1;
   if (onMassSelect) menuItems.push({ icon: <CheckSquareIcon />, label: "Mass Select", onClick: () => { onMassSelect(); setMenuOpen(false); } });
   if (onMassEdit) menuItems.push({ icon: <EditIcon />, label: "Mass Edit", onClick: () => { onMassEdit(); setMenuOpen(false); } });
-  const dividerAfterIdx = hasDivider ? (onImport && onExport ? 1 : 0) : -1;
 
   return (
     <div className="space-y-3">
