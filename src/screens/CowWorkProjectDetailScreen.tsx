@@ -384,6 +384,28 @@ export default function CowWorkProjectDetailScreen() {
 
       await refetchWorked();
       queryClient.invalidateQueries({ queryKey: ["project-work-counts"] });
+
+      // Auto-apply flags from selected quick notes
+      if (animalId && selectedNotes.length > 0) {
+        const flagTierMap: Record<string, string> = { red: "cull", gold: "production", teal: "management" };
+        const flagNotes = QUICK_NOTES.filter(n => n.flag && selectedNotes.includes(n.label));
+        for (const note of flagNotes) {
+          const tier = flagTierMap[note.flag!] || note.flag!;
+          // Insert flag — allows multiple flags per animal (different tiers or same tier different reasons)
+          await supabase.from("animal_flags").insert({
+            operation_id: operationId,
+            animal_id: animalId,
+            flag_tier: tier,
+            flag_name: note.label,
+            flag_note: `Auto-applied from quick note "${note.label}" during ${projectName}`,
+          });
+        }
+        if (flagNotes.length > 0) {
+          queryClient.invalidateQueries({ queryKey: ["animal-flags"] });
+          queryClient.invalidateQueries({ queryKey: ["dashboard-flag-samples"] });
+        }
+      }
+
       const msg = editingRecord
         ? `Tag ${tagField} updated`
         : createdNew
@@ -443,19 +465,13 @@ export default function CowWorkProjectDetailScreen() {
           <div className="flex items-center gap-2 shrink-0">
             {projectStatus !== "Completed" && (
               <button
-                className="rounded-lg py-1.5 px-3 cursor-pointer active:scale-[0.97] transition-all"
+                className="rounded-full py-1.5 px-4 cursor-pointer active:scale-[0.97] transition-all"
                 style={{ fontSize: 11, fontWeight: 700, backgroundColor: "#F3D12A", color: "#1A1A1A", border: "none" }}
                 onClick={(e) => { e.stopPropagation(); navigate("/cow-work/" + id + "/close-out"); }}
               >
-                Complete
+                Complete Project
               </button>
             )}
-            <span
-              className="rounded-full"
-              style={{ fontSize: 10, fontWeight: 700, color: "#F3D12A", backgroundColor: "rgba(243,209,42,0.15)", padding: "3px 8px" }}
-            >
-              {tabLabels[activeTab]}
-            </span>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
               style={{ transform: headerOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
               <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="rgba(255,255,255,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -489,7 +505,7 @@ export default function CowWorkProjectDetailScreen() {
                   style={{
                     fontSize: 12,
                     fontWeight: activeTab === tab ? 700 : 500,
-                    color: activeTab === tab ? "white" : "rgba(255,255,255,0.40)",
+                    color: activeTab === tab ? "#F3D12A" : "rgba(255,255,255,0.40)",
                     background: "none", border: "none",
                   }}
                   onClick={() => { setActiveTab(tab); setHeaderOpen(false); }}
