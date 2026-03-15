@@ -740,6 +740,14 @@ export default function CowWorkProjectDetailScreen() {
     ? Math.round(saleWeightAnimals.reduce((s, a) => s + Number(a.sale_weight), 0) / saleWeightAnimals.length)
     : 0;
   const totalSaleWeight = saleWeightAnimals.reduce((s, a) => s + Number(a.sale_weight), 0);
+  // Breeding stats
+  const bredAnimals = worked.filter(a => a.breeding_sire || a.breeding_type);
+  const sireMap = new Map<string, number>();
+  worked.forEach(a => { if (a.breeding_sire) sireMap.set(a.breeding_sire, (sireMap.get(a.breeding_sire) || 0) + 1); });
+  const sireEntries = [...sireMap.entries()].sort((a, b) => b[1] - a[1]);
+  const estrusMap = new Map<string, number>();
+  worked.forEach(a => { if (a.estrus_status) estrusMap.set(a.estrus_status, (estrusMap.get(a.estrus_status) || 0) + 1); });
+  const estrusEntries = [...estrusMap.entries()].sort((a, b) => b[1] - a[1]);
 
   const tabLabels: Record<Tab, string> = { input: "Add", worked: "List", stats: "Stats", details: "Project Details" };
 
@@ -1573,8 +1581,11 @@ export default function CowWorkProjectDetailScreen() {
                 } else if (projectType === "PURCH") {
                   cards.push({ value: avgPrice ? `$${avgPrice}` : "—", label: "AVG PRICE" });
                   cards.push({ value: totalPrice ? `$${totalPrice.toLocaleString()}` : "—", label: "TOTAL COST" });
+                } else if (["AI", "BREED", "ET", "TO"].includes(projectType)) {
+                  cards.push({ value: bredAnimals.length, label: "BRED" });
+                  cards.push({ value: sireEntries.length, label: "SIRES USED" });
                 }
-                // Weight if anyone has it (universal)
+                // Weight if anyone has it (universal — all work types)
                 if (weighedAnimals.length > 0) {
                   cards.push({ value: `${avgWeight}`, label: "AVG WEIGHT" });
                 }
@@ -1629,6 +1640,48 @@ export default function CowWorkProjectDetailScreen() {
                         <div style={{ height: 6, borderRadius: 3, backgroundColor: r.color, width: `${(r.count / total) * 100}%` }} />
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", minWidth: 24, textAlign: "right" }}>{r.count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Breeding: Sire breakdown */}
+            {["AI", "BREED", "ET", "TO"].includes(projectType) && sireEntries.length > 0 && (
+              <div style={{ borderRadius: 12, backgroundColor: "white", padding: "14px 14px", border: "1px solid rgba(212,212,208,0.60)" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646", marginBottom: 12 }}>Sires</div>
+                {sireEntries.map(([sire, count], i) => {
+                  const total = bredAnimals.length || 1;
+                  const colors = ["#55BAAA", "#0E2646", "#F3D12A", "#E87461", "#717182"];
+                  return (
+                    <div key={sire} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors[i % colors.length], flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{sire}</span>
+                      <div style={{ flex: 2, height: 6, borderRadius: 3, backgroundColor: "rgba(26,26,26,0.06)" }}>
+                        <div style={{ height: 6, borderRadius: 3, backgroundColor: colors[i % colors.length], width: `${(count / total) * 100}%` }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", minWidth: 24, textAlign: "right" }}>{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Breeding: Estrus status breakdown */}
+            {["AI", "BREED", "ET", "TO"].includes(projectType) && estrusEntries.length > 0 && (
+              <div style={{ borderRadius: 12, backgroundColor: "white", padding: "14px 14px", border: "1px solid rgba(212,212,208,0.60)" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646", marginBottom: 12 }}>Estrus Status</div>
+                {estrusEntries.map(([status, count]) => {
+                  const total = worked.length || 1;
+                  const pct = Math.round((count / total) * 100);
+                  return (
+                    <div key={status} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#55BAAA", flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{status}</span>
+                      <div style={{ flex: 2, height: 6, borderRadius: 3, backgroundColor: "rgba(26,26,26,0.06)" }}>
+                        <div style={{ height: 6, borderRadius: 3, backgroundColor: "#55BAAA", width: `${pct}%` }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", minWidth: 40, textAlign: "right" }}>{count} ({pct}%)</span>
                     </div>
                   );
                 })}
