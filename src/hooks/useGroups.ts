@@ -11,6 +11,7 @@ export function useGroups() {
         .from('groups')
         .select('*')
         .eq('operation_id', operationId)
+        .eq('is_active', true)
         .order('name', { ascending: true });
       if (error) throw error;
       return data;
