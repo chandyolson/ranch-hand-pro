@@ -50,7 +50,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
   const sortRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
-  const hasMenu = !!(onImport || onExport || onMassSelect || onMassEdit);
+  const hasMenu = !!(onImport || onExport || onMassSelect || onMassEdit || onFilter);
   const activeFilterLabel = filterChips.find(c => c.value === activeFilter)?.label || "Filter";
 
   useEffect(() => {
