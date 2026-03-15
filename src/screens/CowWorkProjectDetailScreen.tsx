@@ -7,6 +7,7 @@ import { useChuteSideToast } from "../components/ToastContext";
 import FlagIcon from "../components/FlagIcon";
 import AnimalLookup from "../components/AnimalLookup";
 import CollapsibleQuickNotes from "../components/CollapsibleQuickNotes";
+import ConfigureFieldsSection from "../components/ConfigureFieldsSection";
 import FormFieldRow from "../components/FormFieldRow";
 import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
@@ -159,6 +160,7 @@ export default function CowWorkProjectDetailScreen() {
   const [editProducts, setEditProducts] = useState<{ id: string; name: string; dosage: string; route: string }[]>([]);
   const [editProductPickerOpen, setEditProductPickerOpen] = useState(false);
   const [editProductSearch, setEditProductSearch] = useState("");
+  const [editFieldConfig, setEditFieldConfig] = useState<FieldVisibilityConfig | null>(null);
   const [editSaving, setEditSaving] = useState(false);
 
   const startEditingProject = () => {
@@ -168,6 +170,7 @@ export default function CowWorkProjectDetailScreen() {
     setEditStatus(project?.project_status || "Pending");
     setEditHeadCount(project?.estimated_head ? String(project.estimated_head) : "");
     setEditMemo(project?.description || "");
+    setEditFieldConfig(resolveFieldConfig(project?.field_visibility as FieldVisibilityConfig | null));
     // Load current products into edit state
     setEditProducts((projectProducts || []).map((pp: any) => ({
       id: (pp.product as any)?.id || pp.product_id,
@@ -192,6 +195,7 @@ export default function CowWorkProjectDetailScreen() {
           project_status: editStatus,
           estimated_head: editHeadCount ? parseInt(editHeadCount) : null,
           description: editMemo.trim() || null,
+          field_visibility: editFieldConfig as any,
         })
         .eq("id", id!);
       if (error) throw error;
@@ -537,6 +541,7 @@ export default function CowWorkProjectDetailScreen() {
             .update({ project_status: "In Progress" })
             .eq("id", id!);
           queryClient.invalidateQueries({ queryKey: ["project", id] });
+          queryClient.invalidateQueries({ queryKey: ["projects"] });
         }
       }
 
@@ -1473,6 +1478,17 @@ export default function CowWorkProjectDetailScreen() {
                     style={{ minHeight: 56, backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16 }}
                   />
                 </div>
+
+                {/* Field Configuration */}
+                {editFieldConfig && (
+                  <div className="pt-1">
+                    <ConfigureFieldsSection
+                      workTypeCode={projectType}
+                      config={editFieldConfig}
+                      onChange={setEditFieldConfig}
+                    />
+                  </div>
+                )}
               </>
             )}
 

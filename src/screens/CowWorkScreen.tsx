@@ -68,7 +68,7 @@ export default function CowWorkScreen() {
       type: workType?.name || workType?.code || "",
       typeCode: workType?.code || "",
       group: (p.group as any)?.name || "",
-      headCount: p.head_count || 0,
+      headCount: p.estimated_head || p.head_count || 0,
       workedCount: workCounts?.[p.id] || 0,
     };
   });
