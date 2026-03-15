@@ -7,6 +7,7 @@ import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
 import { useChuteSideToast } from "@/components/ToastContext";
 import FieldRow from "@/components/calving/FieldRow";
+import CollapsibleQuickNotes from "@/components/CollapsibleQuickNotes";
 import SegmentedToggle from "@/components/calving/SegmentedToggle";
 import PillScore from "@/components/calving/PillScore";
 import AnimalLookup from "@/components/AnimalLookup";
@@ -261,61 +262,6 @@ export default function CalvingNewScreen() {
         );
       if (label === "Twin" && !isTwin) setIsTwin(true);
     }
-  };
-
-  const renderNotes = (collapsed = false) => {
-    const list = collapsed ? QUICK_NOTES.filter((n) => selectedNotes.includes(n.label)) : QUICK_NOTES;
-    if (collapsed && list.length === 0) return <span style={{ fontSize: 12, color: "rgba(26,26,26,0.40)" }}>None</span>;
-    return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, paddingTop: collapsed ? 4 : 0 }}>
-        {list.map((n) => {
-          const active = selectedNotes.includes(n.label);
-          const c = QUICK_NOTE_PILL_COLORS[n.flag || "none"];
-          const solidActive: Record<string, { bg: string; border: string; text: string }> = {
-            red: { bg: "#9B2335", border: "#9B2335", text: "#FFFFFF" },
-            gold: { bg: "#B8860B", border: "#B8860B", text: "#FFFFFF" },
-            teal: { bg: "#55BAAA", border: "#3D9A8B", text: "#FFFFFF" },
-            none: { bg: "#717182", border: "#5A5A6A", text: "#FFFFFF" },
-          };
-          const tier = n.flag || "none";
-          const s = active ? solidActive[tier] : null;
-          return (
-            <button
-              key={n.label}
-              onClick={collapsed ? undefined : () => toggleNote(n.label)}
-              type="button"
-              style={{
-                borderRadius: 9999,
-                padding: "4px 10px",
-                fontSize: 11,
-                fontWeight: active ? 700 : 600,
-                backgroundColor: active ? s!.bg : c.bg,
-                border: `${active ? 2 : 1}px solid ${active ? s!.border : c.border}`,
-                color: active ? s!.text : c.text,
-                cursor: collapsed ? "default" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 3,
-                transition: "all 100ms",
-              }}
-            >
-              {active && (
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                  <path
-                    d="M2 5L4 7L8 3"
-                    stroke="#FFFFFF"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-              {n.label}
-            </button>
-          );
-        })}
-      </div>
-    );
   };
 
   const cowTraitCount = Object.values(cowTraits).filter((v) => v).length;
@@ -1226,7 +1172,33 @@ export default function CalvingNewScreen() {
                     </span>
                   ))}
                 </div>
-                {selectedNotes.length > 0 && renderNotes(true)}
+                {selectedNotes.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, paddingTop: 4 }}>
+                    {selectedNotes.map(label => {
+                      const n = QUICK_NOTES.find(q => q.label === label);
+                      const tier = n?.flag || "none";
+                      const colors: Record<string, { bg: string; border: string }> = {
+                        red: { bg: "#9B2335", border: "#9B2335" },
+                        gold: { bg: "#B8860B", border: "#B8860B" },
+                        teal: { bg: "#55BAAA", border: "#3D9A8B" },
+                        none: { bg: "#717182", border: "#5A5A6A" },
+                      };
+                      const s = colors[tier];
+                      return (
+                        <span key={label} style={{
+                          borderRadius: 9999, padding: "3px 9px", fontSize: 10, fontWeight: 700,
+                          backgroundColor: s.bg, border: `1.5px solid ${s.border}`, color: "#FFFFFF",
+                          display: "flex", alignItems: "center", gap: 3,
+                        }}>
+                          <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5L4 7L8 3" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             ) : (
               <span style={{ fontSize: 12, color: "rgba(26,26,26,0.40)" }}>Vigor, notes, twin, graft</span>
@@ -1237,8 +1209,11 @@ export default function CalvingNewScreen() {
             <PillScore label="Calf Vigor" value={vigor} onChange={setVigor} labels={TRAIT_LABELS.calfVigor} />
             <div style={{ height: 1, backgroundColor: "rgba(26,26,26,0.06)" }} />
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#0E2646", marginBottom: 6 }}>Quick Notes</div>
-              {renderNotes(false)}
+              <CollapsibleQuickNotes
+                selectedNotes={selectedNotes}
+                onToggle={toggleNote}
+                context="calving"
+              />
             </div>
             <div style={{ height: 1, backgroundColor: "rgba(26,26,26,0.06)" }} />
             <div>
