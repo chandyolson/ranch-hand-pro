@@ -71,7 +71,7 @@ export default function LoadFromProtocolDrawer({
         .eq("client_operation_id", operationId)
         .order("protocol_year", { ascending: false });
       if (error) throw error;
-      return (data || []) as AssignedProtocol[];
+      return (data || []) as unknown as AssignedProtocol[];
     },
     enabled: open,
   });

@@ -103,7 +103,7 @@ export default function BlockLibraryPanel({
         .eq("animal_class", animalClass)
         .order("name");
       if (error) throw error;
-      return (data || []) as BlockData[];
+      return (data || []) as unknown as BlockData[];
     },
     enabled: !!operationId && !!animalClass,
   });
