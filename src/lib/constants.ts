@@ -332,3 +332,39 @@ export const DEATH_REASONS = [
   "Unknown",
   "Other",
 ] as const;
+
+// ── BSE (Breeding Soundness Exam) Values ──
+export const BSE_PASS_FAIL = ["Pass", "Fail", "Marginal", "Deferred", "Permanent Fail"] as const;
+
+export const BSE_MOTILITY = ["Excellent", "Very Good", "Good", "Poor", "No Motility"] as const;
+
+export const BSE_PHYSICAL_DEFECTS = [
+  "Epididymitis", "Penile Injury", "Bad Feet", "Corkscrew",
+  "Testicular Trauma", "Warts", "Persistent Frenulum", "Frenulum-Okay",
+  "Cryptorchid", "Vesiculitis",
+] as const;
+
+export const BSE_SEMEN_DEFECTS = [
+  "Proximal Droplets", "Distal Droplets", "Coiled Tails", "Bent Tails",
+  "Detached Heads", "Abnormal Acrosomes", "Pyriform Heads", "Midpiece Defects",
+  "Fractured Heads", "White Blood Cells", "Red Blood Cells",
+] as const;
+
+// ── Sale / Cull Reasons ──
+export const SALE_REASONS = [
+  "Open", "Pregnancy Status", "Drought", "Poor Production", "Poor Mother",
+  "Body Condition", "Injury", "Age", "Private Sale", "Dispersal",
+  "Disposition", "Bad Bag", "Bad Feet", "Lameness", "Disease", "Market Animal",
+] as const;
+
+// ── Disease Types ──
+export const DISEASE_TYPES = [
+  "Pneumonia", "Scours", "Pinkeye", "Navel Infection", "Diphtheria",
+  "Bloat", "Footrot", "Lameness", "Retained Placenta", "Ain't Doin Right",
+] as const;
+
+// ── Breeding Method ──
+export const BREEDING_METHODS = ["AI", "IVF", "Natural", "ET"] as const;
+
+// ── Estrus Status ──
+export const ESTRUS_STATUS = ["Heat", "Estrus", "FTAI", "Unknown"] as const;

@@ -12,7 +12,7 @@ import FormFieldRow from "../components/FormFieldRow";
 import FieldRow from "../components/calving/FieldRow";
 import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
-import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, type FlagColor } from "@/lib/constants";
+import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, BSE_PASS_FAIL, BSE_MOTILITY, BSE_PHYSICAL_DEFECTS, BSE_SEMEN_DEFECTS, SALE_REASONS, DISEASE_TYPES, BREEDING_METHODS, ESTRUS_STATUS, type FlagColor } from "@/lib/constants";
 import { getLockedFields, getOptionalFields, resolveFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -340,8 +340,8 @@ export default function CowWorkProjectDetailScreen() {
   const [scrotal, setScrotal] = useState("");
   const [motility, setMotility] = useState("");
   const [morphology, setMorphology] = useState("");
-  const [semenDefects, setSemenDefects] = useState("");
-  const [physicalDefects, setPhysicalDefects] = useState("");
+  const [semenDefects, setSemenDefects] = useState<string[]>([]);
+  const [physicalDefects, setPhysicalDefects] = useState<string[]>([]);
   // Breeding fields
   const [breedingSire, setBreedingSire] = useState("");
   const [breedingDate, setBreedingDate] = useState(new Date().toISOString().split("T")[0]);
@@ -474,8 +474,8 @@ export default function CowWorkProjectDetailScreen() {
     setScrotal("");
     setMotility("");
     setMorphology("");
-    setSemenDefects("");
-    setPhysicalDefects("");
+    setSemenDefects([]);
+    setPhysicalDefects([]);
     setBreedingSire("");
     setBreedingDate(new Date().toISOString().split("T")[0]);
     setBreedingType("");
@@ -993,7 +993,7 @@ export default function CowWorkProjectDetailScreen() {
                       <FieldRow key={f.key} label="Result">
                         <select value={bseResult} onChange={e => setBseResult(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
-                          <option>Pass</option><option>Fail</option><option>Defer</option>
+                          {BSE_PASS_FAIL.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </FieldRow>
                     );
@@ -1004,7 +1004,10 @@ export default function CowWorkProjectDetailScreen() {
                     );
                     case "motility": return (
                       <FieldRow key={f.key} label="Motility">
-                        <input type="number" value={motility} onChange={e => setMotility(e.target.value)} placeholder="%" style={IS} />
+                        <select value={motility} onChange={e => setMotility(e.target.value)} style={{...IS, appearance: "auto" as const}}>
+                          <option value="" disabled>Select…</option>
+                          {BSE_MOTILITY.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
                       </FieldRow>
                     );
                     case "morphology": return (
@@ -1013,14 +1016,48 @@ export default function CowWorkProjectDetailScreen() {
                       </FieldRow>
                     );
                     case "semen_defects": return (
-                      <FieldRow key={f.key} label="Semen Def.">
-                        <input type="text" value={semenDefects} onChange={e => setSemenDefects(e.target.value)} placeholder="Defects…" style={IS} />
-                      </FieldRow>
+                      <div key={f.key} style={{ paddingTop: 2 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1A1A", marginBottom: 4 }}>Semen Defects</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {BSE_SEMEN_DEFECTS.map(d => {
+                            const on = semenDefects.includes(d);
+                            return (
+                              <button key={d} type="button" onClick={() => {
+                                if (on) setSemenDefects(semenDefects.filter(x => x !== d));
+                                else setSemenDefects([...semenDefects, d]);
+                              }} style={{
+                                borderRadius: 9999, padding: "4px 10px", fontSize: 11, fontWeight: on ? 700 : 500,
+                                backgroundColor: on ? "#9B2335" : "rgba(26,26,26,0.05)",
+                                border: on ? "1.5px solid #9B2335" : "1px solid rgba(26,26,26,0.12)",
+                                color: on ? "#FFFFFF" : "rgba(26,26,26,0.60)",
+                                cursor: "pointer", transition: "all 100ms",
+                              }}>{d}</button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                     case "physical_defects": return (
-                      <FieldRow key={f.key} label="Physical Def.">
-                        <input type="text" value={physicalDefects} onChange={e => setPhysicalDefects(e.target.value)} placeholder="Defects…" style={IS} />
-                      </FieldRow>
+                      <div key={f.key} style={{ paddingTop: 2 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#1A1A1A", marginBottom: 4 }}>Physical Defects</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {BSE_PHYSICAL_DEFECTS.map(d => {
+                            const on = physicalDefects.includes(d);
+                            return (
+                              <button key={d} type="button" onClick={() => {
+                                if (on) setPhysicalDefects(physicalDefects.filter(x => x !== d));
+                                else setPhysicalDefects([...physicalDefects, d]);
+                              }} style={{
+                                borderRadius: 9999, padding: "4px 10px", fontSize: 11, fontWeight: on ? 700 : 500,
+                                backgroundColor: on ? "#9B2335" : "rgba(26,26,26,0.05)",
+                                border: on ? "1.5px solid #9B2335" : "1px solid rgba(26,26,26,0.12)",
+                                color: on ? "#FFFFFF" : "rgba(26,26,26,0.60)",
+                                cursor: "pointer", transition: "all 100ms",
+                              }}>{d}</button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                     case "breeding_sire": return (
                       <FieldRow key={f.key} label="Sire">
@@ -1042,7 +1079,7 @@ export default function CowWorkProjectDetailScreen() {
                       <FieldRow key={f.key} label="Method">
                         <select value={breedingType} onChange={e => setBreedingType(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
-                          <option>AI</option><option>IVF</option><option>Natural</option>
+                          {BREEDING_METHODS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </FieldRow>
                     );
@@ -1050,10 +1087,7 @@ export default function CowWorkProjectDetailScreen() {
                       <FieldRow key={f.key} label="Estrus Status">
                         <select value={estrusStatus} onChange={e => setEstrusStatus(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
-                          <option>Heat</option>
-                          <option>Estrus</option>
-                          <option>FTAI</option>
-                          <option>Unknown</option>
+                          {ESTRUS_STATUS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </FieldRow>
                     );
@@ -1071,7 +1105,7 @@ export default function CowWorkProjectDetailScreen() {
                       <FieldRow key={f.key} label="Cull Reason">
                         <select value={cullReason} onChange={e => setCullReason(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
-                          <option>Age</option><option>Udder</option><option>Feet</option><option>Disposition</option><option>Open</option><option>Health</option><option>Body Condition</option><option>Other</option>
+                          {SALE_REASONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </FieldRow>
                     );
@@ -1090,7 +1124,10 @@ export default function CowWorkProjectDetailScreen() {
                     );
                     case "disease": return (
                       <FieldRow key={f.key} label="Disease">
-                        <input type="text" value={disease} onChange={e => setDisease(e.target.value)} placeholder="Disease…" style={IS} />
+                        <select value={disease} onChange={e => setDisease(e.target.value)} style={{...IS, appearance: "auto" as const}}>
+                          <option value="" disabled>Select…</option>
+                          {DISEASE_TYPES.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
                       </FieldRow>
                     );
                     default: return null;
