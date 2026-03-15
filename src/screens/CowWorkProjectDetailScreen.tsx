@@ -1015,31 +1015,34 @@ export default function CowWorkProjectDetailScreen() {
 
                     {/* Calving sub-tab */}
                     {historyTab === "calving" && (
-                      <div className="px-3 py-3 space-y-2">
+                      <div className="px-3 py-3 space-y-0">
                         {(animalCalvings || []).length === 0 ? (
                           <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)", textAlign: "center", padding: 12 }}>No calving records</div>
                         ) : (
-                          (animalCalvings || []).map(c => (
-                            <div key={c.id} className="rounded-xl px-3 py-3 bg-[#0E2646]">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>Calf {(c.calf as any)?.tag || "—"}</span>
-                                <span className="rounded-full" style={{
-                                  fontSize: 9, fontWeight: 700, padding: "2px 8px",
-                                  backgroundColor: c.calf_sex === "Bull" ? "rgba(85,186,170,0.15)" : "rgba(232,160,191,0.20)",
-                                  color: c.calf_sex === "Bull" ? "#55BAAA" : "#E8A0BF",
-                                }}>{c.calf_sex || "—"}</span>
-                                <span className="ml-auto" style={{ fontSize: 11, color: "rgba(240,240,240,0.35)" }}>
+                          (animalCalvings || []).map((c, idx) => (
+                            <div key={c.id} style={{ padding: "8px 0", borderBottom: idx < (animalCalvings || []).length - 1 ? "1px solid rgba(26,26,26,0.06)" : "none" }}>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>Calf {(c.calf as any)?.tag || "—"}</span>
+                                  <span style={{
+                                    fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 9999,
+                                    backgroundColor: c.calf_sex === "Bull" ? "rgba(85,186,170,0.12)" : "rgba(232,160,191,0.12)",
+                                    color: c.calf_sex === "Bull" ? "#55BAAA" : "#C77DA3",
+                                  }}>{c.calf_sex || "—"}</span>
+                                </div>
+                                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
                                   {new Date(c.calving_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                 </span>
                               </div>
-                              {c.birth_weight && (
-                                <div className="flex gap-2 mt-1.5">
-                                  <span className="rounded-full" style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(240,240,240,0.08)", color: "rgba(240,240,240,0.60)" }}>
-                                    {c.birth_weight} lbs
-                                  </span>
-                                </div>
-                              )}
-                              {c.memo && <div style={{ fontSize: 12, color: "rgba(240,240,240,0.45)", marginTop: 4 }}>{c.memo}</div>}
+                              <div style={{ display: "flex", gap: 6, marginTop: 3 }}>
+                                {c.birth_weight && (
+                                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(26,26,26,0.50)" }}>{c.birth_weight} lbs</span>
+                                )}
+                                {c.assistance && (
+                                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.35)" }}>Assist: {c.assistance}</span>
+                                )}
+                              </div>
+                              {c.memo && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.35)", marginTop: 2 }}>{c.memo}</div>}
                             </div>
                           ))
                         )}
