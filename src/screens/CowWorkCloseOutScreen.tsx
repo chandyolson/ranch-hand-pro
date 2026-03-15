@@ -23,7 +23,7 @@ export default function CowWorkCloseOutScreen() {
   const [templateName, setTemplateName] = useState("");
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [actionedMissing, setActionedMissing] = useState<Record<string, string>>({});
-  const [reconSource, setReconSource] = useState<"group" | "project" | null>(hasExpected ? "group" : null);
+  const [reconSource, setReconSource] = useState<"group" | "project" | null>(null);
   const [reconProjectId, setReconProjectId] = useState("");
   // Report builder toggles
   const [rptSummary, setRptSummary] = useState(true);
