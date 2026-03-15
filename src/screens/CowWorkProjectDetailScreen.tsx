@@ -95,19 +95,42 @@ export default function CowWorkProjectDetailScreen() {
     }
   }, [project?.project_status]);
 
-  // Apply field defaults on initial load (only when form is fresh/empty)
+  // Apply field defaults — maps field keys to state setters
+  const applyFieldDefaults = (defaults: Record<string, string>) => {
+    if (!defaults || typeof defaults !== "object") return;
+    const setterMap: Record<string, (v: string) => void> = {
+      preg_stage: setPregResult,
+      bse_result: setBseResult,
+      breeding_type: setBreedingType,
+      technician: setTechnician,
+      breeding_sire: setBreedingSire,
+      tag_color: setNewTagColor,
+      estrus_status: setEstrusStatus,
+      weight: setWeight,
+      scrotal: setScrotal,
+      cull_reason: setCullReason,
+      disposition: setDispositionField,
+      sale_weight: setSaleWeight,
+      disease: setDisease,
+      purchase_price: setPurchasePrice,
+      purchase_source: setPurchaseSource,
+      dna: setSampleId,
+      lot: setLot,
+      pen: setPen,
+      data1: setData1,
+      data2: setData2,
+    };
+    for (const [key, val] of Object.entries(defaults)) {
+      if (val && setterMap[key]) setterMap[key](val);
+    }
+  };
+
+  // Apply on initial load (only once)
   const [defaultsApplied, setDefaultsApplied] = useState(false);
   useEffect(() => {
     if (!project || defaultsApplied) return;
     const defaults = (project as any)?.field_defaults;
-    if (!defaults || typeof defaults !== "object") return;
-    if (defaults.preg_stage) setPregResult(defaults.preg_stage);
-    if (defaults.bse_result) setBseResult(defaults.bse_result);
-    if (defaults.breeding_type) setBreedingType(defaults.breeding_type);
-    if (defaults.technician) setTechnician(defaults.technician);
-    if (defaults.breeding_sire) setBreedingSire(defaults.breeding_sire);
-    if (defaults.tag_color) setNewTagColor(defaults.tag_color);
-    if (defaults.estrus_status) setEstrusStatus(defaults.estrus_status);
+    if (defaults) applyFieldDefaults(defaults);
     setDefaultsApplied(true);
   }, [project, defaultsApplied]);
 
@@ -531,14 +554,7 @@ export default function CowWorkProjectDetailScreen() {
     setPurchasePrice("");
     setPurchaseSource("");
     // Re-apply field defaults from project settings
-    const defaults = (project as any)?.field_defaults || {};
-    if (defaults.preg_stage) setPregResult(defaults.preg_stage);
-    if (defaults.bse_result) setBseResult(defaults.bse_result);
-    if (defaults.breeding_type) setBreedingType(defaults.breeding_type);
-    if (defaults.technician) setTechnician(defaults.technician);
-    if (defaults.breeding_sire) setBreedingSire(defaults.breeding_sire);
-    if (defaults.tag_color) setNewTagColor(defaults.tag_color);
-    if (defaults.estrus_status) setEstrusStatus(defaults.estrus_status);
+    applyFieldDefaults((project as any)?.field_defaults || {});
     // Scroll to top and focus tag input
     setTimeout(() => {
       tagSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1657,79 +1673,156 @@ export default function CowWorkProjectDetailScreen() {
                   </div>
                 )}
 
-                {/* Field Defaults */}
-                <div style={{ paddingTop: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#0E2646", marginBottom: 4 }}>Field Defaults</div>
-                  <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", marginBottom: 8 }}>Auto-fill values for every animal. Override per animal as needed.</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {(projectType === "PREG") && (
-                      <div>
-                        <FieldRow label="Preg Default">
-                          <select value={editFieldDefaults.preg_stage || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, preg_stage: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
-                            <option value="">No default</option>
-                            {(pregStages || []).map(s => <option key={s.id} value={s.stage_name}>{s.stage_name}</option>)}
-                          </select>
-                        </FieldRow>
-                        <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", paddingLeft: 93, marginTop: 2 }}>
-                          Options: {(pregStages || []).map(s => s.stage_name).join(", ") || "None configured"}
-                        </div>
-                      </div>
-                    )}
-                    {(projectType === "AI" || projectType === "BREED" || projectType === "ET") && (
-                      <>
-                        <div>
-                          <FieldRow label="Method">
-                            <select value={editFieldDefaults.breeding_type || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, breeding_type: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
-                              <option value="">No default</option>
-                              {BREEDING_METHODS.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                          </FieldRow>
-                          <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", paddingLeft: 93, marginTop: 2 }}>
-                            Options: {BREEDING_METHODS.join(", ")}
-                          </div>
-                        </div>
-                        <div>
-                          <FieldRow label="Technician">
-                            <select value={editFieldDefaults.technician || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, technician: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
-                              <option value="">No default</option>
-                              {(technicians || []).map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
-                            </select>
-                          </FieldRow>
-                          <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", paddingLeft: 93, marginTop: 2 }}>
-                            Available: {(technicians || []).map(t => t.name).join(", ") || "None in system"}
-                          </div>
-                        </div>
-                        <FieldRow label="Sire">
-                          <input type="text" value={editFieldDefaults.breeding_sire || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, breeding_sire: e.target.value }))} placeholder="Bull tag…" style={IS} />
-                        </FieldRow>
-                      </>
-                    )}
-                    {projectType === "BSE" && (
-                      <div>
-                        <FieldRow label="Result">
-                          <select value={editFieldDefaults.bse_result || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, bse_result: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
-                            <option value="">No default</option>
-                            {BSE_PASS_FAIL.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        </FieldRow>
-                        <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", paddingLeft: 93, marginTop: 2 }}>
-                          Options: {BSE_PASS_FAIL.join(", ")}
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <FieldRow label="Tag Color">
-                        <select value={editFieldDefaults.tag_color || ""} onChange={e => setEditFieldDefaults(prev => ({ ...prev, tag_color: e.target.value }))} style={{ ...IS, appearance: "auto" as const }}>
-                          <option value="">No default</option>
-                          {TAG_COLOR_OPTIONS.filter(c => c !== "None").map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                      </FieldRow>
-                      <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", paddingLeft: 93, marginTop: 2 }}>
-                        Options: {TAG_COLOR_OPTIONS.filter(c => c !== "None").join(", ")}
-                      </div>
+                {/* Field Defaults — dynamic based on enabled fields */}
+                {editFieldConfig && editFieldConfig.enabledFields.length > 0 && (
+                  <div style={{ paddingTop: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#0E2646", marginBottom: 4 }}>Field Defaults</div>
+                    <div style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", marginBottom: 8 }}>Auto-fill values for every animal. Override per animal as needed.</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {editFieldConfig.enabledFields.map(key => {
+                        const val = editFieldDefaults[key] || "";
+                        const set = (v: string) => setEditFieldDefaults(prev => ({ ...prev, [key]: v }));
+                        switch (key) {
+                          case "preg_stage": return (
+                            <FieldRow key={key} label="Preg">
+                              <select value={val} onChange={e => set(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                                <option value="">No default</option>
+                                {(pregStages || []).map(s => <option key={s.id} value={s.stage_name}>{s.stage_name}</option>)}
+                              </select>
+                            </FieldRow>
+                          );
+                          case "breeding_type": return (
+                            <FieldRow key={key} label="Method">
+                              <select value={val} onChange={e => set(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                                <option value="">No default</option>
+                                {BREEDING_METHODS.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            </FieldRow>
+                          );
+                          case "technician": return (
+                            <FieldRow key={key} label="Technician">
+                              <select value={val} onChange={e => set(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                                <option value="">No default</option>
+                                {(technicians || []).map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                              </select>
+                            </FieldRow>
+                          );
+                          case "breeding_sire": return (
+                            <FieldRow key={key} label="Sire">
+                              <input type="text" value={val} onChange={e => set(e.target.value)} placeholder="Bull tag…" style={IS} />
+                            </FieldRow>
+                          );
+                          case "bse_result": return (
+                            <FieldRow key={key} label="Pass/Fail">
+                              <select value={val} onChange={e => set(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                                <option value="">No default</option>
+                                {BSE_PASS_FAIL.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            </FieldRow>
+                          );
+                          case "estrus_status": return (
+                            <FieldRow key={key} label="Estrus">
+                              <select value={val} onChange={e => set(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                                <option value="">No default</option>
+                                {ESTRUS_STATUS.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            </FieldRow>
+                          );
+                          case "tag_color": return (
+                            <FieldRow key={key} label="Tag Color">
+                              <select value={val} onChange={e => set(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                                <option value="">No default</option>
+                                {TAG_COLOR_OPTIONS.filter(c => c !== "None").map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </FieldRow>
+                          );
+                          case "cull_reason": return (
+                            <FieldRow key={key} label="Cull Reason">
+                              <select value={val} onChange={e => set(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                                <option value="">No default</option>
+                                {SALE_REASONS.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            </FieldRow>
+                          );
+                          case "disposition": return (
+                            <FieldRow key={key} label="Disposition">
+                              <select value={val} onChange={e => set(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                                <option value="">No default</option>
+                                <option>Sold</option><option>Kept</option><option>Dead</option><option>Shipped</option>
+                              </select>
+                            </FieldRow>
+                          );
+                          case "disease": return (
+                            <FieldRow key={key} label="Disease">
+                              <select value={val} onChange={e => set(e.target.value)} style={{ ...IS, appearance: "auto" as const }}>
+                                <option value="">No default</option>
+                                {DISEASE_TYPES.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            </FieldRow>
+                          );
+                          // Number fields — default as text input
+                          case "weight": return (
+                            <FieldRow key={key} label="Weight">
+                              <input type="number" value={val} onChange={e => set(e.target.value)} placeholder="No default" style={IS} />
+                            </FieldRow>
+                          );
+                          case "scrotal": return (
+                            <FieldRow key={key} label="Scrotal">
+                              <input type="number" value={val} onChange={e => set(e.target.value)} placeholder="No default" style={IS} />
+                            </FieldRow>
+                          );
+                          case "sale_weight": return (
+                            <FieldRow key={key} label="Sale Weight">
+                              <input type="number" value={val} onChange={e => set(e.target.value)} placeholder="No default" style={IS} />
+                            </FieldRow>
+                          );
+                          case "purchase_price": return (
+                            <FieldRow key={key} label="Price">
+                              <input type="number" value={val} onChange={e => set(e.target.value)} placeholder="No default" style={IS} />
+                            </FieldRow>
+                          );
+                          // Text fields
+                          case "dna": return (
+                            <FieldRow key={key} label="DNA">
+                              <input type="text" value={val} onChange={e => set(e.target.value)} placeholder="No default" style={IS} />
+                            </FieldRow>
+                          );
+                          case "lot": return (
+                            <FieldRow key={key} label="Lot">
+                              <input type="text" value={val} onChange={e => set(e.target.value)} placeholder="No default" style={IS} />
+                            </FieldRow>
+                          );
+                          case "pen": return (
+                            <FieldRow key={key} label="Pen">
+                              <input type="text" value={val} onChange={e => set(e.target.value)} placeholder="No default" style={IS} />
+                            </FieldRow>
+                          );
+                          case "data1": return (
+                            <FieldRow key={key} label="Data 1">
+                              <input type="text" value={val} onChange={e => set(e.target.value)} placeholder="No default" style={IS} />
+                            </FieldRow>
+                          );
+                          case "data2": return (
+                            <FieldRow key={key} label="Data 2">
+                              <input type="text" value={val} onChange={e => set(e.target.value)} placeholder="No default" style={IS} />
+                            </FieldRow>
+                          );
+                          case "purchase_source": return (
+                            <FieldRow key={key} label="Source">
+                              <input type="text" value={val} onChange={e => set(e.target.value)} placeholder="No default" style={IS} />
+                            </FieldRow>
+                          );
+                          // Skip fields that don't make sense as defaults
+                          case "quick_notes": case "memo": case "semen_defects": case "physical_defects":
+                          case "motility_pct": case "morphology": case "days_of_gestation": case "fetal_sex":
+                          case "sample": case "breeding_date": case "traits": case "motility_desc": case "morphology_desc":
+                            return null;
+                          default: return null;
+                        }
+                      })}
                     </div>
                   </div>
-                </div>
+                )}
               </>
             )}
 
