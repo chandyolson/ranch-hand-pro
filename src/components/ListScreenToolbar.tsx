@@ -27,6 +27,7 @@ interface ListScreenToolbarProps {
   onExport?: () => void;
   onMassSelect?: () => void;
   onMassEdit?: () => void;
+  onFilter?: () => void;
   resultCount?: number;
   isFiltering?: boolean;
   hideTitle?: boolean;
