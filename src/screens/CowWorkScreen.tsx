@@ -4,30 +4,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import CowWorkProjectCard from "@/components/CowWorkProjectCard";
-import ListScreenToolbar from "@/components/ListScreenToolbar";
-import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useChuteSideToast } from "@/components/ToastContext";
-import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilters";
-import { applyFilters } from "@/lib/filter-utils";
-import type { FilterFieldConfig } from "@/lib/filter-types";
 
-const COWWORK_FILTER_FIELDS: FilterFieldConfig[] = [
-  { key: "name", label: "Project Name", type: "text", group: "Project" },
-  { key: "type", label: "Work Type", type: "text", group: "Project" },
-  { key: "status", label: "Status", type: "select", options: ["pending", "in-progress", "completed"], group: "Project" },
-  { key: "group", label: "Group", type: "text", group: "Project" },
-];
+const STATUS_ORDER: Record<string, number> = { "in-progress": 0, pending: 1, completed: 2 };
 
 export default function CowWorkScreen() {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("newest");
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const navigate = useNavigate();
   const { operationId } = useOperation();
-  const { showToast } = useChuteSideToast();
-  const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_cowwork");
-  const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_cowwork");
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ["projects", operationId],
@@ -64,6 +50,7 @@ export default function CowWorkScreen() {
       id: p.id,
       name: p.name,
       date: new Date(p.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      rawDate: p.date,
       status: p.project_status.toLowerCase().replace(" ", "-") as "pending" | "in-progress" | "completed",
       type: workType?.name || workType?.code || "",
       typeCode: workType?.code || "",
@@ -73,110 +60,111 @@ export default function CowWorkScreen() {
     };
   });
 
-  const filtered = applyFilters(
-    mapped.filter((p) =>
-      !search ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.type.toLowerCase().includes(search.toLowerCase()) ||
-      p.group.toLowerCase().includes(search.toLowerCase())
-    ),
-    filters
-  )
-    .sort((a, b) => {
-      switch (sort) {
-        case "newest": return 0;
-        case "oldest": return -1;
-        case "name": return a.name.localeCompare(b.name);
-        default: return 0;
+  // Get unique work type codes for the filter pills
+  const typeCodeSet = new Set(mapped.map(p => p.typeCode).filter(Boolean));
+  const typeCodes = Array.from(typeCodeSet).sort();
+
+  // Apply filters
+  const filtered = mapped
+    .filter(p => {
+      if (statusFilter !== "all" && p.status !== statusFilter) return false;
+      if (typeFilter !== "all" && p.typeCode !== typeFilter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        if (!p.name.toLowerCase().includes(q) && !p.type.toLowerCase().includes(q) && !p.group.toLowerCase().includes(q) && !p.typeCode.toLowerCase().includes(q)) return false;
       }
+      return true;
+    })
+    // Sort: In Progress first, then Pending, then Completed. Within each group, newest date first.
+    .sort((a, b) => {
+      const statusDiff = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9);
+      if (statusDiff !== 0) return statusDiff;
+      return b.rawDate.localeCompare(a.rawDate);
     });
 
-  const isFiltering = search.length > 0 || filters.length > 0;
-
-  const allProjects = mapped;
   const stats = {
-    total: allProjects.length,
-    open: allProjects.filter((p) => p.status !== "completed").length,
-    inProgress: allProjects.filter((p) => p.status === "in-progress").length,
-    headActive: allProjects
-      .filter((p) => p.status === "pending" || p.status === "in-progress")
-      .reduce((s, p) => s + p.headCount, 0),
+    total: mapped.length,
+    inProgress: mapped.filter(p => p.status === "in-progress").length,
+    pending: mapped.filter(p => p.status === "pending").length,
+    completed: mapped.filter(p => p.status === "completed").length,
   };
 
-  return (
-    <div className="px-4 pt-1 pb-10 space-y-2">
-      {/* Toolbar (search + menu + add) */}
-      <ListScreenToolbar
-        title="Cow Work"
-        addLabel="New Project"
-        hideTitle
-        compactAdd
-        onAdd={() => navigate("/cow-work/new")}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search projects, types, groups…"
-        filterChips={[]}
-        activeFilter=""
-        onFilterChange={() => {}}
-        sortOptions={[
-          { value: "newest", label: "Newest" },
-          { value: "oldest", label: "Oldest" },
-          { value: "name", label: "Name" },
-        ]}
-        activeSort={sort}
-        onSortChange={setSort}
-        onFilter={() => setFilterOpen(!filterOpen)}
-        onImport={() => showToast("info", "Import — coming soon")}
-        onExport={() => showToast("info", "Export — coming soon")}
-        onMassSelect={() => showToast("info", "Mass Select — coming soon")}
-        onMassEdit={() => showToast("info", "Mass Edit — coming soon")}
-        resultCount={filtered.length}
-        isFiltering={isFiltering}
-      />
+  const PS = { fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 9999, cursor: "pointer", border: "none", transition: "all 150ms" } as const;
+  const pillOn = (active: boolean, color?: string) => ({
+    ...PS,
+    backgroundColor: active ? (color || "#0E2646") : "rgba(26,26,26,0.05)",
+    color: active ? "#FFFFFF" : "rgba(26,26,26,0.50)",
+    fontWeight: active ? 700 : 500,
+  });
 
-      {/* Advanced filter panel (toggled from menu) */}
-      {filterOpen && (
-        <AdvancedSearchPanel
-          fields={COWWORK_FILTER_FIELDS}
-          filters={filters}
-          onFiltersChange={setFilters}
-          presets={presets}
-          onAddPreset={addPreset}
-          onDeletePreset={deletePreset}
-          onClearAll={clearFilters}
-        />
-      )}
+  return (
+    <div style={{ padding: "6px 16px 40px", display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Search + New Project */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, height: 40, borderRadius: 10, border: "1px solid #D4D4D0", backgroundColor: "white", paddingLeft: 12, paddingRight: 12 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,26,0.30)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search projects…"
+            style={{ flex: 1, border: "none", outline: "none", backgroundColor: "transparent", fontSize: 16, fontFamily: "'Inter', sans-serif", color: "#1A1A1A" }}
+          />
+          {search && (
+            <button onClick={() => setSearch("")} style={{ background: "none", border: "none", fontSize: 16, color: "rgba(26,26,26,0.30)", cursor: "pointer", padding: 0 }}>×</button>
+          )}
+        </div>
+        <button
+          onClick={() => navigate("/cow-work/new")}
+          style={{ height: 40, paddingLeft: 14, paddingRight: 14, borderRadius: 10, border: "none", backgroundColor: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+        >
+          + New
+        </button>
+      </div>
 
       {/* Stats bar */}
-      <div
-        className="rounded-xl px-3 py-2.5 flex items-center justify-between"
-        style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
-      >
+      <div style={{ borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}>
         {[
           { label: "TOTAL", value: isLoading ? "—" : stats.total },
-          { label: "OPEN", value: isLoading ? "—" : stats.open },
           { label: "ACTIVE", value: isLoading ? "—" : stats.inProgress },
-          { label: "HEAD", value: isLoading ? "—" : stats.headActive },
+          { label: "PENDING", value: isLoading ? "—" : stats.pending },
+          { label: "DONE", value: isLoading ? "—" : stats.completed },
         ].map((stat, i, arr) => (
-          <div key={stat.label} className="flex items-center gap-3">
-            <div className="flex flex-col items-center">
-              <span style={{ fontSize: 18, fontWeight: 600, color: "white", lineHeight: 1 }}>
-                {stat.value}
-              </span>
-              <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(168,230,218,0.60)", letterSpacing: "0.08em", marginTop: 4 }}>
-                {stat.label}
-              </span>
+          <div key={stat.label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ fontSize: 18, fontWeight: 600, color: "white", lineHeight: 1 }}>{stat.value}</span>
+              <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(168,230,218,0.60)", letterSpacing: "0.08em", marginTop: 4 }}>{stat.label}</span>
             </div>
-            {i < arr.length - 1 && (
-              <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.12)" }} />
-            )}
+            {i < arr.length - 1 && <div style={{ width: 1, height: 22, backgroundColor: "rgba(255,255,255,0.12)" }} />}
           </div>
         ))}
       </div>
 
+      {/* Quick filter pills: Status */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <button onClick={() => setStatusFilter("all")} style={pillOn(statusFilter === "all")}>All</button>
+        <button onClick={() => setStatusFilter("in-progress")} style={pillOn(statusFilter === "in-progress", "#55BAAA")}>In Progress</button>
+        <button onClick={() => setStatusFilter("pending")} style={pillOn(statusFilter === "pending", "#717182")}>Pending</button>
+        <button onClick={() => setStatusFilter("completed")} style={pillOn(statusFilter === "completed", "#B8960F")}>Completed</button>
+      </div>
+
+      {/* Quick filter pills: Work Type */}
+      {typeCodes.length > 1 && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <button onClick={() => setTypeFilter("all")} style={pillOn(typeFilter === "all")}>All Types</button>
+          {typeCodes.map(code => (
+            <button key={code} onClick={() => setTypeFilter(code)} style={pillOn(typeFilter === code)}>
+              {code}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Project list */}
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-[100px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.15)" }} />
           ))}
@@ -184,9 +172,9 @@ export default function CowWorkScreen() {
       )}
 
       {!isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {filtered.length > 0 ? (
-            filtered.map((p) => (
+            filtered.map(p => (
               <CowWorkProjectCard
                 key={p.id}
                 {...p}
@@ -194,9 +182,9 @@ export default function CowWorkScreen() {
               />
             ))
           ) : (
-            <div className="py-12 text-center space-y-1.5">
+            <div style={{ padding: "48px 0", textAlign: "center" }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No projects found</div>
-              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or filter</div>
+              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)", marginTop: 4 }}>Try a different search or filter</div>
             </div>
           )}
         </div>
