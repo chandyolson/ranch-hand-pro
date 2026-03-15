@@ -44,6 +44,10 @@ export const ALL_FIELDS: FieldDef[] = [
   // ── Treatment recommended fields ──
   { key: "disease",           label: "Disease",            recommendedFor: ["TREAT"], defaultOn: false, inputType: "select" },
 
+  // ── Purchase recommended fields ──
+  { key: "purchase_price",    label: "Purchase Price",     recommendedFor: ["PURCH"], defaultOn: false, inputType: "number" },
+  { key: "purchase_source",   label: "Source / Seller",    recommendedFor: ["PURCH"], defaultOn: false, inputType: "text" },
+
   // ── Common fields (on by default for all work types) ──
   { key: "weight",            label: "Weight",             recommendedFor: [],        defaultOn: true,  inputType: "number" },
   { key: "quick_notes",       label: "Quick Notes",        recommendedFor: [],        defaultOn: true,  inputType: "pills" },

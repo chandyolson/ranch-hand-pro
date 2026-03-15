@@ -386,6 +386,8 @@ export default function CowWorkProjectDetailScreen() {
   const [saleWeight, setSaleWeight] = useState("");
   // Treatment field
   const [disease, setDisease] = useState("");
+  const [purchasePrice, setPurchasePrice] = useState("");
+  const [purchaseSource, setPurchaseSource] = useState("");
 
   const [isExpectedMatch, setIsExpectedMatch] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any>(null);
@@ -526,6 +528,8 @@ export default function CowWorkProjectDetailScreen() {
     setDispositionField("");
     setSaleWeight("");
     setDisease("");
+    setPurchasePrice("");
+    setPurchaseSource("");
     // Re-apply field defaults from project settings
     const defaults = (project as any)?.field_defaults || {};
     if (defaults.preg_stage) setPregResult(defaults.preg_stage);
@@ -836,12 +840,14 @@ export default function CowWorkProjectDetailScreen() {
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#3D9A8B" }}>Editing existing record — data loaded below</span>
                 </div>
               )}
-              {/* Phase C: New animal — expanded details section */}
-              {tagField.length >= 3 && isNewAnimal && !isMatched && !isDuplicate && (
+              {/* Phase C: New animal details — always visible for PURCH, or when adding new */}
+              {tagField.length >= 3 && (isNewAnimal || projectType === "PURCH") && !isMatched && !isDuplicate && (
                 <div style={{ marginTop: 6, borderRadius: 10, border: "1.5px solid rgba(243,209,42,0.40)", padding: 10, backgroundColor: "rgba(243,209,42,0.04)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(243,209,42,0.20)", color: "#B8960F" }}>NEW</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#B8960F" }}>New animal — fill in details below</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#B8960F" }}>
+                      {projectType === "PURCH" ? "New purchase — enter animal details" : "New animal — fill in details below"}
+                    </span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     <FieldRow label="EID">
@@ -1231,6 +1237,16 @@ export default function CowWorkProjectDetailScreen() {
                           <option value="" disabled>Select…</option>
                           {DISEASE_TYPES.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
+                      </FieldRow>
+                    );
+                    case "purchase_price": return (
+                      <FieldRow key={f.key} label="Price">
+                        <input type="number" value={purchasePrice} onChange={e => setPurchasePrice(e.target.value)} placeholder="$ per head" inputMode="decimal" style={IS} />
+                      </FieldRow>
+                    );
+                    case "purchase_source": return (
+                      <FieldRow key={f.key} label="Source">
+                        <input type="text" value={purchaseSource} onChange={e => setPurchaseSource(e.target.value)} placeholder="Seller or sale barn…" style={IS} />
                       </FieldRow>
                     );
                     default: {
