@@ -101,13 +101,21 @@ export default function CowWorkProjectDetailScreen() {
   const { data: workedAnimals, refetch: refetchWorked } = useQuery({
     queryKey: ["project-animals", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get cow_work records
+      const { data: cwData, error: cwErr } = await supabase
         .from("cow_work")
-        .select("*, animal:animals(id, tag, tag_color, sex, type, breed, year_born)")
-        .eq("project_id", id!)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data || [];
+        .select("*")
+        .eq("project_id", id!);
+      if (cwErr) { console.error("cow_work query error:", cwErr); throw cwErr; }
+      if (!cwData || cwData.length === 0) return [];
+      // Then get animals for those records
+      const animalIds = [...new Set(cwData.map(r => r.animal_id).filter(Boolean))];
+      const { data: animals } = await supabase
+        .from("animals")
+        .select("id, tag, tag_color, sex, type, breed, year_born")
+        .in("id", animalIds);
+      const animalMap = new Map((animals || []).map(a => [a.id, a]));
+      return cwData.map(r => ({ ...r, animal: animalMap.get(r.animal_id) || null }));
     },
     enabled: !!id,
   });
