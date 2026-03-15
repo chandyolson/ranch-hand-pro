@@ -97,14 +97,14 @@ export default function CowWorkProjectDetailScreen() {
     enabled: !!id,
   });
 
-  // Load operation products (for additional product picker)
-  const { data: opProducts } = useQuery({
-    queryKey: ["operation-products", operationId],
+  // Load global products (for additional product picker)
+  const { data: allProducts } = useQuery({
+    queryKey: ["global-products"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("operation_products")
-        .select("*, product:products(id, name, dosage, route)")
-        .eq("operation_id", operationId);
+        .from("products")
+        .select("id, name, dosage, route, product_type")
+        .order("name");
       if (error) throw error;
       return data || [];
     },
@@ -1100,16 +1100,14 @@ export default function CowWorkProjectDetailScreen() {
                           className="absolute left-0 right-0 mt-1 rounded-lg bg-white shadow-lg overflow-y-auto z-10"
                           style={{ maxHeight: 200, border: "1px solid rgba(212,212,208,0.60)" }}
                         >
-                          {(opProducts || []).length === 0 ? (
+                          {(allProducts || []).length === 0 ? (
                             <div className="px-3 py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products available</div>
                           ) : (
-                            (opProducts || []).map((op: any) => {
-                              const prod = op.product as any;
-                              if (!prod) return null;
+                            (allProducts || []).map((prod: any) => {
                               const alreadyAdded = additionalProducts.some(ap => ap.product_id === prod.id);
                               return (
                                 <button
-                                  key={op.id}
+                                  key={prod.id}
                                   className="w-full text-left px-3 py-2.5 cursor-pointer"
                                   style={{
                                     background: "none",

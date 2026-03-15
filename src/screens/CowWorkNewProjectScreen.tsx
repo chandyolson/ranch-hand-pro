@@ -62,13 +62,13 @@ export default function CowWorkNewProjectScreen() {
     },
   });
 
-  const { data: opProducts } = useQuery({
-    queryKey: ["operation-products", operationId],
+  const { data: allProducts } = useQuery({
+    queryKey: ["global-products"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("operation_products")
-        .select("*, product:products(id, name, dosage, route)")
-        .eq("operation_id", operationId);
+        .from("products")
+        .select("id, name, dosage, route, product_type")
+        .order("name");
       if (error) throw error;
       return data;
     },
@@ -535,19 +535,17 @@ export default function CowWorkNewProjectScreen() {
             ) : (
               <div className="mt-2 space-y-1.5">
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>SELECT PRODUCT</div>
-                {(opProducts || []).length === 0 ? (
+                {(allProducts || []).length === 0 ? (
                   <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)", padding: "8px 0" }}>
-                    No products configured. Add products in Reference &gt; Treatments.
+                    No products available
                   </div>
                 ) : (
                   <div className="max-h-48 overflow-y-auto space-y-0 rounded-lg" style={{ border: "1px solid #D4D4D0" }}>
-                    {(opProducts || []).map(op => {
-                      const prod = op.product as any;
-                      if (!prod) return null;
+                    {(allProducts || []).map(prod => {
                       const alreadyAdded = products.some(p => p.id === prod.id);
                       return (
                         <button
-                          key={op.id}
+                          key={prod.id}
                           className="flex items-center justify-between w-full px-3 py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.03)]"
                           style={{
                             background: alreadyAdded ? "rgba(85,186,170,0.06)" : "white",
@@ -560,7 +558,7 @@ export default function CowWorkNewProjectScreen() {
                             setProducts(prev => [...prev, {
                               id: prod.id,
                               name: prod.name,
-                              dosage: op.custom_dosage || prod.dosage || "",
+                              dosage: prod.dosage || "",
                               route: prod.route || "",
                               source: "manual",
                             }]);
@@ -568,7 +566,7 @@ export default function CowWorkNewProjectScreen() {
                         >
                           <span className="truncate" style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{prod.name}</span>
                           <span className="shrink-0 ml-2" style={{ fontSize: 12, color: "rgba(26,26,26,0.40)" }}>
-                            {alreadyAdded ? "Added" : [op.custom_dosage || prod.dosage, prod.route].filter(Boolean).join(" · ")}
+                            {alreadyAdded ? "Added" : [prod.dosage, prod.route].filter(Boolean).join(" · ")}
                           </span>
                         </button>
                       );
