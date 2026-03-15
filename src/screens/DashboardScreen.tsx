@@ -50,17 +50,18 @@ const DashboardScreen: React.FC = () => {
     },
   });
 
-  // ── Recent animals (last 5 updated) ──
-  const { data: recentAnimals } = useQuery({
-    queryKey: ["dashboard-recent-animals", operationId],
+  // ── Calving-per-day chart data (last 30 days) ──
+  const { data: calvingByDay } = useQuery({
+    queryKey: ["dashboard-calving-by-day", operationId],
     queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const { data, error } = await supabase
-        .from("animals")
-        .select("id, tag, tag_color, breed, sex, type, year_born, status, memo")
+        .from("calving_records")
+        .select("calving_date, calf_status")
         .eq("operation_id", operationId)
-        .eq("status", "Active")
-        .order("updated_at", { ascending: false })
-        .limit(5);
+        .gte("calving_date", thirtyDaysAgo.toISOString().split("T")[0])
+        .order("calving_date", { ascending: true });
       if (error) throw error;
       return data || [];
     },
