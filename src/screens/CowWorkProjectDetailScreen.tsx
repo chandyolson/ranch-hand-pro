@@ -8,6 +8,7 @@ import FlagIcon from "../components/FlagIcon";
 import AnimalLookup from "../components/AnimalLookup";
 import FormFieldRow from "../components/FormFieldRow";
 import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, type FlagColor } from "@/lib/constants";
+import { getLockedFields, getOptionalFields, resolveFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -166,6 +167,38 @@ export default function CowWorkProjectDetailScreen() {
   const projectStatus = project?.project_status || "Pending";
   const headCount = project?.estimated_head || project?.head_count || 0;
   const worked = workedAnimals || [];
+
+  // Dynamic field configuration — read from project, fall back to defaults
+  const fieldConfig = resolveFieldConfig(project?.field_visibility as FieldVisibilityConfig | null);
+  const lockedFields = getLockedFields(projectType);
+  const enabledOptionalKeys = fieldConfig.optionalFields;
+  const isFieldVisible = (key: string) => enabledOptionalKeys.includes(key);
+
+  // Additional field states for dynamic fields
+  const [data1, setData1] = useState("");
+  const [data2, setData2] = useState("");
+  const [lot, setLot] = useState("");
+  const [sampleField, setSampleField] = useState("");
+  const [pen, setPen] = useState("");
+  // BSE fields
+  const [bseResult, setBseResult] = useState("");
+  const [scrotal, setScrotal] = useState("");
+  const [motility, setMotility] = useState("");
+  const [morphology, setMorphology] = useState("");
+  const [semenDefects, setSemenDefects] = useState("");
+  const [physicalDefects, setPhysicalDefects] = useState("");
+  // Breeding fields
+  const [breedingSire, setBreedingSire] = useState("");
+  const [breedingDate, setBreedingDate] = useState("");
+  const [breedingType, setBreedingType] = useState("");
+  const [estrusStatus, setEstrusStatus] = useState("");
+  const [technician, setTechnician] = useState("");
+  // Sale fields
+  const [cullReason, setCullReason] = useState("");
+  const [dispositionField, setDispositionField] = useState("");
+  const [saleWeight, setSaleWeight] = useState("");
+  // Treatment field
+  const [disease, setDisease] = useState("");
 
   const [isExpectedMatch, setIsExpectedMatch] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any>(null);
@@ -699,104 +732,265 @@ export default function CowWorkProjectDetailScreen() {
               </div>
             )}
 
-            {/* PREG fields — only for PREG projects */}
-            {projectType === "PREG" && (
+            {/* ── LOCKED FIELDS (work-type-specific) ── */}
+            {lockedFields.length > 0 && (
               <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-                <div style={SUB_LABEL}>PREG CHECK</div>
-                <div className="flex items-center gap-2 min-w-0">
-                  <label style={LABEL_STYLE}>Preg</label>
-                  <select value={pregResult} onChange={e => setPregResult(e.target.value)} className={INPUT_CLS}>
-                    <option value="" disabled>Select…</option>
-                    <option>Confirmed</option><option>Open</option><option>Suspect</option><option>First Calf Heifer</option>
-                  </select>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#55BAAA", textTransform: "uppercase" }}>
+                  {projectType} FIELDS
                 </div>
-                <div className="flex items-center gap-2 min-w-0">
-                  <label style={LABEL_STYLE}>Days Gest.</label>
-                  <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" className={INPUT_CLS} />
-                </div>
-                <div className="flex items-center gap-2 min-w-0">
-                  <label style={LABEL_STYLE}>Calf Sex</label>
-                  <select value={calfSex} onChange={e => setCalfSex(e.target.value)} className={INPUT_CLS}>
-                    <option value="" disabled>Select…</option>
-                    {PREG_CALF_SEX_OPTIONS.filter(o => o !== "None").map(o => (
-                      <option key={o} value={o}>{o}</option>
-                    ))}
-                  </select>
-                </div>
+                {lockedFields.map(f => {
+                  switch (f.key) {
+                    case "preg_stage": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Preg</label>
+                        <select value={pregResult} onChange={e => setPregResult(e.target.value)} className={INPUT_CLS}>
+                          <option value="" disabled>Select…</option>
+                          <option>Confirmed</option><option>Open</option><option>Suspect</option><option>First Calf Heifer</option>
+                        </select>
+                      </div>
+                    );
+                    case "days_of_gestation": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Days Gest.</label>
+                        <input type="number" value={pregDays} onChange={e => setPregDays(e.target.value)} placeholder="0" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "fetal_sex": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Calf Sex</label>
+                        <select value={calfSex} onChange={e => setCalfSex(e.target.value)} className={INPUT_CLS}>
+                          <option value="" disabled>Select…</option>
+                          {PREG_CALF_SEX_OPTIONS.filter(o => o !== "None").map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    );
+                    case "bse_result": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Result</label>
+                        <select value={bseResult} onChange={e => setBseResult(e.target.value)} className={INPUT_CLS}>
+                          <option value="" disabled>Select…</option>
+                          <option>Pass</option><option>Fail</option><option>Defer</option>
+                        </select>
+                      </div>
+                    );
+                    case "scrotal": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Scrotal</label>
+                        <input type="number" value={scrotal} onChange={e => setScrotal(e.target.value)} placeholder="cm" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "motility": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Motility</label>
+                        <input type="number" value={motility} onChange={e => setMotility(e.target.value)} placeholder="%" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "morphology": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Morphology</label>
+                        <input type="number" value={morphology} onChange={e => setMorphology(e.target.value)} placeholder="%" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "semen_defects": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Semen Def.</label>
+                        <input type="text" value={semenDefects} onChange={e => setSemenDefects(e.target.value)} placeholder="Defects…" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "physical_defects": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Physical Def.</label>
+                        <input type="text" value={physicalDefects} onChange={e => setPhysicalDefects(e.target.value)} placeholder="Defects…" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "breeding_sire": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Sire</label>
+                        <input type="text" value={breedingSire} onChange={e => setBreedingSire(e.target.value)} placeholder="Bull ID…" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "breeding_date": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Breed Date</label>
+                        <input type="date" value={breedingDate} onChange={e => setBreedingDate(e.target.value)} className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "breeding_type": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Method</label>
+                        <select value={breedingType} onChange={e => setBreedingType(e.target.value)} className={INPUT_CLS}>
+                          <option value="" disabled>Select…</option>
+                          <option>Natural</option><option>AI</option><option>ET</option>
+                        </select>
+                      </div>
+                    );
+                    case "estrus_status": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Estrus</label>
+                        <select value={estrusStatus} onChange={e => setEstrusStatus(e.target.value)} className={INPUT_CLS}>
+                          <option value="" disabled>Select…</option>
+                          <option>Standing</option><option>Not Standing</option><option>Unknown</option>
+                        </select>
+                      </div>
+                    );
+                    case "technician": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Technician</label>
+                        <input type="text" value={technician} onChange={e => setTechnician(e.target.value)} placeholder="Name…" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "cull_reason": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Cull Reason</label>
+                        <select value={cullReason} onChange={e => setCullReason(e.target.value)} className={INPUT_CLS}>
+                          <option value="" disabled>Select…</option>
+                          <option>Age</option><option>Udder</option><option>Feet</option><option>Disposition</option><option>Open</option><option>Health</option><option>Body Condition</option><option>Other</option>
+                        </select>
+                      </div>
+                    );
+                    case "disposition": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Disposition</label>
+                        <select value={dispositionField} onChange={e => setDispositionField(e.target.value)} className={INPUT_CLS}>
+                          <option value="" disabled>Select…</option>
+                          <option>Sold</option><option>Kept</option><option>Dead</option><option>Shipped</option>
+                        </select>
+                      </div>
+                    );
+                    case "sale_weight": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Sale Wt</label>
+                        <input type="number" value={saleWeight} onChange={e => setSaleWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "disease": return (
+                      <div key={f.key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Disease</label>
+                        <input type="text" value={disease} onChange={e => setDisease(e.target.value)} placeholder="Disease…" className={INPUT_CLS} />
+                      </div>
+                    );
+                    default: return null;
+                  }
+                })}
               </div>
             )}
 
-            {/* Optional fields */}
-            <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-              <div style={SUB_LABEL}>ADDITIONAL</div>
-              <div className="flex items-center gap-2 min-w-0">
-                <label style={LABEL_STYLE}>Weight</label>
-                <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
-              </div>
-              <div className="pt-1">
-                <div style={{ ...SUB_LABEL, marginBottom: 6 }}>QUICK NOTES</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                  {QUICK_NOTES.filter(n => n.context === "all").map(n => {
-                    const active = selectedNotes.includes(n.label);
-                    const c = QUICK_NOTE_PILL_COLORS[n.flag || "none"];
-                    const solidActive: Record<string, { bg: string; border: string; text: string }> = {
-                      red: { bg: "#9B2335", border: "#9B2335", text: "#FFFFFF" },
-                      gold: { bg: "#B8860B", border: "#B8860B", text: "#FFFFFF" },
-                      teal: { bg: "#55BAAA", border: "#3D9A8B", text: "#FFFFFF" },
-                      none: { bg: "#717182", border: "#5A5A6A", text: "#FFFFFF" },
-                    };
-                    const tier = n.flag || "none";
-                    const s = active ? solidActive[tier] : null;
-                    return (
-                      <button
-                        key={n.label}
-                        type="button"
-                        onClick={() => {
-                          if (active) {
-                            setSelectedNotes(selectedNotes.filter(x => x !== n.label));
-                          } else {
-                            setSelectedNotes([...selectedNotes, n.label]);
-                          }
-                        }}
-                        style={{
-                          borderRadius: 9999,
-                          padding: "4px 10px",
-                          fontSize: 11,
-                          fontWeight: active ? 700 : 600,
-                          backgroundColor: active ? s!.bg : c.bg,
-                          border: `${active ? 2 : 1}px solid ${active ? s!.border : c.border}`,
-                          color: active ? s!.text : c.text,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 3,
-                          transition: "all 100ms",
-                        }}
-                      >
-                        {active && (
-                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                            <path d="M2 5L4 7L8 3" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                        {n.label}
-                      </button>
+            {/* ── OPTIONAL FIELDS (from field_visibility config, in order) ── */}
+            {enabledOptionalKeys.length > 0 && (
+              <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+                <div style={SUB_LABEL}>PROJECT FIELDS</div>
+                {enabledOptionalKeys.map(key => {
+                  switch (key) {
+                    case "weight": return (
+                      <div key={key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Weight</label>
+                        <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
+                      </div>
                     );
-                  })}
-                </div>
+                    case "quick_notes": return (
+                      <div key={key} className="pt-1">
+                        <div style={{ ...SUB_LABEL, marginBottom: 6 }}>QUICK NOTES</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                          {QUICK_NOTES.filter(n => n.context === "all").map(n => {
+                            const active = selectedNotes.includes(n.label);
+                            const c = QUICK_NOTE_PILL_COLORS[n.flag || "none"];
+                            const solidActive: Record<string, { bg: string; border: string; text: string }> = {
+                              red: { bg: "#9B2335", border: "#9B2335", text: "#FFFFFF" },
+                              gold: { bg: "#B8860B", border: "#B8860B", text: "#FFFFFF" },
+                              teal: { bg: "#55BAAA", border: "#3D9A8B", text: "#FFFFFF" },
+                              none: { bg: "#717182", border: "#5A5A6A", text: "#FFFFFF" },
+                            };
+                            const tier = n.flag || "none";
+                            const s = active ? solidActive[tier] : null;
+                            return (
+                              <button
+                                key={n.label}
+                                type="button"
+                                onClick={() => {
+                                  if (active) setSelectedNotes(selectedNotes.filter(x => x !== n.label));
+                                  else setSelectedNotes([...selectedNotes, n.label]);
+                                }}
+                                style={{
+                                  borderRadius: 9999, padding: "4px 10px", fontSize: 11,
+                                  fontWeight: active ? 700 : 600,
+                                  backgroundColor: active ? s!.bg : c.bg,
+                                  border: `${active ? 2 : 1}px solid ${active ? s!.border : c.border}`,
+                                  color: active ? s!.text : c.text,
+                                  cursor: "pointer", display: "flex", alignItems: "center", gap: 3, transition: "all 100ms",
+                                }}
+                              >
+                                {active && (
+                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                    <path d="M2 5L4 7L8 3" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                )}
+                                {n.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                    case "dna": return (
+                      <div key={key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>DNA</label>
+                        <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "memo": return (
+                      <div key={key} className="pt-2">
+                        <div style={{ ...SUB_LABEL, marginBottom: 6 }}>NOTES</div>
+                        <textarea
+                          value={memo} onChange={e => setMemo(e.target.value)}
+                          className="w-full resize-none rounded-lg px-3 py-2.5 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
+                          style={{ minHeight: 56, backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16 }}
+                        />
+                      </div>
+                    );
+                    case "tag_color": return (
+                      <div key={key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Tag Color</label>
+                        <select value={newTagColor} onChange={e => setNewTagColor(e.target.value)} className={INPUT_CLS}>
+                          <option value="">Select…</option>
+                          {TAG_COLOR_OPTIONS.map(c => <option key={c} value={c === "None" ? "" : c}>{c}</option>)}
+                        </select>
+                      </div>
+                    );
+                    case "data1": return (
+                      <div key={key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Data 1</label>
+                        <input type="text" value={data1} onChange={e => setData1(e.target.value)} placeholder="Custom…" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "data2": return (
+                      <div key={key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Data 2</label>
+                        <input type="text" value={data2} onChange={e => setData2(e.target.value)} placeholder="Custom…" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "lot": return (
+                      <div key={key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Lot</label>
+                        <input type="text" value={lot} onChange={e => setLot(e.target.value)} placeholder="Lot #" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "sample": return (
+                      <div key={key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Sample</label>
+                        <input type="text" value={sampleField} onChange={e => setSampleField(e.target.value)} placeholder="Sample ID" className={INPUT_CLS} />
+                      </div>
+                    );
+                    case "pen": return (
+                      <div key={key} className="flex items-center gap-2 min-w-0">
+                        <label style={LABEL_STYLE}>Pen</label>
+                        <input type="text" value={pen} onChange={e => setPen(e.target.value)} placeholder="Pen #" className={INPUT_CLS} />
+                      </div>
+                    );
+                    default: return null;
+                  }
+                })}
               </div>
-              <div className="flex items-center gap-2 min-w-0">
-                <label style={LABEL_STYLE}>Sample ID</label>
-                <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" className={INPUT_CLS} />
-              </div>
-              <div className="pt-2">
-                <div style={{ ...SUB_LABEL, marginBottom: 6 }}>MEMO</div>
-                <textarea
-                  value={memo} onChange={e => setMemo(e.target.value)}
-                  className="w-full resize-none rounded-lg px-3 py-2.5 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
-                  style={{ minHeight: 56, backgroundColor: "#F5F5F0", border: "1px solid #D4D4D0", fontSize: 16 }}
-                />
-              </div>
-            </div>
+            )}
 
             {/* Products given (project-level) */}
             <div className="rounded-xl bg-white px-3 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
