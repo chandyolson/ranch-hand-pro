@@ -94,6 +94,10 @@ export default function CowWorkCloseOutScreen() {
   const expected = expectedAnimals || [];
   const hasExpected = expected.length > 0;
 
+  useEffect(() => {
+    if (hasExpected && reconSource === null) setReconSource("group");
+  }, [hasExpected]);
+
   // Load project products
   const { data: projectProducts } = useQuery({
     queryKey: ["project-products-closeout", id],
