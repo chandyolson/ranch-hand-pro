@@ -856,23 +856,83 @@ export default function CalvingNewScreen() {
                       )}
 
                       {/* Work tab */}
-                      {damHistoryTab === "work" && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                          {(!damWork || damWork.length === 0) && (
-                            <div style={{ fontSize: 11, color: "rgba(26,26,26,0.30)", padding: 8 }}>No work records</div>
-                          )}
-                          {(damWork || []).map((w) => (
-                            <div key={w.id} style={{ borderRadius: 8, backgroundColor: "rgba(26,26,26,0.03)", padding: "10px 12px", border: "1px solid rgba(26,26,26,0.06)" }}>
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{(w.project as any)?.name || "Work"}</span>
-                                <span style={{ fontSize: 10, color: "rgba(26,26,26,0.35)" }}>{fmtHistDate(w.date)}</span>
+                      {damHistoryTab === "work" && (() => {
+                        const allWork = damWork || [];
+                        const pregRecords = allWork.filter(w => w._typeCode === "PREG");
+                        const breedRecords = allWork.filter(w => w._typeCode === "BREED" || w._typeCode === "AI" || w._typeCode === "ET");
+                        const otherRecords = allWork.filter(w => !["PREG", "BREED", "AI", "ET"].includes(w._typeCode));
+
+                        const fmtBredDue = (checkDate: string, daysGest: number) => {
+                          const check = new Date(checkDate + "T12:00:00");
+                          const bred = new Date(check.getTime() - daysGest * 86400000);
+                          const due = new Date(bred.getTime() + 283 * 86400000);
+                          const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                          return `Bred ~${fmt(bred)} · Due ~${fmt(due)}`;
+                        };
+
+                        if (allWork.length === 0) {
+                          return <div style={{ fontSize: 13, color: "rgba(26,26,26,0.35)", padding: "20px 0", textAlign: "center" }}>No work history</div>;
+                        }
+
+                        return (
+                          <div>
+                            {/* PREG cards */}
+                            {pregRecords.map(w => (
+                              <div key={w.id} style={{ background: "rgba(26,26,26,0.03)", border: "1px solid rgba(26,26,26,0.06)", borderRadius: 8, padding: "10px 12px", marginBottom: 6 }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 8, letterSpacing: "0.04em", background: "rgba(85,186,170,0.12)", color: "#0F6E56" }}>PREG</span>
+                                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{fmtHistDate(w._projectDate)}</span>
+                                </div>
+                                <div style={{ fontSize: 12, color: "rgba(26,26,26,0.55)", marginTop: 4, display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                                  {w.preg_stage && <><span style={{ fontWeight: 600, color: "#1A1A1A" }}>{w.preg_stage}</span><span style={{ margin: "0 6px", color: "rgba(26,26,26,0.2)" }}>·</span></>}
+                                  {w.days_of_gestation && <><span>{w.days_of_gestation} days</span><span style={{ margin: "0 6px", color: "rgba(26,26,26,0.2)" }}>·</span></>}
+                                  {w.fetal_sex && <><span>{w.fetal_sex}</span><span style={{ margin: "0 6px", color: "rgba(26,26,26,0.2)" }}>·</span></>}
+                                  {w.weight && <span>{w.weight} lb</span>}
+                                </div>
+                                {w._sireTag && (
+                                  <div style={{ fontSize: 11, fontWeight: 600, color: "#0F6E56", background: "rgba(85,186,170,0.1)", padding: "2px 8px", borderRadius: 8, display: "inline-block", marginTop: 4 }}>
+                                    Sire: {w._sireTag}{w.estrus_status ? ` (${w.estrus_status})` : ""}
+                                  </div>
+                                )}
+                                {w.days_of_gestation && w.days_of_gestation > 0 && (
+                                  <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", fontStyle: "italic", marginTop: 4 }}>
+                                    {fmtBredDue(w._projectDate, w.days_of_gestation)}
+                                  </div>
+                                )}
                               </div>
-                              {w.weight && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.50)", marginTop: 2 }}>{w.weight} lbs</div>}
-                              {w.memo && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.35)", marginTop: 2 }}>{w.memo}</div>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            ))}
+
+                            {/* BREED cards */}
+                            {breedRecords.map(w => (
+                              <div key={w.id} style={{ background: "rgba(26,26,26,0.03)", border: "1px solid rgba(26,26,26,0.06)", borderRadius: 8, padding: "10px 12px", marginBottom: 6 }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 8, letterSpacing: "0.04em", background: "rgba(232,160,191,0.12)", color: "#993556" }}>{w._typeCode}</span>
+                                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{fmtHistDate(w._projectDate)}</span>
+                                </div>
+                                <div style={{ fontSize: 12, color: "rgba(26,26,26,0.55)", marginTop: 4, display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                                  {w._sireTag && <><span style={{ fontWeight: 600, color: "#1A1A1A" }}>{w._sireTag}</span><span style={{ margin: "0 6px", color: "rgba(26,26,26,0.2)" }}>·</span></>}
+                                  {w.estrus_status && <span>Estrus: {w.estrus_status}</span>}
+                                </div>
+                              </div>
+                            ))}
+
+                            {/* Other work cards */}
+                            {otherRecords.map(w => (
+                              <div key={w.id} style={{ background: "rgba(26,26,26,0.03)", border: "1px solid rgba(26,26,26,0.06)", borderRadius: 8, padding: "10px 12px", marginBottom: 6 }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    {w._typeCode && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 8, background: "rgba(14,38,70,0.08)", color: "#0E2646", letterSpacing: "0.04em" }}>{w._typeCode}</span>}
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{w._projectName || "Work"}</span>
+                                  </div>
+                                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{fmtHistDate(w._projectDate)}</span>
+                                </div>
+                                {w.weight && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.50)", marginTop: 2 }}>{w.weight} lbs</div>}
+                                {w.memo && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.35)", marginTop: 2 }}>{w.memo}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
