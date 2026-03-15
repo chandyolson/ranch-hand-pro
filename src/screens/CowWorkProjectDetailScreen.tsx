@@ -550,15 +550,19 @@ export default function CowWorkProjectDetailScreen() {
                 />
                 <button
                   className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 cursor-pointer active:scale-[0.97]"
-                  style={{ backgroundColor: "rgba(14,38,70,0.06)", border: "1px solid rgba(14,38,70,0.10)" }}
-                  onClick={() => showToast("info", "Connect EID wand to scan")}
+                  style={{ backgroundColor: "#55BAAA", border: "none" }}
+                  onClick={() => {
+                    setIsMatched(false);
+                    setMatchedAnimal(null);
+                    setIsDuplicate(false);
+                    setIsNewAnimal(true);
+                    setIsExpectedMatch(false);
+                    setEditingRecord(null);
+                  }}
+                  title="Add new animal"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <rect x="1" y="3" width="2" height="10" rx="0.5" fill="#0E2646" />
-                    <rect x="4" y="2" width="1.5" height="12" rx="0.5" fill="#0E2646" opacity="0.6" />
-                    <rect x="7" y="3" width="2" height="10" rx="0.5" fill="#0E2646" />
-                    <rect x="10.5" y="1" width="1.5" height="14" rx="0.5" fill="#0E2646" opacity="0.6" />
-                    <rect x="13" y="3" width="2" height="10" rx="0.5" fill="#0E2646" />
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M9 4V14M4 9H14" stroke="white" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </button>
               </div>
@@ -1015,160 +1019,6 @@ export default function CowWorkProjectDetailScreen() {
                     default: return null;
                   }
                 })}
-              </div>
-            )}
-
-            {/* Products given (project-level) */}
-            <div className="rounded-xl bg-white px-3 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-              <div className="flex items-center justify-between">
-                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.40)", textTransform: "uppercase" }}>PRODUCTS GIVEN</span>
-                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.35)" }}>
-                  {(projectProducts || []).length} product{(projectProducts || []).length !== 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {(projectProducts || []).length === 0 ? (
-                  <span style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>No products configured</span>
-                ) : (
-                  (projectProducts || []).map((pp: any, i: number) => (
-                    <span
-                      key={pp.id || i}
-                      className="rounded-full"
-                      style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", backgroundColor: "rgba(14,38,70,0.06)", color: "#0E2646" }}
-                    >
-                      {(pp.product as any)?.name || pp.product_name || "Unknown"}
-                    </span>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Phase F: Additional Products (per-animal exceptions) — only when animal loaded */}
-            {(isMatched || isNewAnimal || editingRecord) && (
-              <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-                <button
-                  className="flex items-center justify-between w-full px-3 py-3 cursor-pointer"
-                  style={{ background: "none", border: "none" }}
-                  onClick={() => setAdditionalProductsOpen(!additionalProductsOpen)}
-                >
-                  <div className="flex items-center gap-2">
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.40)", textTransform: "uppercase" }}>
-                      ADDITIONAL PRODUCTS
-                    </span>
-                    {additionalProducts.length > 0 && (
-                      <span
-                        className="rounded-full"
-                        style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", backgroundColor: "rgba(85,186,170,0.15)", color: "#55BAAA" }}
-                      >
-                        {additionalProducts.length}
-                      </span>
-                    )}
-                  </div>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
-                    style={{ transform: additionalProductsOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
-                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="rgba(26,26,26,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-
-                {additionalProductsOpen && (
-                  <div className="px-3 pb-3 space-y-2" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
-                    {additionalProducts.length === 0 && (
-                      <div className="pt-2" style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>
-                        Add products given only to this animal
-                      </div>
-                    )}
-                    {additionalProducts.map((ap, i) => (
-                      <div key={`${ap.product_id}-${i}`} className="rounded-lg px-3 py-2.5 mt-1" style={{ backgroundColor: "rgba(85,186,170,0.04)", border: "1px solid rgba(85,186,170,0.15)" }}>
-                        <div className="flex items-center justify-between">
-                          <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{ap.product_name}</span>
-                          <button
-                            className="cursor-pointer"
-                            style={{ background: "none", border: "none", fontSize: 16, color: "rgba(26,26,26,0.30)", lineHeight: 1 }}
-                            onClick={() => setAdditionalProducts(prev => prev.filter((_, idx) => idx !== i))}
-                          >
-                            ×
-                          </button>
-                        </div>
-                        <div className="flex gap-1 mt-0.5">
-                          {ap.dosage && <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{ap.dosage}</span>}
-                          {ap.dosage && ap.route && <span style={{ fontSize: 11, color: "rgba(26,26,26,0.25)" }}>·</span>}
-                          {ap.route && <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{ap.route}</span>}
-                        </div>
-                        <input
-                          className="w-full mt-1.5 rounded-md px-2.5 py-1.5 outline-none transition-all focus:border-[#F3D12A] focus:ring-2 focus:ring-[#F3D12A]/25"
-                          style={{ fontSize: 14, border: "1px solid rgba(212,212,208,0.60)", backgroundColor: "white" }}
-                          placeholder="Reason (e.g. foot rot treatment)"
-                          value={ap.reason}
-                          onChange={e => {
-                            const updated = [...additionalProducts];
-                            updated[i] = { ...updated[i], reason: e.target.value };
-                            setAdditionalProducts(updated);
-                          }}
-                        />
-                      </div>
-                    ))}
-
-                    {/* Add product button / picker */}
-                    <div className="pt-1 relative">
-                      <button
-                        className="flex items-center gap-1 cursor-pointer active:scale-[0.97]"
-                        style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#55BAAA" }}
-                        onClick={() => setAddProdPickerOpen(!addProdPickerOpen)}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path d="M7 3V11M3 7H11" stroke="#55BAAA" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                        Add Product
-                      </button>
-
-                      {addProdPickerOpen && (
-                        <div
-                          className="absolute left-0 right-0 mt-1 rounded-lg bg-white shadow-lg overflow-y-auto z-10"
-                          style={{ maxHeight: 200, border: "1px solid rgba(212,212,208,0.60)" }}
-                        >
-                          {(allProducts || []).length === 0 ? (
-                            <div className="px-3 py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products available</div>
-                          ) : (
-                            (allProducts || []).map((prod: any) => {
-                              const alreadyAdded = additionalProducts.some(ap => ap.product_id === prod.id);
-                              return (
-                                <button
-                                  key={prod.id}
-                                  className="w-full text-left px-3 py-2.5 cursor-pointer"
-                                  style={{
-                                    background: "none",
-                                    border: "none",
-                                    borderBottom: "1px solid rgba(26,26,26,0.06)",
-                                    opacity: alreadyAdded ? 0.4 : 1,
-                                  }}
-                                  disabled={alreadyAdded}
-                                  onClick={() => {
-                                    setAdditionalProducts(prev => [
-                                      ...prev,
-                                      {
-                                        product_id: prod.id,
-                                        product_name: prod.name,
-                                        dosage: prod.dosage || "",
-                                        route: prod.route || "",
-                                        reason: "",
-                                      },
-                                    ]);
-                                    setAddProdPickerOpen(false);
-                                  }}
-                                >
-                                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{prod.name}</div>
-                                  <div style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>
-                                    {[prod.dosage, prod.route].filter(Boolean).join(" · ")}
-                                  </div>
-                                </button>
-                              );
-                            })
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
