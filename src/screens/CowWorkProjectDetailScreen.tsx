@@ -781,6 +781,11 @@ export default function CowWorkProjectDetailScreen() {
                 {worked.length}
               </span>
               <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.50)" }}>worked</span>
+              {headCount > 0 && (
+                <>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.25)" }}>of {headCount}</span>
+                </>
+              )}
               <span className="shrink-0" style={{ width: 1, height: 16, backgroundColor: "rgba(255,255,255,0.15)" }} />
               <span className="truncate" style={{ fontSize: 11, fontWeight: 600, color: "#A8E6DA" }}>{projectName}</span>
             </div>
@@ -789,6 +794,24 @@ export default function CowWorkProjectDetailScreen() {
               <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="rgba(255,255,255,0.40)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
+          {/* Progress bar */}
+          {headCount > 0 && (
+            <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                {worked.length <= headCount ? (
+                  <div style={{ height: 4, borderRadius: 2, backgroundColor: "#55BAAA", width: `${Math.min((worked.length / headCount) * 100, 100)}%`, transition: "width 300ms" }} />
+                ) : (
+                  <div style={{ display: "flex", height: 4, width: "100%" }}>
+                    <div style={{ height: 4, backgroundColor: "#55BAAA", flex: headCount, borderRadius: "2px 0 0 2px" }} />
+                    <div style={{ height: 4, backgroundColor: "#E87461", flex: worked.length - headCount, borderRadius: "0 2px 2px 0" }} />
+                  </div>
+                )}
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 600, color: worked.length > headCount ? "#E87461" : "rgba(168,230,218,0.60)", flexShrink: 0 }}>
+                {Math.max(0, headCount - worked.length)} left
+              </span>
+            </div>
+          )}
         </div>
 
         {headerOpen && (
