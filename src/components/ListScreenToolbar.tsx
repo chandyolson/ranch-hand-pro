@@ -110,22 +110,6 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
           </div>
         ) : <div className="flex-1" />}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Filter icon button — toggles advanced filter panel */}
-          {advancedFilter && (
-            <button
-              className="flex items-center justify-center cursor-pointer active:scale-[0.97]"
-              style={{
-                width: 36, height: 36, borderRadius: 9999,
-                backgroundColor: filterOpen ? "#0E2646" : "white",
-                border: filterOpen ? "1px solid #0E2646" : "1px solid #D4D4D0",
-              }}
-              onClick={() => setFilterOpen(!filterOpen)}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M2 3h12L9 8.5V13l-2-1V8.5L2 3z" stroke={filterOpen ? "#FFFFFF" : "#0E2646"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          )}
           {hasMenu && (
             <div className="relative" ref={menuRef}>
               <button
@@ -159,6 +143,25 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
                       </button>
                     </React.Fragment>
                   ))}
+                  {advancedFilter && (
+                    <>
+                      <div style={{ height: 1, backgroundColor: "rgba(212,212,208,0.60)", margin: "4px 0" }} />
+                      <button
+                        className="flex items-center gap-3 w-full cursor-pointer active:bg-[rgba(0,0,0,0.04)]"
+                        style={{
+                          height: 44, paddingLeft: 16, paddingRight: 16, border: "none",
+                          backgroundColor: filterOpen ? "rgba(14,38,70,0.06)" : "transparent",
+                          fontSize: 14, fontWeight: filterOpen ? 700 : 500, color: "#1A1A1A",
+                        }}
+                        onClick={() => { setFilterOpen(!filterOpen); setMenuOpen(false); }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M2 3h12L9 8.5V13l-2-1V8.5L2 3z" stroke="#0E2646" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        {filterOpen ? "Hide Filters" : "Filter"}
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
