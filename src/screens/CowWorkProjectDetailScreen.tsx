@@ -324,7 +324,7 @@ export default function CowWorkProjectDetailScreen() {
   const worked = workedAnimals || [];
 
   // Dynamic field configuration — read from project, fall back to defaults
-  const fieldConfig = resolveFieldConfig(project?.field_visibility as FieldVisibilityConfig | null);
+  const fieldConfig = resolveFieldConfig(project?.field_visibility as unknown as FieldVisibilityConfig | null);
   const lockedFields = getLockedFields(projectType);
   const enabledOptionalKeys = fieldConfig.optionalFields;
   const isFieldVisible = (key: string) => enabledOptionalKeys.includes(key);

@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import StatCard from "@/components/StatCard";
-import DataCard from "@/components/DataCard";
 import FlagIcon from "@/components/FlagIcon";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import { useChuteSideToast } from "@/components/ToastContext";
