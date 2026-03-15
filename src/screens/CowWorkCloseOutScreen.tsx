@@ -7,6 +7,7 @@ import { useChuteSideToast } from "@/components/ToastContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SUB_LABEL, INPUT_CLS, LABEL_STYLE } from "@/lib/styles";
 import { ANIMAL_TYPE_OPTIONS, SEX_OPTIONS, BREED_OPTIONS, TAG_COLOR_HEX } from "@/lib/constants";
+import { sortByTag } from "@/lib/natural-sort";
 import { generateProjectReportPDF, type ReportAnimal, type ReportProduct, type ReportRecon } from "@/lib/project-report-pdf";
 
 export default function CowWorkCloseOutScreen() {
@@ -562,7 +563,7 @@ export default function CowWorkCloseOutScreen() {
       <div className="rounded-xl bg-white px-4 py-4" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         <div style={SUB_LABEL}>ANIMALS WORKED · {worked.length}</div>
         <div className="space-y-0 mt-2">
-          {worked.map((a, i) => {
+          {sortByTag(worked, (a: any) => (a.animal as any)?.tag || "").map((a, i) => {
             const animalTag = (a.animal as any)?.tag || "Unknown";
             const animalType = (a.animal as any)?.type || (a.animal as any)?.sex || "";
             return (
@@ -937,7 +938,8 @@ export default function CowWorkCloseOutScreen() {
             onClick={async () => {
               try {
                 const XLSX = await import("xlsx");
-                const rows = worked.map((w: any, i: number) => ({
+                const sorted = sortByTag(worked, (w: any) => (w.animal as any)?.tag || "");
+                const rows = sorted.map((w: any, i: number) => ({
                   "#": i + 1,
                   "Tag": (w.animal as any)?.tag || "",
                   "Tag Color": (w.animal as any)?.tag_color || "",
@@ -980,7 +982,8 @@ export default function CowWorkCloseOutScreen() {
           </button>
           <button
             onClick={() => {
-              const rows = worked.map((w: any) => [
+              const sorted = sortByTag(worked, (w: any) => (w.animal as any)?.tag || "");
+              const rows = sorted.map((w: any) => [
                 (w.animal as any)?.tag || "",
                 (w.animal as any)?.tag_color || "",
                 (w.animal as any)?.sex || "",

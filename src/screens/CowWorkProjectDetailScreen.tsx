@@ -13,6 +13,7 @@ import FieldRow from "../components/calving/FieldRow";
 import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
 import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, BSE_PASS_FAIL, BSE_MOTILITY, BSE_PHYSICAL_DEFECTS, BSE_SEMEN_DEFECTS, SALE_REASONS, DISEASE_TYPES, BREEDING_METHODS, ESTRUS_STATUS, SEX_OPTIONS, ANIMAL_TYPE_OPTIONS, BREED_OPTIONS, type FlagColor } from "@/lib/constants";
+import { sortByTag } from "@/lib/natural-sort";
 import { ALL_FIELDS, getLockedFields, getOptionalFields, resolveFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -1432,7 +1433,7 @@ export default function CowWorkProjectDetailScreen() {
               )}
             </div>
             <div className="space-y-2">
-              {worked.map((a, i) => {
+              {sortByTag(worked, (a: any) => (a.animal as any)?.tag || "").map((a, i) => {
                 const preg = a.preg_stage || "—";
                 const pregColor = preg === "Confirmed" ? { bg: "rgba(85,186,170,0.15)", color: "#55BAAA" }
                   : preg === "Open" ? { bg: "rgba(232,116,97,0.15)", color: "#E87461" }
