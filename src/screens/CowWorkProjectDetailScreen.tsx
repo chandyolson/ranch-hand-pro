@@ -297,11 +297,11 @@ export default function CowWorkProjectDetailScreen() {
     queryFn: async () => {
       const { data } = await supabase
         .from("calving_records")
-        .select("*, calf:animals!calving_records_calf_id_fkey(tag)")
+        .select("*, calf:animals!calving_records_calf_id_fkey(tag, tag_color, sex, status), sire:animals!calving_records_sire_id_fkey(tag)")
         .eq("dam_id", matchedAnimal.id)
         .eq("operation_id", operationId)
         .order("calving_date", { ascending: false })
-        .limit(5);
+        .limit(10);
       return data || [];
     },
     enabled: !!matchedAnimal?.id,
@@ -312,11 +312,11 @@ export default function CowWorkProjectDetailScreen() {
     queryFn: async () => {
       const { data } = await supabase
         .from("cow_work")
-        .select("*, project:projects(name)")
+        .select("*, project:projects(name, work_types:project_work_types(work_type:work_types(code)))")
         .eq("animal_id", matchedAnimal.id)
         .eq("operation_id", operationId)
         .order("date", { ascending: false })
-        .limit(5);
+        .limit(10);
       return data || [];
     },
     enabled: !!matchedAnimal?.id,
@@ -1019,32 +1019,52 @@ export default function CowWorkProjectDetailScreen() {
                         {(animalCalvings || []).length === 0 ? (
                           <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)", textAlign: "center", padding: 12 }}>No calving records</div>
                         ) : (
-                          (animalCalvings || []).map((c, idx) => (
-                            <div key={c.id} style={{ padding: "8px 0", borderBottom: idx < (animalCalvings || []).length - 1 ? "1px solid rgba(26,26,26,0.06)" : "none" }}>
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                  <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>Calf {(c.calf as any)?.tag || "—"}</span>
-                                  <span style={{
-                                    fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 9999,
-                                    backgroundColor: c.calf_sex === "Bull" ? "rgba(85,186,170,0.12)" : "rgba(232,160,191,0.12)",
-                                    color: c.calf_sex === "Bull" ? "#55BAAA" : "#C77DA3",
-                                  }}>{c.calf_sex || "—"}</span>
+                          (animalCalvings || []).map((c, idx) => {
+                            const calfTag = (c.calf as any)?.tag || c.calf_tag || "—";
+                            const calfStatus = c.calf_status;
+                            const isDead = calfStatus === "Dead";
+                            const sireTag = (c.sire as any)?.tag;
+                            const assistLabels: Record<number, string> = { 1: "No Assist", 2: "Easy Pull", 3: "Hard Pull", 4: "C-Section", 5: "Abnormal" };
+                            const assistLabel = c.assistance ? assistLabels[c.assistance] || `Assist ${c.assistance}` : null;
+                            const notes = Array.isArray(c.quick_notes) && c.quick_notes.length > 0 ? c.quick_notes : null;
+                            return (
+                              <div key={c.id} style={{ padding: "10px 0", borderBottom: idx < (animalCalvings || []).length - 1 ? "1px solid rgba(26,26,26,0.06)" : "none" }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: isDead ? "#D4183D" : "#0E2646" }}>Calf {calfTag}</span>
+                                    <span style={{
+                                      fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 9999,
+                                      backgroundColor: c.calf_sex === "Bull" ? "rgba(85,186,170,0.12)" : "rgba(232,160,191,0.12)",
+                                      color: c.calf_sex === "Bull" ? "#55BAAA" : "#C77DA3",
+                                    }}>{c.calf_sex || "—"}</span>
+                                    {isDead && (
+                                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 9999, backgroundColor: "rgba(212,24,61,0.10)", color: "#D4183D" }}>DEAD</span>
+                                    )}
+                                  </div>
+                                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
+                                    {new Date(c.calving_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                  </span>
                                 </div>
-                                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
-                                  {new Date(c.calving_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                </span>
-                              </div>
-                              <div style={{ display: "flex", gap: 6, marginTop: 3 }}>
-                                {c.birth_weight && (
-                                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(26,26,26,0.50)" }}>{c.birth_weight} lbs</span>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4, fontSize: 11, color: "rgba(26,26,26,0.50)" }}>
+                                  {c.birth_weight && <span>{c.birth_weight} lbs</span>}
+                                  {sireTag && <span>Sire: {sireTag}</span>}
+                                  {assistLabel && <span>{assistLabel}</span>}
+                                  {c.calf_size && <span>Size: {c.calf_size}</span>}
+                                </div>
+                                {notes && (
+                                  <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>
+                                    {notes.map((n: string) => (
+                                      <span key={n} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 9999, backgroundColor: "rgba(14,38,70,0.06)", color: "rgba(26,26,26,0.45)" }}>{n}</span>
+                                    ))}
+                                  </div>
                                 )}
-                                {c.assistance && (
-                                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.35)" }}>Assist: {c.assistance}</span>
+                                {isDead && c.death_explanation && (
+                                  <div style={{ fontSize: 11, color: "#D4183D", marginTop: 3 }}>{c.death_explanation}</div>
                                 )}
+                                {c.memo && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.35)", marginTop: 3 }}>{c.memo}</div>}
                               </div>
-                              {c.memo && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.35)", marginTop: 2 }}>{c.memo}</div>}
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     )}
@@ -1055,25 +1075,51 @@ export default function CowWorkProjectDetailScreen() {
                         {(animalWork || []).length === 0 ? (
                           <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)", textAlign: "center", padding: 12 }}>No work history</div>
                         ) : (
-                          (animalWork || []).map(w => (
-                            <div key={w.id} className="py-2" style={{ borderBottom: "1px solid rgba(26,26,26,0.06)" }}>
-                              <div className="flex items-center justify-between">
-                                <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{(w.project as any)?.name || "—"}</span>
-                                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
-                                  {new Date(w.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                </span>
-                              </div>
-                              <div className="flex gap-2 mt-1">
-                                {w.weight && (
-                                  <span className="rounded-full" style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646" }}>
-                                    {w.weight} lbs
+                          (animalWork || []).map((w, idx) => {
+                            const typeCode = (w.project as any)?.work_types?.[0]?.work_type?.code || "";
+                            const details: string[] = [];
+                            if (w.weight) details.push(`${w.weight} lbs`);
+                            if (w.preg_stage) details.push(`Preg: ${w.preg_stage}`);
+                            if (w.days_of_gestation) details.push(`${w.days_of_gestation}d`);
+                            if (w.bse_result) details.push(`BSE: ${w.bse_result}`);
+                            if (w.scrotal) details.push(`SC: ${w.scrotal}cm`);
+                            if (w.breeding_sire) details.push(`Sire: ${w.breeding_sire}`);
+                            if (w.breeding_type) details.push(w.breeding_type);
+                            if (w.estrus_status) details.push(w.estrus_status);
+                            if (w.sale_weight) details.push(`Sale: ${w.sale_weight} lbs`);
+                            if (w.cull_reason) details.push(w.cull_reason);
+                            if (w.purchase_price) details.push(`$${w.purchase_price}`);
+                            if (w.disease) details.push(w.disease);
+                            const notes = Array.isArray(w.quick_notes) && w.quick_notes.length > 0 ? w.quick_notes : null;
+                            return (
+                              <div key={w.id} style={{ padding: "10px 0", borderBottom: idx < (animalWork || []).length - 1 ? "1px solid rgba(26,26,26,0.06)" : "none" }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    {typeCode && (
+                                      <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 9999, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646", letterSpacing: "0.04em" }}>{typeCode}</span>
+                                    )}
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{(w.project as any)?.name || "—"}</span>
+                                  </div>
+                                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", flexShrink: 0 }}>
+                                    {new Date(w.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                   </span>
+                                </div>
+                                {details.length > 0 && (
+                                  <div style={{ fontSize: 11, color: "rgba(26,26,26,0.50)", marginTop: 3 }}>
+                                    {details.join(" · ")}
+                                  </div>
                                 )}
-                                {w.preg_stage && <span style={{ fontSize: 12, color: "rgba(26,26,26,0.50)" }}>Preg: {w.preg_stage}</span>}
+                                {notes && (
+                                  <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>
+                                    {notes.map((n: string) => (
+                                      <span key={n} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 9999, backgroundColor: "rgba(14,38,70,0.06)", color: "rgba(26,26,26,0.45)" }}>{n}</span>
+                                    ))}
+                                  </div>
+                                )}
+                                {w.memo && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.35)", marginTop: 3 }}>{w.memo}</div>}
                               </div>
-                              {w.memo && <div style={{ fontSize: 12, color: "rgba(26,26,26,0.40)", fontStyle: "italic", marginTop: 2 }}>{w.memo}</div>}
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     )}
