@@ -189,7 +189,7 @@ export default function CowWorkProjectDetailScreen() {
   const [physicalDefects, setPhysicalDefects] = useState("");
   // Breeding fields
   const [breedingSire, setBreedingSire] = useState("");
-  const [breedingDate, setBreedingDate] = useState("");
+  const [breedingDate, setBreedingDate] = useState(new Date().toISOString().split("T")[0]);
   const [breedingType, setBreedingType] = useState("");
   const [estrusStatus, setEstrusStatus] = useState("");
   const [technician, setTechnician] = useState("");
@@ -822,7 +822,13 @@ export default function CowWorkProjectDetailScreen() {
                     case "breeding_sire": return (
                       <div key={f.key} className="flex items-center gap-2 min-w-0">
                         <label style={LABEL_STYLE}>Sire</label>
-                        <input type="text" value={breedingSire} onChange={e => setBreedingSire(e.target.value)} placeholder="Bull ID…" className={INPUT_CLS} />
+                        <AnimalLookup
+                          value={breedingSire}
+                          onChange={(v) => setBreedingSire(v)}
+                          onSelect={(animal) => setBreedingSire(animal.tag)}
+                          placeholder="Bull tag…"
+                          sexFilter={["Bull"]}
+                        />
                       </div>
                     );
                     case "breeding_date": return (
@@ -842,10 +848,15 @@ export default function CowWorkProjectDetailScreen() {
                     );
                     case "estrus_status": return (
                       <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Estrus</label>
+                        <label style={LABEL_STYLE}>Heat Status</label>
                         <select value={estrusStatus} onChange={e => setEstrusStatus(e.target.value)} className={INPUT_CLS}>
                           <option value="" disabled>Select…</option>
-                          <option>Standing</option><option>Not Standing</option><option>Unknown</option>
+                          <option>In Heat</option>
+                          <option>Not in Heat</option>
+                          <option>Tail Paint Gone</option>
+                          <option>CIDR</option>
+                          <option>Timed AI</option>
+                          <option>Unknown</option>
                         </select>
                       </div>
                     );
