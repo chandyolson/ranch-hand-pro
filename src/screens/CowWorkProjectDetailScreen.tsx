@@ -188,7 +188,7 @@ export default function CowWorkProjectDetailScreen() {
     setEditStatus(project?.project_status || "Pending");
     setEditHeadCount(project?.estimated_head ? String(project.estimated_head) : "");
     setEditMemo(project?.description || "");
-    setEditFieldConfig(resolveFieldConfig(project?.field_visibility as FieldVisibilityConfig | null));
+    setEditFieldConfig(resolveFieldConfig(project?.field_visibility as unknown as FieldVisibilityConfig | null));
     // Load current products into edit state
     setEditProducts((projectProducts || []).map((pp: any) => ({
       id: (pp.product as any)?.id || pp.product_id,
