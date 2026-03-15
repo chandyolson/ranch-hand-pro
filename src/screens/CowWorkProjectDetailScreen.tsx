@@ -6,7 +6,7 @@ import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "../components/ToastContext";
 import FlagIcon from "../components/FlagIcon";
 import FormFieldRow from "../components/FormFieldRow";
-import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, type FlagColor } from "@/lib/constants";
+import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, type FlagColor } from "@/lib/constants";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -28,6 +28,8 @@ export default function CowWorkProjectDetailScreen() {
   const [historyTab, setHistoryTab] = useState<"info" | "calving" | "history">("info");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isNewAnimal, setIsNewAnimal] = useState(false);
+  const [newTagColor, setNewTagColor] = useState("");
 
   const [pregResult, setPregResult] = useState("");
   const [pregDays, setPregDays] = useState("");
@@ -109,7 +111,7 @@ export default function CowWorkProjectDetailScreen() {
   const worked = workedAnimals || [];
 
   const lookupTag = async (tag: string) => {
-    if (!tag.trim()) { setMatchedAnimal(null); setIsMatched(false); setIsDuplicate(false); return; }
+    if (!tag.trim()) { setMatchedAnimal(null); setIsMatched(false); setIsDuplicate(false); setIsNewAnimal(false); return; }
     const { data } = await supabase
       .from("animals")
       .select("*")
@@ -119,12 +121,14 @@ export default function CowWorkProjectDetailScreen() {
     if (data) {
       setIsMatched(true);
       setMatchedAnimal(data);
+      setIsNewAnimal(false);
       const isDup = worked.some(w => w.animal_id === data.id);
       setIsDuplicate(isDup);
     } else {
       setIsMatched(false);
       setMatchedAnimal(null);
       setIsDuplicate(false);
+      setIsNewAnimal(true);
     }
   };
 
@@ -133,6 +137,8 @@ export default function CowWorkProjectDetailScreen() {
     setIsMatched(false);
     setIsDuplicate(false);
     setMatchedAnimal(null);
+    setIsNewAnimal(false);
+    setNewTagColor("");
     setHistoryOpen(false);
     setPregResult("");
     setPregDays("");
@@ -145,16 +151,36 @@ export default function CowWorkProjectDetailScreen() {
 
   const saveAndNext = async () => {
     if (!tagField.trim()) { showToast("error", "Tag required to save"); return; }
-    if (!matchedAnimal) { showToast("error", "Tag not found in herd"); return; }
+    if (!matchedAnimal && !isNewAnimal) { showToast("error", "Tag not found in herd"); return; }
     setSaving(true);
     try {
+      let animalId = matchedAnimal?.id;
+      let createdNew = false;
+
+      // Phase C: Auto-create animal if not found
+      if (!animalId && isNewAnimal) {
+        const { data: newAnimal, error: createErr } = await supabase
+          .from("animals")
+          .insert({
+            operation_id: operationId,
+            tag: tagField.trim(),
+            tag_color: newTagColor || null,
+            status: "Active",
+          })
+          .select()
+          .single();
+        if (createErr) throw createErr;
+        animalId = newAnimal.id;
+        createdNew = true;
+      }
+
       const recordOrder = worked.length + 1;
       const { error } = await supabase
         .from("cow_work")
         .insert({
           operation_id: operationId,
           project_id: id,
-          animal_id: matchedAnimal.id,
+          animal_id: animalId,
           date: project?.date || new Date().toISOString().split("T")[0],
           record_order: recordOrder,
           weight: weight ? parseFloat(weight) : null,
@@ -164,11 +190,12 @@ export default function CowWorkProjectDetailScreen() {
           quick_notes: quickNote ? [quickNote] : null,
           memo: memo.trim() || null,
           dna: sampleId.trim() || null,
+          is_new_animal: createdNew,
         });
       if (error) throw error;
       await refetchWorked();
       queryClient.invalidateQueries({ queryKey: ["project-work-counts"] });
-      showToast("success", `Tag ${tagField} saved`);
+      showToast("success", createdNew ? `New animal ${tagField} created & saved` : `Tag ${tagField} saved`);
       clearForm();
     } catch (err: any) {
       showToast("error", err.message || "Failed to save");
@@ -295,7 +322,7 @@ export default function CowWorkProjectDetailScreen() {
                   style={{ fontSize: 16, fontWeight: 600, color: "#0E2646", border: "2px solid #F3D12A", backgroundColor: "white" }}
                   placeholder="Tag or EID…"
                   value={tagField}
-                  onChange={e => { setTagField(e.target.value); setIsMatched(false); setMatchedAnimal(null); setIsDuplicate(false); }}
+                  onChange={e => { setTagField(e.target.value); setIsMatched(false); setMatchedAnimal(null); setIsDuplicate(false); setIsNewAnimal(false); }}
                   onBlur={() => lookupTag(tagField)}
                   onKeyDown={e => { if (e.key === "Enter") lookupTag(tagField); }}
                 />
@@ -328,10 +355,40 @@ export default function CowWorkProjectDetailScreen() {
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#B8960F" }}>Already in project · View record</span>
                 </div>
               )}
-              {tagField.length >= 3 && !isMatched && !isDuplicate && matchedAnimal === null && (
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="shrink-0 rounded-full" style={{ width: 8, height: 8, backgroundColor: "#E87461" }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: "#E87461" }}>No match found</span>
+              {/* Phase C: New animal — will be created on save */}
+              {tagField.length >= 3 && isNewAnimal && !isMatched && !isDuplicate && (
+                <div className="space-y-2 mt-1">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="rounded-full px-2.5 py-0.5"
+                      style={{ fontSize: 11, fontWeight: 700, backgroundColor: "rgba(243,209,42,0.20)", color: "#B8960F" }}
+                    >
+                      NEW
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#B8960F" }}>
+                      New animal — will be created on save
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label style={{ fontSize: 13, fontWeight: 600, color: "rgba(26,26,26,0.50)", flexShrink: 0 }}>Tag Color</label>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {TAG_COLOR_OPTIONS.map(c => (
+                        <button
+                          key={c}
+                          className="cursor-pointer active:scale-[0.95] rounded-full"
+                          style={{
+                            width: 26,
+                            height: 26,
+                            backgroundColor: TAG_COLOR_HEX[c],
+                            border: newTagColor === c ? "2.5px solid #0E2646" : "2px solid rgba(26,26,26,0.10)",
+                            boxShadow: newTagColor === c ? "0 0 0 1.5px white inset" : "none",
+                          }}
+                          title={c}
+                          onClick={() => setNewTagColor(c === "None" ? "" : c)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -554,8 +611,18 @@ export default function CowWorkProjectDetailScreen() {
         {/* =================== ANIMALS WORKED TAB =================== */}
         {activeTab === "worked" && (
           <>
-            <div style={SUB_LABEL}>
-              ANIMALS WORKED · {worked.length}
+            <div className="flex items-center gap-2">
+              <div style={SUB_LABEL}>
+                ANIMALS WORKED · {worked.length}
+              </div>
+              {worked.filter(a => a.is_new_animal).length > 0 && (
+                <span
+                  className="rounded-full"
+                  style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.20)", color: "#B8960F" }}
+                >
+                  {worked.filter(a => a.is_new_animal).length} new
+                </span>
+              )}
             </div>
             <div className="space-y-2">
               {worked.map((a, i) => {
@@ -570,6 +637,14 @@ export default function CowWorkProjectDetailScreen() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
                         <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(240,240,240,0.90)" }}>{animalTag}</span>
+                        {a.is_new_animal && (
+                          <span
+                            className="rounded-full"
+                            style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.20)", color: "#F3D12A" }}
+                          >
+                            NEW
+                          </span>
+                        )}
                       </div>
                       <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: pregColor.bg, color: pregColor.color }}>
                         {preg}
