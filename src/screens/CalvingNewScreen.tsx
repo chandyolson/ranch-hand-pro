@@ -916,18 +916,36 @@ export default function CalvingNewScreen() {
                               </div>
                             ))}
 
-                            {/* Other work cards */}
-                            {otherRecords.map(w => (
+                            {/* Divider + remaining work cards */}
+                            {otherRecords.length > 0 && (
+                              <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.25)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "10px 0 6px", textAlign: "center" }}>
+                                TREATMENTS &amp; PROCESSING
+                              </div>
+                            )}
+
+                            {/* VAX cards */}
+                            {otherRecords.filter(w => w._typeCode === "VAX" || w._typeCode === "TREAT").map(w => (
                               <div key={w.id} style={{ background: "rgba(26,26,26,0.03)", border: "1px solid rgba(26,26,26,0.06)", borderRadius: 8, padding: "10px 12px", marginBottom: 6 }}>
                                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    {w._typeCode && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 8, background: "rgba(14,38,70,0.08)", color: "#0E2646", letterSpacing: "0.04em" }}>{w._typeCode}</span>}
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{w._projectName || "Work"}</span>
-                                  </div>
+                                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 8, letterSpacing: "0.04em", background: "rgba(243,209,42,0.12)", color: "#B8860B" }}>VAX</span>
                                   <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{fmtHistDate(w._projectDate)}</span>
                                 </div>
-                                {w.weight && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.50)", marginTop: 2 }}>{w.weight} lbs</div>}
-                                {w.memo && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.35)", marginTop: 2 }}>{w.memo}</div>}
+                                <div style={{ fontSize: 12, color: "rgba(26,26,26,0.55)", marginTop: 4 }}>
+                                  {w._projectName || "Treatment"}
+                                </div>
+                              </div>
+                            ))}
+
+                            {/* All other work types */}
+                            {otherRecords.filter(w => w._typeCode !== "VAX" && w._typeCode !== "TREAT").map(w => (
+                              <div key={w.id} style={{ background: "rgba(26,26,26,0.03)", border: "1px solid rgba(26,26,26,0.06)", borderRadius: 8, padding: "10px 12px", marginBottom: 6 }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 8, letterSpacing: "0.04em", background: "rgba(26,26,26,0.06)", color: "rgba(26,26,26,0.45)" }}>{w._typeCode || "WORK"}</span>
+                                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{fmtHistDate(w._projectDate)}</span>
+                                </div>
+                                <div style={{ fontSize: 12, color: "rgba(26,26,26,0.55)", marginTop: 4 }}>
+                                  {w._projectName || "Work"}{w.weight ? ` · ${w.weight} lb` : ""}
+                                </div>
                               </div>
                             ))}
                           </div>
