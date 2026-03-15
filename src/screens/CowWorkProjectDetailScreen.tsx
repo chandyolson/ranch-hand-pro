@@ -723,6 +723,23 @@ export default function CowWorkProjectDetailScreen() {
     weighedAnimals.length > 0
       ? Math.round(weighedAnimals.reduce((s, a) => s + Number(a.weight), 0) / weighedAnimals.length)
       : 0;
+  const passCount = worked.filter(a => a.bse_result === "Pass").length;
+  const failCount = worked.filter(a => a.bse_result === "Fail" || a.bse_result === "Permanent Fail").length;
+  const marginalCount = worked.filter(a => a.bse_result === "Marginal" || a.bse_result === "Deferred").length;
+  const scrotalAnimals = worked.filter(a => a.scrotal);
+  const avgScrotal = scrotalAnimals.length > 0
+    ? (scrotalAnimals.reduce((s, a) => s + Number(a.scrotal), 0) / scrotalAnimals.length).toFixed(1)
+    : "—";
+  const priceAnimals = worked.filter(a => a.purchase_price);
+  const avgPrice = priceAnimals.length > 0
+    ? Math.round(priceAnimals.reduce((s, a) => s + Number(a.purchase_price), 0) / priceAnimals.length)
+    : 0;
+  const totalPrice = priceAnimals.reduce((s, a) => s + Number(a.purchase_price), 0);
+  const saleWeightAnimals = worked.filter(a => a.sale_weight);
+  const avgSaleWeight = saleWeightAnimals.length > 0
+    ? Math.round(saleWeightAnimals.reduce((s, a) => s + Number(a.sale_weight), 0) / saleWeightAnimals.length)
+    : 0;
+  const totalSaleWeight = saleWeightAnimals.reduce((s, a) => s + Number(a.sale_weight), 0);
 
   const tabLabels: Record<Tab, string> = { input: "Add", worked: "List", stats: "Stats", details: "Project Details" };
 
@@ -1534,42 +1551,93 @@ export default function CowWorkProjectDetailScreen() {
 
         {/* =================== STATS TAB =================== */}
         {activeTab === "stats" && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: worked.length, label: "WORKED" },
-                { value: confirmedCount, label: "CONFIRMED" },
-                { value: openCount, label: "OPEN" },
-                { value: `${avgWeight} lbs`, label: "AVG WEIGHT" },
-              ].map(s => (
-                <div key={s.label} className="rounded-xl px-4 py-3.5" style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "white", lineHeight: 1 }}>{s.value}</div>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(168,230,218,0.70)", textTransform: "uppercase", marginTop: 4 }}>{s.label}</div>
-                </div>
-              ))}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Universal stat cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {(() => {
+                const cards: { value: string | number; label: string }[] = [
+                  { value: worked.length, label: "WORKED" },
+                ];
+                // Work-type-specific cards
+                if (projectType === "PREG") {
+                  cards.push({ value: confirmedCount, label: "CONFIRMED" });
+                  cards.push({ value: openCount, label: "OPEN" });
+                  cards.push({ value: suspectCount, label: "SUSPECT" });
+                } else if (projectType === "BSE") {
+                  cards.push({ value: passCount, label: "PASS" });
+                  cards.push({ value: failCount, label: "FAIL" });
+                  cards.push({ value: avgScrotal, label: "AVG SCROTAL" });
+                } else if (projectType === "SALE") {
+                  cards.push({ value: avgSaleWeight ? `${avgSaleWeight}` : "—", label: "AVG SALE WT" });
+                  cards.push({ value: totalSaleWeight ? `${totalSaleWeight}` : "—", label: "TOTAL LBS" });
+                } else if (projectType === "PURCH") {
+                  cards.push({ value: avgPrice ? `$${avgPrice}` : "—", label: "AVG PRICE" });
+                  cards.push({ value: totalPrice ? `$${totalPrice.toLocaleString()}` : "—", label: "TOTAL COST" });
+                }
+                // Weight if anyone has it (universal)
+                if (weighedAnimals.length > 0) {
+                  cards.push({ value: `${avgWeight}`, label: "AVG WEIGHT" });
+                }
+                return cards.map(s => (
+                  <div key={s.label} style={{ borderRadius: 12, padding: "14px 16px", background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: "white", lineHeight: 1 }}>{s.value}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(168,230,218,0.70)", textTransform: "uppercase", marginTop: 4 }}>{s.label}</div>
+                  </div>
+                ));
+              })()}
             </div>
 
-            {/* Preg breakdown */}
-            <div className="rounded-xl bg-white px-3 py-3.5" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646", marginBottom: 12 }}>Preg Results</div>
-              {[
-                { label: "Confirmed", count: confirmedCount, color: "#55BAAA" },
-                { label: "Open", count: openCount, color: "#E87461" },
-                { label: "Suspect", count: suspectCount, color: "#F3D12A" },
-              ].map(r => {
-                const total = worked.length || 1;
-                return (
-                  <div key={r.label} className="flex items-center gap-3 mb-2">
-                    <span className="shrink-0 rounded-full" style={{ width: 8, height: 8, backgroundColor: r.color }} />
-                    <span className="flex-1" style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{r.label}</span>
-                    <div className="rounded-full" style={{ flex: 2, height: 6, backgroundColor: "rgba(26,26,26,0.06)" }}>
-                      <div className="rounded-full" style={{ height: 6, backgroundColor: r.color, width: `${(r.count / total) * 100}%` }} />
+            {/* PREG breakdown bars */}
+            {projectType === "PREG" && worked.length > 0 && (
+              <div style={{ borderRadius: 12, backgroundColor: "white", padding: "14px 14px", border: "1px solid rgba(212,212,208,0.60)" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646", marginBottom: 12 }}>Preg Results</div>
+                {[
+                  { label: "Confirmed", count: confirmedCount, color: "#55BAAA" },
+                  { label: "Open", count: openCount, color: "#E87461" },
+                  { label: "Suspect", count: suspectCount, color: "#F3D12A" },
+                ].map(r => {
+                  const total = worked.length || 1;
+                  return (
+                    <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: r.color, flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{r.label}</span>
+                      <div style={{ flex: 2, height: 6, borderRadius: 3, backgroundColor: "rgba(26,26,26,0.06)" }}>
+                        <div style={{ height: 6, borderRadius: 3, backgroundColor: r.color, width: `${(r.count / total) * 100}%` }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", minWidth: 24, textAlign: "right" }}>{r.count}</span>
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", minWidth: 20, textAlign: "right" }}>{r.count}</span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* BSE breakdown bars */}
+            {projectType === "BSE" && worked.length > 0 && (
+              <div style={{ borderRadius: 12, backgroundColor: "white", padding: "14px 14px", border: "1px solid rgba(212,212,208,0.60)" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646", marginBottom: 12 }}>BSE Results</div>
+                {[
+                  { label: "Pass", count: passCount, color: "#55BAAA" },
+                  { label: "Fail", count: failCount, color: "#E87461" },
+                  { label: "Marginal / Deferred", count: marginalCount, color: "#F3D12A" },
+                ].map(r => {
+                  const total = worked.length || 1;
+                  return (
+                    <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: r.color, flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{r.label}</span>
+                      <div style={{ flex: 2, height: 6, borderRadius: 3, backgroundColor: "rgba(26,26,26,0.06)" }}>
+                        <div style={{ height: 6, borderRadius: 3, backgroundColor: r.color, width: `${(r.count / total) * 100}%` }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", minWidth: 24, textAlign: "right" }}>{r.count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {worked.length === 0 && (
+              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)", textAlign: "center", padding: 24 }}>No stats yet — add animals first</div>
+            )}
           </div>
         )}
 
