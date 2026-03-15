@@ -76,7 +76,7 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Row 1: Title/Search + menu + add */}
+      {/* Row 1: Search + filter icon + menu + add */}
       <div className="flex items-center gap-2">
         {!hideTitle && (
           <span className="flex-shrink-0" style={{ fontSize: 20, fontWeight: 800, color: "#0E2646", letterSpacing: "-0.02em" }}>
@@ -110,6 +110,22 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
           </div>
         ) : <div className="flex-1" />}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Filter icon button — toggles advanced filter panel */}
+          {advancedFilter && (
+            <button
+              className="flex items-center justify-center cursor-pointer active:scale-[0.97]"
+              style={{
+                width: 36, height: 36, borderRadius: 9999,
+                backgroundColor: filterOpen ? "#0E2646" : "white",
+                border: filterOpen ? "1px solid #0E2646" : "1px solid #D4D4D0",
+              }}
+              onClick={() => setFilterOpen(!filterOpen)}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2 3h12L9 8.5V13l-2-1V8.5L2 3z" stroke={filterOpen ? "#FFFFFF" : "#0E2646"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
           {hasMenu && (
             <div className="relative" ref={menuRef}>
               <button
@@ -183,10 +199,12 @@ const ListScreenToolbar: React.FC<ListScreenToolbarProps> = ({
         </div>
       )}
 
-      {/* Row 3: Filter dropdown + Sort */}
-      {advancedFilter && (
+      {/* Advanced filter panel — toggled by filter icon */}
+      {advancedFilter && filterOpen && (
         <div>{advancedFilter}</div>
       )}
+
+      {/* Row 3: Filter chips + Sort (when no advanced filter) */}
       {!hideFilter && !advancedFilter && (
       <div className="flex items-center gap-1.5">
         <div className="relative flex-1" ref={filterRef}>

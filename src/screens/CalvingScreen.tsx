@@ -45,6 +45,7 @@ export default function CalvingScreen() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
   const [sortOpen, setSortOpen] = useState(false);
+  const [yearOpen, setYearOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
   const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_calving");
   const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_calving");
@@ -156,22 +157,38 @@ export default function CalvingScreen() {
         ))}
       </div>
 
-      {/* Year picker */}
-      <div style={{ display: "flex", gap: 6, paddingTop: 2 }}>
-        {yearOptions.map(y => (
+      {/* Year picker — collapsed shows selected year, tap to expand */}
+      <div style={{ display: "flex", gap: 6, paddingTop: 2, alignItems: "center" }}>
+        {!yearOpen ? (
           <button
-            key={y}
-            onClick={() => setSelectedYear(y)}
+            onClick={() => setYearOpen(true)}
             style={{
               padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
-              border: selectedYear === y ? "none" : "1px solid #D4D4D0",
-              background: selectedYear === y ? "#0E2646" : "transparent",
-              color: selectedYear === y ? "#FFFFFF" : "rgba(26,26,26,0.5)",
+              border: "none", background: "#0E2646", color: "#FFFFFF",
+              display: "flex", alignItems: "center", gap: 4,
             }}
           >
-            {y}
+            {selectedYear}
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M2.5 3.75L5 6.25L7.5 3.75" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
-        ))}
+        ) : (
+          yearOptions.map(y => (
+            <button
+              key={y}
+              onClick={() => { setSelectedYear(y); setYearOpen(false); }}
+              style={{
+                padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                border: selectedYear === y ? "none" : "1px solid #D4D4D0",
+                background: selectedYear === y ? "#0E2646" : "transparent",
+                color: selectedYear === y ? "#FFFFFF" : "rgba(26,26,26,0.5)",
+              }}
+            >
+              {y}
+            </button>
+          ))
+        )}
       </div>
 
       <ListScreenToolbar
