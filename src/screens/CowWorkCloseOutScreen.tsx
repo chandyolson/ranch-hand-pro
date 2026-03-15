@@ -824,33 +824,6 @@ export default function CowWorkCloseOutScreen() {
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="flex gap-3 pt-1">
-        <button
-          className="flex-1 rounded-full py-3.5 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97] transition-all"
-          style={{ fontSize: 14, fontWeight: 600, color: "#0E2646" }}
-          onClick={() => navigate(-1)}
-        >
-          Go Back
-        </button>
-        <button
-          className="rounded-full py-3.5 cursor-pointer active:scale-[0.97] transition-all"
-          style={{
-            flex: 2,
-            fontSize: 14,
-            fontWeight: 700,
-            color: "#1A1A1A",
-            backgroundColor: "#F3D12A",
-            border: "none",
-            opacity: closing ? 0.5 : 1,
-          }}
-          disabled={closing || hasNewAnimals}
-          onClick={handleCloseOut}
-        >
-          {closing ? "Closing…" : hasNewAnimals ? "Review New Animals First" : "Complete Project"}
-        </button>
-      </div>
-
       {/* Report Builder */}
       <div style={{ borderRadius: 12, backgroundColor: "white", padding: 14, border: "1px solid rgba(212,212,208,0.60)" }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2646", marginBottom: 4 }}>Project Report</div>
@@ -1017,6 +990,29 @@ export default function CowWorkCloseOutScreen() {
             CSV (.csv)
           </button>
         </div>
+      </div>
+
+      {/* Action Buttons — at the very bottom so user can export/report first */}
+      <div style={{ display: "flex", gap: 10, paddingTop: 8 }}>
+        <button
+          onClick={() => navigate(-1)}
+          style={{ flex: 1, padding: "14px 0", borderRadius: 9999, border: "1px solid #D4D4D0", backgroundColor: "white", fontSize: 14, fontWeight: 600, color: "#0E2646", cursor: "pointer" }}
+        >
+          Go Back
+        </button>
+        <button
+          onClick={handleCloseOut}
+          disabled={closing || hasNewAnimals}
+          style={{
+            flex: 2, padding: "14px 0", borderRadius: 9999, border: "none",
+            fontSize: 14, fontWeight: 700, color: "#1A1A1A",
+            backgroundColor: "#F3D12A",
+            opacity: closing || hasNewAnimals ? 0.5 : 1,
+            cursor: closing || hasNewAnimals ? "default" : "pointer",
+          }}
+        >
+          {closing ? "Closing…" : hasNewAnimals ? "Review New Animals First" : "Complete Project"}
+        </button>
       </div>
     </div>
   );
