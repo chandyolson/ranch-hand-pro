@@ -95,10 +95,12 @@ export default function CowWorkProjectDetailScreen() {
     }
   }, [project?.project_status]);
 
-  // Apply field defaults on initial load
+  // Apply field defaults on initial load (only when form is fresh/empty)
+  const [defaultsApplied, setDefaultsApplied] = useState(false);
   useEffect(() => {
-    if (!project) return;
-    const defaults = (project as any)?.field_defaults || {};
+    if (!project || defaultsApplied) return;
+    const defaults = (project as any)?.field_defaults;
+    if (!defaults || typeof defaults !== "object") return;
     if (defaults.preg_stage) setPregResult(defaults.preg_stage);
     if (defaults.bse_result) setBseResult(defaults.bse_result);
     if (defaults.breeding_type) setBreedingType(defaults.breeding_type);
@@ -106,7 +108,8 @@ export default function CowWorkProjectDetailScreen() {
     if (defaults.breeding_sire) setBreedingSire(defaults.breeding_sire);
     if (defaults.tag_color) setNewTagColor(defaults.tag_color);
     if (defaults.estrus_status) setEstrusStatus(defaults.estrus_status);
-  }, [project?.id]);
+    setDefaultsApplied(true);
+  }, [project, defaultsApplied]);
 
   // Load worked animals
   const { data: workedAnimals, refetch: refetchWorked } = useQuery({
