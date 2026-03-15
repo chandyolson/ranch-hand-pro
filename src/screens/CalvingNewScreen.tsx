@@ -127,7 +127,7 @@ export default function CalvingNewScreen() {
   const [selectedDamId, setSelectedDamId] = useState<string | null>(null);
   const [showDam, setShowDam] = useState(false);
   const [damFullHistory, setDamFullHistory] = useState(false);
-  const [damHistoryTab, setDamHistoryTab] = useState("calving");
+  const [damHistoryTab, setDamHistoryTab] = useState("info");
 
   // Calf
   const [calfTag, setCalfTag] = useState("");
