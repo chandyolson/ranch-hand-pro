@@ -143,13 +143,25 @@ const DashboardScreen: React.FC = () => {
 
   const fc = flagCounts || { management: 0, production: 0, cull: 0 };
   const openActions = actionItems || [];
-  const animals = recentAnimals || [];
   const work = upcomingWork || [];
   const activity = recentActivity || [];
 
-  const filteredAnimals = search
-    ? animals.filter((a) => a.tag.toLowerCase().includes(search.toLowerCase()) || (a.breed || "").toLowerCase().includes(search.toLowerCase()))
-    : animals;
+  // Build chart data from calving records
+  const chartData = useMemo(() => {
+    const raw = calvingByDay || [];
+    const counts: Record<string, { date: string; alive: number; dead: number }> = {};
+    raw.forEach((r) => {
+      if (!counts[r.calving_date]) counts[r.calving_date] = { date: r.calving_date, alive: 0, dead: 0 };
+      if (r.calf_status === "Dead") counts[r.calving_date].dead++;
+      else counts[r.calving_date].alive++;
+    });
+    return Object.values(counts)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((d) => ({
+        ...d,
+        label: new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      }));
+  }, [calvingByDay]);
 
   return (
     <div className="px-4 space-y-5">
