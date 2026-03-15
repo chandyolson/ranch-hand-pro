@@ -95,44 +95,7 @@ export default function CowWorkProjectDetailScreen() {
     }
   }, [project?.project_status]);
 
-  // Apply field defaults — maps field keys to state setters
-  const applyFieldDefaults = (defaults: Record<string, string>) => {
-    if (!defaults || typeof defaults !== "object") return;
-    const setterMap: Record<string, (v: string) => void> = {
-      preg_stage: setPregResult,
-      bse_result: setBseResult,
-      breeding_type: setBreedingType,
-      technician: setTechnician,
-      breeding_sire: setBreedingSire,
-      tag_color: setNewTagColor,
-      estrus_status: setEstrusStatus,
-      weight: setWeight,
-      scrotal: setScrotal,
-      cull_reason: setCullReason,
-      disposition: setDispositionField,
-      sale_weight: setSaleWeight,
-      disease: setDisease,
-      purchase_price: setPurchasePrice,
-      purchase_source: setPurchaseSource,
-      dna: setSampleId,
-      lot: setLot,
-      pen: setPen,
-      data1: setData1,
-      data2: setData2,
-    };
-    for (const [key, val] of Object.entries(defaults)) {
-      if (val && setterMap[key]) setterMap[key](val);
-    }
-  };
-
-  // Apply on initial load (only once)
-  const [defaultsApplied, setDefaultsApplied] = useState(false);
-  useEffect(() => {
-    if (!project || defaultsApplied) return;
-    const defaults = (project as any)?.field_defaults;
-    if (defaults) applyFieldDefaults(defaults);
-    setDefaultsApplied(true);
-  }, [project, defaultsApplied]);
+  // Apply on initial load — moved below all state declarations (see after line 419)
 
   // Load worked animals
   const { data: workedAnimals, refetch: refetchWorked } = useQuery({
@@ -417,6 +380,46 @@ export default function CowWorkProjectDetailScreen() {
 
   const [isExpectedMatch, setIsExpectedMatch] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any>(null);
+
+  // Apply field defaults — maps field keys to state setters
+  // MUST be after all useState declarations
+  const applyFieldDefaults = (defaults: Record<string, string>) => {
+    if (!defaults || typeof defaults !== "object") return;
+    const setterMap: Record<string, (v: string) => void> = {
+      preg_stage: setPregResult,
+      bse_result: setBseResult,
+      breeding_type: setBreedingType,
+      technician: setTechnician,
+      breeding_sire: setBreedingSire,
+      tag_color: setNewTagColor,
+      estrus_status: setEstrusStatus,
+      weight: setWeight,
+      scrotal: setScrotal,
+      cull_reason: setCullReason,
+      disposition: setDispositionField,
+      sale_weight: setSaleWeight,
+      disease: setDisease,
+      purchase_price: setPurchasePrice,
+      purchase_source: setPurchaseSource,
+      dna: setSampleId,
+      lot: setLot,
+      pen: setPen,
+      data1: setData1,
+      data2: setData2,
+    };
+    for (const [key, val] of Object.entries(defaults)) {
+      if (val && setterMap[key]) setterMap[key](val);
+    }
+  };
+
+  // Apply field defaults on initial load (only once)
+  const [defaultsApplied, setDefaultsApplied] = useState(false);
+  useEffect(() => {
+    if (!project || defaultsApplied) return;
+    const defaults = (project as any)?.field_defaults;
+    if (defaults) applyFieldDefaults(defaults);
+    setDefaultsApplied(true);
+  }, [project, defaultsApplied]);
 
   const lookupTag = async (tag: string) => {
     if (!tag.trim()) { setMatchedAnimal(null); setIsMatched(false); setIsDuplicate(false); setIsNewAnimal(false); setIsExpectedMatch(false); setEditingRecord(null); return; }

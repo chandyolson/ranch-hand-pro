@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { ALL_FIELDS, getRecommendedFields, type FieldDef, type FieldVisibilityConfig } from "@/lib/field-config";
 
 interface ConfigureFieldsSectionProps {
@@ -9,48 +9,68 @@ interface ConfigureFieldsSectionProps {
 
 export default function ConfigureFieldsSection({ workTypeCode, config, onChange }: ConfigureFieldsSectionProps) {
   const [expanded, setExpanded] = useState(false);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
 
   const recommended = getRecommendedFields(workTypeCode);
   const enabledKeys = config.enabledFields || [];
   const activeCount = enabledKeys.length;
 
   const isOn = (key: string) => enabledKeys.includes(key);
-  const isRecommended = (key: string) => recommended.some(f => f.key === key);
+  const isRec = (key: string) => recommended.some(f => f.key === key);
 
   const toggleField = (key: string) => {
-    const next = isOn(key)
-      ? enabledKeys.filter(k => k !== key)
-      : [...enabledKeys, key];
+    const next = isOn(key) ? enabledKeys.filter(k => k !== key) : [...enabledKeys, key];
     onChange({ enabledFields: next });
   };
 
-  const moveField = (idx: number, dir: -1 | 1) => {
-    const target = idx + dir;
-    if (target < 0 || target >= enabledKeys.length) return;
-    const reordered = [...enabledKeys];
-    [reordered[idx], reordered[target]] = [reordered[target], reordered[idx]];
-    onChange({ enabledFields: reordered });
-  };
+  // Drag handlers
+  const handleDragStart = useCallback((idx: number, e: React.DragEvent) => {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    // Make drag image semi-transparent
+    if (e.currentTarget instanceof HTMLElement) {
+      e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
+    }
+  }, []);
 
-  // Enabled fields in their configured order
+  const handleDragOver = useCallback((idx: number, e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragIdx !== null && idx !== dragIdx) setOverIdx(idx);
+  }, [dragIdx]);
+
+  const handleDrop = useCallback((dropIdx: number) => {
+    if (dragIdx === null || dragIdx === dropIdx) { setDragIdx(null); setOverIdx(null); return; }
+    const reordered = [...enabledKeys];
+    const [moved] = reordered.splice(dragIdx, 1);
+    reordered.splice(dropIdx, 0, moved);
+    onChange({ enabledFields: reordered });
+    setDragIdx(null);
+    setOverIdx(null);
+  }, [dragIdx, enabledKeys, onChange]);
+
+  const handleDragEnd = useCallback(() => {
+    setDragIdx(null);
+    setOverIdx(null);
+  }, []);
+
+  // Enabled fields in configured order
   const enabledFieldDefs = enabledKeys
     .map(key => ALL_FIELDS.find(f => f.key === key))
     .filter(Boolean) as FieldDef[];
 
-  // Disabled fields: recommended first, then other
+  // Disabled fields
   const disabledFields = ALL_FIELDS.filter(f => !isOn(f.key));
   const disabledRecommended = disabledFields.filter(f => f.recommendedFor.includes(workTypeCode));
   const disabledOther = disabledFields.filter(f => !f.recommendedFor.includes(workTypeCode));
 
   const renderToggle = (key: string, enabled: boolean) => (
-    <button
-      type="button"
-      onClick={() => toggleField(key)}
+    <button type="button" onClick={() => toggleField(key)}
       style={{
         position: "relative", width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer",
         backgroundColor: enabled ? "#55BAAA" : "#CBCED4", transition: "background-color 200ms",
-      }}
-    >
+      }}>
       <span style={{
         position: "absolute", top: 2, left: enabled ? 20 : 2,
         width: 18, height: 18, borderRadius: 9, backgroundColor: "#FFFFFF",
@@ -59,39 +79,44 @@ export default function ConfigureFieldsSection({ workTypeCode, config, onChange 
     </button>
   );
 
-  const renderEnabledRow = (f: FieldDef, idx: number) => (
-    <div key={f.key} style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "10px 0", borderBottom: "1px solid rgba(26,26,26,0.04)",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, width: 16, cursor: "grab", flexShrink: 0 }}>
-          <div style={{ width: 10, height: 2, backgroundColor: "rgba(26,26,26,0.20)", borderRadius: 1 }} />
-          <div style={{ width: 10, height: 2, backgroundColor: "rgba(26,26,26,0.20)", borderRadius: 1 }} />
-          <div style={{ width: 10, height: 2, backgroundColor: "rgba(26,26,26,0.20)", borderRadius: 1 }} />
+  const renderEnabledRow = (f: FieldDef, idx: number) => {
+    const isDragging = dragIdx === idx;
+    const isOver = overIdx === idx;
+    return (
+      <div
+        key={f.key}
+        draggable
+        onDragStart={e => handleDragStart(idx, e)}
+        onDragOver={e => handleDragOver(idx, e)}
+        onDrop={() => handleDrop(idx)}
+        onDragEnd={handleDragEnd}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "10px 0", borderBottom: "1px solid rgba(26,26,26,0.04)",
+          opacity: isDragging ? 0.4 : 1,
+          borderTop: isOver ? "2px solid #F3D12A" : "2px solid transparent",
+          transition: "opacity 150ms",
+          cursor: "grab",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          {/* Drag handle */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, width: 16, flexShrink: 0 }}>
+            <div style={{ width: 12, height: 2, backgroundColor: "rgba(26,26,26,0.25)", borderRadius: 1 }} />
+            <div style={{ width: 12, height: 2, backgroundColor: "rgba(26,26,26,0.25)", borderRadius: 1 }} />
+            <div style={{ width: 12, height: 2, backgroundColor: "rgba(26,26,26,0.25)", borderRadius: 1 }} />
+          </div>
+          <span style={{ fontSize: 14, fontWeight: 500, color: "#1A1A1A" }}>{f.label}</span>
+          {isRec(f.key) && (
+            <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.12)", color: "#55BAAA" }}>REC</span>
+          )}
         </div>
-        <span style={{ fontSize: 14, fontWeight: 500, color: "#1A1A1A" }}>{f.label}</span>
-        {isRecommended(f.key) && (
-          <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.12)", color: "#55BAAA" }}>REC</span>
-        )}
+        <div style={{ flexShrink: 0 }}>
+          {renderToggle(f.key, true)}
+        </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-        {enabledKeys.length > 1 && (
-          <>
-            <button type="button" disabled={idx === 0} onClick={() => moveField(idx, -1)}
-              style={{ background: "none", border: "none", padding: 2, cursor: "pointer", opacity: idx === 0 ? 0.2 : 0.5 }}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2L2 6.5H10L6 2Z" fill="#1A1A1A" /></svg>
-            </button>
-            <button type="button" disabled={idx === enabledKeys.length - 1} onClick={() => moveField(idx, 1)}
-              style={{ background: "none", border: "none", padding: 2, cursor: "pointer", opacity: idx === enabledKeys.length - 1 ? 0.2 : 0.5 }}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 10L10 5.5H2L6 10Z" fill="#1A1A1A" /></svg>
-            </button>
-          </>
-        )}
-        {renderToggle(f.key, true)}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderDisabledRow = (f: FieldDef) => (
     <div key={f.key} style={{
@@ -102,9 +127,7 @@ export default function ConfigureFieldsSection({ workTypeCode, config, onChange 
         <div style={{ width: 16 }} />
         <span style={{ fontSize: 14, fontWeight: 500, color: "rgba(26,26,26,0.40)" }}>{f.label}</span>
       </div>
-      <div style={{ flexShrink: 0 }}>
-        {renderToggle(f.key, false)}
-      </div>
+      <div style={{ flexShrink: 0 }}>{renderToggle(f.key, false)}</div>
     </div>
   );
 
@@ -122,35 +145,29 @@ export default function ConfigureFieldsSection({ workTypeCode, config, onChange 
         </svg>
       </button>
 
-      {/* Collapsed: pill summary in configured order */}
       {!expanded && activeCount > 0 && (
         <div style={{ padding: "0 14px 12px", display: "flex", flexWrap: "wrap", gap: 4, marginTop: -4 }}>
           {enabledFieldDefs.map(f => (
             <span key={f.key} style={{
               fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 9999,
-              backgroundColor: isRecommended(f.key) ? "rgba(85,186,170,0.12)" : "rgba(14,38,70,0.06)",
-              color: isRecommended(f.key) ? "#55BAAA" : "#0E2646",
-            }}>
-              {f.label}
-            </span>
+              backgroundColor: isRec(f.key) ? "rgba(85,186,170,0.12)" : "rgba(14,38,70,0.06)",
+              color: isRec(f.key) ? "#55BAAA" : "#0E2646",
+            }}>{f.label}</span>
           ))}
         </div>
       )}
 
-      {/* Expanded */}
       {expanded && (
         <div style={{ padding: "0 14px 14px", borderTop: "1px solid rgba(212,212,208,0.40)" }}>
-          {/* Enabled fields in configured order */}
           {enabledFieldDefs.length > 0 && (
             <div style={{ marginTop: 10 }}>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#55BAAA", textTransform: "uppercase", marginBottom: 4 }}>
-                ACTIVE ({enabledFieldDefs.length})
+                ACTIVE ({enabledFieldDefs.length}) — drag to reorder
               </div>
               {enabledFieldDefs.map((f, idx) => renderEnabledRow(f, idx))}
             </div>
           )}
 
-          {/* Disabled fields */}
           {(disabledRecommended.length > 0 || disabledOther.length > 0) && (
             <div style={{ marginTop: 10 }}>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 4 }}>
