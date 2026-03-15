@@ -248,24 +248,29 @@ export default function CowWorkCloseOutScreen() {
   const handleCloseOut = async () => {
     setClosing(true);
     try {
-      const { error } = await supabase
+      const updatePayload = {
+        project_status: "Completed",
+        head_count: worked.length,
+        description: closingNotes.trim()
+          ? `${project?.description || ""}\n\n--- Close-out Notes ---\n${closingNotes.trim()}`.trim()
+          : project?.description || null,
+      };
+      console.log("Close-out update:", { id, updatePayload });
+      const { error, data } = await supabase
         .from("projects")
-        .update({
-          project_status: "Completed",
-          head_count: worked.length, // Lock final worked count
-          description: closingNotes.trim()
-            ? `${project?.description || ""}\n\n--- Close-out Notes ---\n${closingNotes.trim()}`.trim()
-            : project?.description || null,
-        })
+        .update(updatePayload)
         .eq("id", id!)
-        .eq("operation_id", operationId);
+        .select();
+      console.log("Close-out result:", { error, data });
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Update returned no rows — project may not exist or RLS blocked it");
       queryClient.invalidateQueries({ queryKey: ["project", id] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["project-work-counts"] });
       showToast("success", `${projectName} completed — ${worked.length} head`);
       navigate("/cow-work");
     } catch (err: any) {
+      console.error("Close-out error:", err);
       showToast("error", err.message || "Failed to close out");
     } finally {
       setClosing(false);
