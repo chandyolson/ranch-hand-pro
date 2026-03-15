@@ -2109,7 +2109,7 @@ export default function CowWorkProjectDetailScreen() {
                 style={{ fontSize: 14, fontWeight: 700, backgroundColor: "#F3D12A", color: "#1A1A1A", border: "none" }}
                 onClick={() => navigate("/cow-work/" + id + "/close-out")}
               >
-                Complete Project
+                Begin Project Close Out
               </button>
             )}
 
