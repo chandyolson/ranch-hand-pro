@@ -37,7 +37,7 @@ const assistanceLabel = (v: number | null) => {
 export default function AnimalDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const { operationId } = useOperation();
-  const { data: animal, isLoading } = useAnimal(id);
+  const { data: animal, isLoading, isError } = useAnimal(id);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -348,7 +348,7 @@ export default function AnimalDetailScreen() {
   );
 
   /* ═══════ LOADING ═══════ */
-  if (isLoading || !animal) {
+  if (isLoading) {
     return (
       <div className="px-4 py-10 flex items-center justify-center">
         <div
@@ -362,6 +362,29 @@ export default function AnimalDetailScreen() {
           }}
         />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (isError || !animal) {
+    return (
+      <div className="px-4 py-10 flex flex-col items-center justify-center gap-3">
+        <p style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>Animal not found</p>
+        <p style={{ fontSize: 13, color: "rgba(26,26,26,0.45)" }}>This record may have been removed or the link is invalid.</p>
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            marginTop: 8,
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#55BAAA",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          ← Go Back
+        </button>
       </div>
     );
   }
