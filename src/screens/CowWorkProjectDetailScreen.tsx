@@ -703,7 +703,7 @@ export default function CowWorkProjectDetailScreen() {
         {activeTab === "input" && (
           <>
             {/* Tag / EID field */}
-            <div ref={tagSectionRef} className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div ref={tagSectionRef} className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div className="flex items-center gap-2 min-w-0">
                 <AnimalLookup
                   value={tagField}
@@ -939,7 +939,7 @@ export default function CowWorkProjectDetailScreen() {
 
             {/* ── LOCKED FIELDS (work-type-specific) ── */}
             {lockedFields.length > 0 && (
-              <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+              <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#55BAAA", textTransform: "uppercase" }}>
                   {projectType} FIELDS
                 </div>
@@ -1098,7 +1098,7 @@ export default function CowWorkProjectDetailScreen() {
 
             {/* ── OPTIONAL FIELDS (from field_visibility config, in order) ── */}
             {enabledOptionalKeys.length > 0 && (
-              <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+              <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
                 {enabledOptionalKeys.map(key => {
                   switch (key) {
                     case "weight": return (
@@ -1440,7 +1440,7 @@ export default function CowWorkProjectDetailScreen() {
 
         {/* =================== DETAILS TAB =================== */}
         {activeTab === "details" && (
-          <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: isEditingProject ? "2px solid #F3D12A" : "1px solid rgba(212,212,208,0.60)" }}>
+          <div className="rounded-xl bg-white px-4 py-4 space-y-3" style={{ border: isEditingProject ? "2px solid #F3D12A" : "1px solid rgba(212,212,208,0.60)" }}>
             <div className="flex items-center justify-between">
               <div style={SUB_LABEL}>{isEditingProject ? "EDITING PROJECT" : "PROJECT DETAILS"}</div>
               <div className="flex items-center gap-2">
