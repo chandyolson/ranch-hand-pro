@@ -1536,6 +1536,7 @@ export type Database = {
           default_cattle_type: string | null
           default_field_visibility: Json
           default_products: Json | null
+          field_defaults: Json | null
           id: string
           name: string
           operation_id: string
@@ -1546,6 +1547,7 @@ export type Database = {
           default_cattle_type?: string | null
           default_field_visibility: Json
           default_products?: Json | null
+          field_defaults?: Json | null
           id?: string
           name: string
           operation_id: string
@@ -1556,6 +1558,7 @@ export type Database = {
           default_cattle_type?: string | null
           default_field_visibility?: Json
           default_products?: Json | null
+          field_defaults?: Json | null
           id?: string
           name?: string
           operation_id?: string
@@ -1624,6 +1627,7 @@ export type Database = {
           date: string
           description: string | null
           estimated_head: number | null
+          field_defaults: Json | null
           field_visibility: Json | null
           group_id: string | null
           head_count: number | null
@@ -1645,6 +1649,7 @@ export type Database = {
           date?: string
           description?: string | null
           estimated_head?: number | null
+          field_defaults?: Json | null
           field_visibility?: Json | null
           group_id?: string | null
           head_count?: number | null
@@ -1666,6 +1671,7 @@ export type Database = {
           date?: string
           description?: string | null
           estimated_head?: number | null
+          field_defaults?: Json | null
           field_visibility?: Json | null
           group_id?: string | null
           head_count?: number | null

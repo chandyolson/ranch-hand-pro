@@ -404,7 +404,7 @@ export default function CowWorkCloseOutScreen() {
                   </div>
                 ) : (
                   <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)" }}>All expected animals were worked</div>
-                )}}
+                )}
               </div>
 
               {/* Extra bucket */}
