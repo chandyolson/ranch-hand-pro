@@ -842,20 +842,18 @@ export default function CowWorkProjectDetailScreen() {
                         <label style={LABEL_STYLE}>Method</label>
                         <select value={breedingType} onChange={e => setBreedingType(e.target.value)} className={INPUT_CLS}>
                           <option value="" disabled>Select…</option>
-                          <option>Natural</option><option>AI</option><option>ET</option>
+                          <option>AI</option><option>IVF</option><option>Natural</option>
                         </select>
                       </div>
                     );
                     case "estrus_status": return (
                       <div key={f.key} className="flex items-center gap-2 min-w-0">
-                        <label style={LABEL_STYLE}>Heat Status</label>
+                        <label style={LABEL_STYLE}>Estrus Status</label>
                         <select value={estrusStatus} onChange={e => setEstrusStatus(e.target.value)} className={INPUT_CLS}>
                           <option value="" disabled>Select…</option>
-                          <option>In Heat</option>
-                          <option>Not in Heat</option>
-                          <option>Tail Paint Gone</option>
-                          <option>CIDR</option>
-                          <option>Timed AI</option>
+                          <option>Heat</option>
+                          <option>Estrus</option>
+                          <option>FTAI</option>
                           <option>Unknown</option>
                         </select>
                       </div>
