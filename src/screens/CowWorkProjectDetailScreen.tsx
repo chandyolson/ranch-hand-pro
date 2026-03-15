@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "../components/ToastContext";
 import FlagIcon from "../components/FlagIcon";
+import AnimalLookup from "../components/AnimalLookup";
 import FormFieldRow from "../components/FormFieldRow";
 import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, type FlagColor } from "@/lib/constants";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
@@ -57,6 +58,13 @@ export default function CowWorkProjectDetailScreen() {
     },
     enabled: !!id,
   });
+
+  // Default to Project Details tab for completed projects
+  useEffect(() => {
+    if (project?.project_status === "Completed") {
+      setActiveTab("details");
+    }
+  }, [project?.project_status]);
 
   // Load worked animals
   const { data: workedAnimals, refetch: refetchWorked } = useQuery({
@@ -213,6 +221,41 @@ export default function CowWorkProjectDetailScreen() {
     }
   };
 
+  // Handler for AnimalLookup — runs cow-work-specific logic on selection
+  const onAnimalSelect = (animal: any) => {
+    setTagField(animal.tag);
+    setIsMatched(true);
+    setMatchedAnimal(animal);
+    setIsNewAnimal(false);
+
+    // Check if this animal was Expected
+    const expectedMatch = stillExpected.find(e => e.animal_id === animal.id);
+    setIsExpectedMatch(!!expectedMatch);
+
+    // If already worked, load existing record for editing
+    const existingRecord = worked.find(w => w.animal_id === animal.id);
+    if (existingRecord) {
+      setIsDuplicate(false);
+      setEditingRecord(existingRecord);
+      setWeight(existingRecord.weight ? String(existingRecord.weight) : "");
+      setPregResult(existingRecord.preg_stage || "");
+      setPregDays(existingRecord.days_of_gestation ? String(existingRecord.days_of_gestation) : "");
+      setCalfSex(existingRecord.fetal_sex || "");
+      setSelectedNotes(existingRecord.quick_notes || []);
+      setSampleId(existingRecord.dna || "");
+      setMemo(existingRecord.memo || "");
+      if (existingRecord.additional_products && Array.isArray(existingRecord.additional_products)) {
+        setAdditionalProducts(existingRecord.additional_products as any[]);
+        if ((existingRecord.additional_products as any[]).length > 0) setAdditionalProductsOpen(true);
+      } else {
+        setAdditionalProducts([]);
+      }
+    } else {
+      setIsDuplicate(false);
+      setEditingRecord(null);
+    }
+  };
+
   const clearForm = () => {
     setTagField("");
     setIsMatched(false);
@@ -332,7 +375,7 @@ export default function CowWorkProjectDetailScreen() {
       ? Math.round(weighedAnimals.reduce((s, a) => s + Number(a.weight), 0) / weighedAnimals.length)
       : 0;
 
-  const tabLabels: Record<Tab, string> = { input: "Input", worked: "Animals", stats: "Stats", details: "Details" };
+  const tabLabels: Record<Tab, string> = { input: "Add", worked: "List", stats: "Stats", details: "Project Details" };
 
   if (projectLoading) {
     return (
@@ -365,6 +408,15 @@ export default function CowWorkProjectDetailScreen() {
             <span className="truncate" style={{ fontSize: 11, fontWeight: 600, color: "#A8E6DA" }}>{projectName}</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {projectStatus !== "Completed" && (
+              <button
+                className="rounded-lg py-1.5 px-3 cursor-pointer active:scale-[0.97] transition-all"
+                style={{ fontSize: 11, fontWeight: 700, backgroundColor: "#F3D12A", color: "#1A1A1A", border: "none" }}
+                onClick={(e) => { e.stopPropagation(); navigate("/cow-work/" + id + "/close-out"); }}
+              >
+                Complete
+              </button>
+            )}
             <span
               className="rounded-full"
               style={{ fontSize: 10, fontWeight: 700, color: "#F3D12A", backgroundColor: "rgba(243,209,42,0.15)", padding: "3px 8px" }}
@@ -394,13 +446,6 @@ export default function CowWorkProjectDetailScreen() {
                   </div>
                 ))}
               </div>
-              <button
-                className="mt-2.5 rounded-lg py-1.5 px-4 cursor-pointer active:scale-[0.97] transition-all"
-                style={{ fontSize: 11, fontWeight: 700, backgroundColor: "#F3D12A", color: "#1A1A1A", border: "none" }}
-                onClick={() => navigate("/cow-work/" + id + "/close-out")}
-              >
-                Complete Project
-              </button>
             </div>
 
             <div className="flex px-3.5 mt-3" style={{ backgroundColor: "rgba(0,0,0,0.15)", borderRadius: "0 0 12px 12px" }}>
@@ -435,14 +480,23 @@ export default function CowWorkProjectDetailScreen() {
             {/* Tag / EID field */}
             <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div className="flex items-center gap-2 min-w-0">
-                <input
-                  className="flex-1 h-12 rounded-lg px-3 outline-none transition-all"
-                  style={{ fontSize: 16, fontWeight: 600, color: "#0E2646", border: "2px solid #F3D12A", backgroundColor: "white" }}
-                  placeholder="Tag or EID…"
+                <AnimalLookup
                   value={tagField}
-                  onChange={e => { setTagField(e.target.value); setIsMatched(false); setMatchedAnimal(null); setIsDuplicate(false); setIsNewAnimal(false); setIsExpectedMatch(false); setEditingRecord(null); }}
-                  onBlur={() => lookupTag(tagField)}
-                  onKeyDown={e => { if (e.key === "Enter") lookupTag(tagField); }}
+                  onChange={(v) => {
+                    setTagField(v);
+                    if (!v) { setIsMatched(false); setMatchedAnimal(null); setIsDuplicate(false); setIsNewAnimal(false); setIsExpectedMatch(false); setEditingRecord(null); }
+                  }}
+                  onSelect={onAnimalSelect}
+                  onNoMatch={(search) => {
+                    setIsMatched(false);
+                    setMatchedAnimal(null);
+                    setIsDuplicate(false);
+                    setIsNewAnimal(true);
+                    setIsExpectedMatch(false);
+                    setEditingRecord(null);
+                  }}
+                  placeholder="Tag or EID…"
+                  inputStyle={{ flex: 1, minWidth: 0, height: 48, borderRadius: 8, border: "2px solid #F3D12A", paddingLeft: 12, paddingRight: 12, fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 600, color: "#0E2646", outline: "none", backgroundColor: "white", boxSizing: "border-box" as const }}
                 />
                 <button
                   className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 cursor-pointer active:scale-[0.97]"
@@ -459,21 +513,15 @@ export default function CowWorkProjectDetailScreen() {
                 </button>
               </div>
 
-              {/* Match indicators */}
-              {isMatched && matchedAnimal && (
+              {/* Match indicators — Expected badge, editing indicator */}
+              {isMatched && matchedAnimal && isExpectedMatch && (
                 <div className="flex items-center gap-1.5 mt-1">
-                  <span className="shrink-0 rounded-full" style={{ width: 8, height: 8, backgroundColor: "#55BAAA" }} />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#55BAAA" }}>
-                    Tag {matchedAnimal.tag} — {matchedAnimal.tag_color || ""} {matchedAnimal.type || matchedAnimal.sex} {matchedAnimal.year_born || ""}
+                  <span
+                    className="rounded-full"
+                    style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(85,186,170,0.15)", color: "#55BAAA" }}
+                  >
+                    ✓ Expected
                   </span>
-                  {isExpectedMatch && (
-                    <span
-                      className="rounded-full"
-                      style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(85,186,170,0.15)", color: "#55BAAA" }}
-                    >
-                      ✓ Expected
-                    </span>
-                  )}
                 </div>
               )}
               {/* Phase D: Editing existing record indicator */}

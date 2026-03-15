@@ -8,8 +8,10 @@ import { useLocations } from "@/hooks/useLocations";
 import { useGroupMembers, useGroupMemberCount } from "@/hooks/useAnimalGroups";
 import { useChuteSideToast } from "../components/ToastContext";
 import FormFieldRow from "../components/FormFieldRow";
+import ConfigureFieldsSection from "../components/ConfigureFieldsSection";
 import LoadFromProtocolDrawer from "../components/LoadFromProtocolDrawer";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
+import { getDefaultFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
 
 const cattleTypeOptions = ["Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
 
@@ -37,6 +39,7 @@ export default function CowWorkNewProjectScreen() {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [protocolDrawerOpen, setProtocolDrawerOpen] = useState(false);
+  const [fieldConfig, setFieldConfig] = useState<FieldVisibilityConfig>(getDefaultFieldConfig());
   const [saving, setSaving] = useState(false);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
@@ -90,10 +93,15 @@ export default function CowWorkNewProjectScreen() {
     }
   }, [memberCount]);
 
-  // Task 4: Template load handler — now includes products
+  // Task 4: Template load handler — now includes products and field config
   const handleTemplateSelect = (t: any) => {
     if (t.work_type_id) setProcessingType(t.work_type_id);
     if (t.default_cattle_type) setCattleType(t.default_cattle_type);
+
+    // Load template field visibility config
+    if (t.default_field_visibility && typeof t.default_field_visibility === "object" && t.default_field_visibility.optionalFields) {
+      setFieldConfig(t.default_field_visibility as FieldVisibilityConfig);
+    }
 
     // Load template products (append, don't replace)
     if (Array.isArray(t.default_products) && t.default_products.length > 0) {
@@ -120,25 +128,31 @@ export default function CowWorkNewProjectScreen() {
     showToast("success", `${protocolProducts.length} product${protocolProducts.length !== 1 ? "s" : ""} added from protocol`);
   };
 
+  // Live Project Record ID preview — computed here so handleSave can reference it
+  const selectedWorkType = (workTypes || []).find(w => w.id === processingType);
+  const selectedGroup = (groups || []).find(g => g.id === group);
+  const previewParts = [
+    date ? new Date(date + "T12:00:00").toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" }).replace(/ /g, "") : null,
+    selectedGroup?.name || null,
+    selectedWorkType?.code || null,
+  ].filter(Boolean);
+  const projectRecordId = previewParts.length > 0 ? previewParts.join("-") : null;
+
   const handleSave = async (startWorking: boolean) => {
     if (!processingType) { showToast("error", "Processing type is required"); return; }
     setSaving(true);
     try {
       const wt = (workTypes || []).find(w => w.id === processingType);
       const grp = (groups || []).find(g => g.id === group);
-      const projectName = [wt?.name, grp?.name].filter(Boolean).join(" - ") || "New Project";
-      const displayId = [
-        new Date(date).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ""),
-        grp?.name?.substring(0, 20) || "",
-        wt?.code || "",
-      ].filter(Boolean).join("-");
+      // Use the same live preview ID the user sees at the top
+      const saveName = projectRecordId || [wt?.name, grp?.name].filter(Boolean).join(" - ") || "New Project";
 
       const { data: project, error } = await supabase
         .from("projects")
         .insert({
           operation_id: operationId,
-          name: projectName,
-          project_id_display: displayId,
+          name: saveName,
+          project_id_display: saveName,
           date,
           project_status: "Pending",
           head_count: null,
@@ -149,6 +163,7 @@ export default function CowWorkNewProjectScreen() {
           // Task 7+8: preload and estimated head
           preload_mode: preloadEnabled ? preloadMode : "none",
           estimated_head: estimatedHead || null,
+          field_visibility: fieldConfig as any,
         })
         .select()
         .single();
@@ -220,7 +235,7 @@ export default function CowWorkNewProjectScreen() {
 
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["project-counts"] });
-      showToast("success", projectName + " created");
+      showToast("success", saveName + " created");
 
       if (startWorking) {
         navigate("/cow-work/" + project.id);
@@ -239,7 +254,25 @@ export default function CowWorkNewProjectScreen() {
       {/* Section label */}
       <div style={SUB_LABEL}>PROJECT SETUP</div>
 
-      {/* Form card */}
+      {/* Live Project Record ID preview */}
+      <div
+        className="rounded-xl px-3.5 py-3"
+        style={{
+          background: projectRecordId
+            ? "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)"
+            : "#E8E8E4",
+          transition: "background 300ms",
+        }}
+      >
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: projectRecordId ? "rgba(168,230,218,0.60)" : "rgba(26,26,26,0.30)", marginBottom: 4 }}>
+          PROJECT RECORD ID
+        </div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: projectRecordId ? "#FFFFFF" : "rgba(26,26,26,0.25)", letterSpacing: "-0.01em" }}>
+          {projectRecordId || "Select type and group…"}
+        </div>
+      </div>
+
+      {/* Form card — Step 1: What & When */}
       <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         {/* Date */}
         <div className="flex items-center gap-2 min-w-0">
@@ -247,7 +280,7 @@ export default function CowWorkNewProjectScreen() {
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className={INPUT_CLS} />
         </div>
 
-        {/* Type */}
+        {/* Type — what are you doing? */}
         <div className="flex items-center gap-2 min-w-0">
           <label style={LABEL_STYLE}>Type</label>
           <select value={processingType} onChange={e => setProcessingType(e.target.value)} className={INPUT_CLS}>
@@ -257,7 +290,64 @@ export default function CowWorkNewProjectScreen() {
             ))}
           </select>
         </div>
+      </div>
 
+      {/* Step 2: Template — do you want to use a saved setup? */}
+      <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+        <button
+          className="flex items-center justify-between w-full px-3 py-3.5 cursor-pointer active:scale-[0.99]"
+          onClick={() => setTemplateOpen(!templateOpen)}
+        >
+          <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>Load from Template</span>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+            style={{ transform: templateOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
+            <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="rgba(26,26,26,0.40)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {templateOpen && (
+          <div className="px-3 pb-2" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
+            {(templates || []).length === 0 ? (
+              <div className="text-center py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No templates</div>
+            ) : (
+              (templates || []).map(t => {
+                const tProducts = Array.isArray(t.default_products) ? (t.default_products as any[]) : [];
+                return (
+                  <button
+                    key={t.id}
+                    className="flex items-center justify-between w-full py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.02)]"
+                    style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", background: "none", border: "none", borderBottomStyle: "solid", borderBottomWidth: 1, borderBottomColor: "rgba(26,26,26,0.06)" }}
+                    onClick={() => handleTemplateSelect(t)}
+                  >
+                    <div className="text-left min-w-0">
+                      <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{t.name}</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {t.default_cattle_type && (
+                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{t.default_cattle_type}</span>
+                        )}
+                        {tProducts.length > 0 && (
+                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
+                            {tProducts.length} product{tProducts.length !== 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span
+                      className="rounded-full shrink-0"
+                      style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.15)", color: "#C4A600" }}
+                    >
+                      {(t.work_type as any)?.code || ""}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Step 3: Group & Pre-load — which group, and how to load them? */}
+      <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         {/* Group */}
         <div className="flex items-center gap-2 min-w-0">
           <label style={LABEL_STYLE}>Group</label>
@@ -266,6 +356,74 @@ export default function CowWorkNewProjectScreen() {
             {(groups || []).map(g => (
               <option key={g.id} value={g.id}>{g.name}</option>
             ))}
+          </select>
+        </div>
+
+        {/* Pre-load toggle — appears inline when a group is selected */}
+        {group && (
+          <>
+            <div className="flex items-center justify-between pt-1">
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Pre-load animals from group</span>
+              <button
+                onClick={() => {
+                  setPreloadEnabled(!preloadEnabled);
+                  if (preloadEnabled) setPreloadMode("expected");
+                }}
+                className="relative shrink-0 cursor-pointer"
+                style={{
+                  width: 44, height: 24, borderRadius: 12, border: "none",
+                  backgroundColor: preloadEnabled ? "#55BAAA" : "#CBCED4",
+                  transition: "background-color 200ms",
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute", top: 2,
+                    left: preloadEnabled ? 22 : 2,
+                    width: 20, height: 20, borderRadius: 10,
+                    backgroundColor: "#FFFFFF",
+                    transition: "left 200ms",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                  }}
+                />
+              </button>
+            </div>
+
+            {preloadEnabled && (
+              <div className="flex gap-4 pt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="preloadMode"
+                    value="expected"
+                    checked={preloadMode === "expected"}
+                    onChange={() => setPreloadMode("expected")}
+                    style={{ accentColor: "#55BAAA" }}
+                  />
+                  <span style={{ fontSize: 16, color: "#1A1A1A" }}>As Expected</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="preloadMode"
+                    value="worked"
+                    checked={preloadMode === "worked"}
+                    onChange={() => setPreloadMode("worked")}
+                    style={{ accentColor: "#55BAAA" }}
+                  />
+                  <span style={{ fontSize: 16, color: "#1A1A1A" }}>As Worked</span>
+                </label>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Cattle Type */}
+        <div className="flex items-center gap-2 min-w-0">
+          <label style={LABEL_STYLE}>Cattle Type</label>
+          <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={INPUT_CLS}>
+            <option value="" disabled>Optional</option>
+            {cattleTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
 
@@ -280,15 +438,6 @@ export default function CowWorkNewProjectScreen() {
             placeholder="Optional"
             className={INPUT_CLS}
           />
-        </div>
-
-        {/* Cattle Type */}
-        <div className="flex items-center gap-2 min-w-0">
-          <label style={LABEL_STYLE}>Cattle Type</label>
-          <select value={cattleType} onChange={e => setCattleType(e.target.value)} className={INPUT_CLS}>
-            <option value="" disabled>Optional</option>
-            {cattleTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
-          </select>
         </div>
 
         {/* Location */}
@@ -314,64 +463,12 @@ export default function CowWorkNewProjectScreen() {
         </div>
       </div>
 
-      {/* Task 7: Pre-load toggle — only when a group is selected */}
-      {group && (
-        <div className="rounded-xl bg-white px-3 py-3.5 space-y-2" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-          <div className="flex items-center justify-between">
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Pre-load animals from group</span>
-            <button
-              onClick={() => {
-                setPreloadEnabled(!preloadEnabled);
-                if (preloadEnabled) setPreloadMode("expected");
-              }}
-              className="relative shrink-0 cursor-pointer"
-              style={{
-                width: 44, height: 24, borderRadius: 12, border: "none",
-                backgroundColor: preloadEnabled ? "#55BAAA" : "#CBCED4",
-                transition: "background-color 200ms",
-              }}
-            >
-              <span
-                style={{
-                  position: "absolute", top: 2,
-                  left: preloadEnabled ? 22 : 2,
-                  width: 20, height: 20, borderRadius: 10,
-                  backgroundColor: "#FFFFFF",
-                  transition: "left 200ms",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-                }}
-              />
-            </button>
-          </div>
-
-          {preloadEnabled && (
-            <div className="flex gap-4 pt-1">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="preloadMode"
-                  value="expected"
-                  checked={preloadMode === "expected"}
-                  onChange={() => setPreloadMode("expected")}
-                  style={{ accentColor: "#55BAAA" }}
-                />
-                <span style={{ fontSize: 16, color: "#1A1A1A" }}>As Expected</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="preloadMode"
-                  value="worked"
-                  checked={preloadMode === "worked"}
-                  onChange={() => setPreloadMode("worked")}
-                  style={{ accentColor: "#55BAAA" }}
-                />
-                <span style={{ fontSize: 16, color: "#1A1A1A" }}>As Worked</span>
-              </label>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Step 4: Configure Fields — what fields show on the Add tab? */}
+      <ConfigureFieldsSection
+        workTypeCode={selectedWorkType?.code || ""}
+        config={fieldConfig}
+        onChange={setFieldConfig}
+      />
 
       {/* Products Given collapsible */}
       <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
@@ -480,61 +577,6 @@ export default function CowWorkNewProjectScreen() {
                   Done
                 </button>
               </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Load from Template collapsible */}
-      <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
-        <button
-          className="flex items-center justify-between w-full px-3 py-3.5 cursor-pointer active:scale-[0.99]"
-          onClick={() => setTemplateOpen(!templateOpen)}
-        >
-          <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>Load from Template</span>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
-            style={{ transform: templateOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms" }}>
-            <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="rgba(26,26,26,0.40)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-
-        {templateOpen && (
-          <div className="px-3 pb-2" style={{ borderTop: "1px solid rgba(212,212,208,0.40)" }}>
-            {(templates || []).length === 0 ? (
-              <div className="text-center py-3" style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No templates</div>
-            ) : (
-              (templates || []).map(t => {
-                const tProducts = Array.isArray(t.default_products) ? (t.default_products as any[]) : [];
-                return (
-                  <button
-                    key={t.id}
-                    className="flex items-center justify-between w-full py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.02)]"
-                    style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", background: "none", border: "none", borderBottomStyle: "solid", borderBottomWidth: 1, borderBottomColor: "rgba(26,26,26,0.06)" }}
-                    onClick={() => handleTemplateSelect(t)}
-                  >
-                    <div className="text-left min-w-0">
-                      <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{t.name}</span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {t.default_cattle_type && (
-                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{t.default_cattle_type}</span>
-                        )}
-                        {/* Task 5: Product count badge on template cards */}
-                        {tProducts.length > 0 && (
-                          <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>
-                            {tProducts.length} product{tProducts.length !== 1 ? "s" : ""}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span
-                      className="rounded-full shrink-0"
-                      style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.15)", color: "#C4A600" }}
-                    >
-                      {(t.work_type as any)?.code || ""}
-                    </span>
-                  </button>
-                );
-              })
             )}
           </div>
         )}
