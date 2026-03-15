@@ -8,6 +8,7 @@ import { useLocations } from "@/hooks/useLocations";
 import { useGroupMemberCount } from "@/hooks/useAnimalGroups";
 import { useChuteSideToast } from "../components/ToastContext";
 import FormFieldRow from "../components/FormFieldRow";
+import LoadFromProtocolDrawer from "../components/LoadFromProtocolDrawer";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 
 const cattleTypeOptions = ["Cow", "Heifer", "Bull", "Steer", "Calf", "Mixed"];
@@ -17,7 +18,7 @@ interface ProductRow {
   name: string;
   dosage: string;
   route: string;
-  source?: "manual" | "template";
+  source?: "manual" | "template" | "protocol";
   source_ref?: string | null;
 }
 
@@ -35,6 +36,7 @@ export default function CowWorkNewProjectScreen() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const [protocolDrawerOpen, setProtocolDrawerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
@@ -109,6 +111,12 @@ export default function CowWorkNewProjectScreen() {
     }
 
     setTemplateOpen(false);
+  };
+
+  // Phase B: Load products from protocol event
+  const handleProtocolProducts = (protocolProducts: ProductRow[]) => {
+    setProducts(prev => [...prev, ...protocolProducts]);
+    showToast("success", `${protocolProducts.length} product${protocolProducts.length !== 1 ? "s" : ""} added from protocol`);
   };
 
   const handleSave = async (startWorking: boolean) => {
@@ -364,15 +372,24 @@ export default function CowWorkNewProjectScreen() {
               ))
             )}
 
-            {/* Product picker toggle */}
+            {/* Product action buttons */}
             {!productPickerOpen ? (
-              <button
-                className="mt-2 rounded-full px-4 py-2 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
-                style={{ fontSize: 13, fontWeight: 600, color: "#0E2646" }}
-                onClick={() => setProductPickerOpen(true)}
-              >
-                + Add Product
-              </button>
+              <div className="flex gap-2 mt-2 flex-wrap">
+                <button
+                  className="rounded-full px-4 py-2 border border-[#D4D4D0] bg-white cursor-pointer active:scale-[0.97]"
+                  style={{ fontSize: 13, fontWeight: 600, color: "#0E2646" }}
+                  onClick={() => setProductPickerOpen(true)}
+                >
+                  + Add Product
+                </button>
+                <button
+                  className="rounded-full px-4 py-2 border border-[#55BAAA] bg-white cursor-pointer active:scale-[0.97]"
+                  style={{ fontSize: 13, fontWeight: 600, color: "#55BAAA" }}
+                  onClick={() => setProtocolDrawerOpen(true)}
+                >
+                  Load from Protocol
+                </button>
+              </div>
             ) : (
               <div className="mt-2 space-y-1.5">
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase" }}>SELECT PRODUCT</div>
@@ -503,6 +520,13 @@ export default function CowWorkNewProjectScreen() {
           {saving ? "Saving..." : "Save & Work Cows"}
         </button>
       </div>
+
+      {/* Phase B: Protocol product loader */}
+      <LoadFromProtocolDrawer
+        open={protocolDrawerOpen}
+        onOpenChange={setProtocolDrawerOpen}
+        onLoadProducts={handleProtocolProducts}
+      />
     </div>
   );
 }
