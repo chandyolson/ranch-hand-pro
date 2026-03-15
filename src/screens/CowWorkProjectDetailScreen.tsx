@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ export default function CowWorkProjectDetailScreen() {
   const queryClient = useQueryClient();
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
+  const tagSectionRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState<Tab>("input");
   const [headerOpen, setHeaderOpen] = useState(false);
@@ -115,6 +116,21 @@ export default function CowWorkProjectDetailScreen() {
   // Reference data for edit mode
   const { data: groups } = useGroups();
   const { data: locations } = useLocations();
+
+  // Load technicians for breeding projects
+  const { data: technicians } = useQuery({
+    queryKey: ["technicians", operationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("technicians")
+        .select("id, name")
+        .eq("operation_id", operationId)
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   // Load preg stages from operation's custom list
   const { data: pregStages } = useQuery({
@@ -425,6 +441,12 @@ export default function CowWorkProjectDetailScreen() {
     setDispositionField("");
     setSaleWeight("");
     setDisease("");
+    // Scroll to top and focus tag input
+    setTimeout(() => {
+      tagSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const input = tagSectionRef.current?.querySelector("input");
+      if (input) input.focus();
+    }, 100);
   };
 
   const saveAndNext = async () => {
@@ -643,7 +665,7 @@ export default function CowWorkProjectDetailScreen() {
         {activeTab === "input" && (
           <>
             {/* Tag / EID field */}
-            <div className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
+            <div ref={tagSectionRef} className="rounded-xl bg-white px-3 py-3.5 space-y-3" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
               <div className="flex items-center gap-2 min-w-0">
                 <AnimalLookup
                   value={tagField}
@@ -984,7 +1006,12 @@ export default function CowWorkProjectDetailScreen() {
                     case "technician": return (
                       <div key={f.key} className="flex items-center gap-2 min-w-0">
                         <label style={LABEL_STYLE}>Technician</label>
-                        <input type="text" value={technician} onChange={e => setTechnician(e.target.value)} placeholder="Name…" className={INPUT_CLS} />
+                        <select value={technician} onChange={e => setTechnician(e.target.value)} className={INPUT_CLS}>
+                          <option value="" disabled>Select…</option>
+                          {(technicians || []).map(t => (
+                            <option key={t.id} value={t.name}>{t.name}</option>
+                          ))}
+                        </select>
                       </div>
                     );
                     case "cull_reason": return (
@@ -1374,7 +1401,7 @@ export default function CowWorkProjectDetailScreen() {
                   ["Group", projectGroup],
                   ["Location", projectLocation],
                   ["Status", projectStatus],
-                  ["Head Count", String(headCount)],
+                  ["Head Expected", String(headCount)],
                 ].map(([label, value]) => (
                   <div key={label} className="flex items-center gap-2 min-w-0">
                     <span style={LABEL_STYLE}>{label}</span>
@@ -1424,7 +1451,7 @@ export default function CowWorkProjectDetailScreen() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2 min-w-0">
-                  <label style={LABEL_STYLE}>Expected Hd</label>
+                  <label style={LABEL_STYLE}>Head Expected</label>
                   <input type="number" value={editHeadCount} onChange={e => setEditHeadCount(e.target.value)} placeholder="Optional" className={INPUT_CLS} />
                 </div>
                 <div className="pt-1">

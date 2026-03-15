@@ -438,7 +438,7 @@ export default function CowWorkNewProjectScreen() {
 
         {/* Expected Head */}
         <div className="flex items-center gap-2 min-w-0">
-          <label style={LABEL_STYLE}>Expected Hd</label>
+          <label style={LABEL_STYLE}>Head Expected</label>
           <input
             type="number"
             inputMode="numeric"
