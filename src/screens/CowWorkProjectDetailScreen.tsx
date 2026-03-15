@@ -13,7 +13,7 @@ import FieldRow from "../components/calving/FieldRow";
 import { useGroups } from "@/hooks/useGroups";
 import { useLocations } from "@/hooks/useLocations";
 import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, BSE_PASS_FAIL, BSE_MOTILITY, BSE_PHYSICAL_DEFECTS, BSE_SEMEN_DEFECTS, SALE_REASONS, DISEASE_TYPES, BREEDING_METHODS, ESTRUS_STATUS, type FlagColor } from "@/lib/constants";
-import { getLockedFields, getOptionalFields, resolveFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
+import { ALL_FIELDS, getLockedFields, getOptionalFields, resolveFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -188,7 +188,7 @@ export default function CowWorkProjectDetailScreen() {
     setEditStatus(project?.project_status || "Pending");
     setEditHeadCount(project?.estimated_head ? String(project.estimated_head) : "");
     setEditMemo(project?.description || "");
-    setEditFieldConfig(resolveFieldConfig(project?.field_visibility as unknown as FieldVisibilityConfig | null));
+    setEditFieldConfig(resolveFieldConfig(project?.field_visibility as unknown as FieldVisibilityConfig | null, projectType));
     // Load current products into edit state
     setEditProducts((projectProducts || []).map((pp: any) => ({
       id: (pp.product as any)?.id || pp.product_id,
@@ -324,10 +324,12 @@ export default function CowWorkProjectDetailScreen() {
   const worked = workedAnimals || [];
 
   // Dynamic field configuration — read from project, fall back to defaults
-  const fieldConfig = resolveFieldConfig(project?.field_visibility as unknown as FieldVisibilityConfig | null);
-  const lockedFields = getLockedFields(projectType);
-  const enabledOptionalKeys = fieldConfig.optionalFields;
-  const isFieldVisible = (key: string) => enabledOptionalKeys.includes(key);
+  const fieldConfig = resolveFieldConfig(project?.field_visibility as unknown as FieldVisibilityConfig | null, projectType);
+  const enabledFieldKeys = fieldConfig.enabledFields || [];
+  const allFieldDefs = ALL_FIELDS;
+  const enabledFields = enabledFieldKeys
+    .map(key => allFieldDefs.find(f => f.key === key))
+    .filter(Boolean) as import("@/lib/field-config").FieldDef[];
 
   // Additional field states for dynamic fields
   const [data1, setData1] = useState("");
@@ -967,12 +969,11 @@ export default function CowWorkProjectDetailScreen() {
               </div>
             )}
 
-            {/* ── ALL DATA ENTRY FIELDS (locked + optional in one card) ── */}
-            {(lockedFields.length > 0 || enabledOptionalKeys.length > 0) && (
+            {/* ── ALL DATA ENTRY FIELDS (unified — recommended + optional in one card) ── */}
+            {enabledFields.length > 0 && (
               <div style={{ borderRadius: 12, backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)", padding: 12 }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {/* Locked fields (work-type-specific) */}
-                {lockedFields.map(f => {
+                {enabledFields.map(f => {
                   switch (f.key) {
                     case "preg_stage": return (
                       <FieldRow key={f.key} label="Preg">
@@ -1183,20 +1184,16 @@ export default function CowWorkProjectDetailScreen() {
                         </select>
                       </FieldRow>
                     );
-                    default: return null;
-                  }
-                })}
-
-                {/* Optional fields (from field_visibility config) */}
-                {enabledOptionalKeys.map(key => {
-                  switch (key) {
-                    case "weight": return (
-                      <FieldRow key={key} label="Weight">
-                        <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" style={IS} />
-                      </FieldRow>
+                    default: {
+                      // Optional fields (weight, quick_notes, dna, etc.)
+                      switch (f.key) {
+                        case "weight": return (
+                          <FieldRow key={f.key} label="Weight">
+                            <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" style={IS} />
+                          </FieldRow>
                     );
                     case "quick_notes": return (
-                      <div key={key} className="pt-1">
+                      <div key={f.key} className="pt-1">
                         <CollapsibleQuickNotes
                           selectedNotes={selectedNotes}
                           onToggle={(label) => {
@@ -1207,12 +1204,12 @@ export default function CowWorkProjectDetailScreen() {
                       </div>
                     );
                     case "dna": return (
-                      <FieldRow key={key} label="DNA">
+                      <FieldRow key={f.key} label="DNA">
                         <input type="text" value={sampleId} onChange={e => setSampleId(e.target.value)} placeholder="DNA/sample ID" style={IS} />
                       </FieldRow>
                     );
                     case "memo": return (
-                      <FieldRow key={key} label="Notes">
+                      <FieldRow key={f.key} label="Notes">
                         <textarea
                           value={memo} onChange={e => setMemo(e.target.value)}
                           style={{ ...IS, height: "auto", minHeight: 36, paddingTop: 8, paddingBottom: 8, resize: "none" as const }}
@@ -1221,7 +1218,7 @@ export default function CowWorkProjectDetailScreen() {
                       </FieldRow>
                     );
                     case "tag_color": return (
-                      <FieldRow key={key} label="Tag Color">
+                      <FieldRow key={f.key} label="Tag Color">
                         <select value={newTagColor} onChange={e => setNewTagColor(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="">Select…</option>
                           {TAG_COLOR_OPTIONS.map(c => <option key={c} value={c === "None" ? "" : c}>{c}</option>)}
@@ -1229,32 +1226,32 @@ export default function CowWorkProjectDetailScreen() {
                       </FieldRow>
                     );
                     case "data1": return (
-                      <FieldRow key={key} label="Data 1">
+                      <FieldRow key={f.key} label="Data 1">
                         <input type="text" value={data1} onChange={e => setData1(e.target.value)} placeholder="Custom…" style={IS} />
                       </FieldRow>
                     );
                     case "data2": return (
-                      <FieldRow key={key} label="Data 2">
+                      <FieldRow key={f.key} label="Data 2">
                         <input type="text" value={data2} onChange={e => setData2(e.target.value)} placeholder="Custom…" style={IS} />
                       </FieldRow>
                     );
                     case "lot": return (
-                      <FieldRow key={key} label="Lot">
+                      <FieldRow key={f.key} label="Lot">
                         <input type="text" value={lot} onChange={e => setLot(e.target.value)} placeholder="Lot #" style={IS} />
                       </FieldRow>
                     );
                     case "sample": return (
-                      <FieldRow key={key} label="Sample">
+                      <FieldRow key={f.key} label="Sample">
                         <input type="text" value={sampleField} onChange={e => setSampleField(e.target.value)} placeholder="Sample ID" style={IS} />
                       </FieldRow>
                     );
                     case "pen": return (
-                      <FieldRow key={key} label="Pen">
+                      <FieldRow key={f.key} label="Pen">
                         <input type="text" value={pen} onChange={e => setPen(e.target.value)} placeholder="Pen #" style={IS} />
                       </FieldRow>
                     );
                     case "motility_desc": return (
-                      <FieldRow key={key} label="Motility Qual.">
+                      <FieldRow key={f.key} label="Motility Qual.">
                         <select value={motilityDesc} onChange={e => setMotilityDesc(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
                           {BSE_MOTILITY.map(o => <option key={o} value={o}>{o}</option>)}
@@ -1262,7 +1259,7 @@ export default function CowWorkProjectDetailScreen() {
                       </FieldRow>
                     );
                     case "morphology_desc": return (
-                      <FieldRow key={key} label="Morphology Qual.">
+                      <FieldRow key={f.key} label="Morphology Qual.">
                         <select value={morphologyDesc} onChange={e => setMorphologyDesc(e.target.value)} style={{...IS, appearance: "auto" as const}}>
                           <option value="" disabled>Select…</option>
                           {BSE_MOTILITY.map(o => <option key={o} value={o}>{o}</option>)}
@@ -1270,6 +1267,8 @@ export default function CowWorkProjectDetailScreen() {
                       </FieldRow>
                     );
                     default: return null;
+                  }
+                    }
                   }
                 })}
                 </div>
