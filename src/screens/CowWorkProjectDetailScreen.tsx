@@ -6,7 +6,7 @@ import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "../components/ToastContext";
 import FlagIcon from "../components/FlagIcon";
 import FormFieldRow from "../components/FormFieldRow";
-import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, type FlagColor } from "@/lib/constants";
+import { PREG_CALF_SEX_OPTIONS, FLAG_HEX_MAP, TAG_COLOR_OPTIONS, TAG_COLOR_HEX, QUICK_NOTES, QUICK_NOTE_PILL_COLORS, type FlagColor } from "@/lib/constants";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -35,7 +35,7 @@ export default function CowWorkProjectDetailScreen() {
   const [pregDays, setPregDays] = useState("");
   const [calfSex, setCalfSex] = useState("");
   const [weight, setWeight] = useState("");
-  const [quickNote, setQuickNote] = useState("");
+  const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
   const [sampleId, setSampleId] = useState("");
   const [memo, setMemo] = useState("");
   // Phase F: Additional Products state
@@ -189,7 +189,7 @@ export default function CowWorkProjectDetailScreen() {
         setPregResult(existingRecord.preg_stage || "");
         setPregDays(existingRecord.days_of_gestation ? String(existingRecord.days_of_gestation) : "");
         setCalfSex(existingRecord.fetal_sex || "");
-        setQuickNote(existingRecord.quick_notes?.[0] || "");
+        setSelectedNotes(existingRecord.quick_notes || []);
         setSampleId(existingRecord.dna || "");
         setMemo(existingRecord.memo || "");
         // Phase F: Load existing additional products
@@ -227,7 +227,7 @@ export default function CowWorkProjectDetailScreen() {
     setPregDays("");
     setCalfSex("");
     setWeight("");
-    setQuickNote("");
+    setSelectedNotes([]);
     setSampleId("");
     setMemo("");
     setAdditionalProducts([]);
@@ -266,7 +266,7 @@ export default function CowWorkProjectDetailScreen() {
         preg_stage: pregResult || null,
         days_of_gestation: pregDays ? parseInt(pregDays) : null,
         fetal_sex: calfSex || null,
-        quick_notes: quickNote ? [quickNote] : null,
+        quick_notes: selectedNotes.length > 0 ? selectedNotes : null,
         memo: memo.trim() || null,
         dna: sampleId.trim() || null,
         additional_products: additionalProducts.length > 0 ? additionalProducts : null,
@@ -497,24 +497,24 @@ export default function CowWorkProjectDetailScreen() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <label style={{ fontSize: 13, fontWeight: 600, color: "rgba(26,26,26,0.50)", flexShrink: 0 }}>Tag Color</label>
-                    <div className="flex gap-1.5 flex-wrap">
+                    <label style={{ fontSize: 13, fontWeight: 600, color: "rgba(26,26,26,0.50)", flexShrink: 0, width: 105 }}>Tag Color</label>
+                    <select
+                      value={newTagColor}
+                      onChange={e => setNewTagColor(e.target.value)}
+                      className="flex-1 h-[40px] rounded-lg border px-3 outline-none"
+                      style={{
+                        fontSize: 16,
+                        fontFamily: "Inter, sans-serif",
+                        color: newTagColor ? "#1A1A1A" : "rgba(26,26,26,0.40)",
+                        borderColor: "#D4D4D0",
+                        backgroundColor: "white",
+                      }}
+                    >
+                      <option value="">Select color…</option>
                       {TAG_COLOR_OPTIONS.map(c => (
-                        <button
-                          key={c}
-                          className="cursor-pointer active:scale-[0.95] rounded-full"
-                          style={{
-                            width: 26,
-                            height: 26,
-                            backgroundColor: TAG_COLOR_HEX[c],
-                            border: newTagColor === c ? "2.5px solid #0E2646" : "2px solid rgba(26,26,26,0.10)",
-                            boxShadow: newTagColor === c ? "0 0 0 1.5px white inset" : "none",
-                          }}
-                          title={c}
-                          onClick={() => setNewTagColor(c === "None" ? "" : c)}
-                        />
+                        <option key={c} value={c === "None" ? "" : c}>{c}</option>
                       ))}
-                    </div>
+                    </select>
                   </div>
                 </div>
               )}
@@ -685,9 +685,56 @@ export default function CowWorkProjectDetailScreen() {
                 <label style={LABEL_STYLE}>Weight</label>
                 <input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="lbs" className={INPUT_CLS} />
               </div>
-              <div className="flex items-center gap-2 min-w-0">
-                <label style={LABEL_STYLE}>Quick Note</label>
-                <input type="text" value={quickNote} onChange={e => setQuickNote(e.target.value)} placeholder="Select or type…" className={INPUT_CLS} />
+              <div className="pt-1">
+                <div style={{ ...SUB_LABEL, marginBottom: 6 }}>QUICK NOTES</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {QUICK_NOTES.filter(n => n.context === "all").map(n => {
+                    const active = selectedNotes.includes(n.label);
+                    const c = QUICK_NOTE_PILL_COLORS[n.flag || "none"];
+                    const solidActive: Record<string, { bg: string; border: string; text: string }> = {
+                      red: { bg: "#9B2335", border: "#9B2335", text: "#FFFFFF" },
+                      gold: { bg: "#B8860B", border: "#B8860B", text: "#FFFFFF" },
+                      teal: { bg: "#55BAAA", border: "#3D9A8B", text: "#FFFFFF" },
+                      none: { bg: "#717182", border: "#5A5A6A", text: "#FFFFFF" },
+                    };
+                    const tier = n.flag || "none";
+                    const s = active ? solidActive[tier] : null;
+                    return (
+                      <button
+                        key={n.label}
+                        type="button"
+                        onClick={() => {
+                          if (active) {
+                            setSelectedNotes(selectedNotes.filter(x => x !== n.label));
+                          } else {
+                            setSelectedNotes([...selectedNotes, n.label]);
+                          }
+                        }}
+                        style={{
+                          borderRadius: 9999,
+                          padding: "4px 10px",
+                          fontSize: 11,
+                          fontWeight: active ? 700 : 600,
+                          backgroundColor: active ? s!.bg : c.bg,
+                          border: `${active ? 2 : 1}px solid ${active ? s!.border : c.border}`,
+                          color: active ? s!.text : c.text,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 3,
+                          transition: "all 100ms",
+                        }}
+                      >
+                        {active && (
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5L4 7L8 3" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                        {n.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div className="flex items-center gap-2 min-w-0">
                 <label style={LABEL_STYLE}>Sample ID</label>
