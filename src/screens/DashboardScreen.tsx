@@ -120,15 +120,15 @@ const DashboardScreen: React.FC = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("animal_flags")
-        .select("flag_tier, animal:animals(tag, type, memo)")
+        .select("flag_tier, animal_id, animal:animals(id, tag, type, memo)")
         .eq("operation_id", operationId)
         .in("flag_tier", ["cull", "production", "management"])
         .is("resolved_at", null)
         .limit(3);
-      const results: Record<string, { tag: string; type: string; memo: string }> = {};
+      const results: Record<string, { id: string; tag: string; type: string; memo: string }> = {};
       (data || []).forEach((row: any) => {
         if (!results[row.flag_tier] && row.animal) {
-          results[row.flag_tier] = { tag: row.animal.tag || "—", type: row.animal.type || "", memo: row.animal.memo || "" };
+          results[row.flag_tier] = { id: row.animal.id || row.animal_id, tag: row.animal.tag || "—", type: row.animal.type || "", memo: row.animal.memo || "" };
         }
       });
       return results;
@@ -246,7 +246,7 @@ const DashboardScreen: React.FC = () => {
                     <div
                       className="w-full rounded-xl px-3.5 py-2.5 flex items-center gap-3 cursor-pointer transition-all active:scale-[0.98]"
                       style={{ backgroundColor: "#0E2646" }}
-                      onClick={() => navigate("/animals")}
+                      onClick={() => sample.id ? navigate("/animals/" + sample.id) : navigate("/animals")}
                     >
                       <FlagIcon color={g.flag} size="sm" />
                       <span style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 800 }}>{sample.tag}</span>
