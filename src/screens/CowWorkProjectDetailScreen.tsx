@@ -829,6 +829,29 @@ export default function CowWorkProjectDetailScreen() {
                 </div>
               ))}
             </div>
+            {/* Progress bar in expanded view */}
+            {headCount > 0 && (
+              <div style={{ marginTop: 10, marginBottom: 4 }}>
+                <div style={{ height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                  {worked.length <= headCount ? (
+                    <div style={{ height: 5, borderRadius: 3, backgroundColor: "#55BAAA", width: `${Math.min((worked.length / headCount) * 100, 100)}%`, transition: "width 300ms" }} />
+                  ) : (
+                    <div style={{ display: "flex", height: 5, width: "100%" }}>
+                      <div style={{ height: 5, backgroundColor: "#55BAAA", flex: headCount, borderRadius: "3px 0 0 3px" }} />
+                      <div style={{ height: 5, backgroundColor: "#E87461", flex: worked.length - headCount, borderRadius: "0 3px 3px 0" }} />
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                  <span style={{ fontSize: 10, fontWeight: 500, color: "rgba(168,230,218,0.50)" }}>
+                    {headCount > 0 ? `${Math.round((worked.length / headCount) * 100)}%` : ""}
+                  </span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: worked.length > headCount ? "#E87461" : "rgba(168,230,218,0.60)" }}>
+                    {worked.length > headCount ? `+${worked.length - headCount} over` : `${Math.max(0, headCount - worked.length)} remaining`}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
