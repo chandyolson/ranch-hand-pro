@@ -45,14 +45,16 @@ export default function WorkTemplateEditScreen() {
   });
 
   const { data: opProducts } = useQuery({
-    queryKey: ["operation-products", operationId],
+    queryKey: ["global-products-for-templates"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("operation_products")
-        .select("*, product:products(id, name, dosage, route)")
-        .eq("operation_id", operationId);
+        .from("products")
+        .select("id, name, dosage, route, product_type")
+        .eq("use_status", true)
+        .order("name");
       if (error) throw error;
-      return data;
+      // Map to match the shape the rest of the component expects
+      return (data || []).map(p => ({ product_id: p.id, product: p }));
     },
   });
 

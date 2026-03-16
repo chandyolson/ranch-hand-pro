@@ -6,7 +6,7 @@ import { COLORS } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
 import { Search, X, Star } from "lucide-react";
 
-const TYPE_PILLS = ["All", "Vaccine", "Antibiotic", "Parasiticide", "Synchronization", "Supplement", "Anti-inflammatory", "Other"];
+const TYPE_PILLS = ["All", "Vaccine", "Injectable", "Parasiticide", "Reproductive", "Supply", "Service"];
 
 export interface SelectedProduct {
   product_id: string;

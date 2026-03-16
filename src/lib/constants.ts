@@ -180,16 +180,19 @@ export const PREG_CALF_SEX_OPTIONS = [
 
 // ── Product / Treatment ──
 
-export type ProductCategory = "vaccine" | "antibiotic" | "hormone" | "mineral" | "other";
+export type ProductCategory = "vaccine" | "injectable" | "parasiticide" | "reproductive" | "supply" | "service" | "diagnostic" | "other";
 
-export const PRODUCT_CATEGORIES: ProductCategory[] = ["vaccine", "antibiotic", "hormone", "mineral", "other"];
+export const PRODUCT_CATEGORIES: ProductCategory[] = ["vaccine", "injectable", "parasiticide", "reproductive", "supply", "service", "diagnostic", "other"];
 
 export const PRODUCT_CATEGORY_CONFIG: Record<ProductCategory, { label: string; color: string; bg: string }> = {
   vaccine: { label: "Vaccine", color: "#55BAAA", bg: "rgba(85,186,170,0.12)" },
-  antibiotic: { label: "Antibiotic", color: "#E87461", bg: "rgba(232,116,97,0.12)" },
-  hormone: { label: "Hormone", color: "#A8A8F0", bg: "rgba(168,168,240,0.12)" },
-  mineral: { label: "Mineral", color: "#F3D12A", bg: "rgba(243,209,42,0.12)" },
-  other: { label: "Other", color: "#A8A8A8", bg: "rgba(168,168,168,0.12)" },
+  injectable: { label: "Injectable", color: "#E87461", bg: "rgba(232,116,97,0.12)" },
+  parasiticide: { label: "Parasiticide", color: "#A8A8F0", bg: "rgba(168,168,240,0.12)" },
+  reproductive: { label: "Reproductive", color: "#E8A0BF", bg: "rgba(232,160,191,0.12)" },
+  supply: { label: "Supply", color: "#BA7517", bg: "rgba(186,117,23,0.12)" },
+  service: { label: "Service", color: "#888780", bg: "rgba(136,135,128,0.12)" },
+  diagnostic: { label: "Diagnostic", color: "#5B8DEF", bg: "rgba(91,141,239,0.12)" },
+  other: { label: "Other", color: "#888780", bg: "rgba(136,135,128,0.12)" },
 };
 
 export const ROUTE_OPTIONS = ["SubQ", "IM", "IV", "Oral", "Topical", "Pour-On"] as const;
