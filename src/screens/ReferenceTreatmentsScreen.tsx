@@ -8,21 +8,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const CATEGORY_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   vaccine: { label: "Vaccine", color: "#55BAAA", bg: "rgba(85,186,170,0.12)" },
-  antibiotic: { label: "Antibiotic", color: "#E87461", bg: "rgba(232,116,97,0.12)" },
-  supplement: { label: "Supplement", color: "#27AE60", bg: "rgba(39,174,96,0.12)" },
-  anthelmentic: { label: "Parasiticide", color: "#A8A8F0", bg: "rgba(168,168,240,0.12)" },
-  "synchronization drug": { label: "Synch Drug", color: "#E8A0BF", bg: "rgba(232,160,191,0.12)" },
-  "growth promotant implant": { label: "Implant", color: "#F3D12A", bg: "rgba(243,209,42,0.12)" },
-  "feed additive": { label: "Feed Additive", color: "#BA7517", bg: "rgba(186,117,23,0.12)" },
-  "anti-inflammatory": { label: "Anti-Inflam", color: "#5B8DEF", bg: "rgba(91,141,239,0.12)" },
+  injectable: { label: "Injectable", color: "#E87461", bg: "rgba(232,116,97,0.12)" },
+  parasiticide: { label: "Parasiticide", color: "#A8A8F0", bg: "rgba(168,168,240,0.12)" },
+  reproductive: { label: "Reproductive", color: "#E8A0BF", bg: "rgba(232,160,191,0.12)" },
+  supply: { label: "Supply", color: "#BA7517", bg: "rgba(186,117,23,0.12)" },
   service: { label: "Service", color: "#888780", bg: "rgba(136,135,128,0.12)" },
-  supply: { label: "Supply", color: "#888780", bg: "rgba(136,135,128,0.12)" },
-  hormone: { label: "Hormone", color: "#A8A8F0", bg: "rgba(168,168,240,0.12)" },
-  mineral: { label: "Mineral", color: "#F3D12A", bg: "rgba(243,209,42,0.12)" },
+  diagnostic: { label: "Diagnostic", color: "#5B8DEF", bg: "rgba(91,141,239,0.12)" },
   other: { label: "Other", color: "#888780", bg: "rgba(136,135,128,0.12)" },
 };
 
-const FILTER_CATEGORIES = ["All", "Vaccine", "Antibiotic", "Supplement", "Parasiticide", "Implant", "Synch Drug", "Other"];
+const FILTER_CATEGORIES = ["All", "Vaccine", "Injectable", "Parasiticide", "Reproductive", "Supply", "Service"];
 
 function getCat(productType: string | null): { key: string; label: string; color: string; bg: string } {
   const k = (productType || "other").toLowerCase();
@@ -92,19 +87,16 @@ export default function ReferenceTreatmentsScreen() {
   const filtered = mapped
     .filter(p => {
       if (catFilter !== "All") {
-        if (catFilter === "Other") {
-          return !["vaccine", "antibiotic", "supplement", "anthelmentic", "growth promotant implant", "synchronization drug"].includes(p.category.key);
-        }
         const filterMap: Record<string, string[]> = {
           Vaccine: ["vaccine"],
-          Antibiotic: ["antibiotic"],
-          Supplement: ["supplement"],
-          Parasiticide: ["anthelmentic"],
-          Implant: ["growth promotant implant"],
-          "Synch Drug": ["synchronization drug"],
+          Injectable: ["injectable"],
+          Parasiticide: ["parasiticide"],
+          Reproductive: ["reproductive"],
+          Supply: ["supply"],
+          Service: ["service"],
         };
         const keys = filterMap[catFilter] || [];
-        if (!keys.includes(p.category.key)) return false;
+        if (keys.length > 0 && !keys.includes(p.category.key)) return false;
       }
       if (search) {
         const s = search.toLowerCase();

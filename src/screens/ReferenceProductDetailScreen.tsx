@@ -6,13 +6,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const CATEGORY_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   vaccine: { label: "Vaccine", color: "#55BAAA", bg: "rgba(85,186,170,0.25)" },
-  antibiotic: { label: "Antibiotic", color: "#F5C4B3", bg: "rgba(232,116,97,0.25)" },
-  supplement: { label: "Supplement", color: "#27AE60", bg: "rgba(39,174,96,0.20)" },
-  anthelmentic: { label: "Parasiticide", color: "#AFA9EC", bg: "rgba(168,168,240,0.25)" },
-  "synchronization drug": { label: "Synch Drug", color: "#E8A0BF", bg: "rgba(232,160,191,0.25)" },
-  "growth promotant implant": { label: "Implant", color: "#F3D12A", bg: "rgba(243,209,42,0.25)" },
-  "feed additive": { label: "Feed Additive", color: "#BA7517", bg: "rgba(186,117,23,0.20)" },
-  "anti-inflammatory": { label: "Anti-Inflam", color: "#85B7EB", bg: "rgba(91,141,239,0.20)" },
+  injectable: { label: "Injectable", color: "#F5C4B3", bg: "rgba(232,116,97,0.25)" },
+  parasiticide: { label: "Parasiticide", color: "#AFA9EC", bg: "rgba(168,168,240,0.25)" },
+  reproductive: { label: "Reproductive", color: "#E8A0BF", bg: "rgba(232,160,191,0.25)" },
+  supply: { label: "Supply", color: "#BA7517", bg: "rgba(186,117,23,0.20)" },
+  service: { label: "Service", color: "#B4B2A9", bg: "rgba(136,135,128,0.20)" },
+  diagnostic: { label: "Diagnostic", color: "#85B7EB", bg: "rgba(91,141,239,0.20)" },
   other: { label: "Other", color: "#B4B2A9", bg: "rgba(136,135,128,0.20)" },
 };
 
