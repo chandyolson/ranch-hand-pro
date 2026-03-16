@@ -22,6 +22,7 @@ import ReferenceScreen from "@/screens/ReferenceScreen";
 import ReferenceGroupsScreen from "@/screens/ReferenceGroupsScreen";
 import ReferenceGroupDetailScreen from "@/screens/ReferenceGroupDetailScreen";
 import ReferenceLocationsScreen from "@/screens/ReferenceLocationsScreen";
+import ReferenceLocationDetailScreen from "@/screens/ReferenceLocationDetailScreen";
 import ReferenceQuickNotesScreen from "@/screens/ReferenceQuickNotesScreen";
 import ReferencePregStagesScreen from "@/screens/ReferencePregStagesScreen";
 import ReferenceTreatmentsScreen from "@/screens/ReferenceTreatmentsScreen";
@@ -63,6 +64,7 @@ const App = () => (
           <Route path="reference/groups" element={<ReferenceGroupsScreen />} />
           <Route path="reference/groups/:id" element={<ReferenceGroupDetailScreen />} />
           <Route path="reference/locations" element={<ReferenceLocationsScreen />} />
+          <Route path="reference/locations/:id" element={<ReferenceLocationDetailScreen />} />
           <Route path="reference/quick-notes" element={<ReferenceQuickNotesScreen />} />
           <Route path="reference/preg-stages" element={<ReferencePregStagesScreen />} />
           <Route path="reference/treatments" element={<ReferenceTreatmentsScreen />} />

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
 import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
@@ -12,7 +13,7 @@ import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilte
 import { applyFilters } from "@/lib/filter-utils";
 import type { FilterFieldConfig } from "@/lib/filter-types";
 
-const LOCATION_TYPES = ["Pasture", "Pen", "Barn", "Corral", "Feedlot", "Headquarters", "Other"];
+const LOCATION_TYPES = ["Pasture", "Pen", "Barn", "Corral", "Feedlot", "Headquarters", "Working Facility", "Water Source", "Lot", "Other"];
 
 const FILTER_FIELDS: FilterFieldConfig[] = [
   { key: "name", label: "Name", type: "text", group: "Identity" },
@@ -22,15 +23,19 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
 ];
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  Pasture:      { bg: "rgba(85,186,170,0.25)", text: "#55BAAA" },
-  Pen:          { bg: "rgba(243,209,42,0.20)", text: "#B8860B" },
-  Barn:         { bg: "rgba(232,138,58,0.25)", text: "#E88A3A" },
-  Corral:       { bg: "rgba(91,141,239,0.25)", text: "#5B8DEF" },
-  Feedlot:      { bg: "rgba(155,35,53,0.15)", text: "#9B2335" },
-  Headquarters: { bg: "rgba(14,38,70,0.15)", text: "#0E2646" },
+  Pasture:            { bg: "rgba(85,186,170,0.25)", text: "#55BAAA" },
+  Pen:                { bg: "rgba(243,209,42,0.20)", text: "#B8860B" },
+  Barn:               { bg: "rgba(232,138,58,0.25)", text: "#E88A3A" },
+  Corral:             { bg: "rgba(91,141,239,0.25)", text: "#5B8DEF" },
+  Feedlot:            { bg: "rgba(155,35,53,0.15)", text: "#9B2335" },
+  Headquarters:       { bg: "rgba(14,38,70,0.15)", text: "#0E2646" },
+  "Working Facility": { bg: "rgba(168,168,240,0.20)", text: "#A8A8F0" },
+  "Water Source":     { bg: "rgba(85,186,170,0.15)", text: "#0F6E56" },
+  Lot:                { bg: "rgba(243,209,42,0.15)", text: "#B8860B" },
 };
 
 const ReferenceLocationsScreen: React.FC = () => {
+  const navigate = useNavigate();
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
   const { data: locations, isLoading, error, refetch } = useLocations();
@@ -196,7 +201,7 @@ const ReferenceLocationsScreen: React.FC = () => {
             const tc = TYPE_COLORS[loc.location_type] || { bg: "rgba(240,240,240,0.12)", text: "rgba(240,240,240,0.6)" };
             return (
               <div key={loc.id}>
-                <div className="rounded-xl px-3.5 py-3 flex items-center gap-3" style={{ backgroundColor: "#0E2646", minHeight: 56 }}>
+                <div onClick={() => navigate("/reference/locations/" + loc.id)} className="rounded-xl px-3.5 py-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform" style={{ backgroundColor: "#0E2646", minHeight: 56 }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: 15, fontWeight: 700, color: "white" }}>{loc.name}</span>
