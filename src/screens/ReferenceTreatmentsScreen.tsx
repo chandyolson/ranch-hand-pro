@@ -1,293 +1,198 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
-import ListScreenToolbar from "@/components/ListScreenToolbar";
-import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PRODUCT_CATEGORIES, PRODUCT_CATEGORY_CONFIG, type ProductCategory } from "@/lib/constants";
-import { INPUT_CLS } from "@/lib/styles";
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useOperation } from '@/contexts/OperationContext';
-import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilters";
-import { applyFilters } from "@/lib/filter-utils";
-import type { FilterFieldConfig } from "@/lib/filter-types";
 
-const TREATMENT_FILTER_FIELDS: FilterFieldConfig[] = [
-  { key: "name", label: "Product Name", type: "text", group: "Product" },
-  { key: "category", label: "Category", type: "select", options: [...PRODUCT_CATEGORIES], group: "Product" },
-  { key: "manufacturer", label: "Manufacturer", type: "text", group: "Product" },
-  { key: "defaultRoute", label: "Route", type: "text", group: "Product" },
-  { key: "withdrawalDays", label: "Withdrawal Days", type: "range", group: "Product" },
-];
+const CATEGORY_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  vaccine: { label: "Vaccine", color: "#55BAAA", bg: "rgba(85,186,170,0.12)" },
+  antibiotic: { label: "Antibiotic", color: "#E87461", bg: "rgba(232,116,97,0.12)" },
+  supplement: { label: "Supplement", color: "#27AE60", bg: "rgba(39,174,96,0.12)" },
+  anthelmentic: { label: "Parasiticide", color: "#A8A8F0", bg: "rgba(168,168,240,0.12)" },
+  "synchronization drug": { label: "Synch Drug", color: "#E8A0BF", bg: "rgba(232,160,191,0.12)" },
+  "growth promotant implant": { label: "Implant", color: "#F3D12A", bg: "rgba(243,209,42,0.12)" },
+  "feed additive": { label: "Feed Additive", color: "#BA7517", bg: "rgba(186,117,23,0.12)" },
+  "anti-inflammatory": { label: "Anti-Inflam", color: "#5B8DEF", bg: "rgba(91,141,239,0.12)" },
+  service: { label: "Service", color: "#888780", bg: "rgba(136,135,128,0.12)" },
+  supply: { label: "Supply", color: "#888780", bg: "rgba(136,135,128,0.12)" },
+  hormone: { label: "Hormone", color: "#A8A8F0", bg: "rgba(168,168,240,0.12)" },
+  mineral: { label: "Mineral", color: "#F3D12A", bg: "rgba(243,209,42,0.12)" },
+  other: { label: "Other", color: "#888780", bg: "rgba(136,135,128,0.12)" },
+};
 
-const ReferenceTreatmentsScreen: React.FC = () => {
+const FILTER_CATEGORIES = ["All", "Vaccine", "Antibiotic", "Supplement", "Parasiticide", "Implant", "Synch Drug", "Other"];
+
+function getCat(productType: string | null): { key: string; label: string; color: string; bg: string } {
+  const k = (productType || "other").toLowerCase();
+  const cfg = CATEGORY_CONFIG[k];
+  if (cfg) return { key: k, ...cfg };
+  return { key: "other", ...CATEGORY_CONFIG.other };
+}
+
+export default function ReferenceTreatmentsScreen() {
+  const navigate = useNavigate();
   const { operationId } = useOperation();
-  const queryClient = useQueryClient();
-  const [addOpen, setAddOpen] = useState(false);
-  const [addSearch, setAddSearch] = useState("");
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("name");
   const { showToast } = useChuteSideToast();
-  const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_treatments");
-  const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_treatments");
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [catFilter, setCatFilter] = useState("All");
 
-  const { data: opProducts, isLoading } = useQuery({
-    queryKey: ['operation-products', operationId],
+  // All products — global catalog
+  const { data: allProducts, isLoading } = useQuery({
+    queryKey: ["all-products-list"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('operation_products')
-        .select('*, product:products(*, manufacturer:manufacturers(name))')
-        .eq('operation_id', operationId);
+        .from("products")
+        .select("*, manufacturer:manufacturers(name)")
+        .eq("use_status", true)
+        .order("name");
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
-  const { data: allProducts } = useQuery({
-    queryKey: ['all-products'],
+  // Operation favorites
+  const { data: favIds } = useQuery({
+    queryKey: ["operation-favorites", operationId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*, manufacturer:manufacturers(name)')
-        .eq('use_status', true)
-        .order('name');
-      if (error) throw error;
-      return data;
+      const { data } = await supabase
+        .from("operation_products")
+        .select("product_id")
+        .eq("operation_id", operationId);
+      return new Set((data || []).map((r: any) => r.product_id));
     },
-    enabled: addOpen,
   });
 
-  const linkedProductIds = useMemo(() => new Set((opProducts || []).map(op => op.product_id)), [opProducts]);
+  const toggleFav = async (productId: string, isFav: boolean) => {
+    if (isFav) {
+      await supabase.from("operation_products").delete().eq("product_id", productId).eq("operation_id", operationId);
+    } else {
+      await supabase.from("operation_products").insert({ product_id: productId, operation_id: operationId });
+    }
+    queryClient.invalidateQueries({ queryKey: ["operation-favorites"] });
+  };
 
-  const mapped = useMemo(() => (opProducts || []).map(op => ({
-    id: op.id,
-    productId: op.product_id,
-    name: (op.product as any)?.name || 'Unknown',
-    category: ((op.product as any)?.product_type?.toLowerCase() || 'other') as ProductCategory,
-    defaultDosage: op.custom_dosage || (op.product as any)?.dosage || '',
-    defaultRoute: (op.product as any)?.route || '',
-    withdrawalDays: parseInt((op.product as any)?.slaughter_withdrawal || '0') || 0,
-    manufacturer: (op.product as any)?.manufacturer?.name || '',
-  })), [opProducts]);
+  const mapped = useMemo(() => (allProducts || []).map(p => {
+    const cat = getCat(p.product_type);
+    return {
+      id: p.id,
+      name: p.name,
+      manufacturer: (p as any).manufacturer?.name || "",
+      category: cat,
+      dosage: p.dosage || "",
+      route: p.route || "",
+      slaughterWd: p.slaughter_withdrawal || "",
+      milkWd: p.milk_withdrawal || "",
+      isFav: favIds?.has(p.id) || false,
+    };
+  }), [allProducts, favIds]);
 
-  const filtered = applyFilters(
-    mapped.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase())),
-    filters
-  )
-    .sort((a, b) => {
-      switch (sort) {
-        case "name": return a.name.localeCompare(b.name);
-        case "category": return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
-        case "withdrawal": return b.withdrawalDays - a.withdrawalDays;
-        default: return 0;
+  const filtered = mapped
+    .filter(p => {
+      if (catFilter !== "All") {
+        if (catFilter === "Other") {
+          return !["vaccine", "antibiotic", "supplement", "anthelmentic", "growth promotant implant", "synchronization drug"].includes(p.category.key);
+        }
+        const filterMap: Record<string, string[]> = {
+          Vaccine: ["vaccine"],
+          Antibiotic: ["antibiotic"],
+          Supplement: ["supplement"],
+          Parasiticide: ["anthelmentic"],
+          Implant: ["growth promotant implant"],
+          "Synch Drug": ["synchronization drug"],
+        };
+        const keys = filterMap[catFilter] || [];
+        if (!keys.includes(p.category.key)) return false;
       }
+      if (search) {
+        const s = search.toLowerCase();
+        return p.name.toLowerCase().includes(s) || p.manufacturer.toLowerCase().includes(s);
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      // Favorites first, then alphabetical
+      if (a.isFav !== b.isFav) return a.isFav ? -1 : 1;
+      return a.name.localeCompare(b.name);
     });
 
-
-
-
-
-
-
-
-
-
-
-
-  const handleAddProduct = async (productId: string, productName: string) => {
-    const { error } = await supabase.from('operation_products').insert({
-      operation_id: operationId,
-      product_id: productId,
-    });
-    if (error) { showToast("error", error.message); return; }
-    queryClient.invalidateQueries({ queryKey: ['operation-products'] });
-    showToast("success", productName + " added");
-    setAddOpen(false);
-    setAddSearch("");
-  };
-
-  const handleDelete = async (opProductId: string, name: string) => {
-    const { error } = await supabase.from('operation_products').delete().eq('id', opProductId);
-    if (error) { showToast("error", error.message); return; }
-    queryClient.invalidateQueries({ queryKey: ['operation-products'] });
-    showToast("success", name + " removed");
-  };
-
-  const availableProducts = useMemo(() =>
-    (allProducts || []).filter(p =>
-      !linkedProductIds.has(p.id) &&
-      (!addSearch || p.name.toLowerCase().includes(addSearch.toLowerCase()))
-    ).slice(0, 50),
-  [allProducts, linkedProductIds, addSearch]);
-
-  const isFiltering = search.length > 0 || filters.length > 0;
-  const allMapped = mapped;
-  const stats = {
-    total: allMapped.length,
-    vaccines: allMapped.filter(p => p.category === "vaccine").length,
-    antibiotics: allMapped.filter(p => p.category === "antibiotic").length,
+  const wdText = (p: typeof mapped[0]) => {
+    const parts: string[] = [];
+    if (p.slaughterWd) parts.push(p.slaughterWd + "d meat");
+    if (p.milkWd && p.milkWd !== "0") parts.push(p.milkWd + "d milk");
+    if (parts.length === 0 && !p.slaughterWd) return "0d withdrawal";
+    return parts.join(" · ") || "0d withdrawal";
   };
 
   return (
-    <div className="px-4 pt-1 pb-10 space-y-2">
-      {/* Stats bar */}
-      <div
-        className="rounded-xl px-3 py-2.5 flex items-center justify-between"
-        style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
-      >
-        {[
-          { label: "TOTAL", value: isLoading ? "—" : stats.total },
-          { label: "VACCINES", value: isLoading ? "—" : stats.vaccines },
-          { label: "ANTIBIOTICS", value: isLoading ? "—" : stats.antibiotics },
-        ].map((stat, i, arr) => (
-          <div key={stat.label} className="flex items-center gap-3">
-            <div className="flex flex-col items-center" style={{ minWidth: 50 }}>
-              <span style={{ fontSize: 18, fontWeight: 600, color: "white", lineHeight: 1 }}>{stat.value}</span>
-              <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(168,230,218,0.60)", letterSpacing: "0.08em", marginTop: 4 }}>{stat.label}</span>
-            </div>
-            {i < arr.length - 1 && <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.12)" }} />}
-          </div>
+    <div className="px-4 pt-1 pb-10 space-y-0">
+      {/* Category filter pills */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, marginTop: 6 }}>
+        {FILTER_CATEGORIES.map(c => (
+          <button key={c} onClick={() => setCatFilter(c)} style={{
+            fontSize: 11, fontWeight: 600, padding: "5px 12px", borderRadius: 20, cursor: "pointer",
+            background: catFilter === c ? "#0E2646" : "transparent",
+            color: catFilter === c ? "#FFFFFF" : "rgba(26,26,26,0.5)",
+            border: catFilter === c ? "none" : "1px solid #D4D4D0",
+          }}>{c}</button>
         ))}
       </div>
-      <ListScreenToolbar
-        title="Products"
-        addLabel="Add Product"
-        onAdd={() => setAddOpen(true)}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search products…"
-        filterChips={[]}
-        activeFilter=""
-        onFilterChange={() => {}}
-        sortOptions={[
-          { value: "name", label: "Name" },
-          { value: "category", label: "Category" },
-          { value: "withdrawal", label: "Withdrawal" },
-        ]}
-        activeSort={sort}
-        onSortChange={setSort}
-        onExport={() => showToast("info", "Export — coming soon")}
-        resultCount={filtered.length}
-        isFiltering={isFiltering}
-        advancedFilter={
-          <AdvancedSearchPanel
-            fields={TREATMENT_FILTER_FIELDS}
-            filters={filters}
-            onFiltersChange={setFilters}
-            presets={presets}
-            onAddPreset={addPreset}
-            onDeletePreset={deletePreset}
-            onClearAll={clearFilters}
-          />
-        }
-      />
 
-      {/* Add product picker */}
-      {addOpen && (
-        <div className="rounded-xl px-3 py-3.5 space-y-2" style={{ backgroundColor: "white", border: "2px solid #F3D12A" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#0E2646" }}>Link a product to your operation</div>
-          <input
-            type="text"
-            value={addSearch}
-            onChange={e => setAddSearch(e.target.value)}
-            placeholder="Search products…"
-            className={INPUT_CLS}
-            style={{ fontSize: 16, width: "100%" }}
-          />
-          <div className="overflow-y-auto" style={{ maxHeight: 240 }}>
-            {availableProducts.length === 0 ? (
-              <div className="py-4 text-center" style={{ fontSize: 13, color: "rgba(26,26,26,0.4)" }}>
-                {addSearch ? "No matching products" : "All products already linked"}
-              </div>
-            ) : availableProducts.map(p => {
-              const catKey = (p.product_type?.toLowerCase() || 'other') as ProductCategory;
-              const cat = PRODUCT_CATEGORY_CONFIG[catKey] || PRODUCT_CATEGORY_CONFIG.other;
-              return (
-                <button
-                  key={p.id}
-                  className="w-full flex items-center gap-2 py-2.5 px-1 border-b border-[rgba(26,26,26,0.06)] last:border-b-0 cursor-pointer hover:bg-[rgba(14,38,70,0.03)] transition-colors text-left"
-                  style={{ background: "none", border: "none", borderBottom: "1px solid rgba(26,26,26,0.06)" }}
-                  onClick={() => handleAddProduct(p.id, p.name)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{p.name}</span>
-                    {(p as any).manufacturer?.name && (
-                      <span style={{ fontSize: 12, color: "rgba(26,26,26,0.45)", marginLeft: 6 }}>{(p as any).manufacturer.name}</span>
-                    )}
-                  </div>
-                  <span className="rounded-full shrink-0" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: cat.bg, color: cat.color }}>
-                    {cat.label.toUpperCase()}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <button
-            className="w-full rounded-full py-2.5 border cursor-pointer active:scale-[0.97]"
-            style={{ borderColor: "#D4D4D0", backgroundColor: "white", fontSize: 13, fontWeight: 600, color: "#0E2646" }}
-            onClick={() => { setAddOpen(false); setAddSearch(""); }}
-          >
-            Cancel
-          </button>
-        </div>
-      )}
+      {/* Search */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #D4D4D0", borderRadius: 10, padding: "0 12px", height: 40, marginTop: 8 }}>
+        <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5.5" stroke="rgba(26,26,26,0.3)" strokeWidth="1.5"/><path d="M12.5 12.5L16 16" stroke="rgba(26,26,26,0.3)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..." style={{ border: "none", outline: "none", background: "transparent", fontSize: 15, color: "#1A1A1A", flex: 1 }} />
+        {search && (
+          <button onClick={() => setSearch("")} style={{ width: 24, height: 24, borderRadius: 12, background: "rgba(26,26,26,0.08)", border: "none", fontSize: 12, color: "rgba(26,26,26,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+        )}
+      </div>
+
+      {/* Count */}
+      <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.35)", marginTop: 8 }}>
+        {filtered.length} product{filtered.length !== 1 ? "s" : ""}{catFilter !== "All" ? ` in ${catFilter}` : ""}
+        {search ? ` matching "${search}"` : ""}
+      </div>
 
       {/* Product list */}
       {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-[72px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.15)" }} />
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 8, marginTop: 8 }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-[72px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.10)" }} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="py-12 text-center space-y-1.5">
-          <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No products found</div>
-          <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or filter</div>
+        <div style={{ textAlign: "center" as const, padding: "40px 0" }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.4)" }}>No products found</p>
+          <p style={{ fontSize: 13, color: "rgba(26,26,26,0.3)", marginTop: 4 }}>Try a different search or category</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2">
-          {filtered.map(p => {
-            const cat = PRODUCT_CATEGORY_CONFIG[p.category] || PRODUCT_CATEGORY_CONFIG.other;
-            return (
-              <div key={p.id} className="rounded-xl px-3.5 py-3 flex items-start gap-3" style={{ backgroundColor: "#0E2646", minHeight: 56 }}>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span style={{ fontSize: 15, fontWeight: 700, color: "white" }}>{p.name}</span>
-                    <span className="rounded-full shrink-0" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: cat.bg, color: cat.color }}>
-                      {cat.label.toUpperCase()}
-                    </span>
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 8, marginTop: 8 }}>
+          {filtered.map(p => (
+            <div key={p.id} onClick={() => navigate("/reference/treatments/" + p.id)}
+              style={{ background: "#fff", border: "1px solid #D4D4D0", borderRadius: 10, padding: 12, cursor: "pointer" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#0E2646" }}>{p.name}</span>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 10, letterSpacing: "0.04em", background: p.category.bg, color: p.category.color }}>{p.category.label.toUpperCase()}</span>
                   </div>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {(p.defaultDosage || p.defaultRoute) && (
-                      <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.50)" }}>
-                        {[p.defaultDosage, p.defaultRoute].filter(Boolean).join(" · ")}
-                      </span>
-                    )}
-                    {p.manufacturer && (
-                      <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.40)" }}>
-                        {p.manufacturer}
-                      </span>
-                    )}
-                    {p.withdrawalDays > 0 && (
-                      <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", backgroundColor: "rgba(243,209,42,0.15)", color: "#F3D12A" }}>
-                        {p.withdrawalDays}d withdrawal
-                      </span>
-                    )}
-                  </div>
+                  {p.manufacturer && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.45)", marginTop: 2 }}>{p.manufacturer}</div>}
                 </div>
-                <button
-                  onClick={() => handleDelete(p.id, p.name)}
-                  style={{ width: 28, height: 28, borderRadius: 8, border: "none", backgroundColor: "rgba(155,35,53,0.15)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3H10M4.5 5V9M7.5 5V9M3 3L3.5 10.5H8.5L9 3" stroke="rgba(155,35,53,0.7)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <button onClick={(e) => { e.stopPropagation(); toggleFav(p.id, p.isFav); }} style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill={p.isFav ? "#F3D12A" : "none"} stroke={p.isFav ? "#F3D12A" : "rgba(26,26,26,0.2)"} strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 </button>
               </div>
-            );
-          })}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, flexWrap: "wrap" as const }}>
+                {p.route && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 8, background: "rgba(26,26,26,0.04)", color: "rgba(26,26,26,0.55)" }}>{p.route}</span>}
+                {p.dosage && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 8, background: "rgba(26,26,26,0.04)", color: "rgba(26,26,26,0.55)" }}>{p.dosage}</span>}
+                <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 8, background: "rgba(243,209,42,0.1)", color: "#B8860B" }}>{wdText(p)}</span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
   );
-};
-
-export default ReferenceTreatmentsScreen;
+}

@@ -25,6 +25,7 @@ import ReferenceLocationsScreen from "@/screens/ReferenceLocationsScreen";
 import ReferenceQuickNotesScreen from "@/screens/ReferenceQuickNotesScreen";
 import ReferencePregStagesScreen from "@/screens/ReferencePregStagesScreen";
 import ReferenceTreatmentsScreen from "@/screens/ReferenceTreatmentsScreen";
+import ReferenceProductDetailScreen from "@/screens/ReferenceProductDetailScreen";
 import ReferenceTeamScreen from "@/screens/ReferenceTeamScreen";
 import ReferenceSettingsScreen from "@/screens/ReferenceSettingsScreen";
 import ProtocolTemplateBuilderScreen from "@/screens/ProtocolTemplateBuilderScreen";
@@ -65,6 +66,7 @@ const App = () => (
           <Route path="reference/quick-notes" element={<ReferenceQuickNotesScreen />} />
           <Route path="reference/preg-stages" element={<ReferencePregStagesScreen />} />
           <Route path="reference/treatments" element={<ReferenceTreatmentsScreen />} />
+          <Route path="reference/treatments/:id" element={<ReferenceProductDetailScreen />} />
           <Route path="reference/team" element={<ReferenceTeamScreen />} />
           <Route path="reference/settings" element={<ReferenceSettingsScreen />} />
           <Route path="reference/breeds" element={<ReferenceBreedsScreen />} />
