@@ -129,6 +129,13 @@ export default function CalvingNewScreen() {
   const [damFullHistory, setDamFullHistory] = useState(false);
   const [damHistoryTab, setDamHistoryTab] = useState("info");
 
+  // Quick-Add Dam
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickAddTag, setQuickAddTag] = useState("");
+  const [quickAddColor, setQuickAddColor] = useState("None");
+  const [quickAddYear, setQuickAddYear] = useState("");
+  const [quickAddSaving, setQuickAddSaving] = useState(false);
+
   // Calf
   const [calfTag, setCalfTag] = useState("");
   const [calfStatus, setCalfStatus] = useState("Alive");
@@ -601,12 +608,69 @@ export default function CalvingNewScreen() {
                   if (prefs?.calf_tag_default_color) setCalfColor(prefs.calf_tag_default_color);
                 }
               }}
-              onNoMatch={(search) => { showToast("info", `Quick-Add Dam for "${search}" — coming soon`); }}
+              onNoMatch={(search) => { setQuickAddTag(search); setQuickAddOpen(true); setQuickAddYear(String(new Date().getFullYear() - 3)); }}
               placeholder="Type dam tag…"
               inputStyle={IS}
               sexFilter={["Cow", "Spayed Heifer"]}
             />
           </FieldRow>
+
+          {/* Quick-Add Dam dialog */}
+          {quickAddOpen && !selectedDamId && (
+            <div style={{ background: "#fff", border: "2px solid #F3D12A", borderRadius: 10, padding: 12, marginTop: 6 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0E2646", marginBottom: 8 }}>Quick-Add Dam: {quickAddTag}</div>
+              <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A", width: 75, flexShrink: 0 }}>Tag</span>
+                  <input type="text" value={quickAddTag} onChange={e => setQuickAddTag(e.target.value)} style={{ ...IS, flex: 1 }} />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A", width: 75, flexShrink: 0 }}>Tag Color</span>
+                  <select value={quickAddColor} onChange={e => setQuickAddColor(e.target.value)} style={{ ...IS, flex: 1 }}>
+                    {["None", "Yellow", "Orange", "Red", "Green", "Blue", "Purple", "Pink", "White"].map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A", width: 75, flexShrink: 0 }}>Year Born</span>
+                  <input type="number" value={quickAddYear} onChange={e => setQuickAddYear(e.target.value)} placeholder="e.g. 2021" style={{ ...IS, flex: 1 }} />
+                </div>
+                <div style={{ fontSize: 10, color: "rgba(26,26,26,0.4)", fontStyle: "italic" }}>Minimum 2 years old to be a dam</div>
+                <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                  <button onClick={() => { setQuickAddOpen(false); setQuickAddTag(""); }} style={{ flex: 1, padding: "8px 0", borderRadius: 20, border: "1px solid #D4D4D0", background: "#fff", fontSize: 12, fontWeight: 600, color: "#0E2646", cursor: "pointer" }}>Cancel</button>
+                  <button
+                    disabled={quickAddSaving}
+                    onClick={async () => {
+                      if (!quickAddTag.trim()) { showToast("error", "Tag is required"); return; }
+                      const yr = parseInt(quickAddYear);
+                      if (yr && yr > new Date().getFullYear() - 2) { showToast("error", "Dam must be at least 2 years old"); return; }
+                      setQuickAddSaving(true);
+                      try {
+                        const { data, error } = await supabase.from("animals").insert({
+                          operation_id: operationId,
+                          tag: quickAddTag.trim(),
+                          tag_color: quickAddColor,
+                          sex: "Cow",
+                          type: "Cow",
+                          year_born: yr || null,
+                          status: "Active",
+                        }).select().single();
+                        if (error) throw error;
+                        setSelectedDamId(data.id);
+                        setDamTag(quickAddTag.trim());
+                        setQuickAddOpen(false);
+                        showToast("success", `Dam ${quickAddTag.trim()} created`);
+                        queryClient.invalidateQueries({ queryKey: ["animals"] });
+                      } catch (err: any) {
+                        showToast("error", err.message || "Failed to create dam");
+                      } finally { setQuickAddSaving(false); }
+                    }}
+                    style={{ flex: 2, padding: "8px 0", borderRadius: 20, border: "none", background: "#F3D12A", fontSize: 12, fontWeight: 700, color: "#1A1A1A", cursor: "pointer", opacity: quickAddSaving ? 0.5 : 1 }}
+                  >{quickAddSaving ? "Creating..." : "Create Dam"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {selectedDamId && damLookup && (() => {
             // Compute stat chips from damCalvings
             const calvings = damCalvings || [];

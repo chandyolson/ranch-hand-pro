@@ -216,40 +216,17 @@ const ReferenceLocationsScreen: React.FC = () => {
                       <div className="truncate" style={{ fontSize: 12, fontWeight: 400, color: "rgba(240,240,240,0.45)", marginTop: 2 }}>{loc.description}</div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={async () => {
-                        const nn = window.prompt("Edit location name:", loc.name);
-                        if (!nn || nn.trim() === loc.name) return;
-                        const { error } = await supabase.from("locations").update({ name: nn.trim() }).eq("id", loc.id);
-                        if (error) { showToast("error", error.message); return; }
-                        queryClient.invalidateQueries({ queryKey: ["locations"] });
-                        showToast("success", nn.trim() + " updated");
-                      }}
-                      style={{ width: 28, height: 28, borderRadius: 8, border: "none", backgroundColor: "rgba(255,255,255,0.08)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5L10.5 3.5M1 11L1.5 8.5L9 1L11 3L3.5 10.5L1 11Z" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    </button>
-                    <button
-                      onClick={() => handleDelete(loc.id, loc.name)}
-                      style={{ width: 28, height: 28, borderRadius: 8, border: "none", backgroundColor: "rgba(155,35,53,0.15)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3H10M4.5 5V9M7.5 5V9M3 3L3.5 10.5H8.5L9 3" stroke="rgba(155,35,53,0.7)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    </button>
+                  <div className="flex items-center shrink-0">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3L9 7L5 11" stroke="rgba(240,240,240,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
                 </div>
                 {/* Sub-locations */}
                 {subs.length > 0 && (
                   <div className="ml-4 mt-1 space-y-1">
                     {subs.map(sub => (
-                      <div key={sub.id} className="rounded-lg px-3 py-2 flex items-center gap-2" style={{ backgroundColor: "rgba(14,38,70,0.06)", border: "1px solid rgba(14,38,70,0.08)" }}>
+                      <div key={sub.id} onClick={() => navigate("/reference/locations/" + sub.id)} className="rounded-lg px-3 py-2 flex items-center gap-2 cursor-pointer active:scale-[0.98] transition-transform" style={{ backgroundColor: "rgba(14,38,70,0.06)", border: "1px solid rgba(14,38,70,0.08)" }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: "#0E2646", flex: 1 }}>{sub.name}</span>
-                        <button
-                          onClick={() => handleDelete(sub.id, sub.name)}
-                          style={{ width: 24, height: 24, borderRadius: 6, border: "none", backgroundColor: "rgba(155,35,53,0.10)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                        >
-                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 3H10M4.5 5V9M7.5 5V9M3 3L3.5 10.5H8.5L9 3" stroke="rgba(155,35,53,0.5)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        </button>
+                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M5 3L9 7L5 11" stroke="rgba(26,26,26,0.25)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       </div>
                     ))}
                   </div>

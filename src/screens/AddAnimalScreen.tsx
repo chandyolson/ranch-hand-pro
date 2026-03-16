@@ -36,7 +36,7 @@ export default function AddAnimalScreen() {
   const [regName, setRegName] = useState("");
   const [regNumber, setRegNumber] = useState("");
   const [memo, setMemo] = useState("");
-  const [duplicate, setDuplicate] = useState(false);
+  const [duplicate, setDuplicate] = useState<{ id: string; tag: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const { showToast } = useChuteSideToast();
@@ -63,8 +63,20 @@ export default function AddAnimalScreen() {
   }, [allBreeds, prefs]);
 
   useEffect(() => {
-    setDuplicate(tag === "3309" && tagColor === "Pink" && yearBorn === "2020");
-  }, [tag, tagColor, yearBorn]);
+    const checkDup = async () => {
+      if (!tag.trim() || tag.trim().length < 2) { setDuplicate(null); return; }
+      const { data } = await supabase
+        .from("animals")
+        .select("id, tag")
+        .eq("operation_id", operationId)
+        .eq("tag", tag.trim())
+        .limit(1)
+        .maybeSingle();
+      setDuplicate(data ? { id: data.id, tag: data.tag } : null);
+    };
+    const timer = setTimeout(checkDup, 400);
+    return () => clearTimeout(timer);
+  }, [tag, operationId]);
 
   const handleSave = async () => {
     if (!tag.trim()) { showToast("error", "Tag is required"); return; }
@@ -135,12 +147,12 @@ export default function AddAnimalScreen() {
           <div className="flex-1 min-w-0">
             <div style={{ fontSize: 13, fontWeight: 700, color: "#B8960F" }}>Possible duplicate</div>
             <div style={{ fontSize: 12, fontWeight: 400, color: "#B8960F", marginTop: 2 }}>
-              Tag {tag} · {tagColor} · {yearBorn} already exists.
+              Tag {duplicate.tag} already exists in this operation.
             </div>
             <div
               className="cursor-pointer underline"
               style={{ fontSize: 12, fontWeight: 700, color: "#B8960F", marginTop: 4 }}
-              onClick={() => navigate("/animals/3309")}
+              onClick={() => navigate("/animals/" + duplicate.id)}
             >
               View existing record →
             </div>
