@@ -282,7 +282,11 @@ function CurveChart({ current, prior }: { current: any[]; prior?: any[] }) {
 /* ═══════════════ MAIN SCREEN ═══════════════ */
 export default function CalvingDashboardScreen() {
   const [tab, setTab] = useState("This Season");
-  const [year] = useState(new Date().getFullYear()); // TODO: year picker
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(currentYear);
+  const [yearOpen, setYearOpen] = useState(false);
+  const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const [search, setSearch] = useState("");
   const { operationId } = useOperation();
   const nav = useNavigate();
 
@@ -315,6 +319,31 @@ export default function CalvingDashboardScreen() {
   const daysLeft = expectedLast ? Math.max(0, Math.ceil((expectedLast.getTime() - Date.now()) / DAY_MS)) : null;
   const pct = m && expectedHead > 0 ? (m.total / expectedHead * 100).toFixed(1) : "—";
 
+  // Search — query calving records matching dam tag, calf tag, or memo
+  const { data: searchResults } = useQuery({
+    queryKey: ["calving-dash-search", operationId, year, search],
+    queryFn: async () => {
+      if (!search || search.length < 2) return [];
+      const q = search.toLowerCase();
+      // Fetch records for the year with dam join
+      const { data, error } = await supabase
+        .from("calving_records")
+        .select("id, calving_date, calf_tag, calf_sex, calf_status, memo, dam:animals!calving_records_dam_id_fkey(tag)")
+        .eq("operation_id", operationId)
+        .gte("calving_date", `${year}-01-01`)
+        .lte("calving_date", `${year}-12-31`)
+        .limit(2000);
+      if (error) throw error;
+      return (data || []).filter((r) => {
+        const damTag = ((r.dam as any)?.tag || "").toLowerCase();
+        const calfTag = (r.calf_tag || "").toLowerCase();
+        const memo = (r.memo || "").toLowerCase();
+        return damTag.includes(q) || calfTag.includes(q) || memo.includes(q);
+      }).slice(0, 20);
+    },
+    enabled: !!operationId && search.length >= 2,
+  });
+
   // Death cause pie
   const deathColors = [C.royalBlue, C.deepPurple, C.antiqueGold, C.crimson, C.burgundy, C.lavender, C.teal, "#8B5FBF", C.border];
   const deathPie = m ? Object.entries(m.deathEx).sort(([, a], [, b]) => b - a)
@@ -334,16 +363,67 @@ export default function CalvingDashboardScreen() {
       </div>
 
       {/* Search bar */}
-      <div className="relative mt-3 mb-3">
-        <div className="absolute" style={{ left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+      <div className="relative mt-3 mb-2">
+        <div className="absolute" style={{ left: 14, top: 22, transform: "translateY(-50%)", pointerEvents: "none" }}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="rgba(26,26,26,0.3)" strokeWidth="2" strokeLinecap="round"><circle cx="8.5" cy="8.5" r="6" /><path d="M13 13l4.5 4.5" /></svg>
         </div>
-        <input type="text" placeholder="Search by dam tag, calf tag, or memo…" className="w-full outline-none"
+        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by dam tag, calf tag, or memo…" className="w-full outline-none"
           style={{ height: 44, borderRadius: 22, border: "1px solid #D4D4D0", background: "#FFF", padding: "0 16px 0 42px", fontSize: 14, fontFamily: "Inter, sans-serif", color: C.text }}
           onFocus={(e) => { e.currentTarget.style.borderColor = C.yellow; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(243,209,42,0.25)"; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = "#D4D4D0"; e.currentTarget.style.boxShadow = "none"; }}
+          onBlur={(e) => { setTimeout(() => { e.currentTarget.style.borderColor = "#D4D4D0"; e.currentTarget.style.boxShadow = "none"; }, 150); }}
         />
+        {/* Search results dropdown */}
+        {search.length >= 2 && searchResults && searchResults.length > 0 && (
+          <div className="absolute left-0 right-0 bg-white border border-[#D4D4D0] rounded-xl mt-1 shadow-lg overflow-hidden" style={{ zIndex: 20, maxHeight: 260, overflowY: "auto" }}>
+            {searchResults.map((r: any) => (
+              <button key={r.id} onClick={() => { nav(`/calving/${r.id}`); setSearch(""); }}
+                className="w-full flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50"
+                style={{ background: "none", border: "none", borderBottom: "1px solid rgba(212,212,208,0.2)" }}>
+                <div className="flex items-center gap-3">
+                  <span style={{ fontSize: 13, fontWeight: 600, color: C.navy }}>{(r.dam as any)?.tag || "?"}</span>
+                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>→</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{r.calf_tag || "no tag"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span style={{ fontSize: 10, color: r.calf_status === "Dead" ? C.crimson : "rgba(26,26,26,0.35)" }}>{r.calf_status}</span>
+                  <span style={{ fontSize: 10, color: "rgba(26,26,26,0.25)" }}>{new Date(r.calving_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+        {search.length >= 2 && searchResults && searchResults.length === 0 && (
+          <div className="absolute left-0 right-0 bg-white border border-[#D4D4D0] rounded-xl mt-1 shadow-lg px-4 py-3" style={{ zIndex: 20 }}>
+            <p style={{ fontSize: 12, color: "rgba(26,26,26,0.4)" }}>No records match "{search}"</p>
+          </div>
+        )}
       </div>
+
+      {/* Year picker */}
+      {tab === "This Season" && (
+        <div className="flex gap-1.5 mb-2" style={{ alignItems: "center" }}>
+          {!yearOpen ? (
+            <button onClick={() => setYearOpen(true)}
+              className="cursor-pointer active:scale-[0.97]"
+              style={{ padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, border: "none", background: C.navy, color: "#FFF", display: "flex", alignItems: "center", gap: 5 }}>
+              {year}
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.75L5 6.25L7.5 3.75" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+          ) : (
+            yearOptions.map((y) => (
+              <button key={y} onClick={() => { setYear(y); setYearOpen(false); }}
+                className="cursor-pointer active:scale-[0.97]"
+                style={{
+                  padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, border: year === y ? "none" : "1px solid #D4D4D0",
+                  background: year === y ? C.navy : "transparent", color: year === y ? "#FFF" : "rgba(26,26,26,0.5)", cursor: "pointer",
+                }}>
+                {y}
+              </button>
+            ))
+          )}
+        </div>
+      )}
 
       {/* ═══════ THIS SEASON TAB ═══════ */}
       {tab === "This Season" && (
