@@ -90,7 +90,7 @@ function useBulls(operationId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("animals")
-        .select("id, tag, tag_color, breed, year_born, name, reg_name, reg_number, status, memo")
+        .select("id, tag, tag_color, breed, year_born, name, reg_name, reg_number, status, memo, bull_role")
         .eq("operation_id", operationId)
         .eq("type", "Bull")
         .eq("status", "Active")
@@ -137,7 +137,28 @@ function useBullFlags(operationId: string) {
   });
 }
 
-/* ═══════════════ COMPUTE ═══════════════ */
+function useLatestBSE(operationId: string) {
+  return useQuery({
+    queryKey: ["bulls-dash-bse", operationId],
+    queryFn: async () => {
+      // Get most recent BSE result per bull
+      const { data, error } = await supabase
+        .from("cow_work")
+        .select("animal_id, date, pass_fail, scrotal, motility, morphology")
+        .eq("operation_id", operationId)
+        .not("pass_fail", "is", null)
+        .order("date", { ascending: false });
+      if (error) throw error;
+      // Keep only the most recent per animal
+      const latest: Record<string, any> = {};
+      (data || []).forEach((r) => {
+        if (!latest[r.animal_id]) latest[r.animal_id] = r;
+      });
+      return latest;
+    },
+    enabled: !!operationId,
+  });
+}
 function useBullMetrics(raw: any[] | undefined) {
   return useMemo(() => {
     if (!raw?.length) return null;
@@ -169,15 +190,25 @@ function useBullMetrics(raw: any[] | undefined) {
     const registered = raw.filter((b) => b.reg_number != null).length;
     const named = raw.filter((b) => b.name || b.reg_name).length;
 
-    // Bull list with computed age
+    // Role breakdown
+    const roleCount: Record<string, number> = { "AI Sire": 0, "Herd Sire": 0, "Home Raised": 0 };
+    raw.forEach((b) => {
+      const roles = b.bull_role || [];
+      roles.forEach((r: string) => { if (roleCount[r] !== undefined) roleCount[r]++; });
+    });
+    const roleBreakdown = Object.entries(roleCount).filter(([, v]) => v > 0)
+      .map(([name, value]) => ({ name, value }));
+
+    // Bull list with computed age and roles
     const list = raw.map((b) => ({
       id: b.id, tag: b.tag, tagColor: b.tag_color,
       breed: b.breed, age: b.year_born ? currentYear - b.year_born : null,
       name: b.name || b.reg_name || null,
       regNumber: b.reg_number, yearBorn: b.year_born,
+      roles: (b.bull_role || []) as string[],
     }));
 
-    return { total, breedBreakdown, ageDist, avgAge, oldestAge, registered, named, list };
+    return { total, breedBreakdown, ageDist, avgAge, oldestAge, registered, named, list, roleBreakdown };
   }, [raw]);
 }
 
@@ -190,20 +221,28 @@ export default function BullsDashboardScreen() {
 
   const { data: raw, isLoading } = useBulls(operationId);
   const { data: flagged } = useBullFlags(operationId);
+  const { data: bseMap } = useLatestBSE(operationId);
   const m = useBullMetrics(raw);
 
-  // Filtered bull list for search
+  // Filtered bull list for search (also filter by role)
+  const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const filteredList = useMemo(() => {
     if (!m) return [];
-    if (!search || search.length < 1) return m.list;
-    const q = search.toLowerCase();
-    return m.list.filter((b) =>
-      b.tag.toLowerCase().includes(q) ||
-      (b.breed || "").toLowerCase().includes(q) ||
-      (b.name || "").toLowerCase().includes(q) ||
-      (b.regNumber || "").toLowerCase().includes(q)
-    );
-  }, [m, search]);
+    let list = m.list;
+    if (roleFilter) {
+      list = list.filter((b) => b.roles.includes(roleFilter));
+    }
+    if (search && search.length >= 1) {
+      const q = search.toLowerCase();
+      list = list.filter((b) =>
+        b.tag.toLowerCase().includes(q) ||
+        (b.breed || "").toLowerCase().includes(q) ||
+        (b.name || "").toLowerCase().includes(q) ||
+        (b.regNumber || "").toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [m, search, roleFilter]);
 
   return (
     <div className="px-4">
@@ -356,6 +395,31 @@ export default function BullsDashboardScreen() {
                 </WCard>
               </>}
 
+              {/* Role Breakdown */}
+              {m.roleBreakdown.length > 0 && <>
+                <Divider title="Bull Roles" />
+                <WCard>
+                  <div className="flex flex-wrap gap-2">
+                    {m.roleBreakdown.map((r) => {
+                      const roleColors: Record<string, { bg: string; color: string }> = {
+                        "AI Sire": { bg: "rgba(50,102,173,0.10)", color: C.royalBlue },
+                        "Herd Sire": { bg: "rgba(59,32,114,0.10)", color: C.deepPurple },
+                        "Home Raised": { bg: "rgba(85,186,170,0.10)", color: "#2A7A6C" },
+                      };
+                      const rc = roleColors[r.name] || { bg: "rgba(26,26,26,0.05)", color: C.text };
+                      return (
+                        <button key={r.name} onClick={() => { setRoleFilter(r.name); setTab("Bull List"); }}
+                          className="rounded-full px-3 py-1.5 cursor-pointer active:scale-[0.97]"
+                          style={{ fontSize: 12, fontWeight: 600, backgroundColor: rc.bg, color: rc.color, border: "none" }}>
+                          {r.name} <span style={{ fontWeight: 700 }}>{r.value}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <Sub>Tap a role to filter the bull list</Sub>
+                </WCard>
+              </>}
+
               {/* Link to full list */}
               <WCard>
                 <button onClick={() => setTab("Bull List")} className="w-full flex items-center justify-between cursor-pointer" style={{ background: "none", border: "none" }}>
@@ -376,50 +440,97 @@ export default function BullsDashboardScreen() {
             <div className="flex flex-col gap-3"><Skel /><Skel /></div>
           ) : (
             <>
+              {/* Role filter pills */}
+              <div className="flex gap-1.5 mb-2 flex-wrap">
+                <button onClick={() => setRoleFilter(null)}
+                  className="rounded-full px-3 py-1 cursor-pointer active:scale-[0.97]"
+                  style={{ fontSize: 11, fontWeight: 600, border: !roleFilter ? "none" : "1px solid #D4D4D0",
+                    background: !roleFilter ? C.navy : "transparent", color: !roleFilter ? "#fff" : "rgba(26,26,26,0.5)" }}>
+                  All
+                </button>
+                {["AI Sire", "Herd Sire", "Home Raised"].map((role) => {
+                  const active = roleFilter === role;
+                  const rc: Record<string, string> = { "AI Sire": C.royalBlue, "Herd Sire": C.deepPurple, "Home Raised": "#2A7A6C" };
+                  return (
+                    <button key={role} onClick={() => setRoleFilter(active ? null : role)}
+                      className="rounded-full px-3 py-1 cursor-pointer active:scale-[0.97]"
+                      style={{ fontSize: 11, fontWeight: 600, border: active ? "none" : "1px solid #D4D4D0",
+                        background: active ? rc[role] : "transparent", color: active ? "#fff" : "rgba(26,26,26,0.5)" }}>
+                      {role}
+                    </button>
+                  );
+                })}
+              </div>
+
               <p style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.4)", marginBottom: 8 }}>
-                {filteredList.length} of {m.total} bulls{search ? ` matching "${search}"` : ""}
+                {filteredList.length} of {m.total} bulls{search ? ` matching "${search}"` : ""}{roleFilter ? ` · ${roleFilter}` : ""}
               </p>
               <div className="rounded-xl bg-white border border-[#D4D4D0]/60 overflow-hidden">
-                {filteredList.map((b, idx) => (
-                  <div key={b.id}>
-                    {idx > 0 && <div className="h-px mx-3.5" style={{ backgroundColor: "rgba(212,212,208,0.15)" }} />}
-                    <button onClick={() => nav(`/animals/${b.id}`)}
-                      className="w-full flex items-center justify-between px-3.5 py-3 cursor-pointer active:bg-gray-50"
-                      style={{ background: "none", border: "none" }}>
-                      <div className="flex items-center gap-3 min-w-0">
-                        {/* Tag color dot */}
-                        <div className="rounded-full shrink-0" style={{
-                          width: 10, height: 10,
-                          backgroundColor: TAG_HEX[b.tagColor || "None"] || "#999",
-                          border: (!b.tagColor || b.tagColor === "None") ? "1px solid #D4D4D0" : "none",
-                        }} />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{b.tag}</span>
-                            {b.name && <span className="truncate" style={{ fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.4)" }}>{b.name}</span>}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {b.breed && <span style={{ fontSize: 10, color: "rgba(26,26,26,0.35)" }}>{b.breed}</span>}
-                            {b.yearBorn && <span style={{ fontSize: 10, color: "rgba(26,26,26,0.25)" }}>· Born {b.yearBorn}</span>}
-                            {b.regNumber && <span style={{ fontSize: 10, color: C.royalBlue }}>· Reg</span>}
+                {filteredList.map((b, idx) => {
+                  const bse = bseMap?.[b.id];
+                  const bseColor: Record<string, { bg: string; color: string }> = {
+                    Pass: { bg: "rgba(85,186,170,0.12)", color: "#2A7A6C" },
+                    Fail: { bg: "rgba(123,45,59,0.12)", color: "#7B2D3B" },
+                    Marginal: { bg: "rgba(196,162,78,0.12)", color: "#8B6914" },
+                    "Permanent Fail": { bg: "rgba(123,45,59,0.20)", color: "#7B2D3B" },
+                  };
+                  const roleColors: Record<string, { bg: string; color: string }> = {
+                    "AI Sire": { bg: "rgba(50,102,173,0.08)", color: C.royalBlue },
+                    "Herd Sire": { bg: "rgba(59,32,114,0.08)", color: C.deepPurple },
+                    "Home Raised": { bg: "rgba(85,186,170,0.08)", color: "#2A7A6C" },
+                  };
+                  return (
+                    <div key={b.id}>
+                      {idx > 0 && <div className="h-px mx-3.5" style={{ backgroundColor: "rgba(212,212,208,0.15)" }} />}
+                      <button onClick={() => nav(`/animals/${b.id}`)}
+                        className="w-full flex items-center justify-between px-3.5 py-3 cursor-pointer active:bg-gray-50"
+                        style={{ background: "none", border: "none" }}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="rounded-full shrink-0" style={{
+                            width: 10, height: 10,
+                            backgroundColor: TAG_HEX[b.tagColor || "None"] || "#999",
+                            border: (!b.tagColor || b.tagColor === "None") ? "1px solid #D4D4D0" : "none",
+                          }} />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{b.tag}</span>
+                              {b.name && <span className="truncate" style={{ fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.4)", maxWidth: 120 }}>{b.name}</span>}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              {b.breed && <span style={{ fontSize: 10, color: "rgba(26,26,26,0.35)" }}>{b.breed}</span>}
+                              {b.roles.map((r) => (
+                                <span key={r} className="uppercase rounded-full px-1.5 py-0.5" style={{
+                                  fontSize: 8, fontWeight: 700, letterSpacing: "0.04em",
+                                  backgroundColor: (roleColors[r] || roleColors["Home Raised"]).bg,
+                                  color: (roleColors[r] || roleColors["Home Raised"]).color,
+                                }}>{r}</span>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {b.age != null && (
-                          <span className="rounded-full px-2 py-0.5" style={{
-                            fontSize: 10, fontWeight: 600,
-                            backgroundColor: "rgba(59,32,114,0.08)", color: C.deepPurple,
-                          }}>{b.age} yr</span>
-                        )}
-                        <Chevron />
-                      </div>
-                    </button>
-                  </div>
-                ))}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {bse && (
+                            <span className="rounded-full px-2 py-0.5" style={{
+                              fontSize: 9, fontWeight: 700,
+                              backgroundColor: (bseColor[bse.pass_fail] || bseColor.Pass).bg,
+                              color: (bseColor[bse.pass_fail] || bseColor.Pass).color,
+                            }}>{bse.pass_fail}</span>
+                          )}
+                          {b.age != null && (
+                            <span className="rounded-full px-2 py-0.5" style={{
+                              fontSize: 10, fontWeight: 600,
+                              backgroundColor: "rgba(59,32,114,0.08)", color: C.deepPurple,
+                            }}>{b.age} yr</span>
+                          )}
+                          <Chevron />
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })}
                 {filteredList.length === 0 && (
                   <div className="px-4 py-6 text-center">
-                    <p style={{ fontSize: 13, color: "rgba(26,26,26,0.4)" }}>No bulls match "{search}"</p>
+                    <p style={{ fontSize: 13, color: "rgba(26,26,26,0.4)" }}>No bulls match{search ? ` "${search}"` : ""}{roleFilter ? ` in ${roleFilter}` : ""}</p>
                   </div>
                 )}
               </div>
