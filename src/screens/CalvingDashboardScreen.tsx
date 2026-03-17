@@ -164,6 +164,93 @@ function useFlaggedDams(operationId: string, year: number) {
   });
 }
 
+/* ═══════════════ COMPARE DATA HOOK ═══════════════ */
+interface YearSummary {
+  yr: number;
+  total: number;
+  alive: number;
+  dead: number;
+  deathPct: string;
+  avgWt: string | null;
+  hardPulls: number;
+  hardPullPct: string;
+  bulls: number;
+  heifers: number;
+  bullPct: string;
+  heiferPct: string;
+  firstCalf: string | null;
+  lastCalf: string | null;
+  seasonDays: number;
+  dailyCurve: { dayOfYear: number; d: string; births: number }[];
+}
+
+function useCompareData(operationId: string, years: number[]) {
+  return useQuery({
+    queryKey: ["calving-compare", operationId, years.join(",")],
+    queryFn: async () => {
+      if (!years.length) return [];
+      // Fetch all records for all selected years at once
+      const minYear = Math.min(...years);
+      const maxYear = Math.max(...years);
+      const { data, error } = await supabase
+        .from("calving_records")
+        .select("calving_date, calf_status, calf_sex, birth_weight, assistance")
+        .eq("operation_id", operationId)
+        .gte("calving_date", `${minYear}-01-01`)
+        .lte("calving_date", `${maxYear}-12-31`);
+      if (error) throw error;
+
+      // Group by year and compute summaries
+      const byYear: Record<number, any[]> = {};
+      (data || []).forEach((r) => {
+        const yr = new Date(r.calving_date + "T00:00:00").getFullYear();
+        if (years.includes(yr)) {
+          if (!byYear[yr]) byYear[yr] = [];
+          byYear[yr].push(r);
+        }
+      });
+
+      return years.map((yr): YearSummary => {
+        const recs = byYear[yr] || [];
+        const total = recs.length;
+        const alive = recs.filter((r) => r.calf_status === "Alive").length;
+        const dead = total - alive;
+        const wts = recs.filter((r) => r.birth_weight != null).map((r) => Number(r.birth_weight));
+        const avgWt = wts.length ? (wts.reduce((a, b) => a + b, 0) / wts.length).toFixed(1) : null;
+        const hardPulls = recs.filter((r) => r.assistance != null && r.assistance >= 3).length;
+        const bulls = recs.filter((r) => r.calf_sex === "Bull").length;
+        const heifers = recs.filter((r) => r.calf_sex === "Heifer").length;
+        const dates = recs.map((r) => r.calving_date).sort();
+        const firstCalf = dates[0] || null;
+        const lastCalf = dates[dates.length - 1] || null;
+        const seasonDays = firstCalf && lastCalf ? Math.floor((new Date(lastCalf + "T00:00:00").getTime() - new Date(firstCalf + "T00:00:00").getTime()) / DAY_MS) : 0;
+
+        // Daily curve normalized to day-of-year for overlay alignment
+        const dayMap: Record<string, number> = {};
+        recs.forEach((r) => { dayMap[r.calving_date] = (dayMap[r.calving_date] || 0) + 1; });
+        const dailyCurve = Object.entries(dayMap).sort(([a], [b]) => a.localeCompare(b)).map(([d, n]) => {
+          const dt = new Date(d + "T00:00:00");
+          const jan1 = new Date(dt.getFullYear(), 0, 1);
+          const dayOfYear = Math.ceil((dt.getTime() - jan1.getTime()) / DAY_MS) + 1;
+          return { dayOfYear, d: dt.toLocaleDateString("en-US", { month: "short", day: "numeric" }), births: n };
+        });
+
+        return {
+          yr, total, alive, dead,
+          deathPct: total > 0 ? (dead / total * 100).toFixed(1) : "0",
+          avgWt, hardPulls,
+          hardPullPct: total > 0 ? (hardPulls / total * 100).toFixed(1) : "0",
+          bulls, heifers,
+          bullPct: total > 0 ? Math.round(bulls / total * 100).toString() : "0",
+          heiferPct: total > 0 ? Math.round(heifers / total * 100).toString() : "0",
+          firstCalf, lastCalf, seasonDays, dailyCurve,
+        };
+      });
+    },
+    enabled: !!operationId && years.length > 0,
+  });
+}
+
 /* ═══════════════ COMPUTE METRICS ═══════════════ */
 function useMetrics(raw: any[] | undefined, year: number) {
   return useMemo(() => {
@@ -287,6 +374,7 @@ export default function CalvingDashboardScreen() {
   const [yearOpen, setYearOpen] = useState(false);
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const [search, setSearch] = useState("");
+  const [compareYears, setCompareYears] = useState<number[]>([currentYear, currentYear - 1]);
   const { operationId } = useOperation();
   const nav = useNavigate();
 
@@ -297,6 +385,7 @@ export default function CalvingDashboardScreen() {
   const { data: raw, isLoading } = useSeasonData(operationId, year);
   const { data: flagged } = useFlaggedDams(operationId, year);
   const m = useMetrics(raw, year);
+  const { data: compareData, isLoading: compareLoading } = useCompareData(operationId, compareYears);
 
   // Prior year stats for Live Calf % comparison
   const priorDead = priorRaw ? priorRaw.filter((r) => r.calf_status === "Dead").length : 0;
@@ -693,9 +782,169 @@ export default function CalvingDashboardScreen() {
 
       {/* ═══════ COMPARE TAB ═══════ */}
       {tab === "Compare" && (
-        <div className="pt-6 text-center">
-          <p style={{ fontSize: 14, fontWeight: 600, color: C.navy }}>Compare Tab</p>
-          <p style={{ fontSize: 12, color: "rgba(26,26,26,0.4)", marginTop: 4 }}>Year-over-year comparison — to be built.</p>
+        <div className="flex flex-col gap-3 pb-10">
+
+          {/* Multi-select year pills */}
+          <div className="flex flex-wrap gap-2">
+            {yearOptions.filter((y) => y >= 2023).map((y) => {
+              const selected = compareYears.includes(y);
+              return (
+                <button key={y} className="cursor-pointer active:scale-[0.97]"
+                  onClick={() => {
+                    if (selected) {
+                      if (compareYears.length > 1) setCompareYears(compareYears.filter((cy) => cy !== y));
+                    } else {
+                      if (compareYears.length < 3) setCompareYears([...compareYears, y].sort((a, b) => b - a));
+                    }
+                  }}
+                  style={{
+                    padding: "6px 16px", borderRadius: 20, fontSize: 12, fontWeight: 600, border: selected ? "none" : "1px solid #D4D4D0",
+                    background: selected ? C.navy : "transparent", color: selected ? "#FFF" : "rgba(26,26,26,0.5)",
+                  }}>
+                  {y}{y === currentYear ? "*" : ""}
+                </button>
+              );
+            })}
+            <span style={{ fontSize: 10, color: "rgba(26,26,26,0.3)", alignSelf: "center", marginLeft: 4 }}>Select up to 3</span>
+          </div>
+
+          {compareLoading ? <Skeleton /> : compareData && compareData.length > 0 && (
+            <>
+              {/* Side-by-side KPI cards */}
+              <WCard>
+                <Lbl>Season Summary</Lbl>
+                <div className="mt-3" style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: "left", padding: "4px 8px 8px 0", fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Metric</th>
+                        {compareData.map((yd) => (
+                          <th key={yd.yr} style={{ textAlign: "right", padding: "4px 8px 8px", fontSize: 12, fontWeight: 700, color: C.navy }}>
+                            {yd.yr}{yd.yr === currentYear ? "*" : ""}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { label: "Total born", key: "total", fmt: (v: any) => String(v.total) },
+                        { label: "Alive", key: "alive", fmt: (v: any) => String(v.alive) },
+                        { label: "Death loss", key: "deathPct", fmt: (v: any) => `${v.dead} (${v.deathPct}%)`, color: (v: any) => Number(v.deathPct) > 5 ? C.crimson : C.text },
+                        { label: "Avg birth wt", key: "avgWt", fmt: (v: any) => v.avgWt ? `${v.avgWt} lb` : "—" },
+                        { label: "Hard pulls", key: "hardPulls", fmt: (v: any) => `${v.hardPulls} (${v.hardPullPct}%)`, color: (v: any) => Number(v.hardPullPct) > 3 ? C.burgundy : C.text },
+                        { label: "Bull / heifer %", key: "bullHeiferPct", fmt: (v: any) => `${v.bullPct}/${v.heiferPct}` },
+                        { label: "Season span", key: "seasonDays", fmt: (v: any) => v.seasonDays > 0 ? `${v.seasonDays}d` : "—" },
+                        { label: "First calf", key: "firstCalf", fmt: (v: any) => v.firstCalf ? new Date(v.firstCalf + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—" },
+                        { label: "Last calf", key: "lastCalf", fmt: (v: any) => v.lastCalf ? new Date(v.lastCalf + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—" },
+                      ].map((row, ri) => (
+                        <tr key={row.label} style={{ borderTop: ri > 0 ? "1px solid rgba(212,212,208,0.2)" : "none" }}>
+                          <td style={{ padding: "6px 8px 6px 0", fontWeight: 500, color: "rgba(26,26,26,0.55)" }}>{row.label}</td>
+                          {compareData.map((yd) => (
+                            <td key={yd.yr} style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: row.color ? row.color(yd) : C.text }}>
+                              {row.fmt(yd)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </WCard>
+
+              {/* Overlaid calving curves */}
+              <Divider title="Calving Curves Overlaid" />
+              <WCard>
+                <Lbl>Births by Day of Year</Lbl>
+                <div style={{ width: "100%", height: 220 }} className="mt-2">
+                  <ResponsiveContainer>
+                    <AreaChart margin={{ top: 4, right: 4, left: -22, bottom: 0 }}
+                      data={(() => {
+                        // Merge all years by day-of-year
+                        const allDays: Record<number, any> = {};
+                        compareData.forEach((yd) => {
+                          yd.dailyCurve.forEach((pt) => {
+                            if (!allDays[pt.dayOfYear]) allDays[pt.dayOfYear] = { dayOfYear: pt.dayOfYear, d: pt.d };
+                            allDays[pt.dayOfYear][`y${yd.yr}`] = pt.births;
+                          });
+                        });
+                        return Object.values(allDays).sort((a, b) => a.dayOfYear - b.dayOfYear);
+                      })()}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(14,38,70,0.06)" />
+                      <XAxis dataKey="d" tick={{ fontSize: 8, fill: "rgba(26,26,26,0.35)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                      <YAxis tick={{ fontSize: 8, fill: "rgba(26,26,26,0.35)" }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<Tip />} />
+                      {compareData.map((yd, i) => {
+                        const colors = [C.royalBlue, C.antiqueGold, C.deepPurple];
+                        const dashes = ["", "5 3", "3 2"];
+                        return (
+                          <Area key={yd.yr} type="monotone" dataKey={`y${yd.yr}`} name={String(yd.yr)}
+                            stroke={colors[i % 3]} strokeWidth={i === 0 ? 2.5 : 1.5}
+                            strokeDasharray={dashes[i]} fill="none" />
+                        );
+                      })}
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex justify-center gap-6 mt-2">
+                  {compareData.map((yd, i) => {
+                    const colors = [C.royalBlue, C.antiqueGold, C.deepPurple];
+                    return (
+                      <div key={yd.yr} className="flex items-center gap-1.5">
+                        <div className="rounded-sm" style={{ width: 8, height: 8, backgroundColor: colors[i % 3] }} />
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.55)" }}>{yd.yr}{yd.yr === currentYear ? "*" : ""}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: C.text }}>{yd.total}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <Sub color="rgba(26,26,26,0.3)">* season in progress · curves aligned by day of year</Sub>
+              </WCard>
+
+              {/* Death loss trend */}
+              <Divider title="Death Loss Trend" />
+              <WCard>
+                <Lbl>Death Loss % by Year</Lbl>
+                <div style={{ width: "100%", height: 160 }} className="mt-2">
+                  <ResponsiveContainer>
+                    <BarChart data={compareData} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(14,38,70,0.06)" />
+                      <XAxis dataKey="yr" tick={{ fontSize: 10, fill: "rgba(26,26,26,0.45)" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 8, fill: "rgba(26,26,26,0.35)" }} axisLine={false} tickLine={false} unit="%" />
+                      <Tooltip content={<Tip />} />
+                      <Bar dataKey="deathPct" radius={[4, 4, 0, 0]} name="Death Loss %">
+                        {compareData.map((yd, i) => (
+                          <Cell key={yd.yr} fill={Number(yd.deathPct) > 5 ? C.crimson : C.royalBlue} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </WCard>
+
+              {/* Avg birth weight trend */}
+              <Divider title="Birth Weight Trend" />
+              <WCard>
+                <Lbl>Avg Birth Weight by Year (lb)</Lbl>
+                <div style={{ width: "100%", height: 160 }} className="mt-2">
+                  <ResponsiveContainer>
+                    <BarChart data={compareData.filter((d) => d.avgWt)} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(14,38,70,0.06)" />
+                      <XAxis dataKey="yr" tick={{ fontSize: 10, fill: "rgba(26,26,26,0.45)" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 8, fill: "rgba(26,26,26,0.35)" }} axisLine={false} tickLine={false} domain={[75, 90]} unit=" lb" />
+                      <Tooltip content={<Tip />} />
+                      <Bar dataKey="avgWt" radius={[4, 4, 0, 0]} name="Avg Weight" fill={C.antiqueGold} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </WCard>
+            </>
+          )}
+
+          {!compareLoading && (!compareData || compareData.length === 0) && (
+            <div className="pt-6 text-center">
+              <p style={{ fontSize: 13, color: "rgba(26,26,26,0.4)" }}>Select years above to compare.</p>
+            </div>
+          )}
         </div>
       )}
 
