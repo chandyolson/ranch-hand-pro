@@ -644,7 +644,8 @@ export default function AnimalDetailScreen() {
       {/* ═══ HISTORY TAB ═══ */}
       {activeTab === "history" && (
         <div className="space-y-3" style={{ paddingTop: 10 }}>
-          {/* Calving History */}
+          {/* Calving History — not shown for bulls */}
+          {fields.animalType !== "Bull" && (
           <CollapsibleSection title="Calving History" defaultOpen>
             <div className="space-y-2">
               {calvingHistory.length === 0 && (
@@ -682,6 +683,7 @@ export default function AnimalDetailScreen() {
               ))}
             </div>
           </CollapsibleSection>
+          )}
 
           {/* Cow Work History */}
           <CollapsibleSection title="Cow Work History">
