@@ -117,6 +117,8 @@ export default function AnimalDetailScreen() {
     eid2: "",
     breed: "",
     lifetimeId: "",
+    regName: "",
+    regNumber: "",
   });
   const [memo, setMemo] = useState("");
   const [selectedQuickNotes, setSelectedQuickNotes] = useState<string[]>([]);
@@ -136,6 +138,8 @@ export default function AnimalDetailScreen() {
         eid2: animal.eid2 || "",
         breed: animal.breed || "",
         lifetimeId: animal.lifetime_id || "",
+        regName: animal.reg_name || "",
+        regNumber: animal.reg_number || "",
       });
       setMemo(animal.memo || "");
       setSelectedQuickNotes(animal.quick_notes || []);
@@ -180,6 +184,8 @@ export default function AnimalDetailScreen() {
           eid2: fields.eid2.trim() || null,
           breed: fields.breed.trim() || null,
           lifetime_id: fields.lifetimeId.trim() || null,
+          reg_name: fields.regName.trim() || null,
+          reg_number: fields.regNumber.trim() || null,
           memo: memo.trim() || null,
           quick_notes: selectedQuickNotes.length > 0 ? selectedQuickNotes : null,
         })
@@ -599,7 +605,46 @@ export default function AnimalDetailScreen() {
               <FieldRow label="Lifetime ID">
                 <TextInput value={fields.lifetimeId} readOnly />
               </FieldRow>
+              <FieldRow label="Reg Name">
+                <TextInput value={fields.regName} onChange={update("regName")} placeholder="—" />
+              </FieldRow>
+              <FieldRow label="Reg Number">
+                <TextInput value={fields.regNumber} onChange={update("regNumber")} placeholder="—" />
+              </FieldRow>
             </div>
+            {/* Breed Association Lookup Link */}
+            {fields.regNumber && fields.breed && (
+              <div style={{ marginTop: 10 }}>
+                {(fields.breed === "Angus" || fields.breed === "Commercial Angus") && (
+                  <a
+                    href={`https://www.angus.org/Animal/EpdPedResults?PageRequest=BeefRecords.Services.Models.PageRequest&sRegistrationNumber=${fields.regNumber}`}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8, padding: "10px 14px",
+                      backgroundColor: "rgba(14,38,70,0.04)", borderRadius: 10, textDecoration: "none",
+                      border: "1px solid rgba(14,38,70,0.08)",
+                    }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#0E2646" }}>Look up on AAA</span>
+                    <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>EPDs & Pedigree</span>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginLeft: "auto" }}><path d="M5 2H2.5A1.5 1.5 0 001 3.5v8A1.5 1.5 0 002.5 13h8a1.5 1.5 0 001.5-1.5V9M8 1h5v5M13 1L6 8" stroke="#0E2646" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </a>
+                )}
+                {(fields.breed === "Hereford" || fields.breed === "Commercial Hereford") && (
+                  <a
+                    href="https://myherd.org/web/USHF/AnimalSearch/List"
+                    target="_blank" rel="noopener noreferrer"
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8, padding: "10px 14px",
+                      backgroundColor: "rgba(123,45,59,0.04)", borderRadius: 10, textDecoration: "none",
+                      border: "1px solid rgba(123,45,59,0.08)",
+                    }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#7B2D3B" }}>Look up on AHA</span>
+                    <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>MyHerd · #{fields.regNumber}</span>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginLeft: "auto" }}><path d="M5 2H2.5A1.5 1.5 0 001 3.5v8A1.5 1.5 0 002.5 13h8a1.5 1.5 0 001.5-1.5V9M8 1h5v5M13 1L6 8" stroke="#7B2D3B" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </a>
+                )}
+              </div>
+            )}
           </CollapsibleSection>
 
           <CollapsibleSection title="Quick Notes">
