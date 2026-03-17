@@ -12,7 +12,7 @@ import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
 import CowWorkProjectDetailScreen from "@/screens/CowWorkProjectDetailScreen";
 import ProtocolHubScreen from "@/screens/ProtocolHubScreen";
 import CustomerProtocolScreen from "@/screens/CustomerProtocolScreen";
-import CalvingScreen from "@/screens/CalvingScreen";
+import CalvingDashboardScreen from "@/screens/CalvingDashboardScreen";
 import CalvingNewScreen from "@/screens/CalvingNewScreen";
 import CalvingRecordScreen from "@/screens/CalvingRecordScreen";
 import RedBookScreen from "@/screens/RedBookScreen";
@@ -54,7 +54,7 @@ const App = () => (
           <Route path="protocols/customer/:operationId" element={<CustomerProtocolScreen />} />
           <Route path="protocols/templates/new" element={<ProtocolTemplateBuilderScreen />} />
           <Route path="protocols/templates/:id" element={<ProtocolTemplateDetailScreen />} />
-          <Route path="calving" element={<CalvingScreen />} />
+          <Route path="calving" element={<CalvingDashboardScreen />} />
           <Route path="calving/new" element={<CalvingNewScreen />} />
           <Route path="calving/:id" element={<CalvingRecordScreen />} />
           <Route path="red-book" element={<RedBookScreen />} />
