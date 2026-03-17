@@ -238,6 +238,22 @@ export default function AnimalDetailScreen() {
     memo: w.memo || "",
   }));
 
+  // BSE history — only for bulls
+  const bseHistory = (workRecords || [])
+    .filter((w) => w.pass_fail)
+    .map((w) => ({
+      date: fmtDate(w.date),
+      project: (w.project as any)?.name || "BSE",
+      scrotal: w.scrotal ? `${w.scrotal} cm` : null,
+      motility: w.motility != null ? `${w.motility}%` : null,
+      morphology: w.morphology != null ? `${w.morphology}%` : null,
+      passFail: w.pass_fail,
+      quality: w.quality || null,
+      defects: (w.semen_defects || []).join(", ") || null,
+      physicalDefects: w.physical_defects ? (w.physical_defects as string[]).join(", ") : null,
+      memo: w.bse_memo || w.memo || "",
+    }));
+
   // Weight history derived from work records that have weight
   const weightHistory = (workRecords || [])
     .filter((w) => w.weight)
@@ -681,6 +697,64 @@ export default function AnimalDetailScreen() {
                   )}
                 </NavyCard>
               ))}
+            </div>
+          </CollapsibleSection>
+          )}
+
+          {/* BSE History — bulls only, shown prominently */}
+          {fields.animalType === "Bull" && bseHistory.length > 0 && (
+          <CollapsibleSection title="BSE History" defaultOpen>
+            <div className="space-y-2">
+              {bseHistory.map((b, i) => {
+                const pfColor: Record<string, { bg: string; color: string }> = {
+                  Pass: { bg: "rgba(85,186,170,0.20)", color: "#55BAAA" },
+                  Fail: { bg: "rgba(231,76,60,0.20)", color: "#E74C3C" },
+                  Marginal: { bg: "rgba(243,209,42,0.25)", color: "#F3D12A" },
+                  "Permanent Fail": { bg: "rgba(231,76,60,0.30)", color: "#E74C3C" },
+                };
+                const pfc = pfColor[b.passFail] || pfColor.Pass;
+                return (
+                  <NavyCard key={i}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Badge style={{ backgroundColor: pfc.bg, color: pfc.color, fontWeight: 700 }}>{b.passFail}</Badge>
+                        {b.quality && <span style={{ fontSize: 11, color: "rgba(240,240,240,0.50)" }}>{b.quality}</span>}
+                      </div>
+                      <span style={{ fontSize: 11, color: "rgba(240,240,240,0.35)" }}>{b.date}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
+                      {b.scrotal && (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: "white", lineHeight: 1 }}>{b.scrotal}</span>
+                          <span style={{ fontSize: 8, color: "rgba(240,240,240,0.35)", marginTop: 2 }}>SCROTAL</span>
+                        </div>
+                      )}
+                      {b.motility && (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: "white", lineHeight: 1 }}>{b.motility}</span>
+                          <span style={{ fontSize: 8, color: "rgba(240,240,240,0.35)", marginTop: 2 }}>MOTILITY</span>
+                        </div>
+                      )}
+                      {b.morphology && (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: "white", lineHeight: 1 }}>{b.morphology}</span>
+                          <span style={{ fontSize: 8, color: "rgba(240,240,240,0.35)", marginTop: 2 }}>MORPHOLOGY</span>
+                        </div>
+                      )}
+                    </div>
+                    {b.defects && (
+                      <div style={{ fontSize: 10, color: "rgba(243,209,42,0.70)", marginTop: 6 }}>Defects: {b.defects}</div>
+                    )}
+                    {b.physicalDefects && (
+                      <div style={{ fontSize: 10, color: "rgba(231,76,60,0.70)", marginTop: 2 }}>Physical: {b.physicalDefects}</div>
+                    )}
+                    {b.memo && (
+                      <div style={{ fontSize: 11, color: "rgba(240,240,240,0.35)", marginTop: 4 }}>{b.memo}</div>
+                    )}
+                    <div style={{ fontSize: 9, color: "rgba(240,240,240,0.20)", marginTop: 4 }}>{b.project}</div>
+                  </NavyCard>
+                );
+              })}
             </div>
           </CollapsibleSection>
           )}
