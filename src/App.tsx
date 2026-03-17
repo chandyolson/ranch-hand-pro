@@ -7,6 +7,7 @@ import DashboardScreen from "@/screens/DashboardScreen";
 import AnimalsDashboardScreen from "@/screens/AnimalsDashboardScreen";
 import AnimalDetailScreen from "@/screens/AnimalDetailScreen";
 import AddAnimalScreen from "@/screens/AddAnimalScreen";
+import BullsDashboardScreen from "@/screens/BullsDashboardScreen";
 import CowWorkScreen from "@/screens/CowWorkScreen";
 import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
 import CowWorkProjectDetailScreen from "@/screens/CowWorkProjectDetailScreen";
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="animals" element={<AnimalsDashboardScreen />} />
           <Route path="animals/new" element={<AddAnimalScreen />} />
           <Route path="animals/:id" element={<AnimalDetailScreen />} />
+          <Route path="bulls" element={<BullsDashboardScreen />} />
           <Route path="cow-work" element={<CowWorkScreen />} />
           <Route path="cow-work/new" element={<CowWorkNewProjectScreen />} />
           <Route path="cow-work/:id" element={<CowWorkProjectDetailScreen />} />

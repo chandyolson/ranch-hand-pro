@@ -8,6 +8,7 @@ import { useAnimalCounts } from "@/hooks/useAnimals";
 const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "", subtitle: "" },
   "/animals": { title: "Animals", subtitle: "" },
+  "/bulls": { title: "Bulls", subtitle: "Herd Sires" },
   "/calving": { title: "Calving", subtitle: "" },
   "/calving/new": { title: "Calving", subtitle: "" },
   "/cow-work": { title: "Cow Work", subtitle: "5 Active Projects" },
@@ -31,6 +32,7 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
 const navRouteMap: Record<string, string> = {
   "Operation Dashboard": "/",
   Animals: "/animals",
+  Bulls: "/bulls",
   "Cow Work": "/cow-work",
   Protocols: "/protocols",
   Calving: "/calving",
@@ -100,6 +102,7 @@ const AppLayout: React.FC = () => {
             onClick={() => {
               if (isAnimalDetail) { navigate("/animals"); }
               else if (path === "/animals") { navigate("/"); }
+              else if (path === "/bulls") { navigate("/"); }
               else if (path === "/calving") { navigate("/"); }
               else if (path === "/cow-work") { navigate("/"); }
               else if (path === "/protocols") { navigate("/"); }

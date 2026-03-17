@@ -455,37 +455,16 @@ export default function AnimalsDashboardScreen() {
                 </WCard>
               </>}
 
-              {/* Bull Roster */}
-              <Divider title="Bull Roster" />
-              <WCard style={{ padding: 0 }}>
-                <div className="px-3.5 pt-3 pb-1 flex items-center justify-between">
-                  <Lbl>{m.bulls} Active Bulls</Lbl>
-                </div>
-                {m.bullRoster.slice(0, 15).map((b, idx) => (
-                  <div key={b.id}>
-                    {idx > 0 && <div className="h-px mx-3.5" style={{ backgroundColor: "rgba(212,212,208,0.3)" }} />}
-                    <button onClick={() => nav(`/animals/${b.id}`)}
-                      className="w-full flex items-center justify-between px-3.5 py-2.5 cursor-pointer"
-                      style={{ background: "none", border: "none" }}>
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{b.tag}</span>
-                        {b.name && <span className="truncate" style={{ fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.4)" }}>{b.name}</span>}
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        {b.breed && <span style={{ fontSize: 10, color: "rgba(26,26,26,0.35)" }}>{b.breed}</span>}
-                        {b.age != null && <span style={{ fontSize: 10, fontWeight: 600, color: C.royalBlue }}>{b.age}yr</span>}
-                        <Chevron />
-                      </div>
-                    </button>
+              {/* Bulls link */}
+              <Divider title="Bulls" />
+              <WCard>
+                <button onClick={() => nav("/bulls")} className="w-full flex items-center justify-between cursor-pointer" style={{ background: "none", border: "none" }}>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: C.navy }}>{m.bulls} Active Bulls</p>
+                    <p style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.35)" }}>View bull list, breed breakdown, and flags</p>
                   </div>
-                ))}
-                {m.bulls > 15 && (
-                  <div className="text-center py-2" style={{ borderTop: "1px solid rgba(212,212,208,0.2)" }}>
-                    <button onClick={() => setTab("Records")} className="cursor-pointer" style={{ fontSize: 11, fontWeight: 500, color: C.royalBlue, background: "none", border: "none" }}>
-                      View all {m.bulls} bulls →
-                    </button>
-                  </div>
-                )}
+                  <Chevron />
+                </button>
               </WCard>
 
               {/* Sire Breakdown — hidden if no sire data */}

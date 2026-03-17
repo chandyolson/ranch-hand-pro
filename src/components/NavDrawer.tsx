@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 const NAV_ITEMS = [
   "Operation Dashboard",
   "Animals",
+  "Bulls",
   "Cow Work",
   "Protocols",
   "Calving",
