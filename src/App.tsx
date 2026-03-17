@@ -4,7 +4,7 @@ import { ToastProvider } from "@/components/ToastContext";
 import CowWorkCloseOutScreen from "@/screens/CowWorkCloseOutScreen";
 import AppLayout from "@/components/AppLayout";
 import DashboardScreen from "@/screens/DashboardScreen";
-import AnimalsScreen from "@/screens/AnimalsScreen";
+import AnimalsDashboardScreen from "@/screens/AnimalsDashboardScreen";
 import AnimalDetailScreen from "@/screens/AnimalDetailScreen";
 import AddAnimalScreen from "@/screens/AddAnimalScreen";
 import CowWorkScreen from "@/screens/CowWorkScreen";
@@ -43,7 +43,7 @@ const App = () => (
       <Routes>
         <Route path="/" element={<AppLayout />}>
           <Route index element={<DashboardScreen />} />
-          <Route path="animals" element={<AnimalsScreen />} />
+          <Route path="animals" element={<AnimalsDashboardScreen />} />
           <Route path="animals/new" element={<AddAnimalScreen />} />
           <Route path="animals/:id" element={<AnimalDetailScreen />} />
           <Route path="cow-work" element={<CowWorkScreen />} />
