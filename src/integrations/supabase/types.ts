@@ -162,6 +162,7 @@ export type Database = {
         Row: {
           birth_date: string | null
           breed: string | null
+          bull_role: string[] | null
           calf_tag: string | null
           characteristics: Json | null
           created_at: string | null
@@ -194,6 +195,7 @@ export type Database = {
         Insert: {
           birth_date?: string | null
           breed?: string | null
+          bull_role?: string[] | null
           calf_tag?: string | null
           characteristics?: Json | null
           created_at?: string | null
@@ -226,6 +228,7 @@ export type Database = {
         Update: {
           birth_date?: string | null
           breed?: string | null
+          bull_role?: string[] | null
           calf_tag?: string | null
           characteristics?: Json | null
           created_at?: string | null
@@ -830,6 +833,7 @@ export type Database = {
           cattle_type: string
           created_at: string | null
           description: string | null
+          group_type: string
           id: string
           is_active: boolean
           name: string
@@ -839,6 +843,7 @@ export type Database = {
           cattle_type?: string
           created_at?: string | null
           description?: string | null
+          group_type?: string
           id?: string
           is_active?: boolean
           name: string
@@ -848,6 +853,7 @@ export type Database = {
           cattle_type?: string
           created_at?: string | null
           description?: string | null
+          group_type?: string
           id?: string
           is_active?: boolean
           name?: string
