@@ -516,7 +516,7 @@ export default function CalvingDashboardScreen() {
   const locationTable = useMemo(() => {
     const today = Date.now();
     const map: Record<string, { total: number; wts: number[]; ages: number[] }> = {};
-    filtered.forEach((r: any) => {
+    (filtered || []).forEach((r: any) => {
       const key = r.location_id || "__none";
       if (!map[key]) map[key] = { total: 0, wts: [], ages: [] };
       map[key].total++;
