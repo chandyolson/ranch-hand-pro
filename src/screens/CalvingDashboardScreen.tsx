@@ -794,21 +794,45 @@ export default function CalvingDashboardScreen() {
               </WCard>
 
               {/* Calf Age & Est. Weight — moved up below distribution */}
-              <Divider title="Calf Age & Est. Weight" />
-              <WCard>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <Lbl>Avg Calf Age</Lbl>
-                    <div className="flex items-baseline gap-1.5 mt-1"><Big value={String(m.avgAge)} /><span style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>days</span></div>
-                    <Sub>oldest {m.oldestAge}d · youngest {m.youngestAge}d</Sub>
-                  </div>
-                  <div className="text-right">
+              <Divider title="Calf Age & Deaths" />
+              <div className="grid grid-cols-2 gap-3">
+                <WCard>
+                  <Lbl>Avg Calf Age</Lbl>
+                  <div className="flex items-baseline gap-1.5 mt-1"><Big value={String(m.avgAge)} /><span style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>days</span></div>
+                  <Sub>oldest {m.oldestAge}d · youngest {m.youngestAge}d</Sub>
+                  <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(14,38,70,0.06)" }}>
                     <Lbl>Est. Avg Weight</Lbl>
-                    <div className="flex items-baseline gap-1.5 mt-1 justify-end"><Big value={String(Math.round((m.avgWt ? +m.avgWt : 82) + 2.2 * m.avgAge))} /><span style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>lb</span></div>
-                    <Sub>based on 2.2 lb/day ADG</Sub>
+                    <div className="flex items-baseline gap-1.5 mt-1"><Big value={String(Math.round((m.avgWt ? +m.avgWt : 82) + 2.2 * m.avgAge))} /><span style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>lb</span></div>
+                    <Sub>2.2 lb/day ADG</Sub>
                   </div>
-                </div>
-              </WCard>
+                </WCard>
+                {m.dead > 0 ? (
+                  <WCard>
+                    <Lbl>Cause of Death</Lbl>
+                    <div style={{ width: "100%", height: 110, marginTop: 4 }}>
+                      <ResponsiveContainer><PieChart><Pie data={deathPie} cx="50%" cy="50%" innerRadius={22} outerRadius={42} dataKey="value" paddingAngle={2} strokeWidth={0}>
+                        {deathPie.map((e, i) => <Cell key={i} fill={e.color} />)}
+                      </Pie><Tooltip content={<Tip />} /></PieChart></ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-col gap-1 mt-1">
+                      {deathPie.map((d) => (
+                        <div key={d.name} className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <div className="rounded-sm" style={{ width: 6, height: 6, backgroundColor: d.color }} />
+                            <span style={{ fontSize: 10, fontWeight: 500, color: "rgba(26,26,26,0.6)" }}>{d.name}</span>
+                          </div>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: C.text }}>{d.pct}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </WCard>
+                ) : (
+                  <WCard>
+                    <Lbl>Death Loss</Lbl>
+                    <div className="flex items-baseline gap-1.5 mt-2"><Big value="0" /><span style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>dead</span></div>
+                  </WCard>
+                )}
+              </div>
               {m.ageDist.length > 0 && (
                 <WCard>
                   <Lbl>Calf Age Distribution</Lbl>
@@ -823,32 +847,6 @@ export default function CalvingDashboardScreen() {
                   </div>
                 </WCard>
               )}
-
-              {/* Death Breakdown */}
-              {m.dead > 0 && <>
-                <Divider title="Death Breakdown" />
-                <WCard>
-                  <Lbl>Cause of Death</Lbl>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div style={{ width: 130, height: 130, flexShrink: 0 }}>
-                      <ResponsiveContainer><PieChart><Pie data={deathPie} cx="50%" cy="50%" innerRadius={28} outerRadius={52} dataKey="value" paddingAngle={2} strokeWidth={0}>
-                        {deathPie.map((e, i) => <Cell key={i} fill={e.color} />)}
-                      </Pie><Tooltip content={<Tip />} /></PieChart></ResponsiveContainer>
-                    </div>
-                    <div className="flex-1 flex flex-col gap-1.5">
-                      {deathPie.map((d) => (
-                        <div key={d.name} className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <div className="rounded-sm" style={{ width: 7, height: 7, backgroundColor: d.color }} />
-                            <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(26,26,26,0.6)" }}>{d.name}</span>
-                          </div>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{d.pct}% <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(26,26,26,0.3)" }}>({d.value})</span></span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </WCard>
-              </>}
 
               {/* Calving Curve */}
               <Divider title="Calving Curve" />
@@ -969,63 +967,66 @@ export default function CalvingDashboardScreen() {
                 </WCard>
               </>}
 
-              {/* Calves by Group */}
-              {groupTable.length > 0 && groupTable[0].name !== "No Group" && <>
-                <Divider title="Calves by Group" />
-                <WCard>
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
-                      <thead>
-                        <tr style={{ borderBottom: "2px solid #E5E5E0" }}>
-                          <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, color: C.navy }}>Group</th>
-                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: C.navy }}>Calves</th>
-                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Avg Age</th>
-                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Avg Wt</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {groupTable.map((g) => (
-                          <tr key={g.name} style={{ borderBottom: "1px solid #F0F0EC" }}>
-                            <td style={{ padding: "5px 8px", fontWeight: 600, color: C.text }}>{g.name}</td>
-                            <td style={{ textAlign: "center", padding: "5px 4px", color: C.text }}>{g.total}</td>
-                            <td style={{ textAlign: "center", padding: "5px 4px", color: "rgba(26,26,26,0.55)" }}>{g.avgAge != null ? `${g.avgAge}d` : "—"}</td>
-                            <td style={{ textAlign: "center", padding: "5px 4px", color: "rgba(26,26,26,0.55)" }}>{g.avgWt ? `${g.avgWt} lb` : "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </WCard>
-              </>}
-
-              {/* Calves by Location */}
-              {locationTable.length > 0 && locationTable[0].name !== "No Location" && <>
-                <Divider title="Calves by Location" />
-                <WCard>
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
-                      <thead>
-                        <tr style={{ borderBottom: "2px solid #E5E5E0" }}>
-                          <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, color: C.navy }}>Location</th>
-                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: C.navy }}>Calves</th>
-                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Avg Age</th>
-                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Avg Wt</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {locationTable.map((l) => (
-                          <tr key={l.name} style={{ borderBottom: "1px solid #F0F0EC" }}>
-                            <td style={{ padding: "5px 8px", fontWeight: 600, color: C.text }}>{l.name}</td>
-                            <td style={{ textAlign: "center", padding: "5px 4px", color: C.text }}>{l.total}</td>
-                            <td style={{ textAlign: "center", padding: "5px 4px", color: "rgba(26,26,26,0.55)" }}>{l.avgAge != null ? `${l.avgAge}d` : "—"}</td>
-                            <td style={{ textAlign: "center", padding: "5px 4px", color: "rgba(26,26,26,0.55)" }}>{l.avgWt ? `${l.avgWt} lb` : "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </WCard>
-              </>}
+              {/* Calves by Group & Location — side by side */}
+              {(groupTable.length > 0 && groupTable[0].name !== "No Group") || (locationTable.length > 0 && locationTable[0].name !== "No Location") ? <>
+                <Divider title="Calves by Group & Location" />
+                <div className="grid grid-cols-2 gap-3">
+                  {groupTable.length > 0 && groupTable[0].name !== "No Group" && (
+                    <WCard>
+                      <Lbl>By Group</Lbl>
+                      <div style={{ overflowX: "auto", marginTop: 6 }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
+                          <thead>
+                            <tr style={{ borderBottom: "2px solid #E5E5E0" }}>
+                              <th style={{ textAlign: "left", padding: "4px 4px", fontWeight: 700, color: C.navy }}>Group</th>
+                              <th style={{ textAlign: "center", padding: "4px 2px", fontWeight: 700, color: C.navy }}>#</th>
+                              <th style={{ textAlign: "center", padding: "4px 2px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Age</th>
+                              <th style={{ textAlign: "center", padding: "4px 2px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Wt</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {groupTable.map((g) => (
+                              <tr key={g.name} style={{ borderBottom: "1px solid #F0F0EC" }}>
+                                <td style={{ padding: "4px 4px", fontWeight: 600, color: C.text, fontSize: 10 }}>{g.name}</td>
+                                <td style={{ textAlign: "center", padding: "4px 2px", color: C.text }}>{g.total}</td>
+                                <td style={{ textAlign: "center", padding: "4px 2px", color: "rgba(26,26,26,0.55)" }}>{g.avgAge != null ? `${g.avgAge}d` : "—"}</td>
+                                <td style={{ textAlign: "center", padding: "4px 2px", color: "rgba(26,26,26,0.55)" }}>{g.avgWt ? `${g.avgWt}` : "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </WCard>
+                  )}
+                  {locationTable.length > 0 && locationTable[0].name !== "No Location" && (
+                    <WCard>
+                      <Lbl>By Location</Lbl>
+                      <div style={{ overflowX: "auto", marginTop: 6 }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
+                          <thead>
+                            <tr style={{ borderBottom: "2px solid #E5E5E0" }}>
+                              <th style={{ textAlign: "left", padding: "4px 4px", fontWeight: 700, color: C.navy }}>Location</th>
+                              <th style={{ textAlign: "center", padding: "4px 2px", fontWeight: 700, color: C.navy }}>#</th>
+                              <th style={{ textAlign: "center", padding: "4px 2px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Age</th>
+                              <th style={{ textAlign: "center", padding: "4px 2px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Wt</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {locationTable.map((l) => (
+                              <tr key={l.name} style={{ borderBottom: "1px solid #F0F0EC" }}>
+                                <td style={{ padding: "4px 4px", fontWeight: 600, color: C.text, fontSize: 10 }}>{l.name}</td>
+                                <td style={{ textAlign: "center", padding: "4px 2px", color: C.text }}>{l.total}</td>
+                                <td style={{ textAlign: "center", padding: "4px 2px", color: "rgba(26,26,26,0.55)" }}>{l.avgAge != null ? `${l.avgAge}d` : "—"}</td>
+                                <td style={{ textAlign: "center", padding: "4px 2px", color: "rgba(26,26,26,0.55)" }}>{l.avgWt ? `${l.avgWt}` : "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </WCard>
+                  )}
+                </div>
+              </> : null}
 
               {/* Flagged Cows */}
               {flagged && flagged.length > 0 && <>
