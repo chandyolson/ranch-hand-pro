@@ -170,6 +170,9 @@ const RedBookScreen: React.FC = () => {
                   isPinned={e.is_pinned}
                   hasAction={e.has_action}
                   attachmentCount={e.attachment_count}
+                  flagTier={e.flag_tier}
+                  assignedTo={e.assigned_to}
+                  actionStatus={e.action_status}
                   onClick={() => navigate("/red-book/" + e.id)}
                 />
               </React.Fragment>

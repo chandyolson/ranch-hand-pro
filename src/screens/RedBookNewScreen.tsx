@@ -12,6 +12,12 @@ const categoryConfig: Record<string, { label: string; color: string; bg: string 
   "repairs":     { label: "Repairs",           color: "#E8A0BF", bg: "rgba(232,160,191,0.12)" },
 };
 
+const tierColors: Record<string, { label: string; solid: string; bg: string; border: string }> = {
+  info:   { label: "Info",   solid: "#55BAAA", bg: "rgba(85,186,170,0.10)",  border: "#55BAAA" },
+  action: { label: "Action", solid: "#F3D12A", bg: "rgba(243,209,42,0.10)", border: "#B8860B" },
+  urgent: { label: "Urgent", solid: "#9B2335", bg: "rgba(155,35,53,0.08)",  border: "#9B2335" },
+};
+
 const categories = [
   { value: "invoice", label: "Invoice / Receipt" },
   { value: "cattle-note", label: "Cattle Note" },
@@ -31,6 +37,8 @@ const RedBookNewScreen: React.FC = () => {
   const [body, setBody] = useState("");
   const [category, setCategory] = useState<string>("");
   const [hasAction, setHasAction] = useState(false);
+  const [flagTier, setFlagTier] = useState<"info" | "action" | "urgent">("action");
+  const [assignedTo, setAssignedTo] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
@@ -89,6 +97,9 @@ const RedBookNewScreen: React.FC = () => {
           body: body.trim() || null,
           category,
           has_action: hasAction,
+          flag_tier: hasAction ? flagTier : null,
+          assigned_to: hasAction && assignedTo.trim() ? assignedTo.trim() : null,
+          action_status: hasAction ? "open" : null,
           is_pinned: false,
           attachment_count: pendingFiles.length,
           author_initials: "ME",
@@ -229,18 +240,18 @@ const RedBookNewScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Options card */}
-      <div className="rounded-xl px-3 py-3.5" style={{ backgroundColor: "white", border: "1px solid rgba(212,212,208,0.60)" }}>
+      {/* Action Item card */}
+      <div className="rounded-xl px-3 py-3.5" style={{ backgroundColor: "white", border: `1px solid ${hasAction ? tierColors[flagTier].border : "rgba(212,212,208,0.60)"}` }}>
         <div className="flex items-center justify-between">
           <div>
             <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Needs Follow-up</div>
-            <div style={{ fontSize: 12, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>Appears on dashboard action list</div>
+            <div style={{ fontSize: 12, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>Assign as an action item</div>
           </div>
           <button
             className="relative cursor-pointer transition-all rounded-full"
             style={{
               width: 44, height: 24,
-              backgroundColor: hasAction ? "#9B2335" : "rgba(26,26,26,0.15)",
+              backgroundColor: hasAction ? tierColors[flagTier].solid : "rgba(26,26,26,0.15)",
               border: "none",
             }}
             onClick={() => setHasAction(!hasAction)}
@@ -254,6 +265,56 @@ const RedBookNewScreen: React.FC = () => {
             />
           </button>
         </div>
+
+        {hasAction && (
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(26,26,26,0.06)" }} className="space-y-3">
+            {/* Priority tier pills */}
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 6 }}>PRIORITY</div>
+              <div className="flex gap-2">
+                {(["info", "action", "urgent"] as const).map((tier) => {
+                  const tc = tierColors[tier];
+                  const sel = flagTier === tier;
+                  return (
+                    <button
+                      key={tier}
+                      onClick={() => setFlagTier(tier)}
+                      className="flex items-center gap-1.5 rounded-full px-3 py-1.5 cursor-pointer active:scale-[0.96]"
+                      style={{
+                        fontSize: 12, fontWeight: 600,
+                        backgroundColor: sel ? tc.bg : "white",
+                        border: sel ? `2px solid ${tc.solid}` : "1px solid #D4D4D0",
+                        color: sel ? tc.solid : "rgba(26,26,26,0.5)",
+                      }}
+                    >
+                      <span className="rounded-full" style={{ width: 8, height: 8, backgroundColor: tc.solid }} />
+                      {tc.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Assign to */}
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(26,26,26,0.35)", textTransform: "uppercase", marginBottom: 6 }}>ASSIGN TO</div>
+              <input
+                type="text"
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+                placeholder="Team member name (optional)"
+                className="w-full outline-none"
+                style={{
+                  height: 36, borderRadius: 8, border: "1px solid #D4D4D0",
+                  padding: "0 12px", fontSize: 16, color: "#1A1A1A",
+                  backgroundColor: "#FFFFFF",
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "#F3D12A"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(243,209,42,0.25)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "#D4D4D0"; e.currentTarget.style.boxShadow = "none"; }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Attachments card */}
