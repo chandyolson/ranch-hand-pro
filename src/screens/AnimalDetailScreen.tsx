@@ -88,6 +88,22 @@ export default function AnimalDetailScreen() {
     enabled: !!id,
   });
 
+  const { data: resolvedFlags } = useQuery({
+    queryKey: ["animal-flags-resolved", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("animal_flags")
+        .select("*")
+        .eq("animal_id", id!)
+        .eq("operation_id", operationId)
+        .not("resolved_at", "is", null)
+        .order("resolved_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
   const { data: idHistoryRecords } = useQuery({
     queryKey: ["animal-id-history", id],
     queryFn: async () => {
@@ -123,6 +139,16 @@ export default function AnimalDetailScreen() {
   const [memo, setMemo] = useState("");
   const [selectedQuickNotes, setSelectedQuickNotes] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
+
+  // ── Flag management state ──
+  const [resolvingFlagId, setResolvingFlagId] = useState<string | null>(null);
+  const [resolvingLoading, setResolvingLoading] = useState(false);
+  const [showAddFlag, setShowAddFlag] = useState(false);
+  const [newFlagTier, setNewFlagTier] = useState<"management" | "production" | "cull">("management");
+  const [newFlagName, setNewFlagName] = useState("");
+  const [newFlagNote, setNewFlagNote] = useState("");
+  const [addFlagLoading, setAddFlagLoading] = useState(false);
+  const [showResolvedFlags, setShowResolvedFlags] = useState(false);
 
   // Sync from animal data
   useEffect(() => {
@@ -212,11 +238,26 @@ export default function AnimalDetailScreen() {
   // ── Flag display ──
   const tierToColor: Record<string, FlagColor> = { management: "teal", production: "gold", cull: "red" };
   const tierToHex: Record<string, string> = { management: "#55BAAA", production: "#F3D12A", cull: "#9B2335" };
+  const tierLabel: Record<string, string> = { management: "Management", production: "Production", cull: "Cull" };
   const activeFlags = (flags || []).map((f: any) => ({
+    id: f.id,
     color: tierToColor[f.flag_tier] || "teal" as FlagColor,
     hex: tierToHex[f.flag_tier] || "#55BAAA",
     name: f.flag_name || "",
     tier: f.flag_tier,
+    note: f.flag_note || "",
+    date: f.created_at ? fmtDate(f.created_at) : "",
+  }));
+  const resolvedFlagsList = (resolvedFlags || []).map((f: any) => ({
+    id: f.id,
+    color: tierToColor[f.flag_tier] || "teal" as FlagColor,
+    hex: tierToHex[f.flag_tier] || "#55BAAA",
+    name: f.flag_name || "",
+    tier: f.flag_tier,
+    note: f.flag_note || "",
+    date: f.created_at ? fmtDate(f.created_at) : "",
+    resolvedDate: f.resolved_at ? fmtDate(f.resolved_at) : "",
+  }));
   }));
   // Keep legacy single-flag references for the header icon
   const flagColor = activeFlags.length > 0 ? activeFlags[0].color : null;
@@ -224,6 +265,61 @@ export default function AnimalDetailScreen() {
 
   const displayedNotes = selectedQuickNotes.slice(0, 3);
   const moreCount = selectedQuickNotes.length - 3;
+
+  // ── Flag action handlers ──
+  const handleResolveFlag = async (flagId: string) => {
+    setResolvingLoading(true);
+    try {
+      const { error } = await supabase
+        .from("animal_flags")
+        .update({ resolved_at: new Date().toISOString() })
+        .eq("id", flagId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["animal-flags", id] });
+      queryClient.invalidateQueries({ queryKey: ["animal-flags-resolved", id] });
+      showToast("success", "Flag resolved");
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to resolve flag");
+    } finally {
+      setResolvingLoading(false);
+      setResolvingFlagId(null);
+    }
+  };
+
+  const handleAddFlag = async () => {
+    if (!newFlagName.trim()) {
+      showToast("error", "Flag name is required");
+      return;
+    }
+    setAddFlagLoading(true);
+    try {
+      const { error } = await supabase.from("animal_flags").insert({
+        animal_id: id,
+        operation_id: operationId,
+        flag_tier: newFlagTier,
+        flag_name: newFlagName.trim(),
+        flag_note: newFlagNote.trim() || null,
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["animal-flags", id] });
+      showToast("success", `Flag "${newFlagName.trim()}" added`);
+      setNewFlagTier("management");
+      setNewFlagName("");
+      setNewFlagNote("");
+      setShowAddFlag(false);
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to add flag");
+    } finally {
+      setAddFlagLoading(false);
+    }
+  };
+
+  // Known flag names per tier for the Add Flag picker
+  const FLAG_NAME_OPTIONS: Record<string, string[]> = {
+    cull: ["Cull", "Cull Candidate", "Aggressive"],
+    production: ["Bad Bag", "Bad Feet", "Lame", "Lump Jaw", "Bad Disposition", "Bad Mother", "Old", "Poor Calf", "Poor Condition", "Poor Udder"],
+    management: ["Needs Tag", "Needs Treated", "Check Feet", "DNA"],
+  };
 
   // ── Derived history arrays ──
   const calvingHistory = (calvingRecords || []).map((c) => ({
@@ -699,10 +795,329 @@ export default function AnimalDetailScreen() {
               onBlur={blurReset}
             />
           </CollapsibleSection>
+
+          {/* ═══ FLAGS SECTION ═══ */}
+          <CollapsibleSection title={`Flags${activeFlags.length > 0 ? ` (${activeFlags.length})` : ""}`} defaultOpen={activeFlags.length > 0}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {activeFlags.length === 0 && !showAddFlag && (
+                <div style={{ fontSize: 12, color: "rgba(26,26,26,0.35)", padding: 8 }}>No active flags</div>
+              )}
+
+              {/* Active flag cards */}
+              {activeFlags.map((f) => (
+                <div key={f.id}>
+                  {/* Flag card */}
+                  {resolvingFlagId !== f.id && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 10,
+                        padding: 10,
+                        borderRadius: 8,
+                        border: `1px solid ${f.hex}33`,
+                        backgroundColor: `${f.hex}0D`,
+                      }}
+                    >
+                      <FlagIcon color={f.color} size="sm" />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}>{f.name}</span>
+                          <span style={{ fontSize: 10, fontWeight: 600, color: f.hex, textTransform: "uppercase" }}>{tierLabel[f.tier]}</span>
+                        </div>
+                        {f.note && (
+                          <div style={{ fontSize: 11, color: "rgba(26,26,26,0.55)", marginTop: 3, lineHeight: 1.4 }}>{f.note}</div>
+                        )}
+                        <div style={{ fontSize: 10, color: "rgba(26,26,26,0.35)", marginTop: 3 }}>{f.date}</div>
+                      </div>
+                      <button
+                        onClick={() => setResolvingFlagId(f.id)}
+                        type="button"
+                        style={{
+                          padding: "4px 10px",
+                          borderRadius: 9999,
+                          border: "1px solid #D4D4D0",
+                          backgroundColor: "white",
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "rgba(26,26,26,0.55)",
+                          cursor: "pointer",
+                          flexShrink: 0,
+                        }}
+                      >
+                        Resolve
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Inline resolve confirmation (red-bordered card) */}
+                  {resolvingFlagId === f.id && (
+                    <div
+                      style={{
+                        padding: 12,
+                        borderRadius: 8,
+                        border: "2px solid #9B2335",
+                        backgroundColor: "rgba(155,35,53,0.05)",
+                      }}
+                    >
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#9B2335", marginBottom: 8 }}>
+                        Resolve "{f.name}" flag? This cannot be undone.
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          onClick={() => setResolvingFlagId(null)}
+                          type="button"
+                          style={{
+                            padding: "5px 14px",
+                            borderRadius: 9999,
+                            border: "1px solid #D4D4D0",
+                            backgroundColor: "white",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "rgba(26,26,26,0.55)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleResolveFlag(f.id)}
+                          disabled={resolvingLoading}
+                          type="button"
+                          style={{
+                            padding: "5px 14px",
+                            borderRadius: 9999,
+                            border: "none",
+                            backgroundColor: "#9B2335",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "white",
+                            cursor: resolvingLoading ? "not-allowed" : "pointer",
+                            opacity: resolvingLoading ? 0.6 : 1,
+                          }}
+                        >
+                          {resolvingLoading ? "Resolving…" : "Resolve"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Resolved flags — collapsed toggle */}
+              {resolvedFlagsList.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setShowResolvedFlags(!showResolvedFlags)}
+                    type="button"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: "6px 0",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "rgba(26,26,26,0.40)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    <span style={{ transform: showResolvedFlags ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.15s", display: "inline-block" }}>▸</span>
+                    Resolved ({resolvedFlagsList.length})
+                  </button>
+                  {showResolvedFlags && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+                      {resolvedFlagsList.map((f) => (
+                        <div
+                          key={f.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 10,
+                            padding: 8,
+                            borderRadius: 8,
+                            border: "1px solid #E5E5E0",
+                            backgroundColor: "#F9F9F6",
+                            opacity: 0.65,
+                          }}
+                        >
+                          <FlagIcon color={f.color} size="sm" />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: "#1A1A1A", textDecoration: "line-through" }}>{f.name}</span>
+                            </div>
+                            {f.note && (
+                              <div style={{ fontSize: 11, color: "rgba(26,26,26,0.45)", marginTop: 2, lineHeight: 1.3 }}>{f.note}</div>
+                            )}
+                            <div style={{ fontSize: 10, color: "rgba(26,26,26,0.30)", marginTop: 2 }}>Resolved {f.resolvedDate}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Add Flag section */}
+              {!showAddFlag ? (
+                <button
+                  onClick={() => setShowAddFlag(true)}
+                  type="button"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    padding: "8px 0",
+                    borderRadius: 8,
+                    border: "1px dashed #D4D4D0",
+                    backgroundColor: "transparent",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "rgba(26,26,26,0.45)",
+                    cursor: "pointer",
+                    width: "100%",
+                  }}
+                >
+                  + Add Flag
+                </button>
+              ) : (
+                <div
+                  style={{
+                    padding: 12,
+                    borderRadius: 8,
+                    border: "1px solid #F3D12A",
+                    backgroundColor: "rgba(243,209,42,0.06)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1A1A" }}>New Flag</div>
+
+                  {/* Tier picker pills */}
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {(["management", "production", "cull"] as const).map((tier) => {
+                      const sel = newFlagTier === tier;
+                      const hex = tierToHex[tier];
+                      return (
+                        <button
+                          key={tier}
+                          onClick={() => { setNewFlagTier(tier); setNewFlagName(""); }}
+                          type="button"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            padding: "5px 10px",
+                            borderRadius: 9999,
+                            border: sel ? `2px solid ${hex}` : "1px solid #D4D4D0",
+                            backgroundColor: sel ? `${hex}18` : "white",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: sel ? hex : "rgba(26,26,26,0.55)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <FlagIcon color={tierToColor[tier]} size="sm" />
+                          {tierLabel[tier]}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Flag name pills */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {(FLAG_NAME_OPTIONS[newFlagTier] || []).map((name) => {
+                      const sel = newFlagName === name;
+                      const hex = tierToHex[newFlagTier];
+                      return (
+                        <button
+                          key={name}
+                          onClick={() => setNewFlagName(name)}
+                          type="button"
+                          style={{
+                            padding: "5px 12px",
+                            borderRadius: 9999,
+                            border: sel ? `2px solid ${hex}` : "1px solid #D4D4D0",
+                            backgroundColor: sel ? hex : "white",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: sel ? "white" : "rgba(26,26,26,0.55)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {name}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Note field */}
+                  <textarea
+                    value={newFlagNote}
+                    onChange={(e) => setNewFlagNote(e.target.value)}
+                    placeholder="Note (optional)"
+                    style={{
+                      width: "100%",
+                      minHeight: 50,
+                      resize: "none",
+                      borderRadius: 8,
+                      padding: "8px 12px",
+                      fontSize: 16,
+                      border: "1px solid #D4D4D0",
+                      backgroundColor: "#FFFFFF",
+                      outline: "none",
+                      boxSizing: "border-box" as const,
+                    }}
+                    onFocus={focusGold}
+                    onBlur={blurReset}
+                  />
+
+                  {/* Action buttons */}
+                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                    <button
+                      onClick={() => { setShowAddFlag(false); setNewFlagTier("management"); setNewFlagName(""); setNewFlagNote(""); }}
+                      type="button"
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: 9999,
+                        border: "1px solid #D4D4D0",
+                        backgroundColor: "white",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "rgba(26,26,26,0.55)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleAddFlag}
+                      disabled={addFlagLoading || !newFlagName.trim()}
+                      type="button"
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: 9999,
+                        border: "none",
+                        backgroundColor: !newFlagName.trim() ? "#D4D4D0" : "#0E2646",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "white",
+                        cursor: addFlagLoading || !newFlagName.trim() ? "not-allowed" : "pointer",
+                        opacity: addFlagLoading ? 0.6 : 1,
+                      }}
+                    >
+                      {addFlagLoading ? "Saving…" : "Add Flag"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
         </div>
       )}
-
-      {/* ═══ HISTORY TAB ═══ */}
       {activeTab === "history" && (
         <div className="space-y-3" style={{ paddingTop: 10 }}>
           {/* Calving History — not shown for bulls */}
