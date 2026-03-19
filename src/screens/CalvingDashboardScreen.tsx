@@ -553,7 +553,7 @@ export default function CalvingDashboardScreen() {
                   )}
                   <div className="flex justify-between mt-1.5" style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.3)" }}>
                     <span>{fmt(m.firstCalf)} · Day {m.daysIn}</span>
-                    {daysLeft !== null && <span style={{ color: C.tealLight }}>{daysLeft > 0 ? `${daysLeft} days remain` : "Season complete"}</span>}
+                    {daysLeft !== null && <span style={{ color: C.tealLight }}>{daysLeft > 0 ? `${daysLeft} days remain` : `${pct !== "—" ? pct + "%" : ""} Season complete`}</span>}
                     <span>{fmt(expectedLast)} est.</span>
                   </div>
                   {bullsIn && (
@@ -619,6 +619,37 @@ export default function CalvingDashboardScreen() {
                 </div>
                 <Legend data={[{ name: "Alive", value: m.alive, color: C.royalBlue }, { name: "Dead", value: m.dead, color: C.crimson }]} />
               </WCard>
+
+              {/* Calf Age & Est. Weight — moved up below distribution */}
+              <Divider title="Calf Age & Est. Weight" />
+              <WCard>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <Lbl>Avg Calf Age</Lbl>
+                    <div className="flex items-baseline gap-1.5 mt-1"><Big value={String(m.avgAge)} /><span style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>days</span></div>
+                    <Sub>oldest {m.oldestAge}d · youngest {m.youngestAge}d</Sub>
+                  </div>
+                  <div className="text-right">
+                    <Lbl>Est. Avg Weight</Lbl>
+                    <div className="flex items-baseline gap-1.5 mt-1 justify-end"><Big value={String(Math.round((m.avgWt ? +m.avgWt : 82) + 2.2 * m.avgAge))} /><span style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>lb</span></div>
+                    <Sub>based on 2.2 lb/day ADG</Sub>
+                  </div>
+                </div>
+              </WCard>
+              {m.ageDist.length > 0 && (
+                <WCard>
+                  <Lbl>Calf Age Distribution</Lbl>
+                  <div style={{ width: "100%", height: 140 }} className="mt-2">
+                    <ResponsiveContainer><BarChart data={m.ageDist} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(14,38,70,0.06)" />
+                      <XAxis dataKey="range" tick={{ fontSize: 8, fill: "rgba(26,26,26,0.35)" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 8, fill: "rgba(26,26,26,0.35)" }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<Tip />} />
+                      <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Calves" fill={C.royalBlue} fillOpacity={0.8} />
+                    </BarChart></ResponsiveContainer>
+                  </div>
+                </WCard>
+              )}
 
               {/* Death Breakdown */}
               {m.dead > 0 && <>
@@ -715,36 +746,6 @@ export default function CalvingDashboardScreen() {
                 <Legend data={[{ name: "No Assist", value: m.noAssist, color: C.royalBlue }, { name: "Easy Pull", value: m.easyPull, color: C.antiqueGold }, { name: "Hard Pull", value: m.hardPull, color: C.crimson }]} />
               </WCard>
 
-              {/* Calf Age */}
-              <Divider title="Calf Age & Est. Weight" />
-              <WCard>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <Lbl>Avg Calf Age</Lbl>
-                    <div className="flex items-baseline gap-1.5 mt-1"><Big value={String(m.avgAge)} /><span style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>days</span></div>
-                    <Sub>oldest {m.oldestAge}d · youngest {m.youngestAge}d</Sub>
-                  </div>
-                  <div className="text-right">
-                    <Lbl>Est. Avg Weight</Lbl>
-                    <div className="flex items-baseline gap-1.5 mt-1 justify-end"><Big value={String(Math.round((m.avgWt ? +m.avgWt : 82) + 2.2 * m.avgAge))} /><span style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>lb</span></div>
-                    <Sub>based on 2.2 lb/day ADG</Sub>
-                  </div>
-                </div>
-              </WCard>
-              {m.ageDist.length > 0 && (
-                <WCard>
-                  <Lbl>Calf Age Distribution</Lbl>
-                  <div style={{ width: "100%", height: 140 }} className="mt-2">
-                    <ResponsiveContainer><BarChart data={m.ageDist} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(14,38,70,0.06)" />
-                      <XAxis dataKey="range" tick={{ fontSize: 8, fill: "rgba(26,26,26,0.35)" }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 8, fill: "rgba(26,26,26,0.35)" }} axisLine={false} tickLine={false} />
-                      <Tooltip content={<Tip />} />
-                      <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Calves" fill={C.royalBlue} fillOpacity={0.8} />
-                    </BarChart></ResponsiveContainer>
-                  </div>
-                </WCard>
-              )}
 
               {/* Flagged Cows */}
               {flagged && flagged.length > 0 && <>
