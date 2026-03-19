@@ -270,18 +270,19 @@ export default function AnimalsDashboardScreen() {
         ))}
       </div>
 
-      {/* Search bar */}
-      <div className="relative mt-3 mb-2">
-        <div className="absolute" style={{ left: 14, top: 22, transform: "translateY(-50%)", pointerEvents: "none" }}>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="rgba(26,26,26,0.3)" strokeWidth="2" strokeLinecap="round"><circle cx="8.5" cy="8.5" r="6" /><path d="M13 13l4.5 4.5" /></svg>
-        </div>
-        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by tag, breed, or type…" className="w-full outline-none"
-          style={{ height: 44, borderRadius: 22, border: "1px solid #D4D4D0", background: "#FFF", padding: "0 16px 0 42px", fontSize: 14, fontFamily: "Inter, sans-serif", color: C.text }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = C.yellow; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(243,209,42,0.25)"; }}
-          onBlur={(e) => { setTimeout(() => { e.currentTarget.style.borderColor = "#D4D4D0"; e.currentTarget.style.boxShadow = "none"; }, 150); }}
-        />
-        {search.length >= 2 && searchResults && searchResults.length > 0 && (
+      {/* Search bar + Add New */}
+      <div className="flex items-center gap-2 mt-3 mb-2">
+        <div className="relative flex-1">
+          <div className="absolute" style={{ left: 14, top: 22, transform: "translateY(-50%)", pointerEvents: "none" }}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="rgba(26,26,26,0.3)" strokeWidth="2" strokeLinecap="round"><circle cx="8.5" cy="8.5" r="6" /><path d="M13 13l4.5 4.5" /></svg>
+          </div>
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by tag, breed, or type…" className="w-full outline-none"
+            style={{ height: 44, borderRadius: 22, border: "1px solid #D4D4D0", background: "#FFF", padding: "0 16px 0 42px", fontSize: 14, fontFamily: "Inter, sans-serif", color: C.text }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = C.yellow; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(243,209,42,0.25)"; }}
+            onBlur={(e) => { setTimeout(() => { e.currentTarget.style.borderColor = "#D4D4D0"; e.currentTarget.style.boxShadow = "none"; }, 150); }}
+          />
+          {search.length >= 2 && searchResults && searchResults.length > 0 && (
           <div className="absolute left-0 right-0 bg-white border border-[#D4D4D0] rounded-xl mt-1 shadow-lg overflow-hidden" style={{ zIndex: 20, maxHeight: 260, overflowY: "auto" }}>
             {searchResults.map((a: any) => (
               <button key={a.id} onClick={() => { nav(`/animals/${a.id}`); setSearch(""); }}
@@ -301,6 +302,11 @@ export default function AnimalsDashboardScreen() {
             <p style={{ fontSize: 12, color: "rgba(26,26,26,0.4)" }}>No animals match "{search}"</p>
           </div>
         )}
+        </div>
+        <button onClick={() => nav("/animals/new")} type="button"
+          style={{ width: 44, height: 44, borderRadius: "50%", border: "none", backgroundColor: C.navy, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M10 4v12M4 10h12" /></svg>
+        </button>
       </div>
 
       {/* ═══════ DASHBOARD TAB ═══════ */}
