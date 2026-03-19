@@ -495,7 +495,7 @@ export default function CalvingDashboardScreen() {
   const groupTable = useMemo(() => {
     const today = Date.now();
     const map: Record<string, { total: number; wts: number[]; ages: number[] }> = {};
-    filtered.forEach((r: any) => {
+    (filtered || []).forEach((r: any) => {
       const key = r.group_id || "__none";
       if (!map[key]) map[key] = { total: 0, wts: [], ages: [] };
       map[key].total++;
