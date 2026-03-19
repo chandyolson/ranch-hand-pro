@@ -725,10 +725,10 @@ export default function CalvingDashboardScreen() {
               {/* Season Banner */}
               <div className="rounded-xl overflow-hidden" style={{ background: `linear-gradient(145deg, ${C.navy} 0%, ${C.navyMid} 55%, ${C.teal} 100%)` }}>
                 <div className="px-4 pt-4 pb-3">
-                  <div className="flex items-end justify-between">
+                  <div className="flex items-start justify-between">
                     <div>
                       <p className="uppercase" style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "rgba(255,255,255,0.3)" }}>{year} Calving Season</p>
-                      <p style={{ fontSize: 42, fontWeight: 800, color: "#fff", lineHeight: 1, letterSpacing: "-0.03em", marginTop: 4 }}>{m.total}</p>
+                      <p style={{ fontSize: 34, fontWeight: 800, color: "#fff", lineHeight: 1, letterSpacing: "-0.03em", marginTop: 4 }}>{m.total}</p>
                       <p style={{ fontSize: 12, fontWeight: 500, color: C.tealLight, marginTop: 4 }}>
                         calves born{expectedHead > 0 && !filterGroup && !filterLocation ? ` of ${expectedHead} expected` : ""}
                       </p>
@@ -738,12 +738,10 @@ export default function CalvingDashboardScreen() {
                         </p>
                       )}
                     </div>
-                    {expectedHead > 0 && (
-                      <div className="text-right">
-                        <p style={{ fontSize: 36, fontWeight: 800, color: C.yellow, lineHeight: 1 }}>{pct}<span style={{ fontSize: 18 }}>%</span></p>
-                        <p style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>complete</p>
-                      </div>
-                    )}
+                    <div className="text-center" style={{ paddingTop: 2 }}>
+                      <p style={{ fontSize: 38, fontWeight: 800, color: C.yellow, lineHeight: 1 }}>{m.total > 0 ? (m.alive / m.total * 100).toFixed(1) : "—"}<span style={{ fontSize: 18 }}>%</span></p>
+                      <p className="uppercase" style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>Live Calf %</p>
+                    </div>
                   </div>
                   {expectedHead > 0 && (
                     <div className="w-full rounded-full overflow-hidden mt-4" style={{ height: 8, backgroundColor: "rgba(255,255,255,0.1)" }}>
@@ -777,30 +775,6 @@ export default function CalvingDashboardScreen() {
                   ))}
                 </div>
               </div>
-
-              {/* Live Calf % */}
-              <WCard>
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <Lbl>Live Calf %</Lbl>
-                    <div className="flex items-baseline gap-2 mt-1">
-                      <Big value={`${(m.alive / m.total * 100).toFixed(1)}%`} color={C.teal} />
-                      <span style={{ fontSize: 11, fontWeight: 600, color: C.teal }}>{m.alive} alive</span>
-                    </div>
-                    <Sub>of {m.total} born · {m.dead} dead ({(m.dead / m.total * 100).toFixed(1)}%)</Sub>
-                  </div>
-                  {priorLivePct && (
-                    <div className="text-right">
-                      <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.3)" }}>LAST YEAR</p>
-                      <p style={{ fontSize: 18, fontWeight: 700, color: "rgba(26,26,26,0.25)" }}>{priorLivePct}%</p>
-                    </div>
-                  )}
-                </div>
-                <div className="relative w-full mt-1" style={{ height: 10 }}>
-                  <div className="absolute inset-0 rounded-full" style={{ backgroundColor: "rgba(14,38,70,0.06)" }} />
-                  <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${(m.alive / m.total * 100).toFixed(1)}%`, background: `linear-gradient(90deg, ${C.royalBlue} 0%, ${C.teal} 100%)` }} />
-                </div>
-              </WCard>
 
               {/* Calving Distribution */}
               <Divider title="Calving Distribution" />
