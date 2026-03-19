@@ -472,7 +472,7 @@ export default function CalvingDashboardScreen() {
   // Calves by sire
   const sireData = useMemo(() => {
     const map: Record<string, { bulls: number; heifers: number; wts: number[]; total: number }> = {};
-    filtered.forEach((r: any) => {
+    (filtered || []).forEach((r: any) => {
       if (!r.sire_id) return;
       if (!map[r.sire_id]) map[r.sire_id] = { bulls: 0, heifers: 0, wts: [], total: 0 };
       map[r.sire_id].total++;
