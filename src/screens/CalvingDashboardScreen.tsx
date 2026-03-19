@@ -92,7 +92,7 @@ function useSeasonData(operationId: string, year: number) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("calving_records")
-        .select("calving_date, calf_status, calf_sex, birth_weight, assistance, death_explanation", { count: "exact" })
+        .select("calving_date, calf_status, calf_sex, birth_weight, assistance, death_explanation, sire_id, group_id, location_id", { count: "exact" })
         .eq("operation_id", operationId)
         .gte("calving_date", `${year}-01-01`)
         .lte("calving_date", `${year}-12-31`);
@@ -162,6 +162,51 @@ function useFlaggedDams(operationId: string, year: number) {
     },
     enabled: !!operationId,
   });
+}
+
+/* ═══════════════ SIRE / GROUP / LOCATION NAME LOOKUPS ═══════════════ */
+function useLookups(raw: any[] | undefined) {
+  const sireIds = useMemo(() => [...new Set((raw || []).map((r: any) => r.sire_id).filter(Boolean))], [raw]);
+  const groupIds = useMemo(() => [...new Set((raw || []).map((r: any) => r.group_id).filter(Boolean))], [raw]);
+  const locationIds = useMemo(() => [...new Set((raw || []).map((r: any) => r.location_id).filter(Boolean))], [raw]);
+
+  const { data: sires } = useQuery({
+    queryKey: ["calving-dash-sires", sireIds],
+    queryFn: async () => {
+      if (!sireIds.length) return {};
+      const { data } = await supabase.from("animals").select("id, tag").in("id", sireIds);
+      const map: Record<string, string> = {};
+      (data || []).forEach((s: any) => { map[s.id] = s.tag; });
+      return map;
+    },
+    enabled: sireIds.length > 0,
+  });
+
+  const { data: groups } = useQuery({
+    queryKey: ["calving-dash-groups", groupIds],
+    queryFn: async () => {
+      if (!groupIds.length) return {};
+      const { data } = await supabase.from("groups").select("id, name").in("id", groupIds);
+      const map: Record<string, string> = {};
+      (data || []).forEach((g: any) => { map[g.id] = g.name; });
+      return map;
+    },
+    enabled: groupIds.length > 0,
+  });
+
+  const { data: locations } = useQuery({
+    queryKey: ["calving-dash-locations", locationIds],
+    queryFn: async () => {
+      if (!locationIds.length) return {};
+      const { data } = await supabase.from("locations").select("id, name").in("id", locationIds);
+      const map: Record<string, string> = {};
+      (data || []).forEach((l: any) => { map[l.id] = l.name; });
+      return map;
+    },
+    enabled: locationIds.length > 0,
+  });
+
+  return { sireNames: sires || {}, groupNames: groups || {}, locationNames: locations || {} };
 }
 
 /* ═══════════════ COMPARE DATA HOOK ═══════════════ */
@@ -386,6 +431,104 @@ export default function CalvingDashboardScreen() {
   const { data: flagged } = useFlaggedDams(operationId, year);
   const m = useMetrics(raw, year);
   const { data: compareData, isLoading: compareLoading } = useCompareData(operationId, compareYears);
+  const { sireNames, groupNames, locationNames } = useLookups(raw);
+
+  // Filter state for group/location
+  const [filterGroup, setFilterGroup] = useState<string | null>(null);
+  const [filterLocation, setFilterLocation] = useState<string | null>(null);
+
+  // Filtered raw data (group & location filters apply to sire/group/location charts only)
+  const filtered = useMemo(() => {
+    if (!raw) return [];
+    return raw.filter((r: any) => {
+      if (filterGroup && r.group_id !== filterGroup) return false;
+      if (filterLocation && r.location_id !== filterLocation) return false;
+      return true;
+    });
+  }, [raw, filterGroup, filterLocation]);
+
+  // Group options from raw data
+  const groupOptions = useMemo(() => {
+    if (!raw) return [];
+    const counts: Record<string, number> = {};
+    raw.forEach((r: any) => { if (r.group_id) counts[r.group_id] = (counts[r.group_id] || 0) + 1; });
+    return Object.entries(counts)
+      .map(([id, count]) => ({ id, name: groupNames[id] || id.slice(0, 6), count }))
+      .sort((a, b) => b.count - a.count);
+  }, [raw, groupNames]);
+
+  const locationOptions = useMemo(() => {
+    if (!raw) return [];
+    const counts: Record<string, number> = {};
+    raw.forEach((r: any) => { if (r.location_id) counts[r.location_id] = (counts[r.location_id] || 0) + 1; });
+    return Object.entries(counts)
+      .map(([id, count]) => ({ id, name: locationNames[id] || id.slice(0, 6), count }))
+      .sort((a, b) => b.count - a.count);
+  }, [raw, locationNames]);
+
+  // Calves by sire
+  const sireData = useMemo(() => {
+    const map: Record<string, { bulls: number; heifers: number; wts: number[]; total: number }> = {};
+    filtered.forEach((r: any) => {
+      if (!r.sire_id) return;
+      if (!map[r.sire_id]) map[r.sire_id] = { bulls: 0, heifers: 0, wts: [], total: 0 };
+      map[r.sire_id].total++;
+      if (r.calf_sex === "Bull") map[r.sire_id].bulls++;
+      else if (r.calf_sex === "Heifer") map[r.sire_id].heifers++;
+      if (r.birth_weight != null) map[r.sire_id].wts.push(Number(r.birth_weight));
+    });
+    return Object.entries(map)
+      .map(([id, d]) => ({
+        name: sireNames[id] || "Unknown",
+        bulls: d.bulls,
+        heifers: d.heifers,
+        total: d.total,
+        avgWt: d.wts.length ? Math.round(d.wts.reduce((a, b) => a + b, 0) / d.wts.length) : null,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [filtered, sireNames]);
+
+  // Calves by group table
+  const groupTable = useMemo(() => {
+    const today = Date.now();
+    const map: Record<string, { total: number; wts: number[]; ages: number[] }> = {};
+    filtered.forEach((r: any) => {
+      const key = r.group_id || "__none";
+      if (!map[key]) map[key] = { total: 0, wts: [], ages: [] };
+      map[key].total++;
+      if (r.birth_weight != null) map[key].wts.push(Number(r.birth_weight));
+      if (r.calf_status === "Alive") map[key].ages.push(Math.floor((today - new Date(r.calving_date + "T00:00:00").getTime()) / DAY_MS));
+    });
+    return Object.entries(map)
+      .map(([id, d]) => ({
+        name: id === "__none" ? "No Group" : (groupNames[id] || id.slice(0, 6)),
+        total: d.total,
+        avgWt: d.wts.length ? Math.round(d.wts.reduce((a, b) => a + b, 0) / d.wts.length) : null,
+        avgAge: d.ages.length ? Math.round(d.ages.reduce((a, b) => a + b, 0) / d.ages.length) : null,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [filtered, groupNames]);
+
+  // Calves by location table
+  const locationTable = useMemo(() => {
+    const today = Date.now();
+    const map: Record<string, { total: number; wts: number[]; ages: number[] }> = {};
+    filtered.forEach((r: any) => {
+      const key = r.location_id || "__none";
+      if (!map[key]) map[key] = { total: 0, wts: [], ages: [] };
+      map[key].total++;
+      if (r.birth_weight != null) map[key].wts.push(Number(r.birth_weight));
+      if (r.calf_status === "Alive") map[key].ages.push(Math.floor((today - new Date(r.calving_date + "T00:00:00").getTime()) / DAY_MS));
+    });
+    return Object.entries(map)
+      .map(([id, d]) => ({
+        name: id === "__none" ? "No Location" : (locationNames[id] || id.slice(0, 6)),
+        total: d.total,
+        avgWt: d.wts.length ? Math.round(d.wts.reduce((a, b) => a + b, 0) / d.wts.length) : null,
+        avgAge: d.ages.length ? Math.round(d.ages.reduce((a, b) => a + b, 0) / d.ages.length) : null,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [filtered, locationNames]);
 
   // Prior year stats for Live Calf % comparison
   const priorDead = priorRaw ? priorRaw.filter((r) => r.calf_status === "Dead").length : 0;
@@ -516,6 +659,54 @@ export default function CalvingDashboardScreen() {
                 {y}
               </button>
             ))
+          )}
+        </div>
+      )}
+
+      {/* Group / Location filters */}
+      {tab === "This Season" && (groupOptions.length > 0 || locationOptions.length > 0) && (
+        <div className="flex gap-1.5 mb-2 flex-wrap" style={{ alignItems: "center" }}>
+          {groupOptions.length > 0 && (
+            <select
+              value={filterGroup || ""}
+              onChange={(e) => setFilterGroup(e.target.value || null)}
+              style={{
+                padding: "5px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+                border: filterGroup ? "none" : "1px solid #D4D4D0",
+                background: filterGroup ? C.teal : "transparent",
+                color: filterGroup ? "#FFF" : "rgba(26,26,26,0.5)",
+                cursor: "pointer", appearance: "auto" as const, maxWidth: 160,
+              }}
+            >
+              <option value="">All Groups</option>
+              {groupOptions.map((g) => (
+                <option key={g.id} value={g.id}>{g.name} ({g.count})</option>
+              ))}
+            </select>
+          )}
+          {locationOptions.length > 0 && (
+            <select
+              value={filterLocation || ""}
+              onChange={(e) => setFilterLocation(e.target.value || null)}
+              style={{
+                padding: "5px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+                border: filterLocation ? "none" : "1px solid #D4D4D0",
+                background: filterLocation ? C.teal : "transparent",
+                color: filterLocation ? "#FFF" : "rgba(26,26,26,0.5)",
+                cursor: "pointer", appearance: "auto" as const, maxWidth: 160,
+              }}
+            >
+              <option value="">All Locations</option>
+              {locationOptions.map((l) => (
+                <option key={l.id} value={l.id}>{l.name} ({l.count})</option>
+              ))}
+            </select>
+          )}
+          {(filterGroup || filterLocation) && (
+            <button onClick={() => { setFilterGroup(null); setFilterLocation(null); }} type="button"
+              style={{ padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 600, border: "1px solid #D4D4D0", background: "transparent", color: "rgba(26,26,26,0.4)", cursor: "pointer" }}>
+              Clear
+            </button>
           )}
         </div>
       )}
@@ -746,6 +937,113 @@ export default function CalvingDashboardScreen() {
                 <Legend data={[{ name: "No Assist", value: m.noAssist, color: C.royalBlue }, { name: "Easy Pull", value: m.easyPull, color: C.antiqueGold }, { name: "Hard Pull", value: m.hardPull, color: C.crimson }]} />
               </WCard>
 
+
+              {/* Calves by Sire */}
+              {sireData.length > 0 && <>
+                <Divider title="Calves by Sire" />
+                <WCard>
+                  <Lbl>Bull / Heifer Breakdown by Sire</Lbl>
+                  <div style={{ width: "100%", height: Math.max(160, sireData.length * 28 + 40) }} className="mt-2">
+                    <ResponsiveContainer>
+                      <BarChart data={sireData} layout="vertical" margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(14,38,70,0.06)" horizontal={false} />
+                        <XAxis type="number" tick={{ fontSize: 8, fill: "rgba(26,26,26,0.35)" }} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: "rgba(26,26,26,0.55)", fontWeight: 600 }} axisLine={false} tickLine={false} width={70} />
+                        <Tooltip content={<Tip />} />
+                        <Bar dataKey="bulls" stackId="s" fill={C.royalBlue} name="Bulls" />
+                        <Bar dataKey="heifers" stackId="s" fill={C.antiqueGold} radius={[0, 3, 3, 0]} name="Heifers" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <Legend data={[{ name: "Bulls", value: sireData.reduce((a, s) => a + s.bulls, 0), color: C.royalBlue }, { name: "Heifers", value: sireData.reduce((a, s) => a + s.heifers, 0), color: C.antiqueGold }]} />
+                </WCard>
+                {/* Sire summary table */}
+                <WCard>
+                  <Lbl>Sire Summary</Lbl>
+                  <div style={{ overflowX: "auto", marginTop: 8 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                      <thead>
+                        <tr style={{ borderBottom: "2px solid #E5E5E0" }}>
+                          <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, color: C.navy }}>Sire</th>
+                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: C.navy }}>Total</th>
+                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: C.royalBlue }}>Bulls</th>
+                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: C.antiqueGold }}>Heifers</th>
+                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Avg Wt</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sireData.map((s) => (
+                          <tr key={s.name} style={{ borderBottom: "1px solid #F0F0EC" }}>
+                            <td style={{ padding: "5px 8px", fontWeight: 600, color: C.text }}>{s.name}</td>
+                            <td style={{ textAlign: "center", padding: "5px 4px", color: C.text }}>{s.total}</td>
+                            <td style={{ textAlign: "center", padding: "5px 4px", color: C.royalBlue }}>{s.bulls}</td>
+                            <td style={{ textAlign: "center", padding: "5px 4px", color: "#B8860B" }}>{s.heifers}</td>
+                            <td style={{ textAlign: "center", padding: "5px 4px", color: "rgba(26,26,26,0.55)" }}>{s.avgWt ? `${s.avgWt} lb` : "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </WCard>
+              </>}
+
+              {/* Calves by Group */}
+              {groupTable.length > 0 && groupTable[0].name !== "No Group" && <>
+                <Divider title="Calves by Group" />
+                <WCard>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                      <thead>
+                        <tr style={{ borderBottom: "2px solid #E5E5E0" }}>
+                          <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, color: C.navy }}>Group</th>
+                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: C.navy }}>Calves</th>
+                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Avg Age</th>
+                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Avg Wt</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupTable.map((g) => (
+                          <tr key={g.name} style={{ borderBottom: "1px solid #F0F0EC" }}>
+                            <td style={{ padding: "5px 8px", fontWeight: 600, color: C.text }}>{g.name}</td>
+                            <td style={{ textAlign: "center", padding: "5px 4px", color: C.text }}>{g.total}</td>
+                            <td style={{ textAlign: "center", padding: "5px 4px", color: "rgba(26,26,26,0.55)" }}>{g.avgAge != null ? `${g.avgAge}d` : "—"}</td>
+                            <td style={{ textAlign: "center", padding: "5px 4px", color: "rgba(26,26,26,0.55)" }}>{g.avgWt ? `${g.avgWt} lb` : "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </WCard>
+              </>}
+
+              {/* Calves by Location */}
+              {locationTable.length > 0 && locationTable[0].name !== "No Location" && <>
+                <Divider title="Calves by Location" />
+                <WCard>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                      <thead>
+                        <tr style={{ borderBottom: "2px solid #E5E5E0" }}>
+                          <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, color: C.navy }}>Location</th>
+                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: C.navy }}>Calves</th>
+                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Avg Age</th>
+                          <th style={{ textAlign: "center", padding: "6px 4px", fontWeight: 700, color: "rgba(26,26,26,0.55)" }}>Avg Wt</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {locationTable.map((l) => (
+                          <tr key={l.name} style={{ borderBottom: "1px solid #F0F0EC" }}>
+                            <td style={{ padding: "5px 8px", fontWeight: 600, color: C.text }}>{l.name}</td>
+                            <td style={{ textAlign: "center", padding: "5px 4px", color: C.text }}>{l.total}</td>
+                            <td style={{ textAlign: "center", padding: "5px 4px", color: "rgba(26,26,26,0.55)" }}>{l.avgAge != null ? `${l.avgAge}d` : "—"}</td>
+                            <td style={{ textAlign: "center", padding: "5px 4px", color: "rgba(26,26,26,0.55)" }}>{l.avgWt ? `${l.avgWt} lb` : "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </WCard>
+              </>}
 
               {/* Flagged Cows */}
               {flagged && flagged.length > 0 && <>
