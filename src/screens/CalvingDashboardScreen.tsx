@@ -429,7 +429,7 @@ export default function CalvingDashboardScreen() {
 
   const { data: raw, isLoading } = useSeasonData(operationId, year);
   const { data: flagged } = useFlaggedDams(operationId, year);
-  const m = useMetrics(raw, year);
+  const mAll = useMetrics(raw, year);  // unfiltered — for banner pct, breeding dates
   const { data: compareData, isLoading: compareLoading } = useCompareData(operationId, compareYears);
   const { sireNames, groupNames, locationNames } = useLookups(raw);
 
@@ -437,15 +437,18 @@ export default function CalvingDashboardScreen() {
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
   const [filterLocation, setFilterLocation] = useState<string | null>(null);
 
-  // Filtered raw data (group & location filters apply to sire/group/location charts only)
+  // Filtered raw data — drives ALL dashboard sections
   const filtered = useMemo(() => {
-    if (!raw) return [];
+    if (!raw) return undefined;
+    if (!filterGroup && !filterLocation) return raw;
     return raw.filter((r: any) => {
       if (filterGroup && r.group_id !== filterGroup) return false;
       if (filterLocation && r.location_id !== filterLocation) return false;
       return true;
     });
   }, [raw, filterGroup, filterLocation]);
+
+  const m = useMetrics(filtered, year);  // filtered — drives all charts and cards
 
   // Group options from raw data
   const groupOptions = useMemo(() => {
@@ -544,12 +547,12 @@ export default function CalvingDashboardScreen() {
       .map(([d, n]) => ({ d: new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }), births: n, raw: d }));
   }, [priorRaw]);
 
-  // Breeding date estimates
-  const bullsIn = m?.firstCalf ? new Date(m.firstCalf.getTime() - 280 * DAY_MS) : null;
+  // Breeding date estimates (season-level, always unfiltered)
+  const bullsIn = mAll?.firstCalf ? new Date(mAll.firstCalf.getTime() - 280 * DAY_MS) : null;
   const bullsOut = bullsIn ? new Date(bullsIn.getTime() + 75 * DAY_MS) : null;
   const expectedLast = bullsOut ? new Date(bullsOut.getTime() + 280 * DAY_MS) : null;
   const daysLeft = expectedLast ? Math.max(0, Math.ceil((expectedLast.getTime() - Date.now()) / DAY_MS)) : null;
-  const pct = m && expectedHead > 0 ? (m.total / expectedHead * 100).toFixed(1) : "—";
+  const pct = mAll && expectedHead > 0 ? (mAll.total / expectedHead * 100).toFixed(1) : "—";
 
   // Search — query calving records matching dam tag, calf tag, or memo
   const { data: searchResults } = useQuery({
@@ -727,8 +730,13 @@ export default function CalvingDashboardScreen() {
                       <p className="uppercase" style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "rgba(255,255,255,0.3)" }}>{year} Calving Season</p>
                       <p style={{ fontSize: 42, fontWeight: 800, color: "#fff", lineHeight: 1, letterSpacing: "-0.03em", marginTop: 4 }}>{m.total}</p>
                       <p style={{ fontSize: 12, fontWeight: 500, color: C.tealLight, marginTop: 4 }}>
-                        calves born{expectedHead > 0 ? ` of ${expectedHead} expected` : ""}
+                        calves born{expectedHead > 0 && !filterGroup && !filterLocation ? ` of ${expectedHead} expected` : ""}
                       </p>
+                      {(filterGroup || filterLocation) && (
+                        <p style={{ fontSize: 10, fontWeight: 600, color: C.yellow, marginTop: 2 }}>
+                          Filtered: {[filterGroup && groupNames[filterGroup], filterLocation && locationNames[filterLocation]].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
                     </div>
                     {expectedHead > 0 && (
                       <div className="text-right">
@@ -1075,7 +1083,7 @@ export default function CalvingDashboardScreen() {
               {/* Records link */}
               <WCard>
                 <button onClick={() => setTab("Records")} className="w-full flex items-center justify-between cursor-pointer" style={{ background: "none", border: "none" }}>
-                  <div><p style={{ fontSize: 14, fontWeight: 600, color: C.navy }}>View all calving records</p><p style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.35)" }}>{m.total} records · {year} Season</p></div>
+                  <div><p style={{ fontSize: 14, fontWeight: 600, color: C.navy }}>View all calving records</p><p style={{ fontSize: 12, fontWeight: 500, color: "rgba(26,26,26,0.35)" }}>{mAll?.total || 0} records · {year} Season</p></div>
                   <Chevron />
                 </button>
               </WCard>
