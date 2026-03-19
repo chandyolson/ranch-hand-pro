@@ -258,7 +258,6 @@ export default function AnimalDetailScreen() {
     date: f.created_at ? fmtDate(f.created_at) : "",
     resolvedDate: f.resolved_at ? fmtDate(f.resolved_at) : "",
   }));
-  }));
   // Keep legacy single-flag references for the header icon
   const flagColor = activeFlags.length > 0 ? activeFlags[0].color : null;
   const flagHex = activeFlags.length > 0 ? activeFlags[0].hex : null;
