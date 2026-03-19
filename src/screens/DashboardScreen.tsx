@@ -29,10 +29,53 @@ const FLAG_CONFIG = {
 
 const DashboardScreen: React.FC = () => {
   const [search, setSearch] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [herdExpanded, setHerdExpanded] = useState(false);
   const { showToast } = useChuteSideToast();
   const navigate = useNavigate();
   const { operationId } = useOperation();
+
+  // Debounce search input (300ms)
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // ── Search results query ──
+  const { data: searchResults } = useQuery({
+    queryKey: ["dashboard-search", debouncedSearch, operationId],
+    queryFn: async () => {
+      const q = debouncedSearch;
+      if (q.length < 2) return { animals: [], projects: [] };
+
+      const [animalsRes, projectsRes] = await Promise.all([
+        supabase
+          .from("animals")
+          .select("id, tag, tag_color, type, breed, status")
+          .eq("operation_id", operationId)
+          .ilike("tag", `%${q}%`)
+          .order("tag")
+          .limit(10),
+        supabase
+          .from("projects")
+          .select("id, name, status, work_type")
+          .eq("operation_id", operationId)
+          .ilike("name", `%${q}%`)
+          .order("created_at", { ascending: false })
+          .limit(5),
+      ]);
+
+      return {
+        animals: animalsRes.data || [],
+        projects: projectsRes.data || [],
+      };
+    },
+    enabled: debouncedSearch.length >= 2,
+  });
+
+  const showDropdown = searchFocused && debouncedSearch.length >= 2 &&
+    ((searchResults?.animals?.length ?? 0) > 0 || (searchResults?.projects?.length ?? 0) > 0);
 
   // ── Stat card queries ──
   const { data: animalCounts } = useAnimalCounts();
@@ -167,18 +210,102 @@ const DashboardScreen: React.FC = () => {
     <div className="px-4 space-y-5">
       {/* SECTION 1 — Search */}
       <div className="relative">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ zIndex: 1 }}>
           <circle cx="8" cy="8" r="5.5" stroke="rgba(26,26,26,0.16)" strokeWidth="1.5" />
           <path d="M12.5 12.5L16 16" stroke="rgba(26,26,26,0.16)" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
         <input
           type="text"
-          placeholder="Search tags, animals, projects, notes…"
+          placeholder="Search tags, animals, projects…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
           className="w-full h-[46px] rounded-xl bg-white border border-border-divider font-inter outline-none transition-all pl-10 pr-4 focus:border-gold focus:ring-2 focus:ring-gold/20"
           style={{ fontSize: 16, fontWeight: 400, color: "#1A1A1A" }}
         />
+
+        {/* Search results dropdown */}
+        {showDropdown && (
+          <div
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              right: 0,
+              marginTop: 4,
+              backgroundColor: "white",
+              borderRadius: 12,
+              border: "1px solid #D4D4D0",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+              zIndex: 50,
+              maxHeight: 320,
+              overflowY: "auto",
+            }}
+          >
+            {/* Animal results */}
+            {(searchResults?.animals?.length ?? 0) > 0 && (
+              <>
+                <div style={{ padding: "8px 12px 4px", fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Animals</div>
+                {searchResults!.animals.map((a: any) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => { navigate(`/animals/${a.id}`); setSearch(""); }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      width: "100%",
+                      padding: "8px 12px",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    {a.tag_color && a.tag_color !== "None" && (
+                      <span style={{
+                        width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                        backgroundColor: a.tag_color === "Red" ? "#DC2626" : a.tag_color === "Yellow" ? "#EAB308" : a.tag_color === "Green" ? "#16A34A" : a.tag_color === "Blue" ? "#2563EB" : a.tag_color === "Orange" ? "#EA580C" : a.tag_color === "White" ? "#E5E5E5" : a.tag_color === "Purple" ? "#7C3AED" : "#999",
+                      }} />
+                    )}
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#0E2646" }}>{a.tag}</span>
+                    <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{[a.type, a.breed, a.status !== "Active" ? a.status : null].filter(Boolean).join(" · ")}</span>
+                  </button>
+                ))}
+              </>
+            )}
+
+            {/* Project results */}
+            {(searchResults?.projects?.length ?? 0) > 0 && (
+              <>
+                <div style={{ padding: "8px 12px 4px", fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", borderTop: (searchResults?.animals?.length ?? 0) > 0 ? "1px solid #E5E5E0" : "none" }}>Projects</div>
+                {searchResults!.projects.map((p: any) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => { navigate(`/cow-work/${p.id}`); setSearch(""); }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      width: "100%",
+                      padding: "8px 12px",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "#0E2646" }}>{p.name}</span>
+                    <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>{[p.work_type, p.status].filter(Boolean).join(" · ")}</span>
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* SECTION 2 — Stat Cards */}
