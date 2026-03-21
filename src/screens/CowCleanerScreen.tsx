@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { useOperation } from "@/contexts/OperationContext";
-import { ANGUS_TEMPLATES, type TemplateDefinition } from "@/lib/angus-templates";
+import { ALL_TEMPLATES, type BreedTemplate } from "@/lib/breed-templates";
 import * as XLSX from "xlsx";
 
 // === TYPES ===
@@ -217,7 +217,7 @@ const CowCleanerScreen: React.FC = () => {
 
   // Export state
   const [exporting, setExporting] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateDefinition | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<BreedTemplate | null>(null);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const { showToast } = useChuteSideToast();
   const { operationId } = useOperation();
@@ -349,7 +349,7 @@ const CowCleanerScreen: React.FC = () => {
     setShowTemplateSelector(true);
   }, []);
 
-  const handleExportToTemplate = useCallback((template: TemplateDefinition) => {
+  const handleExportToTemplate = useCallback((template: BreedTemplate) => {
     if (!fileInfo) return;
     setExporting(true);
     try {
@@ -360,8 +360,7 @@ const CowCleanerScreen: React.FC = () => {
         return;
       }
 
-      // Build column mapping from AI analysis: source column → template header
-      // We use likelyMapsTo to find the best match for each template column
+      // Build column mapping from AI analysis: source column → ChuteSide field
       const columnMap: Record<string, string> = {};
       flags.forEach((f) => {
         if (f.likelyMapsTo && f.issue !== "empty") {
@@ -371,30 +370,26 @@ const CowCleanerScreen: React.FC = () => {
 
       // Map ChuteSide field names to common Angus template header patterns
       const fieldToTemplateMap: Record<string, string[]> = {
-        tag: ["CALF TAG", "DAM TAG", "COW TAG", "TAG *", "TAG"],
+        tag: ["CALF TAG", "DAM TAG", "COW TAG", "TAG", "TAG *"],
         eid: ["ELEC ID", "840 EID"],
-        breed: ["CALF ASSN", "DAM ASSN", "COW ASSN", "ASSN *"],
-        sex: ["CALF SEX", "SEX*", "SEX *"],
-        birth_date: ["BIRTH DATE", "BIRTH DATE*", "BIRTH DATE *", "DAM BIRTH DATE", "COW BIRTH DATE"],
-        reg_number: ["CALF ASSN NUM", "DAM ASSN NUM", "DAM ASSN NUMBER", "COW ASSN NUMBER", "ASSN NUM *", "SIRE REG*", "DAM REG*"],
-        reg_name: ["ANGUS NAME*"],
-        sire_id: ["SIRE ASSN NUM", "SIRE REG*"],
-        dam_id: ["DAM ASSN NUM", "DAM REG*"],
-        tag_color: [],
-        year_born: [],
-        lifetime_id: [],
-        name: ["ANGUS NAME*"],
-        official_id: ["TATTOO/BRAND", "TATTOO/ BRAND*", "TATTOO /BRAND", "TATT"],
+        breed: ["CALF ASSN", "DAM ASSN", "COW ASSN", "ASSN"],
+        sex: ["CALF SEX", "SEX", "SEX *"],
+        birth_date: ["BIRTH DATE", "DAM BIRTH DATE", "COW BIRTH DATE", "BIRTH DATE *", "CALF BIRTH DATE"],
+        reg_number: ["CALF ASSN NUM", "DAM ASSN NUM", "DAM ASSN NUMBER", "COW ASSN NUMBER", "ASSN NUM", "ASSN NUM *", "SIRE REG", "DAM REG"],
+        reg_name: ["ANGUS NAME"],
+        sire_id: ["SIRE ASSN NUM", "SIRE REG"],
+        dam_id: ["DAM ASSN NUM", "DAM REG"],
+        official_id: ["TATTOO/BRAND", "TATTOO/ BRAND", "TATTOO /BRAND", "TATT"],
         calf_tag: ["CALF TAG"],
-        memo: ["COMMENT", "FS COMMENT"],
+        memo: ["COMMENT", "FS COMMENT", "COW FOOT SCORE COMMENT", "FOOT SCORE COMMENT"],
       };
 
       // For each template column, find the best source column
-      const templateHeaders = template.columns.map((c) => c.header);
+      const templateHeaders = template.columns.map((c) => c.name);
       const rows: Record<string, string>[] = data.map((row) => {
         const mapped: Record<string, string> = {};
         templateHeaders.forEach((header) => {
-          // Direct match: source column name matches template header
+          // Direct match: source column name matches template header (case-insensitive)
           const directMatch = Object.keys(row).find(
             (col) => col.toUpperCase().trim() === header.toUpperCase().trim()
           );
@@ -420,7 +415,7 @@ const CowCleanerScreen: React.FC = () => {
       // Build the Excel file with template structure
       const ws = XLSX.utils.json_to_sheet(rows, { header: templateHeaders });
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, template.sheetName);
+      XLSX.utils.book_append_sheet(wb, ws, template.name);
 
       const baseName = fileInfo.name.replace(/\.[^.]+$/, "");
       XLSX.writeFile(wb, `${baseName}_${template.id}.xlsx`);
@@ -1525,7 +1520,7 @@ const CowCleanerScreen: React.FC = () => {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {ANGUS_TEMPLATES.map((template) => (
+              {ALL_TEMPLATES.map((template) => (
                 <button
                   key={template.id}
                   onClick={() => handleExportToTemplate(template)}
