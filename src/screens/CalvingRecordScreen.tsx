@@ -776,7 +776,7 @@ export default function CalvingRecordScreen() {
                       const code = workTypeCode(r);
                       const wtName = r.project?.work_types?.[0]?.work_type?.name || code;
                       const bc = badgeColors[code] || defaultBadge;
-                      const projDate = r.project?.project_date ? formatDate(r.project.project_date) : "—";
+                      const projDate = r.project?.date ? formatDate(r.project.date) : "—";
                       const projName = r.project?.name || "";
                       return (
                         <div key={r.id || i} style={{ background: "rgba(26,26,26,0.03)", border: "1px solid rgba(26,26,26,0.06)", borderRadius: 8, padding: "10px 12px", marginBottom: 6 }}>

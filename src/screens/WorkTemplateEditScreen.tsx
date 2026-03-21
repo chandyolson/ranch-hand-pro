@@ -251,7 +251,7 @@ export default function WorkTemplateEditScreen() {
                       const alreadyAdded = products.some((p) => p.product_id === prod.id);
                       return (
                         <button
-                          key={op.id || op.product_id}
+                          key={op.product_id}
                           className="flex items-center justify-between w-full px-3 py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.03)]"
                           style={{
                             background: alreadyAdded ? "rgba(85,186,170,0.06)" : "white",
@@ -266,7 +266,7 @@ export default function WorkTemplateEditScreen() {
                               {
                                 product_id: prod.id,
                                 product_name: prod.name,
-                                dosage: op.custom_dosage || prod.dosage || "",
+                                dosage: prod.dosage || "",
                                 route: prod.route || "",
                               },
                             ]);
@@ -274,7 +274,7 @@ export default function WorkTemplateEditScreen() {
                         >
                           <span className="truncate" style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{prod.name}</span>
                           <span className="shrink-0 ml-2" style={{ fontSize: 12, color: "rgba(26,26,26,0.40)" }}>
-                            {alreadyAdded ? "Added" : [op.custom_dosage || prod.dosage, prod.route].filter(Boolean).join(" · ")}
+                            {alreadyAdded ? "Added" : [prod.dosage, prod.route].filter(Boolean).join(" · ")}
                           </span>
                         </button>
                       );
