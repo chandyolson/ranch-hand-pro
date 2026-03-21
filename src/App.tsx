@@ -87,6 +87,15 @@ const App = () => (
           <Route path="reference/templates/new" element={<WorkTemplateEditScreen />} />
           <Route path="reference/templates/edit" element={<WorkTemplateEditScreen />} />
           <Route path="cow-cleaner" element={<CowCleanerScreen />} />
+          <Route path="sale-barn" element={<SaleDaysList />} />
+          <Route path="sale-barn/customers" element={<CustomerDirectory />} />
+          <Route path="sale-barn/buyers" element={<BuyerDirectory />} />
+          <Route path="sale-barn/settings/prices" element={<PriceSchedule />} />
+          <Route path="sale-barn/settings/designations" element={<DesignationKeyConfig />} />
+          <Route path="sale-barn/:id" element={<SaleDayDetail />} />
+          <Route path="sale-barn/:id/work-order/new" element={<WorkOrderForm />} />
+          <Route path="sale-barn/:id/work-order/:woId" element={<WorkOrderForm />} />
+          <Route path="sale-barn/:id/work-order/:woId/chute" element={<ChutesideEntry />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

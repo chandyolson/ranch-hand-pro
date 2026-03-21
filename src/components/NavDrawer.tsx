@@ -117,6 +117,53 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
               </button>
             );
           })}
+
+          {/* Sale Barn section */}
+          <div style={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.10em",
+            color: "rgba(240,240,240,0.25)",
+            textTransform: "uppercase" as const,
+            paddingLeft: 24,
+            marginTop: 16,
+            marginBottom: 8,
+          }}>
+            SALE BARN
+          </div>
+          {["Sale Days", "Customers", "Buyers", "Settings"].map((item) => {
+            const isActive = activeItem === item;
+            return (
+              <button
+                key={item}
+                className="w-full text-left relative block"
+                style={{
+                  padding: "12px 24px",
+                  fontSize: 15,
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? "#F3D12A" : "rgba(240,240,240,0.6)",
+                  backgroundColor: isActive ? "rgba(243,209,42,0.06)" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+                onClick={() => onItemSelect?.(item)}
+              >
+                {isActive && (
+                  <span
+                    className="absolute left-0 rounded-r-sm"
+                    style={{
+                      width: 3,
+                      height: 24,
+                      backgroundColor: "#F3D12A",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                    }}
+                  />
+                )}
+                {item}
+              </button>
+            );
+          })}
         </div>
 
         <div className="mx-5 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
