@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useChuteSideToast } from "@/components/ToastContext";
+import { useOperation } from "@/contexts/OperationContext";
 import * as XLSX from "xlsx";
 
 // === TYPES ===
@@ -211,6 +213,139 @@ const CowCleanerScreen: React.FC = () => {
 
   // Questions state
   const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  // Export state
+  const [exporting, setExporting] = useState(false);
+  const { showToast } = useChuteSideToast();
+  const { operationId } = useOperation();
+
+  // === EXPORT HANDLERS ===
+
+  // Build cleaned data from original file + accepted fixes
+  const buildCleanedData = useCallback((): Record<string, string>[] => {
+    if (!fileInfo) return [];
+    // For now, return the preview rows with accepted column renames applied
+    // In production this would re-read the full file and apply all transformations
+    const acceptedFlags = flags.filter((f) => f.status === "accepted" && f.issue !== "clean");
+    const removedColumns = flags.filter((f) => f.issue === "empty" && f.status !== "rejected").map((f) => f.column);
+
+    return fileInfo.preview.map((row) => {
+      const cleaned: Record<string, string> = {};
+      Object.entries(row).forEach(([col, val]) => {
+        if (removedColumns.includes(col)) return; // skip empty columns
+        cleaned[col] = val;
+      });
+      return cleaned;
+    });
+  }, [fileInfo, flags]);
+
+  const handleDownloadCleaned = useCallback(() => {
+    if (!fileInfo) return;
+    setExporting(true);
+    try {
+      const data = buildCleanedData();
+      if (data.length === 0) {
+        showToast("error", "No data to export.");
+        return;
+      }
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Cleaned Data");
+      const baseName = fileInfo.name.replace(/\.[^.]+$/, "");
+      XLSX.writeFile(wb, `${baseName}_cleaned.xlsx`);
+      showToast("success", "Cleaned file downloaded.");
+    } catch (err) {
+      console.error("Download error:", err);
+      showToast("error", "Download failed. Try again.");
+    } finally {
+      setExporting(false);
+    }
+  }, [fileInfo, buildCleanedData, showToast]);
+
+  const handleImportToChuteSide = useCallback(async () => {
+    if (!fileInfo) return;
+    setExporting(true);
+    try {
+      const data = buildCleanedData();
+      if (data.length === 0) {
+        showToast("error", "No data to import.");
+        return;
+      }
+
+      // Build column mapping from AI analysis: source column → ChuteSide field
+      const columnMap: Record<string, string> = {};
+      flags.forEach((f) => {
+        if (f.likelyMapsTo && f.issue !== "empty") {
+          columnMap[f.column] = f.likelyMapsTo;
+        }
+      });
+
+      // Check we have the minimum required fields: tag and sex
+      const hasTag = Object.values(columnMap).includes("tag");
+      const hasSex = Object.values(columnMap).includes("sex");
+
+      if (!hasTag) {
+        showToast("error", "Can't import — no column maps to 'tag'. Go back and verify the analysis.");
+        setExporting(false);
+        return;
+      }
+      if (!hasSex) {
+        showToast("error", "Can't import — no column maps to 'sex'. Go back and verify the analysis.");
+        setExporting(false);
+        return;
+      }
+
+      // Map each row to an animals insert record
+      const animals = data.map((row) => {
+        const record: Record<string, unknown> = {
+          operation_id: operationId,
+          status: "Active",
+        };
+        Object.entries(row).forEach(([col, val]) => {
+          const field = columnMap[col];
+          if (field && val) {
+            if (field === "year_born") {
+              const num = parseInt(val, 10);
+              if (!isNaN(num)) record[field] = num;
+            } else if (field === "registered") {
+              record[field] = ["yes", "true", "y", "1"].includes(val.toLowerCase());
+            } else {
+              record[field] = val;
+            }
+          }
+        });
+        return record;
+      });
+
+      // Filter out rows without a tag
+      const validAnimals = animals.filter((a) => a.tag);
+
+      if (validAnimals.length === 0) {
+        showToast("error", "No valid rows found — every row needs at least a tag value.");
+        setExporting(false);
+        return;
+      }
+
+      const { error } = await supabase.from("animals").insert(validAnimals);
+
+      if (error) {
+        console.error("Import error:", error);
+        showToast("error", `Import failed: ${error.message}`);
+      } else {
+        showToast("success", `${validAnimals.length} animals imported to ChuteSide.`);
+      }
+    } catch (err) {
+      console.error("Import error:", err);
+      showToast("error", "Import failed. Try again.");
+    } finally {
+      setExporting(false);
+    }
+  }, [fileInfo, flags, operationId, buildCleanedData, showToast]);
+
+  const handleBreedAssociation = useCallback(() => {
+    // TODO: Build template selector and mapping engine
+    showToast("info", "Breed Association export is coming soon. Use Download Cleaned File for now.");
+  }, [showToast]);
 
   // UX Rule 6b: Tags are strings — all values read as text, never numbers
   const parseCSV = useCallback((text: string): { columns: string[]; rows: Record<string, string>[]; totalRows: number } => {
@@ -1129,6 +1264,8 @@ const CowCleanerScreen: React.FC = () => {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {/* Import to ChuteSide */}
           <button
+            onClick={handleImportToChuteSide}
+            disabled={exporting}
             className="active:scale-[0.98]"
             style={{
               display: "flex",
@@ -1170,6 +1307,8 @@ const CowCleanerScreen: React.FC = () => {
 
           {/* Export to breed association template */}
           <button
+            onClick={handleBreedAssociation}
+            disabled={exporting}
             className="active:scale-[0.98]"
             style={{
               display: "flex",
@@ -1212,6 +1351,8 @@ const CowCleanerScreen: React.FC = () => {
 
           {/* Download cleaned file */}
           <button
+            onClick={handleDownloadCleaned}
+            disabled={exporting}
             className="active:scale-[0.98]"
             style={{
               display: "flex",
