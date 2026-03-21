@@ -274,7 +274,7 @@ export default function WorkTemplateEditScreen() {
                         >
                           <span className="truncate" style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{prod.name}</span>
                           <span className="shrink-0 ml-2" style={{ fontSize: 12, color: "rgba(26,26,26,0.40)" }}>
-                            {alreadyAdded ? "Added" : [op.custom_dosage || prod.dosage, prod.route].filter(Boolean).join(" · ")}
+                            {alreadyAdded ? "Added" : [prod.dosage, prod.route].filter(Boolean).join(" · ")}
                           </span>
                         </button>
                       );

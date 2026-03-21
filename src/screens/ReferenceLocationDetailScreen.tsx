@@ -119,11 +119,11 @@ export default function ReferenceLocationDetailScreen() {
   const { data: recentProjects } = useQuery({
     queryKey: ["location-recent-projects", id],
     queryFn: async () => {
-      const { data } = await supabase.from("projects")
-        .select("id, name, project_date, head_count, work_types:project_work_types(work_type:work_types(code))")
+      const { data } = await (supabase.from("projects") as any)
+        .select("id, name, date, head_count, work_types:project_work_types(work_type:work_types(code))")
         .eq("location_id", id!).eq("operation_id", operationId)
-        .order("project_date", { ascending: false }).limit(5);
-      return data || [];
+        .order("date", { ascending: false }).limit(5);
+      return (data || []) as any[];
     },
     enabled: !!id,
   });
