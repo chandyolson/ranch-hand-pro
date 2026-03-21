@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOperation } from "@/contexts/OperationContext";
-import { useToast } from "@/components/ToastContext";
+import { useChuteSideToast as useToast } from "@/components/ToastContext";
 import { useSaleDays } from "@/hooks/sale-barn/useSaleDays";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
