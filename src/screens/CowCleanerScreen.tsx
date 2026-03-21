@@ -326,7 +326,7 @@ const CowCleanerScreen: React.FC = () => {
         return;
       }
 
-      const { error } = await supabase.from("animals").insert(validAnimals);
+      const { error } = await supabase.from("animals").insert(validAnimals as any);
 
       if (error) {
         console.error("Import error:", error);

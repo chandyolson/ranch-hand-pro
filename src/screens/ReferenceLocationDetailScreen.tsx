@@ -86,7 +86,7 @@ export default function ReferenceLocationDetailScreen() {
   const { data: animalCount } = useQuery({
     queryKey: ["location-animal-count", id],
     queryFn: async () => {
-      const { count } = await supabase.from("animals").select("id", { count: "exact", head: true })
+      const { count } = await (supabase.from("animals") as any).select("id", { count: "exact", head: true })
         .eq("location_id", id!).eq("operation_id", operationId).eq("status", "Active");
       return count || 0;
     },

@@ -139,11 +139,11 @@ export default function CalvingRecordScreen() {
       const { data: workRows } = await supabase.from("cow_work").select("*").eq("animal_id", damId).eq("operation_id", operationId);
       if (!workRows?.length) return [];
       const projectIds = [...new Set(workRows.map(w => w.project_id))];
-      const { data: projects } = await supabase.from("projects").select("id, name, project_date, work_types:project_work_types(work_type:work_types(code, name))").in("id", projectIds);
-      const projMap = new Map((projects || []).map(p => [p.id, p]));
+      const { data: projects } = await supabase.from("projects").select("id, name, date, work_types:project_work_types(work_type:work_types(code, name))").in("id", projectIds);
+      const projMap = new Map((projects || []).map((p: any) => [p.id, p]));
       return workRows.map(w => ({ ...w, project: projMap.get(w.project_id) })).sort((a, b) => {
-        const da = a.project?.project_date || "";
-        const db = b.project?.project_date || "";
+        const da = a.project?.date || "";
+        const db = b.project?.date || "";
         return db.localeCompare(da);
       });
     },
