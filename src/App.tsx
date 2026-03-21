@@ -37,6 +37,14 @@ import WorkTemplateListScreen from "@/screens/WorkTemplateListScreen";
 import WorkTemplateEditScreen from "@/screens/WorkTemplateEditScreen";
 import CowCleanerScreen from "@/screens/CowCleanerScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
+import SaleDaysList from "@/pages/sale-barn/SaleDaysList";
+import SaleDayDetail from "@/pages/sale-barn/SaleDayDetail";
+import WorkOrderForm from "@/pages/sale-barn/WorkOrderForm";
+import ChutesideEntry from "@/pages/sale-barn/ChutesideEntry";
+import CustomerDirectory from "@/pages/sale-barn/CustomerDirectory";
+import BuyerDirectory from "@/pages/sale-barn/BuyerDirectory";
+import PriceSchedule from "@/pages/sale-barn/PriceSchedule";
+import DesignationKeyConfig from "@/pages/sale-barn/DesignationKeyConfig";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
