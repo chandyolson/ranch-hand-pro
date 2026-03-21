@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 // === TYPES ===
 type WizardStep = "upload" | "confirm" | "analysis" | "questions" | "summary" | "export";
@@ -14,9 +15,11 @@ interface FileInfo {
 
 interface ColumnFlag {
   column: string;
-  issue: "empty" | "inconsistent" | "combined" | "unknown" | "format";
+  issue: "clean" | "empty" | "inconsistent" | "combined" | "unknown" | "format";
   description: string;
   suggestion: string;
+  confidence: "high" | "medium" | "low";
+  likelyMapsTo: string | null;
   status: "pending" | "accepted" | "rejected";
 }
 
@@ -198,7 +201,9 @@ const CowCleanerScreen: React.FC = () => {
 
   // Analysis state
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [flags, setFlags] = useState<ColumnFlag[]>([]);
+  const [overallNotes, setOverallNotes] = useState("");
   const [cleanCount, setCleanCount] = useState(0);
   const [emptyCount, setEmptyCount] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
@@ -261,102 +266,60 @@ const CowCleanerScreen: React.FC = () => {
     reader.readAsText(f);
   };
 
-  // Mock analysis — this is where Claude AI integration goes
-  const runAnalysis = () => {
-    if (!fileInfo) return;
+  // Real AI analysis via Supabase Edge Function → Claude API
+  const runAnalysis = async () => {
+    if (!fileInfo || !purpose) return;
     setAnalyzing(true);
-    // Simulate AI analysis delay
-    setTimeout(() => {
-      const mockFlags: ColumnFlag[] = [];
-      fileInfo.columns.forEach((col) => {
-        const lower = col.toLowerCase();
-        // Detect potential issues based on column names and values
-        if (lower.includes("tag") || lower.includes("id")) {
-          // Check if values look like they might have leading zeros stripped
-          const values = fileInfo.preview.map((r) => r[col]).filter(Boolean);
-          const hasNumericOnly = values.every((v) => /^\d+$/.test(v));
-          if (hasNumericOnly) {
-            mockFlags.push({
-              column: col,
-              issue: "format",
-              description: `"${col}" contains numeric-only values. Tags sometimes have leading zeros or letters that may have been stripped.`,
-              suggestion: "Verify these are correct or provide the original tag format.",
-              status: "pending",
-            });
-          }
-        }
-        if (lower.includes("date") || lower.includes("born") || lower.includes("dob")) {
-          const values = fileInfo.preview.map((r) => r[col]).filter(Boolean);
-          const formats = new Set(values.map((v) => (v.includes("/") ? "slash" : v.includes("-") ? "dash" : "other")));
-          if (formats.size > 1) {
-            mockFlags.push({
-              column: col,
-              issue: "inconsistent",
-              description: `"${col}" has mixed date formats (e.g. slashes and dashes).`,
-              suggestion: "Standardize to YYYY-MM-DD format.",
-              status: "pending",
-            });
-          }
-        }
-        // Detect potential combined data
-        if (lower.includes("name") || lower.includes("sire") || lower.includes("dam")) {
-          const values = fileInfo.preview.map((r) => r[col]).filter(Boolean);
-          const hasMultipleParts = values.some((v) => v.includes(" - ") || v.includes(" / ") || v.includes(";"));
-          if (hasMultipleParts) {
-            mockFlags.push({
-              column: col,
-              issue: "combined",
-              description: `"${col}" appears to contain combined data (multiple values separated by dashes or slashes).`,
-              suggestion: "Split into separate columns for name and registration number.",
-              status: "pending",
-            });
-          }
-        }
+    setAnalysisError(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("cow-cleaner-analyze", {
+        body: {
+          columns: fileInfo.columns,
+          sampleRows: fileInfo.preview,
+          totalRows: fileInfo.rows,
+          purpose,
+          purposeDescription: purpose === "custom" ? customDescription : undefined,
+        },
       });
 
-      // Check for empty columns
-      fileInfo.columns.forEach((col) => {
-        const values = fileInfo.preview.map((r) => r[col]).filter(Boolean);
-        if (values.length === 0) {
-          mockFlags.push({
-            column: col,
-            issue: "empty",
-            description: `"${col}" appears to be completely empty in the preview rows.`,
-            suggestion: "Remove this column or verify it has data in later rows.",
-            status: "pending",
-          });
-        }
-      });
+      if (error) throw new Error(error.message || "Analysis request failed");
+      if (data?.error) throw new Error(data.error);
 
-      // Check for unknown columns that don't map to known cattle terms
-      const knownTerms = [
-        "tag", "eid", "breed", "sex", "status", "birth", "date", "born", "dob",
-        "sire", "dam", "name", "reg", "color", "weight", "wt", "location",
-        "group", "pasture", "lot", "pen", "calving", "preg", "ai", "bull",
-        "brand", "ear", "tattoo", "hip", "lifetime", "official", "id",
-        "origin", "type", "memo", "notes", "comment",
-      ];
-      fileInfo.columns.forEach((col) => {
-        const lower = col.toLowerCase().replace(/[^a-z]/g, "");
-        const isKnown = knownTerms.some((t) => lower.includes(t));
-        if (!isKnown && !mockFlags.some((f) => f.column === col)) {
-          mockFlags.push({
-            column: col,
-            issue: "unknown",
-            description: `"${col}" doesn't match common cattle data fields.`,
-            suggestion: "What kind of data is in this column?",
-            status: "pending",
-          });
-        }
-      });
+      // Map API response to ColumnFlag format
+      const apiColumns = data.columns || [];
+      const mappedFlags: ColumnFlag[] = apiColumns.map(
+        (col: {
+          name: string;
+          status: string;
+          description: string;
+          suggestion: string;
+          confidence: string;
+          likelyMapsTo: string | null;
+        }) => ({
+          column: col.name,
+          issue: col.status as ColumnFlag["issue"],
+          description: col.description,
+          suggestion: col.suggestion,
+          confidence: (col.confidence || "medium") as ColumnFlag["confidence"],
+          likelyMapsTo: col.likelyMapsTo || null,
+          status: col.status === "clean" ? "accepted" : "pending",
+        })
+      );
 
-      setFlags(mockFlags);
-      setCleanCount(fileInfo.columns.length - mockFlags.length);
-      setEmptyCount(mockFlags.filter((f) => f.issue === "empty").length);
-      setQuestionCount(mockFlags.filter((f) => f.issue !== "empty").length);
-      setAnalyzing(false);
+      setFlags(mappedFlags);
+      setOverallNotes(data.overallNotes || "");
+      setCleanCount(mappedFlags.filter((f) => f.issue === "clean").length);
+      setEmptyCount(mappedFlags.filter((f) => f.issue === "empty").length);
+      setQuestionCount(mappedFlags.filter((f) => f.issue !== "clean" && f.issue !== "empty").length);
       setStep("analysis");
-    }, 1500);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Something went wrong during analysis";
+      console.error("Cow Cleaner analysis error:", err);
+      setAnalysisError(message);
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const pendingFlags = flags.filter((f) => f.status === "pending" && f.issue !== "empty");
@@ -636,15 +599,72 @@ const CowCleanerScreen: React.FC = () => {
         <SecondaryButton onClick={() => setStep("upload")} style={{ flex: 1 }}>
           Back
         </SecondaryButton>
-        <GoldButton onClick={runAnalysis} style={{ flex: 2 }}>
+        <GoldButton onClick={runAnalysis} disabled={analyzing} style={{ flex: 2 }}>
           {analyzing ? "Analyzing..." : "Run Analysis"}
         </GoldButton>
       </div>
+
+      {analyzing && (
+        <Card style={{ marginTop: 12, textAlign: "center" }}>
+          <div style={{ fontSize: 13, color: "rgba(26,26,26,0.55)", fontFamily: "'Inter', sans-serif" }}>
+            AI is reading your data and looking for patterns...
+          </div>
+          <div style={{ marginTop: 8, height: 4, borderRadius: 2, backgroundColor: "#D4D4D0", overflow: "hidden" }}>
+            <div
+              style={{
+                height: "100%",
+                width: "60%",
+                backgroundColor: "#55BAAA",
+                borderRadius: 2,
+                animation: "pulse 1.5s ease-in-out infinite",
+              }}
+            />
+          </div>
+        </Card>
+      )}
+
+      {analysisError && (
+        <Card style={{ marginTop: 12, border: "1px solid rgba(155,35,53,0.30)", backgroundColor: "rgba(155,35,53,0.04)" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#9B2335", marginBottom: 4, fontFamily: "'Inter', sans-serif" }}>
+            Analysis Failed
+          </div>
+          <div style={{ fontSize: 13, color: "rgba(26,26,26,0.65)", fontFamily: "'Inter', sans-serif", lineHeight: 1.4 }}>
+            {analysisError}
+          </div>
+          <button
+            onClick={runAnalysis}
+            className="active:scale-[0.97]"
+            style={{
+              marginTop: 10,
+              padding: "8px 16px",
+              borderRadius: 9999,
+              border: "1px solid #D4D4D0",
+              backgroundColor: "#FFFFFF",
+              color: "#0E2646",
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: "'Inter', sans-serif",
+              cursor: "pointer",
+            }}
+          >
+            Try Again
+          </button>
+        </Card>
+      )}
     </div>
   );
 
   const renderAnalysis = () => (
     <div style={{ padding: "0 16px" }}>
+      {/* AI overall notes */}
+      {overallNotes && (
+        <Card style={{ marginBottom: 12, border: "1px solid rgba(85,186,170,0.25)", backgroundColor: "rgba(85,186,170,0.04)" }}>
+          <div style={{ fontSize: 13, color: "#0E2646", fontFamily: "'Inter', sans-serif", lineHeight: 1.5 }}>
+            {overallNotes}
+          </div>
+        </Card>
+      )}
+
       {/* Summary cards */}
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <Card style={{ flex: 1, textAlign: "center", marginBottom: 0 }}>
@@ -661,10 +681,10 @@ const CowCleanerScreen: React.FC = () => {
         </Card>
       </div>
 
-      {/* Flags list */}
-      {flags.map((flag, i) => (
+      {/* Flags list — skip clean columns, show issues only */}
+      {flags.filter((f) => f.issue !== "clean").map((flag, i) => (
         <Card key={i}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
             <span
               style={{
                 fontSize: 10,
@@ -678,7 +698,9 @@ const CowCleanerScreen: React.FC = () => {
                       ? "rgba(155,35,53,0.12)"
                       : flag.issue === "format"
                         ? "rgba(243,209,42,0.15)"
-                        : "rgba(85,186,170,0.12)",
+                        : flag.issue === "unknown"
+                          ? "rgba(155,35,53,0.08)"
+                          : "rgba(85,186,170,0.12)",
                 color:
                   flag.issue === "empty"
                     ? "rgba(26,26,26,0.45)"
@@ -686,7 +708,9 @@ const CowCleanerScreen: React.FC = () => {
                       ? "#9B2335"
                       : flag.issue === "format"
                         ? "#B8860B"
-                        : "#55BAAA",
+                        : flag.issue === "unknown"
+                          ? "#9B2335"
+                          : "#55BAAA",
                 textTransform: "uppercase",
                 fontFamily: "'Inter', sans-serif",
               }}
@@ -696,10 +720,45 @@ const CowCleanerScreen: React.FC = () => {
             <span style={{ fontSize: 14, fontWeight: 700, color: "#0E2646", fontFamily: "'Inter', sans-serif" }}>
               {flag.column}
             </span>
+            {/* Confidence badge */}
+            <span
+              style={{
+                fontSize: 9,
+                fontWeight: 700,
+                padding: "2px 6px",
+                borderRadius: 9999,
+                backgroundColor: flag.confidence === "high" ? "rgba(85,186,170,0.12)" : flag.confidence === "medium" ? "rgba(243,209,42,0.12)" : "rgba(155,35,53,0.08)",
+                color: flag.confidence === "high" ? "#55BAAA" : flag.confidence === "medium" ? "#B8860B" : "#9B2335",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                fontFamily: "'Inter', sans-serif",
+                marginLeft: "auto",
+              }}
+            >
+              {flag.confidence}
+            </span>
           </div>
           <div style={{ fontSize: 13, color: "rgba(26,26,26,0.65)", marginBottom: 6, fontFamily: "'Inter', sans-serif", lineHeight: 1.4 }}>
             {flag.description}
           </div>
+          {/* Field mapping pill */}
+          {flag.likelyMapsTo && (
+            <div style={{ marginBottom: 6 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "3px 8px",
+                  borderRadius: 6,
+                  backgroundColor: "rgba(14,38,70,0.06)",
+                  color: "#0E2646",
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                Maps to: {flag.likelyMapsTo}
+              </span>
+            </div>
+          )}
           <div
             style={{
               fontSize: 12,
@@ -715,6 +774,39 @@ const CowCleanerScreen: React.FC = () => {
           </div>
         </Card>
       ))}
+
+      {/* Clean columns summary */}
+      {cleanCount > 0 && (
+        <Card>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#0E2646", marginBottom: 8, fontFamily: "'Inter', sans-serif" }}>
+            Clean Columns ({cleanCount})
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {flags.filter((f) => f.issue === "clean").map((flag) => (
+              <div key={flag.column} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    padding: "4px 10px",
+                    borderRadius: 9999,
+                    backgroundColor: "rgba(85,186,170,0.10)",
+                    color: "#55BAAA",
+                    fontFamily: "'Inter', sans-serif",
+                  }}
+                >
+                  {flag.column}
+                  {flag.likelyMapsTo && (
+                    <span style={{ color: "rgba(85,186,170,0.60)", marginLeft: 4, fontSize: 10 }}>
+                      → {flag.likelyMapsTo}
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
         <SecondaryButton onClick={() => setStep("confirm")} style={{ flex: 1 }}>
@@ -762,8 +854,22 @@ const CowCleanerScreen: React.FC = () => {
             </span>
           </div>
 
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#0E2646", marginBottom: 8, fontFamily: "'Inter', sans-serif" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#0E2646", marginBottom: 4, fontFamily: "'Inter', sans-serif" }}>
             {flag.column}
+          </div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+            {flag.likelyMapsTo && (
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, backgroundColor: "rgba(14,38,70,0.06)", color: "#0E2646", fontFamily: "'Inter', sans-serif" }}>
+                Maps to: {flag.likelyMapsTo}
+              </span>
+            )}
+            <span style={{
+              fontSize: 9, fontWeight: 700, padding: "3px 6px", borderRadius: 9999, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif",
+              backgroundColor: flag.confidence === "high" ? "rgba(85,186,170,0.12)" : flag.confidence === "medium" ? "rgba(243,209,42,0.12)" : "rgba(155,35,53,0.08)",
+              color: flag.confidence === "high" ? "#55BAAA" : flag.confidence === "medium" ? "#B8860B" : "#9B2335",
+            }}>
+              {flag.confidence} confidence
+            </span>
           </div>
           <div style={{ fontSize: 14, color: "rgba(26,26,26,0.65)", marginBottom: 12, fontFamily: "'Inter', sans-serif", lineHeight: 1.5 }}>
             {flag.description}
@@ -930,13 +1036,12 @@ const CowCleanerScreen: React.FC = () => {
           <div style={{ fontSize: 13, fontWeight: 700, color: "#0E2646", marginBottom: 8, fontFamily: "'Inter', sans-serif" }}>
             Column Status
           </div>
-          {fileInfo?.columns.map((col) => {
-            const flag = flags.find((f) => f.column === col);
-            const statusColor = !flag ? "#55BAAA" : flag.status === "accepted" ? "#55BAAA" : flag.issue === "empty" ? "rgba(26,26,26,0.25)" : "#F3D12A";
-            const statusLabel = !flag ? "Clean" : flag.status === "accepted" ? "Fixed" : flag.issue === "empty" ? "Removed" : "Unchanged";
+          {flags.map((flag) => {
+            const statusColor = flag.issue === "clean" ? "#55BAAA" : flag.status === "accepted" ? "#55BAAA" : flag.issue === "empty" ? "rgba(26,26,26,0.25)" : "#F3D12A";
+            const statusLabel = flag.issue === "clean" ? "Clean" : flag.status === "accepted" ? "Fixed" : flag.issue === "empty" ? "Removed" : "Unchanged";
             return (
               <div
-                key={col}
+                key={flag.column}
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
@@ -945,7 +1050,14 @@ const CowCleanerScreen: React.FC = () => {
                   borderBottom: "1px solid rgba(212,212,208,0.30)",
                 }}
               >
-                <span style={{ fontSize: 13, fontWeight: 500, color: "#0E2646", fontFamily: "'Inter', sans-serif" }}>{col}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: "#0E2646", fontFamily: "'Inter', sans-serif" }}>{flag.column}</span>
+                  {flag.likelyMapsTo && (
+                    <span style={{ fontSize: 10, color: "rgba(26,26,26,0.40)", fontFamily: "'Inter', sans-serif" }}>
+                      → {flag.likelyMapsTo}
+                    </span>
+                  )}
+                </div>
                 <span style={{ fontSize: 11, fontWeight: 700, color: statusColor, fontFamily: "'Inter', sans-serif" }}>{statusLabel}</span>
               </div>
             );
