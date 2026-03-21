@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkOrders } from "@/hooks/sale-barn/useWorkOrders";
 import { useChuteSideToast as useToast } from "@/components/ToastContext";
-import type { SaleDay, WorkOrder } from "@/types/sale-barn";
+import type { SaleDay, WorkOrder, SaleBarnAnimal, SortRecord } from "@/types/sale-barn";
 
 const fmtDate = (iso: string) => {
   const d = new Date(iso + "T12:00:00");
