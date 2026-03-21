@@ -360,17 +360,8 @@ const SaleDayDetail: React.FC = () => {
         </div>
       )}
 
-      {activeTab === "Reconciliation" && (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(26,26,26,0.35)", fontSize: 14 }}>
-          Reconciliation coming soon
-        </div>
-      )}
-
-      {activeTab === "Reports" && (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(26,26,26,0.35)", fontSize: 14 }}>
-          Reports coming soon
-        </div>
-      )}
+      <ReconciliationTab workOrders={workOrders} saleDayId={id!} activeTab={activeTab} />
+      <ReportsTab activeTab={activeTab} showToast={showToast} />
     </div>
   );
 };
