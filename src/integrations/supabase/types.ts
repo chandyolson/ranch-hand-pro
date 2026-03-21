@@ -471,6 +471,56 @@ export type Database = {
         }
         Relationships: []
       }
+      buyer_directory: {
+        Row: {
+          buyer_num: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          needs: string | null
+          notes: string | null
+          operation_id: string
+          phone: string | null
+          state: string | null
+          type: string | null
+        }
+        Insert: {
+          buyer_num: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          needs?: string | null
+          notes?: string | null
+          operation_id: string
+          phone?: string | null
+          state?: string | null
+          type?: string | null
+        }
+        Update: {
+          buyer_num?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          needs?: string | null
+          notes?: string | null
+          operation_id?: string
+          phone?: string | null
+          state?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_directory_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calving_records: {
         Row: {
           assistance: number | null
@@ -806,6 +856,44 @@ export type Database = {
             columns: ["technician_id"]
             isOneToOne: false
             referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      designation_keys: {
+        Row: {
+          created_at: string
+          description: string | null
+          hex_color: string
+          id: string
+          label: string
+          operation_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          hex_color: string
+          id?: string
+          label: string
+          operation_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          hex_color?: string
+          id?: string
+          label?: string
+          operation_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "designation_keys_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
             referencedColumns: ["id"]
           },
         ]
@@ -1986,12 +2074,15 @@ export type Database = {
       }
       red_book_notes: {
         Row: {
+          action_status: string | null
+          assigned_to: string | null
           attachment_count: number
           author_initials: string | null
           body: string | null
           category: string
           created_at: string
           created_by: string | null
+          flag_tier: string | null
           has_action: boolean
           id: string
           is_pinned: boolean
@@ -2000,12 +2091,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          action_status?: string | null
+          assigned_to?: string | null
           attachment_count?: number
           author_initials?: string | null
           body?: string | null
           category?: string
           created_at?: string
           created_by?: string | null
+          flag_tier?: string | null
           has_action?: boolean
           id?: string
           is_pinned?: boolean
@@ -2014,12 +2108,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          action_status?: string | null
+          assigned_to?: string | null
           attachment_count?: number
           author_initials?: string | null
           body?: string | null
           category?: string
           created_at?: string
           created_by?: string | null
+          flag_tier?: string | null
           has_action?: boolean
           id?: string
           is_pinned?: boolean
@@ -2030,6 +2127,188 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "red_book_notes_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_barn_animals: {
+        Row: {
+          back_tag: string | null
+          breed: string | null
+          created_at: string
+          designation_key: string | null
+          eid: string
+          eid_2: string | null
+          id: string
+          preg_status: string | null
+          quick_notes: string[] | null
+          sex: string | null
+          sort_dest_pen: string | null
+          sorted: boolean
+          tag_number: string | null
+          work_order_id: string
+        }
+        Insert: {
+          back_tag?: string | null
+          breed?: string | null
+          created_at?: string
+          designation_key?: string | null
+          eid: string
+          eid_2?: string | null
+          id?: string
+          preg_status?: string | null
+          quick_notes?: string[] | null
+          sex?: string | null
+          sort_dest_pen?: string | null
+          sorted?: boolean
+          tag_number?: string | null
+          work_order_id: string
+        }
+        Update: {
+          back_tag?: string | null
+          breed?: string | null
+          created_at?: string
+          designation_key?: string | null
+          eid?: string
+          eid_2?: string | null
+          id?: string
+          preg_status?: string | null
+          quick_notes?: string[] | null
+          sex?: string | null
+          sort_dest_pen?: string | null
+          sorted?: boolean
+          tag_number?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_barn_animals_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_barn_customers: {
+        Row: {
+          address: string | null
+          id: string
+          last_import: string | null
+          name: string
+          notes: string | null
+          operation_id: string
+          phone: string | null
+          state: string | null
+          type: string | null
+        }
+        Insert: {
+          address?: string | null
+          id?: string
+          last_import?: string | null
+          name: string
+          notes?: string | null
+          operation_id: string
+          phone?: string | null
+          state?: string | null
+          type?: string | null
+        }
+        Update: {
+          address?: string | null
+          id?: string
+          last_import?: string | null
+          name?: string
+          notes?: string | null
+          operation_id?: string
+          phone?: string | null
+          state?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_barn_customers_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_barn_prices: {
+        Row: {
+          admin_pct: number
+          created_at: string
+          id: string
+          is_special: boolean
+          operation_id: string
+          sol_charge: number
+          tax_rate: number
+          vet_charge: number
+          work_type: string
+        }
+        Insert: {
+          admin_pct?: number
+          created_at?: string
+          id?: string
+          is_special?: boolean
+          operation_id: string
+          sol_charge?: number
+          tax_rate?: number
+          vet_charge?: number
+          work_type: string
+        }
+        Update: {
+          admin_pct?: number
+          created_at?: string
+          id?: string
+          is_special?: boolean
+          operation_id?: string
+          sol_charge?: number
+          tax_rate?: number
+          vet_charge?: number
+          work_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_barn_prices_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_days: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          operation_id: string
+          status: string
+          vet_crew: string | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          operation_id: string
+          status?: string
+          vet_crew?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          operation_id?: string
+          status?: string
+          vet_crew?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_days_operation_id_fkey"
             columns: ["operation_id"]
             isOneToOne: false
             referencedRelation: "operations"
@@ -2093,6 +2372,48 @@ export type Database = {
             columns: ["operation_id"]
             isOneToOne: false
             referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sort_records: {
+        Row: {
+          animal_id: string
+          created_at: string
+          dest_pen: string
+          id: string
+          source_pen: string
+          work_order_id: string | null
+        }
+        Insert: {
+          animal_id: string
+          created_at?: string
+          dest_pen: string
+          id?: string
+          source_pen: string
+          work_order_id?: string | null
+        }
+        Update: {
+          animal_id?: string
+          created_at?: string
+          dest_pen?: string
+          id?: string
+          source_pen?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sort_records_animal_id_fkey"
+            columns: ["animal_id"]
+            isOneToOne: false
+            referencedRelation: "sale_barn_animals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sort_records_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -2466,6 +2787,119 @@ export type Database = {
         }
         Relationships: []
       }
+      work_order_notes: {
+        Row: {
+          author: string
+          created_at: string
+          id: string
+          text: string
+          work_order_id: string
+        }
+        Insert: {
+          author: string
+          created_at?: string
+          id?: string
+          text: string
+          work_order_id: string
+        }
+        Update: {
+          author?: string
+          created_at?: string
+          id?: string
+          text?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_notes_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_orders: {
+        Row: {
+          admin_charge: number
+          animal_type: string | null
+          buyer_num: string | null
+          created_at: string
+          customer_id: string | null
+          entity_type: string
+          group_notes: string | null
+          head_count: number
+          health_complete: boolean
+          id: string
+          pens: string[] | null
+          sale_day_id: string
+          sol_charge: number
+          special_lump_sum: number | null
+          tax_charge: number
+          total_charge: number
+          vet_charge: number
+          work_complete: boolean
+          work_type: string
+        }
+        Insert: {
+          admin_charge?: number
+          animal_type?: string | null
+          buyer_num?: string | null
+          created_at?: string
+          customer_id?: string | null
+          entity_type: string
+          group_notes?: string | null
+          head_count?: number
+          health_complete?: boolean
+          id?: string
+          pens?: string[] | null
+          sale_day_id: string
+          sol_charge?: number
+          special_lump_sum?: number | null
+          tax_charge?: number
+          total_charge?: number
+          vet_charge?: number
+          work_complete?: boolean
+          work_type: string
+        }
+        Update: {
+          admin_charge?: number
+          animal_type?: string | null
+          buyer_num?: string | null
+          created_at?: string
+          customer_id?: string | null
+          entity_type?: string
+          group_notes?: string | null
+          head_count?: number
+          health_complete?: boolean
+          id?: string
+          pens?: string[] | null
+          sale_day_id?: string
+          sol_charge?: number
+          special_lump_sum?: number | null
+          tax_charge?: number
+          total_charge?: number
+          vet_charge?: number
+          work_complete?: boolean
+          work_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "sale_barn_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_sale_day_id_fkey"
+            columns: ["sale_day_id"]
+            isOneToOne: false
+            referencedRelation: "sale_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_types: {
         Row: {
           code: string
@@ -2493,6 +2927,8 @@ export type Database = {
     }
     Functions: {
       auth_user_operation_ids: { Args: never; Returns: string[] }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never
