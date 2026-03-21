@@ -266,7 +266,7 @@ export default function WorkTemplateEditScreen() {
                               {
                                 product_id: prod.id,
                                 product_name: prod.name,
-                                dosage: op.custom_dosage || prod.dosage || "",
+                                dosage: prod.dosage || "",
                                 route: prod.route || "",
                               },
                             ]);
