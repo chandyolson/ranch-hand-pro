@@ -37,6 +37,14 @@ import WorkTemplateListScreen from "@/screens/WorkTemplateListScreen";
 import WorkTemplateEditScreen from "@/screens/WorkTemplateEditScreen";
 import CowCleanerScreen from "@/screens/CowCleanerScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
+import SaleDaysList from "@/pages/sale-barn/SaleDaysList";
+import SaleDayDetail from "@/pages/sale-barn/SaleDayDetail";
+import WorkOrderForm from "@/pages/sale-barn/WorkOrderForm";
+import ChutesideEntry from "@/pages/sale-barn/ChutesideEntry";
+import CustomerDirectory from "@/pages/sale-barn/CustomerDirectory";
+import BuyerDirectory from "@/pages/sale-barn/BuyerDirectory";
+import PriceSchedule from "@/pages/sale-barn/PriceSchedule";
+import DesignationKeyConfig from "@/pages/sale-barn/DesignationKeyConfig";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
@@ -79,6 +87,15 @@ const App = () => (
           <Route path="reference/templates/new" element={<WorkTemplateEditScreen />} />
           <Route path="reference/templates/edit" element={<WorkTemplateEditScreen />} />
           <Route path="cow-cleaner" element={<CowCleanerScreen />} />
+          <Route path="sale-barn" element={<SaleDaysList />} />
+          <Route path="sale-barn/customers" element={<CustomerDirectory />} />
+          <Route path="sale-barn/buyers" element={<BuyerDirectory />} />
+          <Route path="sale-barn/settings/prices" element={<PriceSchedule />} />
+          <Route path="sale-barn/settings/designations" element={<DesignationKeyConfig />} />
+          <Route path="sale-barn/:id" element={<SaleDayDetail />} />
+          <Route path="sale-barn/:id/work-order/new" element={<WorkOrderForm />} />
+          <Route path="sale-barn/:id/work-order/:woId" element={<WorkOrderForm />} />
+          <Route path="sale-barn/:id/work-order/:woId/chute" element={<ChutesideEntry />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
