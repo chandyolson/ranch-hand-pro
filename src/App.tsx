@@ -35,6 +35,7 @@ import ProtocolTemplateDetailScreen from "@/screens/ProtocolTemplateDetailScreen
 import ReferenceBreedsScreen from "@/screens/ReferenceBreedsScreen";
 import WorkTemplateListScreen from "@/screens/WorkTemplateListScreen";
 import WorkTemplateEditScreen from "@/screens/WorkTemplateEditScreen";
+import CowCleanerScreen from "@/screens/CowCleanerScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
 import NotFound from "@/pages/NotFound";
 
@@ -77,6 +78,7 @@ const App = () => (
           <Route path="reference/templates" element={<WorkTemplateListScreen />} />
           <Route path="reference/templates/new" element={<WorkTemplateEditScreen />} />
           <Route path="reference/templates/edit" element={<WorkTemplateEditScreen />} />
+          <Route path="cow-cleaner" element={<CowCleanerScreen />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

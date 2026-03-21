@@ -27,6 +27,7 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/reference/settings": { title: "Settings", subtitle: "Operation Config" },
   "/reference/breeds": { title: "Breeds", subtitle: "Breed Library" },
   "/reference/templates": { title: "Templates", subtitle: "Work Templates" },
+  "/cow-cleaner": { title: "Cow Cleaner", subtitle: "Import & Clean Data" },
 };
 
 const navRouteMap: Record<string, string> = {
@@ -37,6 +38,7 @@ const navRouteMap: Record<string, string> = {
   Protocols: "/protocols",
   Calving: "/calving",
   "Red Book": "/red-book",
+  "Cow Cleaner": "/cow-cleaner",
   Reference: "/reference",
 };
 
@@ -108,6 +110,7 @@ const AppLayout: React.FC = () => {
               else if (path === "/protocols") { navigate("/"); }
               else if (path.startsWith("/protocols/")) { navigate("/protocols"); }
               else if (path === "/red-book") { navigate("/"); }
+              else if (path === "/cow-cleaner") { navigate("/"); }
               else if (path === "/reference") { navigate("/"); }
               else if (path.startsWith("/reference/")) { navigate("/reference"); }
               else if (path.startsWith("/red-book/")) { navigate("/red-book"); }

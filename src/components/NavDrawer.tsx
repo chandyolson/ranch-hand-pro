@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   "Protocols",
   "Calving",
   "Red Book",
+  "Cow Cleaner",
   "Reference",
 ];
 
