@@ -77,6 +77,8 @@ const AppLayout: React.FC = () => {
       config = { title: "Cow Work", subtitle: "Project Detail" };
     } else if (/^\/cow-work\/[^/]+\/close-out$/.test(path)) {
       config = { title: "Close Out", subtitle: "Finalize Project" };
+    } else if (/^\/sale-barn\/[^/]+/.test(path)) {
+      config = { title: "Sale Day", subtitle: "Sale Day Detail" };
     } else {
       config = { title: "ChuteSide", subtitle: "" };
     }
@@ -122,6 +124,11 @@ const AppLayout: React.FC = () => {
               else if (path.startsWith("/red-book/")) { navigate("/red-book"); }
               else if (path.startsWith("/cow-work/")) { navigate("/cow-work"); }
               else if (path.startsWith("/calving/")) { navigate("/calving"); }
+              else if (/^\/sale-barn\/[^/]+\/work-order/.test(path)) {
+                const sdId = path.split("/")[2];
+                navigate(`/sale-barn/${sdId}`);
+              }
+              else if (/^\/sale-barn\/[^/]+/.test(path)) { navigate("/sale-barn"); }
               else if (window.history.length > 1) { navigate(-1); }
               else { navigate("/"); }
             }}
