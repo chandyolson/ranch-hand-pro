@@ -55,7 +55,7 @@ export default function ReferenceProductDetailScreen() {
     queryKey: ["product-usage-count", id, operationId],
     queryFn: async () => {
       const year = new Date().getFullYear();
-      const { count } = await (supabase.from("treatment_products") as any)
+      const { count }: any = await (supabase.from("treatment_products") as any)
         .select("id", { count: "exact", head: true })
         .eq("product_id", id!)
         .eq("operation_id", operationId)
