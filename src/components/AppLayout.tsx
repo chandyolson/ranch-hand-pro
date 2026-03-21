@@ -62,8 +62,10 @@ const AppLayout: React.FC = () => {
   const isAnimalDetail = /^\/animals\/[^/]+$/.test(path) && path !== "/animals/new";
 
   let config = routeConfig[path];
-  if (isHome) {
+  if (path === "/") {
     config = { title: operationName, subtitle: `Ranch · ${counts?.total ?? '...'} Head · Active` };
+  } else if (path === "/sale-barn") {
+    config = { title: "Sale Barn", subtitle: operationName };
   } else if (path === "/animals") {
     config = { title: "Animals", subtitle: `${counts?.total ?? '...'} Total · ${counts?.active ?? '...'} Active` };
   } else if (!config) {
