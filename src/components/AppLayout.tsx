@@ -124,6 +124,11 @@ const AppLayout: React.FC = () => {
               else if (path.startsWith("/red-book/")) { navigate("/red-book"); }
               else if (path.startsWith("/cow-work/")) { navigate("/cow-work"); }
               else if (path.startsWith("/calving/")) { navigate("/calving"); }
+              else if (/^\/sale-barn\/[^/]+\/work-order/.test(path)) {
+                const sdId = path.split("/")[2];
+                navigate(`/sale-barn/${sdId}`);
+              }
+              else if (/^\/sale-barn\/[^/]+/.test(path)) { navigate("/sale-barn"); }
               else if (window.history.length > 1) { navigate(-1); }
               else { navigate("/"); }
             }}
