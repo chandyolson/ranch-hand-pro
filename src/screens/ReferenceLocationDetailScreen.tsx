@@ -402,7 +402,7 @@ export default function ReferenceLocationDetailScreen() {
                   <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{p.name}</span>
                   <span style={{ fontSize: 10, fontWeight: 600, marginLeft: 6, padding: "1px 6px", borderRadius: 6, background: "rgba(26,26,26,0.06)", color: "rgba(26,26,26,0.45)" }}>{code}</span>
                 </div>
-                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{p.project_date ? fmtDate(p.project_date) : "—"}</span>
+                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>{p.date ? fmtDate(p.date) : "—"}</span>
               </div>
             );
           })}
