@@ -1,12 +1,12 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useSaleBarnPrices } from "@/hooks/sale-barn/useSaleBarnPrices";
 import { useChuteSideToast as useToast } from "@/components/ToastContext";
 import { focusGold, blurReset } from "@/lib/styles";
-import type { SaleDay, WorkOrder, SaleBarnCustomer, SaleBarnPrice } from "@/types/sale-barn";
+import type { SaleDay, WorkOrder, SaleBarnCustomer, WorkOrderNote } from "@/types/sale-barn";
 
 const fmtDate = (iso: string) => {
   const d = new Date(iso + "T12:00:00");
@@ -44,6 +44,66 @@ const FieldRow: React.FC<{ label: string; req?: boolean; children: React.ReactNo
     <div style={{ flex: 1, minWidth: 0, display: "flex", position: "relative" }}>{children}</div>
   </div>
 );
+
+// ── Toggle Switch ──
+const ToggleSwitch: React.FC<{ on: boolean; onToggle: () => void }> = ({ on, onToggle }) => (
+  <button
+    type="button" onClick={onToggle}
+    style={{
+      width: 48, height: 28, borderRadius: 14, border: "none", cursor: "pointer",
+      background: on ? "#55BAAA" : "#CBCED4", position: "relative",
+      transition: "background 200ms",
+    }}
+  >
+    <div style={{
+      width: 22, height: 22, borderRadius: 11, background: "#FFFFFF",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.20)",
+      position: "absolute", top: 3,
+      left: on ? 23 : 3, transition: "left 200ms",
+    }} />
+  </button>
+);
+
+// ── Collapsible Section ──
+const CollapsibleSection: React.FC<{
+  title: string; badge?: number; defaultOpen?: boolean; children: React.ReactNode;
+}> = ({ title, badge, defaultOpen = false, children }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={CARD}>
+      <button
+        type="button" onClick={() => setOpen(!open)}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>{title}</span>
+          {badge !== undefined && badge > 0 && (
+            <span style={{
+              fontSize: 11, fontWeight: 700, color: "#FFFFFF", background: "#0E2646",
+              borderRadius: 9999, padding: "1px 7px", minWidth: 18, textAlign: "center",
+            }}>{badge}</span>
+          )}
+        </div>
+        <svg
+          width="18" height="18" viewBox="0 0 18 18" fill="none"
+          style={{ transition: "transform 250ms", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
+          <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="#717182" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <div style={{
+        maxHeight: open ? 1200 : 0, opacity: open ? 1 : 0,
+        overflow: "hidden", transition: "max-height 250ms ease-in-out, opacity 250ms ease-in-out",
+        marginTop: open ? 10 : 0,
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+};
 
 // ── Customer Typeahead ──
 const CustomerSearch: React.FC<{
@@ -126,6 +186,346 @@ const CustomerSearch: React.FC<{
   );
 };
 
+// ── Notes Thread ──
+const NotesThread: React.FC<{ woId: string | undefined; showToast: (v: string, m: string) => void }> = ({ woId, showToast }) => {
+  const qc = useQueryClient();
+  const [text, setText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const { data: notes } = useQuery({
+    queryKey: ["work_order_notes", woId],
+    enabled: !!woId,
+    queryFn: async () => {
+      const { data } = await (supabase.from("work_order_notes") as any)
+        .select("*").eq("work_order_id", woId!)
+        .order("created_at", { ascending: true });
+      return (data ?? []) as unknown as WorkOrderNote[];
+    },
+  });
+
+  const addNote = useCallback(async () => {
+    if (!text.trim() || !woId) return;
+    setSubmitting(true);
+    const { error } = await (supabase.from("work_order_notes") as any).insert({
+      work_order_id: woId,
+      author: "Office",
+      text: text.trim(),
+    });
+    setSubmitting(false);
+    if (error) { showToast("error", error.message); return; }
+    setText("");
+    qc.invalidateQueries({ queryKey: ["work_order_notes", woId] });
+  }, [text, woId, qc, showToast]);
+
+  const fmtTime = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  };
+
+  const notesList = notes ?? [];
+
+  return (
+    <CollapsibleSection title="Notes" badge={notesList.length} defaultOpen>
+      {notesList.map((n) => {
+        const isCatl = n.author?.toUpperCase() === "CATL";
+        return (
+          <div key={n.id} style={{
+            padding: "8px 12px", borderRadius: 10, marginBottom: 6,
+            borderLeft: `3px solid ${isCatl ? "#55BAAA" : "#0E2646"}`,
+            background: isCatl ? "rgba(85,186,170,0.06)" : "rgba(14,38,70,0.04)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: isCatl ? "#55BAAA" : "#0E2646" }}>{n.author}</span>
+              <span style={{ fontSize: 11, color: "#717182" }}>{fmtTime(n.created_at)}</span>
+            </div>
+            <div style={{ fontSize: 13, color: "#1A1A1A", lineHeight: 1.4 }}>{n.text}</div>
+          </div>
+        );
+      })}
+      {woId && (
+        <div style={{ display: "flex", gap: 6, marginTop: notesList.length > 0 ? 6 : 0 }}>
+          <input
+            style={INPUT}
+            placeholder="Add a note…"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") addNote(); }}
+            onFocus={focusGold} onBlur={blurReset}
+          />
+          <button
+            type="button" onClick={addNote} disabled={submitting || !text.trim()}
+            style={{
+              height: 36, borderRadius: 8, background: "#0E2646", color: "#FFFFFF",
+              fontSize: 13, fontWeight: 600, padding: "0 16px", border: "none",
+              cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.6 : 1,
+            }}
+          >
+            Add
+          </button>
+        </div>
+      )}
+      {!woId && (
+        <div style={{ fontSize: 12, color: "#717182", textAlign: "center", padding: "8px 0" }}>
+          Save the work order first to add notes
+        </div>
+      )}
+    </CollapsibleSection>
+  );
+};
+
+// ── Label Preview ──
+const LabelPreview: React.FC<{
+  pen: string; customerName: string; buyerNum: string;
+  headCount: number; workType: string; isBuyer: boolean;
+  showToast: (v: string, m: string) => void;
+}> = ({ pen, customerName, buyerNum, headCount, workType, isBuyer, showToast }) => (
+  <CollapsibleSection title="Label Preview" defaultOpen={false}>
+    <div style={{
+      border: "2px dashed #D4D4D0", borderRadius: 10, padding: 16,
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: "#717182", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>
+        DYMO PEN CARD
+      </div>
+      <div style={{ fontSize: 28, fontWeight: 800, color: "#1A1A1A", marginBottom: 2 }}>{pen || "—"}</div>
+      <div style={{ fontSize: 16, fontWeight: 600, color: "#1A1A1A", marginBottom: 2 }}>{customerName || "—"}</div>
+      {isBuyer && buyerNum && (
+        <div style={{ fontSize: 14, fontWeight: 500, color: "#717182", marginBottom: 4 }}>#{buyerNum}</div>
+      )}
+      <div style={{ display: "flex", gap: 24, marginTop: 8 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.35)", letterSpacing: "0.06em" }}>HEAD</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A" }}>{headCount || 0}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.35)", letterSpacing: "0.06em" }}>WORK</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{workType || "—"}</div>
+        </div>
+      </div>
+    </div>
+    <button
+      type="button"
+      className="active:scale-[0.97]"
+      onClick={() => showToast("info", "Print label sent to Dymo")}
+      style={{
+        width: "100%", height: 40, borderRadius: 9999, marginTop: 10,
+        border: "1.5px solid #0E2646", background: "transparent",
+        fontSize: 14, fontWeight: 600, color: "#0E2646",
+        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M4 6V2h8v4M4 12H2.667A.667.667 0 0 1 2 11.333V8.667A.667.667 0 0 1 2.667 8h10.666a.667.667 0 0 1 .667.667v2.666a.667.667 0 0 1-.667.667H12M4 10h8v4H4v-4z"
+          stroke="#0E2646" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      Print Label
+    </button>
+  </CollapsibleSection>
+);
+
+// ── Special Charges Calculator (Bottom Sheet) ──
+interface CalcProduct {
+  id: string;
+  productId: string;
+  productName: string;
+  qty: number;
+  unitCost: number;
+}
+
+const SpecialChargesSheet: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  onApply: (lumpSum: number) => void;
+}> = ({ open, onClose, onApply }) => {
+  const [rows, setRows] = useState<CalcProduct[]>([]);
+  const [visible, setVisible] = useState(false);
+
+  const { data: products } = useQuery({
+    queryKey: ["products_for_calc"],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase.from("products").select("id, name, product_type");
+      return data ?? [];
+    },
+  });
+
+  // Default cost lookup from product_sizes
+  const { data: productSizes } = useQuery({
+    queryKey: ["product_sizes_for_calc"],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase.from("product_sizes").select("product_id, cost_per_dose, is_default");
+      return data ?? [];
+    },
+  });
+
+  const defaultCostMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    (productSizes ?? []).forEach((ps: any) => {
+      if (ps.is_default && ps.cost_per_dose != null) m[ps.product_id] = Number(ps.cost_per_dose);
+      else if (ps.cost_per_dose != null && !(ps.product_id in m)) m[ps.product_id] = Number(ps.cost_per_dose);
+    });
+    return m;
+  }, [productSizes]);
+
+  useEffect(() => {
+    if (open) {
+      requestAnimationFrame(() => setVisible(true));
+    } else {
+      setVisible(false);
+    }
+  }, [open]);
+
+  const addRow = () => {
+    setRows((prev) => [...prev, { id: crypto.randomUUID(), productId: "", productName: "", qty: 1, unitCost: 0 }]);
+  };
+
+  const removeRow = (id: string) => setRows((prev) => prev.filter((r) => r.id !== id));
+
+  const updateRow = (id: string, patch: Partial<CalcProduct>) => {
+    setRows((prev) => prev.map((r) => r.id === id ? { ...r, ...patch } : r));
+  };
+
+  const total = rows.reduce((s, r) => s + r.qty * r.unitCost, 0);
+
+  if (!open) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, zIndex: 100,
+          background: "rgba(0,0,0,0.52)",
+          opacity: visible ? 1 : 0, transition: "opacity 250ms",
+        }}
+      />
+      {/* Sheet */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 101,
+        background: "#FFFFFF", borderRadius: "20px 20px 0 0",
+        boxShadow: "0 -4px 30px rgba(0,0,0,0.15)",
+        maxHeight: "80vh", overflowY: "auto",
+        transform: visible ? "translateY(0)" : "translateY(100%)",
+        transition: "transform 300ms ease-out",
+      }}>
+        {/* Handle */}
+        <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: "#D4D4D0" }} />
+        </div>
+
+        <div style={{ padding: "0 16px 20px" }}>
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <span style={{ fontSize: 18, fontWeight: 700, color: "#0E2646" }}>Product Calculator</span>
+            <button onClick={onClose} style={{
+              width: 32, height: 32, borderRadius: 9999, border: "none",
+              background: "rgba(26,26,26,0.06)", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 16, color: "#717182",
+            }}>×</button>
+          </div>
+
+          {/* Product rows */}
+          {rows.map((row) => (
+            <div key={row.id} style={{
+              background: "#F5F5F0", borderRadius: 10, padding: "10px 12px", marginBottom: 8,
+            }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                <select
+                  style={{ ...INPUT, flex: 1, fontSize: 14 }}
+                  value={row.productId}
+                  onChange={(e) => {
+                    const pid = e.target.value;
+                    const pName = (products ?? []).find((p: any) => p.id === pid)?.name ?? "";
+                    const cost = defaultCostMap[pid] ?? 0;
+                    updateRow(row.id, { productId: pid, productName: pName, unitCost: cost });
+                  }}
+                >
+                  <option value="">Select product…</option>
+                  {(products ?? []).map((p: any) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <button onClick={() => removeRow(row.id)} style={{
+                  width: 28, height: 28, borderRadius: 14, border: "none",
+                  background: "rgba(212,24,61,0.06)", color: "#D4183D",
+                  cursor: "pointer", fontSize: 14, fontWeight: 700,
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>×</button>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: "#717182", marginBottom: 2 }}>Qty</div>
+                  <input
+                    type="number" min={1} value={row.qty}
+                    onChange={(e) => updateRow(row.id, { qty: parseInt(e.target.value) || 0 })}
+                    style={{ ...INPUT, width: "100%", flex: "none", fontSize: 14 }}
+                    onFocus={focusGold} onBlur={blurReset}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: "#717182", marginBottom: 2 }}>Unit Cost</div>
+                  <input
+                    type="number" step="0.01" value={row.unitCost}
+                    onChange={(e) => updateRow(row.id, { unitCost: parseFloat(e.target.value) || 0 })}
+                    style={{ ...INPUT, width: "100%", flex: "none", fontSize: 14 }}
+                    onFocus={focusGold} onBlur={blurReset}
+                  />
+                </div>
+                <div style={{ flex: 1, textAlign: "right" }}>
+                  <div style={{ fontSize: 10, color: "#717182", marginBottom: 2 }}>Line Total</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A", paddingTop: 8 }}>
+                    ${(row.qty * row.unitCost).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Add product */}
+          <button
+            type="button" onClick={addRow}
+            style={{
+              width: "100%", height: 40, borderRadius: 10,
+              border: "1px dashed #D4D4D0", background: "transparent",
+              color: "#55BAAA", fontSize: 13, fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            + Add Product
+          </button>
+
+          {/* Total bar */}
+          <div style={{
+            background: "#0E2646", borderRadius: 10, padding: "12px 14px", marginTop: 12,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(240,240,240,0.65)" }}>Lump Sum Total</span>
+            <span style={{ fontSize: 20, fontWeight: 700, color: "#F3D12A" }}>${total.toFixed(2)}</span>
+          </div>
+
+          {/* Apply */}
+          <button
+            type="button"
+            className="active:scale-[0.97]"
+            onClick={() => { onApply(total); }}
+            style={{
+              width: "100%", height: 48, borderRadius: 9999, marginTop: 12,
+              background: "#F3D12A", border: "none",
+              fontSize: 16, fontWeight: 700, color: "#1A1A1A",
+              boxShadow: "0 2px 10px rgba(243,209,42,0.35)",
+              cursor: "pointer",
+            }}
+          >
+            Apply to Work Order
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // ── Main Form ──
 const WorkOrderForm: React.FC = () => {
   const { id: saleDayId, woId } = useParams<{ id: string; woId: string }>();
@@ -166,6 +566,10 @@ const WorkOrderForm: React.FC = () => {
   const [animalType, setAnimalType] = useState("");
   const [pensStr, setPensStr] = useState("");
   const [headCount, setHeadCount] = useState("");
+  const [workComplete, setWorkComplete] = useState(false);
+  const [healthComplete, setHealthComplete] = useState(false);
+  const [specialLumpSum, setSpecialLumpSum] = useState(0);
+  const [calcOpen, setCalcOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Populate for edit
@@ -177,7 +581,9 @@ const WorkOrderForm: React.FC = () => {
     setAnimalType(existingWo.animal_type || "");
     setPensStr((existingWo.pens || []).join(", "));
     setHeadCount(String(existingWo.head_count || ""));
-    // Try to fetch customer
+    setWorkComplete(existingWo.work_complete);
+    setHealthComplete(existingWo.health_complete);
+    setSpecialLumpSum(existingWo.special_lump_sum || 0);
     if (existingWo.customer_id) {
       (supabase.from("sale_barn_customers") as any)
         .select("*").eq("id", existingWo.customer_id).single()
@@ -192,19 +598,18 @@ const WorkOrderForm: React.FC = () => {
   }, [workType, prices]);
 
   const hc = parseInt(headCount) || 0;
+  const isSpecial = priceRow?.is_special === true;
 
   const billing = useMemo(() => {
     if (!priceRow || hc <= 0) return null;
-    const vetCharge = priceRow.vet_charge * hc;
-    const taxCharge = vetCharge * (priceRow.tax_rate / 100);
-    const vetTotal = vetCharge + taxCharge;
+    const vetBase = isSpecial && specialLumpSum > 0 ? specialLumpSum : priceRow.vet_charge * hc;
+    const taxCharge = vetBase * (priceRow.tax_rate / 100);
+    const vetTotal = vetBase + taxCharge;
     const adminCharge = vetTotal * (priceRow.admin_pct / 100);
     const solCharge = priceRow.sol_charge * hc;
     const totalCharge = vetTotal + adminCharge + solCharge;
-    return { vetCharge, taxCharge, vetTotal, adminCharge, solCharge, totalCharge };
-  }, [priceRow, hc]);
-
-  const isSpecial = priceRow?.is_special === true;
+    return { vetCharge: vetBase, taxCharge, vetTotal, adminCharge, solCharge, totalCharge };
+  }, [priceRow, hc, isSpecial, specialLumpSum]);
 
   const handleSave = async () => {
     if (!customer) { showToast("error", "Select a customer"); return; }
@@ -230,9 +635,9 @@ const WorkOrderForm: React.FC = () => {
       sol_charge: billing?.solCharge ?? 0,
       tax_charge: billing?.taxCharge ?? 0,
       total_charge: billing?.totalCharge ?? 0,
-      special_lump_sum: 0,
-      work_complete: false,
-      health_complete: false,
+      special_lump_sum: specialLumpSum,
+      work_complete: workComplete,
+      health_complete: healthComplete,
       group_notes: null,
     };
 
@@ -253,6 +658,7 @@ const WorkOrderForm: React.FC = () => {
   };
 
   const fmt$ = (n: number) => "$" + n.toFixed(2);
+  const firstPen = pensStr.split(",")[0]?.trim() || "";
 
   return (
     <div style={{ paddingBottom: 90 }}>
@@ -355,7 +761,7 @@ const WorkOrderForm: React.FC = () => {
           <button
             type="button"
             className="active:scale-[0.97]"
-            onClick={() => showToast("info", "Product calculator coming in next prompt")}
+            onClick={() => setCalcOpen(true)}
             style={{
               width: "100%", height: 40, borderRadius: 10, marginTop: 4,
               border: "1.5px solid #55BAAA", background: "rgba(85,186,170,0.06)",
@@ -363,6 +769,7 @@ const WorkOrderForm: React.FC = () => {
             }}
           >
             Open Product Calculator
+            {specialLumpSum > 0 && <span style={{ marginLeft: 6 }}>({fmt$(specialLumpSum)})</span>}
           </button>
         )}
       </div>
@@ -373,10 +780,13 @@ const WorkOrderForm: React.FC = () => {
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>Billing</span>
             <div style={{ flex: 1, height: 1, background: "rgba(26,26,26,0.08)" }} />
-            {priceRow && (
+            {priceRow && !isSpecial && (
               <span style={{ fontSize: 11, color: "#717182" }}>
                 Vet ${priceRow.vet_charge}/hd · SOL ${priceRow.sol_charge}/hd
               </span>
+            )}
+            {isSpecial && specialLumpSum > 0 && (
+              <span style={{ fontSize: 11, color: "#55BAAA" }}>Lump sum applied</span>
             )}
           </div>
 
@@ -400,6 +810,37 @@ const WorkOrderForm: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Status Toggles */}
+      <div style={CARD}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: entityType === "buyer" ? 10 : 0 }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Work Complete</span>
+          <ToggleSwitch on={workComplete} onToggle={() => setWorkComplete(!workComplete)} />
+        </div>
+        {entityType === "buyer" && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Health Complete</span>
+              <div style={{ fontSize: 11, color: "#717182" }}>Interstate buyers only</div>
+            </div>
+            <ToggleSwitch on={healthComplete} onToggle={() => setHealthComplete(!healthComplete)} />
+          </div>
+        )}
+      </div>
+
+      {/* Notes Thread */}
+      <NotesThread woId={woId} showToast={showToast} />
+
+      {/* Label Preview */}
+      <LabelPreview
+        pen={firstPen}
+        customerName={customer?.name || ""}
+        buyerNum={buyerNum}
+        headCount={hc}
+        workType={workType}
+        isBuyer={entityType === "buyer"}
+        showToast={showToast}
+      />
 
       {/* Sticky Save Bar */}
       <div style={{
@@ -436,6 +877,17 @@ const WorkOrderForm: React.FC = () => {
           {saving ? "Saving…" : isEdit ? "Update Work Order" : "Save Work Order"}
         </button>
       </div>
+
+      {/* Special Charges Bottom Sheet */}
+      <SpecialChargesSheet
+        open={calcOpen}
+        onClose={() => setCalcOpen(false)}
+        onApply={(lumpSum) => {
+          setSpecialLumpSum(lumpSum);
+          setCalcOpen(false);
+          showToast("success", `Lump sum $${lumpSum.toFixed(2)} applied`);
+        }}
+      />
     </div>
   );
 };
