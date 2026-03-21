@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useBuyerDirectory } from "@/hooks/sale-barn/useBuyerDirectory";
-import { useToast as useChuteSideToast } from "@/components/ToastContext";
+import { useChuteSideToast } from "@/components/ToastContext";
 import { focusGold, blurReset } from "@/lib/styles";
 import type { BuyerDirectoryEntry } from "@/types/sale-barn";
 
