@@ -69,8 +69,7 @@ export default function ReferenceProductDetailScreen() {
   const { data: projectUsageCount } = useQuery({
     queryKey: ["product-project-count", id, operationId],
     queryFn: async () => {
-      const { count } = await supabase
-        .from("project_products")
+      const { count } = await (supabase.from("project_products") as any)
         .select("id", { count: "exact", head: true })
         .eq("product_id", id!)
         .eq("operation_id", operationId);
