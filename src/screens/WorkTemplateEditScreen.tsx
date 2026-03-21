@@ -251,7 +251,7 @@ export default function WorkTemplateEditScreen() {
                       const alreadyAdded = products.some((p) => p.product_id === prod.id);
                       return (
                         <button
-                          key={op.id || op.product_id}
+                          key={op.product_id}
                           className="flex items-center justify-between w-full px-3 py-2.5 cursor-pointer active:bg-[rgba(26,26,26,0.03)]"
                           style={{
                             background: alreadyAdded ? "rgba(85,186,170,0.06)" : "white",
