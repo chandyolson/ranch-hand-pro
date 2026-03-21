@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import * as XLSX from "xlsx";
 
 // === TYPES ===
 type WizardStep = "upload" | "confirm" | "analysis" | "questions" | "summary" | "export";
@@ -211,12 +212,12 @@ const CowCleanerScreen: React.FC = () => {
   // Questions state
   const [currentQuestion, setCurrentQuestion] = useState(0);
 
-  // UX Rule 6b: Tags are strings
-  const parseCSV = useCallback((text: string): { columns: string[]; rows: Record<string, string>[] } => {
+  // UX Rule 6b: Tags are strings — all values read as text, never numbers
+  const parseCSV = useCallback((text: string): { columns: string[]; rows: Record<string, string>[]; totalRows: number } => {
     const lines = text.trim().split("\n");
-    if (lines.length < 2) return { columns: [], rows: [] };
+    if (lines.length < 2) return { columns: [], rows: [], totalRows: 0 };
     const columns = lines[0].split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-    const rows = lines.slice(1, 6).map((line) => {
+    const rows = lines.slice(1, 11).map((line) => {
       const values = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
       const row: Record<string, string> = {};
       columns.forEach((col, i) => {
@@ -224,7 +225,24 @@ const CowCleanerScreen: React.FC = () => {
       });
       return row;
     });
-    return { columns, rows };
+    return { columns, rows, totalRows: lines.length - 1 };
+  }, []);
+
+  const parseExcel = useCallback((buffer: ArrayBuffer): { columns: string[]; rows: Record<string, string>[]; totalRows: number } => {
+    const workbook = XLSX.read(buffer, { type: "array", raw: false, dateNF: "yyyy-mm-dd" });
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+    // Read everything as strings so tag numbers keep leading zeros
+    const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, { defval: "", raw: false });
+    if (jsonData.length === 0) return { columns: [], rows: [], totalRows: 0 };
+    const columns = Object.keys(jsonData[0]);
+    const rows = jsonData.slice(0, 10).map((row) => {
+      const mapped: Record<string, string> = {};
+      columns.forEach((col) => {
+        mapped[col] = String(row[col] ?? "");
+      });
+      return mapped;
+    });
+    return { columns, rows, totalRows: jsonData.length };
   }, []);
 
   const handleFileDrop = useCallback(
@@ -249,21 +267,43 @@ const CowCleanerScreen: React.FC = () => {
 
   const processFile = (f: File) => {
     setFile(f);
+    const ext = f.name.toLowerCase().split(".").pop() || "";
+    const isExcel = ["xlsx", "xls", "xlsm"].includes(ext);
+
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const { columns, rows } = parseCSV(text);
-      const allLines = text.trim().split("\n");
-      setFileInfo({
-        name: f.name,
-        size: f.size,
-        type: f.type || "text/csv",
-        rows: allLines.length - 1,
-        columns,
-        preview: rows,
-      });
+      try {
+        let columns: string[];
+        let rows: Record<string, string>[];
+        let totalRows: number;
+
+        if (isExcel) {
+          const buffer = e.target?.result as ArrayBuffer;
+          ({ columns, rows, totalRows } = parseExcel(buffer));
+        } else {
+          const text = e.target?.result as string;
+          ({ columns, rows, totalRows } = parseCSV(text));
+        }
+
+        setFileInfo({
+          name: f.name,
+          size: f.size,
+          type: isExcel ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : f.type || "text/csv",
+          rows: totalRows,
+          columns,
+          preview: rows,
+        });
+      } catch (err) {
+        console.error("File parse error:", err);
+        setAnalysisError("Couldn't read that file. Make sure it's a valid CSV or Excel file.");
+      }
     };
-    reader.readAsText(f);
+
+    if (isExcel) {
+      reader.readAsArrayBuffer(f);
+    } else {
+      reader.readAsText(f);
+    }
   };
 
   // Real AI analysis via Supabase Edge Function → Claude API
