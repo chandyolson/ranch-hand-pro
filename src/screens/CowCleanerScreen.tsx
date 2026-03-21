@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { useOperation } from "@/contexts/OperationContext";
+import { ANGUS_TEMPLATES, type TemplateDefinition } from "@/lib/angus-templates";
 import * as XLSX from "xlsx";
 
 // === TYPES ===
@@ -216,6 +217,8 @@ const CowCleanerScreen: React.FC = () => {
 
   // Export state
   const [exporting, setExporting] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateDefinition | null>(null);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const { showToast } = useChuteSideToast();
   const { operationId } = useOperation();
 
@@ -343,9 +346,94 @@ const CowCleanerScreen: React.FC = () => {
   }, [fileInfo, flags, operationId, buildCleanedData, showToast]);
 
   const handleBreedAssociation = useCallback(() => {
-    // TODO: Build template selector and mapping engine
-    showToast("info", "Breed Association export is coming soon. Use Download Cleaned File for now.");
-  }, [showToast]);
+    setShowTemplateSelector(true);
+  }, []);
+
+  const handleExportToTemplate = useCallback((template: TemplateDefinition) => {
+    if (!fileInfo) return;
+    setExporting(true);
+    try {
+      const data = buildCleanedData();
+      if (data.length === 0) {
+        showToast("error", "No data to export.");
+        setExporting(false);
+        return;
+      }
+
+      // Build column mapping from AI analysis: source column → template header
+      // We use likelyMapsTo to find the best match for each template column
+      const columnMap: Record<string, string> = {};
+      flags.forEach((f) => {
+        if (f.likelyMapsTo && f.issue !== "empty") {
+          columnMap[f.column] = f.likelyMapsTo;
+        }
+      });
+
+      // Map ChuteSide field names to common Angus template header patterns
+      const fieldToTemplateMap: Record<string, string[]> = {
+        tag: ["CALF TAG", "DAM TAG", "COW TAG", "TAG *", "TAG"],
+        eid: ["ELEC ID", "840 EID"],
+        breed: ["CALF ASSN", "DAM ASSN", "COW ASSN", "ASSN *"],
+        sex: ["CALF SEX", "SEX*", "SEX *"],
+        birth_date: ["BIRTH DATE", "BIRTH DATE*", "BIRTH DATE *", "DAM BIRTH DATE", "COW BIRTH DATE"],
+        reg_number: ["CALF ASSN NUM", "DAM ASSN NUM", "DAM ASSN NUMBER", "COW ASSN NUMBER", "ASSN NUM *", "SIRE REG*", "DAM REG*"],
+        reg_name: ["ANGUS NAME*"],
+        sire_id: ["SIRE ASSN NUM", "SIRE REG*"],
+        dam_id: ["DAM ASSN NUM", "DAM REG*"],
+        tag_color: [],
+        year_born: [],
+        lifetime_id: [],
+        name: ["ANGUS NAME*"],
+        official_id: ["TATTOO/BRAND", "TATTOO/ BRAND*", "TATTOO /BRAND", "TATT"],
+        calf_tag: ["CALF TAG"],
+        memo: ["COMMENT", "FS COMMENT"],
+      };
+
+      // For each template column, find the best source column
+      const templateHeaders = template.columns.map((c) => c.header);
+      const rows: Record<string, string>[] = data.map((row) => {
+        const mapped: Record<string, string> = {};
+        templateHeaders.forEach((header) => {
+          // Direct match: source column name matches template header
+          const directMatch = Object.keys(row).find(
+            (col) => col.toUpperCase().trim() === header.toUpperCase().trim()
+          );
+          if (directMatch && row[directMatch]) {
+            mapped[header] = row[directMatch];
+            return;
+          }
+
+          // Indirect match via AI mapping: source → chuteside field → template header
+          for (const [sourceCol, chuteSideField] of Object.entries(columnMap)) {
+            const possibleHeaders = fieldToTemplateMap[chuteSideField] || [];
+            if (possibleHeaders.some((h) => h.toUpperCase() === header.toUpperCase()) && row[sourceCol]) {
+              mapped[header] = row[sourceCol];
+              return;
+            }
+          }
+
+          mapped[header] = "";
+        });
+        return mapped;
+      });
+
+      // Build the Excel file with template structure
+      const ws = XLSX.utils.json_to_sheet(rows, { header: templateHeaders });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, template.sheetName);
+
+      const baseName = fileInfo.name.replace(/\.[^.]+$/, "");
+      XLSX.writeFile(wb, `${baseName}_${template.id}.xlsx`);
+      showToast("success", `Exported to ${template.name} template.`);
+      setShowTemplateSelector(false);
+      setSelectedTemplate(null);
+    } catch (err) {
+      console.error("Template export error:", err);
+      showToast("error", "Template export failed. Try again.");
+    } finally {
+      setExporting(false);
+    }
+  }, [fileInfo, flags, buildCleanedData, showToast]);
 
   // UX Rule 6b: Tags are strings — all values read as text, never numbers
   const parseCSV = useCallback((text: string): { columns: string[]; rows: Record<string, string>[]; totalRows: number } => {
@@ -1398,6 +1486,80 @@ const CowCleanerScreen: React.FC = () => {
       <SecondaryButton onClick={() => setStep("summary")}>
         Back to Summary
       </SecondaryButton>
+
+      {/* Template selector overlay */}
+      {showTemplateSelector && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div
+            style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)" }}
+            onClick={() => setShowTemplateSelector(false)}
+          />
+          <div
+            style={{
+              position: "relative",
+              backgroundColor: "#F5F5F0",
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              maxHeight: "75vh",
+              overflowY: "auto",
+              padding: 16,
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#0E2646", fontFamily: "'Inter', sans-serif" }}>
+                Select Template
+              </div>
+              <button
+                onClick={() => setShowTemplateSelector(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 8 }}
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 5L15 15M15 5L5 15" stroke="#0E2646" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            <div style={{ fontSize: 13, color: "rgba(26,26,26,0.50)", marginBottom: 16, fontFamily: "'Inter', sans-serif" }}>
+              American Angus Association templates
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {ANGUS_TEMPLATES.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => handleExportToTemplate(template)}
+                  disabled={exporting}
+                  className="active:scale-[0.98]"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    padding: "12px 14px",
+                    borderRadius: 10,
+                    border: "1px solid #D4D4D0",
+                    backgroundColor: "#FFFFFF",
+                    cursor: exporting ? "not-allowed" : "pointer",
+                    textAlign: "left",
+                    transition: "all 0.15s ease",
+                    opacity: exporting ? 0.6 : 1,
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#0E2646", fontFamily: "'Inter', sans-serif" }}>
+                    {template.name}
+                  </span>
+                  <span style={{ fontSize: 12, color: "rgba(26,26,26,0.50)", fontFamily: "'Inter', sans-serif", marginTop: 2 }}>
+                    {template.description}
+                  </span>
+                  <span style={{ fontSize: 11, color: "rgba(26,26,26,0.35)", fontFamily: "'Inter', sans-serif", marginTop: 4 }}>
+                    {template.columns.length} columns
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
