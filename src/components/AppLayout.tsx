@@ -58,7 +58,7 @@ const AppLayout: React.FC = () => {
   const { data: counts } = useAnimalCounts();
   const path = location.pathname;
 
-  const isHome = path === "/";
+  const isHome = path === "/" || path === "/sale-barn";
   const isAnimalDetail = /^\/animals\/[^/]+$/.test(path) && path !== "/animals/new";
 
   let config = routeConfig[path];
