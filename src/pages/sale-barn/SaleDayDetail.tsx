@@ -17,6 +17,265 @@ const fmtCurrency = (n: number) =>
 const TABS = ["Work Orders", "Reconciliation", "Reports"] as const;
 const WO_FILTERS = ["All", "Sellers", "Buyers", "Incomplete"] as const;
 
+// ── RECONCILIATION TAB ──
+interface PenRow {
+  pen: string;
+  customerName: string;
+  expected: number;
+  actual: number;
+  status: "matched" | "short" | "pending" | "sort";
+  woId: string;
+}
+
+const statusColors: Record<string, { bg: string; border: string; text: string }> = {
+  matched: { bg: "rgba(85,186,170,0.10)", border: "rgba(85,186,170,0.30)", text: "#55BAAA" },
+  short: { bg: "rgba(243,209,42,0.10)", border: "rgba(243,209,42,0.30)", text: "#B8860B" },
+  pending: { bg: "rgba(26,26,26,0.04)", border: "#D4D4D0", text: "#717182" },
+  sort: { bg: "rgba(168,168,240,0.10)", border: "rgba(168,168,240,0.30)", text: "#7B68EE" },
+};
+
+const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; activeTab: string }> = ({ workOrders, saleDayId, activeTab }) => {
+  const woIds = useMemo(() => workOrders.map((wo) => wo.id), [workOrders]);
+
+  const { data: animals } = useQuery({
+    queryKey: ["recon_animals", woIds],
+    enabled: activeTab === "Reconciliation" && woIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("sale_barn_animals" as any).select("*").in("work_order_id", woIds);
+      return (data ?? []) as unknown as SaleBarnAnimal[];
+    },
+  });
+
+  const { data: sortRecords } = useQuery({
+    queryKey: ["recon_sorts", woIds],
+    enabled: activeTab === "Reconciliation" && woIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("sort_records" as any).select("*").in("work_order_id", woIds);
+      return (data ?? []) as unknown as SortRecord[];
+    },
+  });
+
+  const penRows = useMemo(() => {
+    const rows: PenRow[] = [];
+    const animalsByWo: Record<string, SaleBarnAnimal[]> = {};
+    (animals || []).forEach((a) => {
+      if (!animalsByWo[a.work_order_id]) animalsByWo[a.work_order_id] = [];
+      animalsByWo[a.work_order_id].push(a);
+    });
+
+    const sortPens = new Set<string>();
+    (sortRecords || []).forEach((sr) => { sortPens.add(sr.dest_pen); });
+
+    workOrders.forEach((wo) => {
+      const pens = wo.pens || [];
+      const woAnimals = animalsByWo[wo.id] || [];
+      const headPerPen = pens.length > 0 ? Math.ceil((wo.head_count || 0) / pens.length) : wo.head_count || 0;
+
+      if (pens.length === 0) {
+        const actual = woAnimals.length;
+        const expected = wo.head_count || 0;
+        rows.push({
+          pen: "—",
+          customerName: wo.buyer_num ? `#${wo.buyer_num}` : "Customer",
+          expected,
+          actual,
+          status: !wo.work_complete ? "pending" : actual >= expected ? "matched" : "short",
+          woId: wo.id,
+        });
+      } else {
+        pens.forEach((pen) => {
+          const actual = woAnimals.filter((a) => (a.sort_dest_pen || pen) === pen).length;
+          const isSortDest = sortPens.has(pen);
+          let status: PenRow["status"];
+          if (isSortDest) status = "sort";
+          else if (!wo.work_complete) status = "pending";
+          else if (actual >= headPerPen) status = "matched";
+          else status = "short";
+
+          rows.push({ pen, customerName: wo.buyer_num ? `#${wo.buyer_num}` : "Customer", expected: headPerPen, actual, status, woId: wo.id });
+        });
+      }
+    });
+    return rows;
+  }, [workOrders, animals, sortRecords]);
+
+  const counts = useMemo(() => {
+    const c = { matched: 0, short: 0, pending: 0, sort: 0 };
+    penRows.forEach((r) => c[r.status]++);
+    return c;
+  }, [penRows]);
+
+  const worked = penRows.filter((r) => r.status !== "pending");
+  const pending = penRows.filter((r) => r.status === "pending");
+
+  if (activeTab !== "Reconciliation") return null;
+
+  const SectionHead: React.FC<{ title: string; count: number }> = ({ title, count }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "14px 0 8px" }}>
+      <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{title}</span>
+      <div style={{ flex: 1, height: 1, background: "rgba(26,26,26,0.08)" }} />
+      <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.35)" }}>{count}</span>
+    </div>
+  );
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+        {(["matched", "short", "pending", "sort"] as const).map((s) => (
+          <span
+            key={s}
+            style={{
+              padding: "6px 14px", borderRadius: 9999, fontSize: 12, fontWeight: 700,
+              background: statusColors[s].bg, border: `1px solid ${statusColors[s].border}`,
+              color: statusColors[s].text, textTransform: "capitalize",
+            }}
+          >
+            {s} {counts[s]}
+          </span>
+        ))}
+      </div>
+
+      {worked.length > 0 && <SectionHead title="Worked Pens" count={worked.length} />}
+      {worked.map((row, i) => {
+        const sc = statusColors[row.status];
+        return (
+          <div
+            key={`${row.woId}-${row.pen}-${i}`}
+            style={{
+              background: "#FFFFFF", borderRadius: 10, marginBottom: 6,
+              padding: "10px 14px", border: `1px solid ${sc.border}`,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#0E2646" }}>{row.pen}</span>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
+                  padding: "2px 8px", background: sc.bg, color: sc.text, textTransform: "uppercase",
+                }}>
+                  {row.status}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 400, color: "#717182", marginTop: 2 }}>{row.customerName}</div>
+            </div>
+            <div style={{ display: "flex", gap: 20, textAlign: "center" }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.35)", letterSpacing: "0.06em" }}>EXP</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A1A1A" }}>{row.expected}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.35)", letterSpacing: "0.06em" }}>ACT</div>
+                <div style={{
+                  fontSize: 16, fontWeight: 700,
+                  color: row.status === "matched" ? "#55BAAA" : row.status === "short" ? "#B8860B" : "#1A1A1A",
+                }}>
+                  {row.actual}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {pending.length > 0 && <SectionHead title="Pending" count={pending.length} />}
+      {pending.map((row, i) => {
+        const sc = statusColors[row.status];
+        return (
+          <div
+            key={`pending-${row.woId}-${row.pen}-${i}`}
+            style={{
+              background: "#FFFFFF", borderRadius: 10, marginBottom: 6,
+              padding: "10px 14px", border: `1px solid ${sc.border}`,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#0E2646" }}>{row.pen}</span>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
+                  padding: "2px 8px", background: sc.bg, color: sc.text, textTransform: "uppercase",
+                }}>
+                  PENDING
+                </span>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 400, color: "#717182", marginTop: 2 }}>{row.customerName}</div>
+            </div>
+            <div style={{ display: "flex", gap: 20, textAlign: "center" }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.35)", letterSpacing: "0.06em" }}>EXP</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A1A1A" }}>{row.expected}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(26,26,26,0.35)", letterSpacing: "0.06em" }}>ACT</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A1A1A" }}>{row.actual}</div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {penRows.length === 0 && (
+        <div style={{ textAlign: "center", padding: "30px 0", color: "rgba(26,26,26,0.35)", fontSize: 14 }}>
+          No pen data to reconcile
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── REPORTS TAB ──
+const REPORTS = [
+  { letter: "P", title: "Preg Cows by Designation", desc: "Per seller: pregnant count grouped by tag color", who: "Sale barn office" },
+  { letter: "D", title: "Daily Designation Totals", desc: "Total head by designation key across all sellers", who: "Sale barn office" },
+  { letter: "B", title: "Billing Summary", desc: "Seller vs buyer charges with Vet/Admin/SOL breakdown", who: "Office + CATL" },
+  { letter: "H", title: "Head Count by Work Type", desc: "Total head by work type for the day", who: "CATL + office" },
+  { letter: "C", title: "CVI Prep Sheet", desc: "Interstate animals: EID, Back Tag, Tag #, buyer, destination", who: "Veterinarian" },
+  { letter: "S", title: "Sort Pen Manifest", desc: "Per sort pen: head by buyer/seller, source pen", who: "Office + pen workers" },
+  { letter: "O", title: "State Ownership Report", desc: "All cattle processed — Excel export", who: "State vet office" },
+];
+
+const ReportsTab: React.FC<{ activeTab: string; showToast: (v: string, m: string) => void }> = ({ activeTab, showToast }) => {
+  if (activeTab !== "Reports") return null;
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      {REPORTS.map((r) => (
+        <button
+          key={r.letter}
+          className="active:scale-[0.98]"
+          onClick={() => showToast("info", `Report: ${r.title} — coming soon`)}
+          style={{
+            display: "flex", alignItems: "center", gap: 12, width: "100%",
+            background: "#FFFFFF", borderRadius: 10,
+            border: "1px solid rgba(212,212,208,0.60)",
+            padding: "12px 14px", marginBottom: 8,
+            cursor: "pointer", textAlign: "left",
+          }}
+        >
+          <div style={{
+            width: 40, height: 40, borderRadius: 10,
+            background: "rgba(14,38,70,0.06)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 700, color: "#0E2646", flexShrink: 0,
+          }}>
+            {r.letter}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{r.title}</div>
+            <div style={{ fontSize: 12, fontWeight: 400, color: "#717182", marginTop: 1 }}>{r.desc}</div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: "#55BAAA", marginTop: 2 }}>{r.who}</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+            <path d="M6 4L10 8L6 12" stroke="rgba(26,26,26,0.25)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      ))}
+    </div>
+  );
+};
+
 const SaleDayDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
