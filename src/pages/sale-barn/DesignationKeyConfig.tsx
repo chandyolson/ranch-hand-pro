@@ -1,3 +1,3 @@
-import PlaceholderScreen from "@/components/PlaceholderScreen";
-const DesignationKeyConfig = () => <PlaceholderScreen title="Designation Key Config" />;
+import SaleBarnSettings from "./SaleBarnSettings";
+const DesignationKeyConfig = () => <SaleBarnSettings activeTab="designations" />;
 export default DesignationKeyConfig;

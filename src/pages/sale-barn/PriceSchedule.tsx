@@ -1,3 +1,3 @@
-import PlaceholderScreen from "@/components/PlaceholderScreen";
-const PriceSchedule = () => <PlaceholderScreen title="Price Schedule" />;
+import SaleBarnSettings from "./SaleBarnSettings";
+const PriceSchedule = () => <SaleBarnSettings activeTab="prices" />;
 export default PriceSchedule;
