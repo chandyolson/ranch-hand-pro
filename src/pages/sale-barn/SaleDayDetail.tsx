@@ -446,7 +446,7 @@ const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; 
           else if (actual >= headPerPen) status = "matched";
           else status = "short";
 
-          rows.push({ pen, customerName: wo.buyer_num ? `#${wo.buyer_num}` : "Customer", expected: headPerPen, actual, status, woId: wo.id });
+          rows.push({ pen, customerName: (wo.customer_id && customerMap?.[wo.customer_id]) || (wo.buyer_num ? `#${wo.buyer_num}` : "No Customer"), expected: headPerPen, actual, status, woId: wo.id });
         });
       }
     });
