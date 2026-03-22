@@ -592,6 +592,25 @@ const WorkOrderForm: React.FC = () => {
     }
   }, [existingWo]);
 
+  // Pre-fill from query params (consignment flow)
+  useEffect(() => {
+    if (isEdit || existingWo) return;
+    const qCustomer = searchParams.get("customer");
+    const qHeadCount = searchParams.get("headCount");
+    const qAnimalType = searchParams.get("animalType");
+    if (qCustomer && !customer) {
+      // Search for customer by name to get the full object
+      (supabase.from("sale_barn_customers") as any)
+        .select("*").eq("operation_id", operationId)
+        .ilike("name", qCustomer).limit(1)
+        .then(({ data }: any) => {
+          if (data && data.length > 0) setCustomer(data[0] as SaleBarnCustomer);
+        });
+    }
+    if (qHeadCount && !headCount) setHeadCount(qHeadCount);
+    if (qAnimalType && !animalType) setAnimalType(qAnimalType);
+  }, [searchParams, isEdit, existingWo]);
+
   // Price lookup & billing calc
   const priceRow = useMemo(() => {
     if (!workType) return null;
