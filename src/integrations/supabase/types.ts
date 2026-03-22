@@ -703,6 +703,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           customer_name: string
+          expected_sale_date: string | null
           head_count: number
           id: string
           notes: string | null
@@ -716,6 +717,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           customer_name: string
+          expected_sale_date?: string | null
           head_count?: number
           id?: string
           notes?: string | null
@@ -729,6 +731,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           customer_name?: string
+          expected_sale_date?: string | null
           head_count?: number
           id?: string
           notes?: string | null
