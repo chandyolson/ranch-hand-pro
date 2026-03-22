@@ -60,13 +60,16 @@ import NotFound from "@/pages/NotFound";
 const SaleBarnGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { operationType } = useOperation();
   const { showToast } = useToast();
-  if (operationType && operationType !== 'vet_practice') {
-    React.useEffect(() => {
+  const blocked = !!operationType && operationType !== 'vet_practice';
+
+  React.useEffect(() => {
+    if (blocked) {
       showToast("error", "Sale Barn is only available for veterinary practice accounts.");
-    }, []);
-    return <Navigate to="/" replace />;
-  }
-  if (!operationType) return null; // still loading
+    }
+  }, [blocked]);
+
+  if (!operationType) return null;
+  if (blocked) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
