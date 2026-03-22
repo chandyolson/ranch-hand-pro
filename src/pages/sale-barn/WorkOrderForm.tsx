@@ -1381,19 +1381,17 @@ const WorkOrderForm: React.FC = () => {
 
       {/* Status Toggles */}
       <div style={CARD}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: entityType === "buyer" ? 10 : 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Work Complete</span>
           <ToggleSwitch on={workComplete} onToggle={() => setWorkComplete(!workComplete)} />
         </div>
-        {entityType === "buyer" && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Health Complete</span>
-              <div style={{ fontSize: 11, color: "#717182" }}>Interstate buyers only</div>
-            </div>
-            <ToggleSwitch on={healthComplete} onToggle={() => setHealthComplete(!healthComplete)} />
+        <div style={{ display: entityType === "buyer" ? "flex" : "none", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Health Complete</span>
+            <div style={{ fontSize: 11, color: "#717182" }}>Interstate buyers only</div>
           </div>
-        )}
+          <ToggleSwitch on={healthComplete} onToggle={() => setHealthComplete(!healthComplete)} />
+        </div>
       </div>
 
       {/* Notes Thread */}
