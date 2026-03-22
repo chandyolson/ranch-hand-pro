@@ -94,6 +94,7 @@ const App = () => (
           <Route path="sale-barn/settings/designations" element={<DesignationKeyConfig />} />
           <Route path="sale-barn/:id" element={<SaleDayDetail />} />
           <Route path="sale-barn/:id/consignments" element={<PlaceholderScreen title="Consignments" />} />
+          <Route path="sale-barn/:id/billing" element={<PlaceholderScreen title="Day Billing" />} />
           <Route path="sale-barn/:id/reports" element={<PlaceholderScreen title="Reports" />} />
           <Route path="sale-barn/:id/work-order/new" element={<WorkOrderForm />} />
           <Route path="sale-barn/:id/work-order/:woId" element={<WorkOrderForm />} />
