@@ -34,6 +34,9 @@ export interface WorkOrderNote {
   work_order_id: string;
   author: string;
   text: string;
+  is_flagged: boolean;
+  resolved_at: string | null;
+  resolved_by: string | null;
   created_at: string;
 }
 
