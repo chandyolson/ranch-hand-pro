@@ -17,7 +17,7 @@ const fmtDate = (iso: string) => {
 const fmtCurrency = (n: number) =>
   `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const TABS = ["Consignments", "Work Orders", "Reconciliation", "Reports"] as const;
+const TABS = ["Work Orders", "Reconciliation"] as const;
 const WO_FILTERS = ["All", "Sellers", "Buyers", "Incomplete"] as const;
 
 const ANIMAL_TYPES = ["Bred Heifers", "Feeder Calves", "Pairs", "Bull", "Bred Cows", "Weigh Up Cows", "Baby Calf", "Heifers", "Yearling Bull"];
@@ -656,7 +656,7 @@ const SaleDayDetail: React.FC = () => {
   const { data: consignmentsResult } = useConsignments(id, saleDay?.date);
   const consignments = consignmentsResult?.data ?? [];
 
-  const [activeTab, setActiveTab] = useState<string>("Consignments");
+  const [activeTab, setActiveTab] = useState<string>("Work Orders");
   const [woFilter, setWoFilter] = useState<string>("All");
   const [woSearch, setWoSearch] = useState("");
 
@@ -715,35 +715,64 @@ const SaleDayDetail: React.FC = () => {
 
   return (
     <div className="px-4">
-      {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 14 }}>
-        {[
-          { label: "CONSIGN", value: consignments.length, subtitle: `${consignments.reduce((s, c) => s + (c.head_count || 0), 0)} hd expected`, angle: 125 },
-          { label: "ORDERS", value: stats.orders, subtitle: `${stats.sellers}S / ${stats.buyers}B`, angle: 130 },
-          { label: "TOTAL HD", value: stats.totalHead, subtitle: `${stats.worked} worked`, angle: 140 },
-          { label: "CATL", value: fmtCurrency(stats.totalCharge), subtitle: "Revenue", angle: 155 },
-          { label: "RECON", value: "0/0", subtitle: "On track", angle: 170 },
-        ].map((card) => (
-          <div
-            key={card.label}
-            style={{
-              background: `linear-gradient(${card.angle}deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)`,
-              borderRadius: 12, padding: "8px 10px", minHeight: 68,
-              display: "flex", flexDirection: "column",
-            }}
-          >
-            <div style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              {card.label}
-            </div>
-            <div style={{ flex: 1 }} />
-            <div style={{ fontSize: 17, fontWeight: 600, color: "#FFFFFF", letterSpacing: "-0.02em", lineHeight: 1 }}>
-              {card.value}
-            </div>
-            <div style={{ fontSize: 10, fontWeight: 500, color: "#A8E6DA", marginTop: 4 }}>
-              {card.subtitle}
-            </div>
+      {/* 2x2 Stat Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "0 0 12px" }}>
+        {/* Consignments */}
+        <button
+          onClick={() => navigate(`/sale-barn/${id}/consignments`)}
+          className="active:scale-[0.97]"
+          style={{
+            background: "#0E2646", borderRadius: 12, padding: 14, minHeight: 80,
+            display: "flex", flexDirection: "column", justifyContent: "flex-end",
+            border: "none", cursor: "pointer", textAlign: "left",
+          }}
+        >
+          <div style={{ fontSize: 22, fontWeight: 700, color: "#FFFFFF", lineHeight: 1 }}>
+            {consignments.filter((c) => c.status === "pending" || c.status === "arrived").length}
           </div>
-        ))}
+          <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.55)", marginTop: 4 }}>Consignments</div>
+        </button>
+
+        {/* Total Head */}
+        <div style={{
+          background: "#0E2646", borderRadius: 12, padding: 14, minHeight: 80,
+          display: "flex", flexDirection: "column", justifyContent: "flex-end",
+        }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "#FFFFFF", lineHeight: 1 }}>
+            {stats.totalHead}
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.55)", marginTop: 4 }}>Total Head</div>
+        </div>
+
+        {/* Revenue */}
+        <div style={{
+          background: "#0E2646", borderRadius: 12, padding: 14, minHeight: 80,
+          display: "flex", flexDirection: "column", justifyContent: "flex-end",
+        }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "#FFFFFF", lineHeight: 1 }}>
+            {fmtCurrency(stats.totalCharge)}
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.55)", marginTop: 4 }}>Revenue</div>
+        </div>
+
+        {/* Reports */}
+        <button
+          onClick={() => navigate(`/sale-barn/${id}/reports`)}
+          className="active:scale-[0.97]"
+          style={{
+            background: "#0E2646", borderRadius: 12, padding: 14, minHeight: 80,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            border: "none", cursor: "pointer",
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <polyline points="14,2 14,8 20,8" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <line x1="16" y1="13" x2="8" y2="13" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="16" y1="17" x2="8" y2="17" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.55)", marginTop: 6 }}>Reports</div>
+        </button>
       </div>
 
       {/* Tab Bar */}
@@ -978,17 +1007,7 @@ const SaleDayDetail: React.FC = () => {
         </div>
       )}
 
-      <ConsignmentsTab
-        consignments={consignments}
-        saleDayId={id!}
-        saleDayDate={saleDay?.date || ""}
-        operationId={operationId}
-        activeTab={activeTab}
-        showToast={showToast}
-        navigate={navigate}
-      />
       <ReconciliationTab workOrders={workOrders} saleDayId={id!} activeTab={activeTab} />
-      <ReportsTab activeTab={activeTab} showToast={showToast} />
     </div>
   );
 };
