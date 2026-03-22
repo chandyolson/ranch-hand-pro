@@ -52,6 +52,7 @@ import DayBillingPage from "@/pages/sale-barn/DayBillingPage";
 import WorkOrderAnimalsReport from "@/pages/sale-barn/WorkOrderAnimalsReport";
 import WorkOrderCviReport from "@/pages/sale-barn/WorkOrderCviReport";
 import ReviewClosePage from "@/pages/sale-barn/ReviewClosePage";
+import AssignAnimals from "@/pages/sale-barn/AssignAnimals";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
