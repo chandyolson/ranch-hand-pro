@@ -15,6 +15,7 @@ interface FileInfo {
   rows: number;
   columns: string[];
   preview: Record<string, string>[];
+  allData: Record<string, string>[];
 }
 
 interface ColumnFlag {
@@ -229,15 +230,12 @@ const CowCleanerScreen: React.FC = () => {
   // Build cleaned data from original file + accepted fixes
   const buildCleanedData = useCallback((): Record<string, string>[] => {
     if (!fileInfo) return [];
-    // For now, return the preview rows with accepted column renames applied
-    // In production this would re-read the full file and apply all transformations
-    const acceptedFlags = flags.filter((f) => f.status === "accepted" && f.issue !== "clean");
     const removedColumns = flags.filter((f) => f.issue === "empty" && f.status !== "rejected").map((f) => f.column);
 
-    return fileInfo.preview.map((row) => {
+    return fileInfo.allData.map((row) => {
       const cleaned: Record<string, string> = {};
       Object.entries(row).forEach(([col, val]) => {
-        if (removedColumns.includes(col)) return; // skip empty columns
+        if (removedColumns.includes(col)) return;
         cleaned[col] = val;
       });
       return cleaned;
@@ -433,11 +431,11 @@ const CowCleanerScreen: React.FC = () => {
   }, [fileInfo, flags, buildCleanedData, showToast]);
 
   // UX Rule 6b: Tags are strings — all values read as text, never numbers
-  const parseCSV = useCallback((text: string): { columns: string[]; rows: Record<string, string>[]; totalRows: number } => {
+  const parseCSV = useCallback((text: string): { columns: string[]; preview: Record<string, string>[]; allData: Record<string, string>[]; totalRows: number } => {
     const lines = text.trim().split("\n");
-    if (lines.length < 2) return { columns: [], rows: [], totalRows: 0 };
+    if (lines.length < 2) return { columns: [], preview: [], allData: [], totalRows: 0 };
     const columns = lines[0].split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-    const rows = lines.slice(1, 11).map((line) => {
+    const allData = lines.slice(1).map((line) => {
       const values = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
       const row: Record<string, string> = {};
       columns.forEach((col, i) => {
@@ -445,24 +443,23 @@ const CowCleanerScreen: React.FC = () => {
       });
       return row;
     });
-    return { columns, rows, totalRows: lines.length - 1 };
+    return { columns, preview: allData.slice(0, 10), allData, totalRows: allData.length };
   }, []);
 
-  const parseExcel = useCallback((buffer: ArrayBuffer): { columns: string[]; rows: Record<string, string>[]; totalRows: number } => {
+  const parseExcel = useCallback((buffer: ArrayBuffer): { columns: string[]; preview: Record<string, string>[]; allData: Record<string, string>[]; totalRows: number } => {
     const workbook = XLSX.read(buffer, { type: "array", raw: false, dateNF: "yyyy-mm-dd" });
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    // Read everything as strings so tag numbers keep leading zeros
     const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, { defval: "", raw: false });
-    if (jsonData.length === 0) return { columns: [], rows: [], totalRows: 0 };
+    if (jsonData.length === 0) return { columns: [], preview: [], allData: [], totalRows: 0 };
     const columns = Object.keys(jsonData[0]);
-    const rows = jsonData.slice(0, 10).map((row) => {
+    const allData = jsonData.map((row) => {
       const mapped: Record<string, string> = {};
       columns.forEach((col) => {
         mapped[col] = String(row[col] ?? "");
       });
       return mapped;
     });
-    return { columns, rows, totalRows: jsonData.length };
+    return { columns, preview: allData.slice(0, 10), allData, totalRows: allData.length };
   }, []);
 
   const handleFileDrop = useCallback(
@@ -494,15 +491,16 @@ const CowCleanerScreen: React.FC = () => {
     reader.onload = (e) => {
       try {
         let columns: string[];
-        let rows: Record<string, string>[];
+        let preview: Record<string, string>[];
+        let allData: Record<string, string>[];
         let totalRows: number;
 
         if (isExcel) {
           const buffer = e.target?.result as ArrayBuffer;
-          ({ columns, rows, totalRows } = parseExcel(buffer));
+          ({ columns, preview, allData, totalRows } = parseExcel(buffer));
         } else {
           const text = e.target?.result as string;
-          ({ columns, rows, totalRows } = parseCSV(text));
+          ({ columns, preview, allData, totalRows } = parseCSV(text));
         }
 
         setFileInfo({
@@ -511,7 +509,8 @@ const CowCleanerScreen: React.FC = () => {
           type: isExcel ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : f.type || "text/csv",
           rows: totalRows,
           columns,
-          preview: rows,
+          preview,
+          allData,
         });
       } catch (err) {
         console.error("File parse error:", err);
