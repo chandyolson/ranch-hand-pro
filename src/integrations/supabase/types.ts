@@ -697,6 +697,70 @@ export type Database = {
         }
         Relationships: []
       }
+      consignments: {
+        Row: {
+          animal_type: string | null
+          created_at: string
+          customer_id: string | null
+          customer_name: string
+          head_count: number
+          id: string
+          notes: string | null
+          operation_id: string
+          sale_day_id: string | null
+          status: string
+          taken_by: string | null
+        }
+        Insert: {
+          animal_type?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_name: string
+          head_count?: number
+          id?: string
+          notes?: string | null
+          operation_id: string
+          sale_day_id?: string | null
+          status?: string
+          taken_by?: string | null
+        }
+        Update: {
+          animal_type?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string
+          head_count?: number
+          id?: string
+          notes?: string | null
+          operation_id?: string
+          sale_day_id?: string | null
+          status?: string
+          taken_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consignments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "sale_barn_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignments_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignments_sale_day_id_fkey"
+            columns: ["sale_day_id"]
+            isOneToOne: false
+            referencedRelation: "sale_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cow_work: {
         Row: {
           additional_products: Json | null
