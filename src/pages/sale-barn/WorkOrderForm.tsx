@@ -836,6 +836,9 @@ const WorkOrderForm: React.FC = () => {
         )}
       </div>
 
+      {/* Report Buttons */}
+      {isEdit && woId && <ReportButtons saleDayId={saleDayId!} woId={woId} />}
+
       {/* Work Section */}
       <div style={CARD}>
         <FieldRow label="Work Type" req>

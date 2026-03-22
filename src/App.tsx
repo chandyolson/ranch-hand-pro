@@ -106,6 +106,8 @@ const App = () => (
           <Route path="sale-barn/:id/work-order/new" element={<WorkOrderForm />} />
           <Route path="sale-barn/:id/work-order/:woId" element={<WorkOrderForm />} />
           <Route path="sale-barn/:id/work-order/:woId/chute" element={<ChutesideEntry />} />
+          <Route path="sale-barn/:id/work-order/:woId/animals" element={<WorkOrderAnimalsReport />} />
+          <Route path="sale-barn/:id/work-order/:woId/cvi" element={<WorkOrderCviReport />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
