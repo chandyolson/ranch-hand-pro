@@ -390,13 +390,19 @@ const ChutesideEntry: React.FC = () => {
       {/* Entry Card */}
       <div style={{ padding: "6px 16px 0" }}>
         <div style={CARD}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>Animal #{worked + 1}</span>
             {sorted && (
               <span style={{
                 fontSize: 10, fontWeight: 700, color: "#7B68EE",
                 background: "rgba(168,168,240,0.15)", borderRadius: 9999, padding: "2px 8px",
               }}>SORT PENDING</span>
+            )}
+            {isBuyer && eid.length === 15 && matchedAssignment && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#55BAAA", background: "rgba(85,186,170,0.12)", borderRadius: 9999, padding: "2px 8px" }}>ASSIGNED</span>
+            )}
+            {isBuyer && eid.length === 15 && !matchedAssignment && assignedAnimals.length > 0 && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#B8860B", background: "rgba(184,134,11,0.12)", borderRadius: 9999, padding: "2px 8px" }}>NOT IN ASSIGNMENT</span>
             )}
           </div>
 
