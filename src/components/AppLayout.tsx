@@ -43,7 +43,6 @@ const navRouteMap: Record<string, string> = {
   "Sale Days": "/sale-barn",
   Customers: "/sale-barn/customers",
   Buyers: "/sale-barn/buyers",
-  Settings: "/sale-barn/settings/prices",
 };
 
 const reverseNavMap: Record<string, string> = Object.fromEntries(
