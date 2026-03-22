@@ -157,6 +157,25 @@ const ChutesideEntry: React.FC = () => {
   const { data: dkData } = useDesignationKeys();
   const desKeys = dkData?.data ?? [];
 
+  /* Assigned animals for buyer work orders */
+  const isBuyer = wo?.entity_type === "buyer";
+  const { data: assignedAnimalsData } = useQuery({
+    queryKey: ["chute_assigned_animals", woId],
+    enabled: !!woId && isBuyer,
+    queryFn: async () => {
+      const { data } = await (supabase.from("sale_barn_animals") as any)
+        .select("*").eq("buyer_work_order_id", woId!)
+        .order("created_at", { ascending: true });
+      return (data ?? []) as unknown as SaleBarnAnimal[];
+    },
+  });
+  const assignedAnimals = assignedAnimalsData ?? [];
+  const assignedEidMap = useMemo(() => {
+    const m: Record<string, SaleBarnAnimal> = {};
+    assignedAnimals.forEach(a => { if (a.eid) m[a.eid] = a; });
+    return m;
+  }, [assignedAnimals]);
+
   /* customer name */
   const { data: customerName } = useQuery({
     queryKey: ["chute_customer", wo?.customer_id],
@@ -168,7 +187,7 @@ const ChutesideEntry: React.FC = () => {
     },
   });
 
-  const expected = wo?.head_count ?? 0;
+  const expected = isBuyer && assignedAnimals.length > 0 ? assignedAnimals.length : (wo?.head_count ?? 0);
   const worked = animals.length;
   const pct = expected > 0 ? Math.min((worked / expected) * 100, 100) : 0;
   const pensLabel = (wo?.pens ?? []).join(", ");
@@ -190,6 +209,7 @@ const ChutesideEntry: React.FC = () => {
   const [sortModalOpen, setSortModalOpen] = useState(false);
   const [groupNotes, setGroupNotes] = useState(wo?.group_notes ?? "");
   const [saving, setSaving] = useState(false);
+  const [matchedAssignment, setMatchedAssignment] = useState<SaleBarnAnimal | null>(null);
 
   useEffect(() => { if (wo?.group_notes) setGroupNotes(wo.group_notes); }, [wo]);
 
@@ -213,9 +233,27 @@ const ChutesideEntry: React.FC = () => {
   const clearForm = useCallback(() => {
     setEid(""); setEidError(""); setBackTag(""); setTagNumber(""); setDesignation("");
     setPregStatus(""); setSex(""); setMemo(""); setQuickNotes([]); setEid2("");
-    setSorted(false); setSortDestPen("");
+    setSorted(false); setSortDestPen(""); setMatchedAssignment(null);
     setTimeout(() => eidRef.current?.focus(), 50);
   }, []);
+
+  /* Auto-populate from assigned animal when EID matches */
+  const tryAutoPopulate = useCallback((value: string) => {
+    if (!isBuyer || value.length !== 15) { setMatchedAssignment(null); return; }
+    const match = assignedEidMap[value];
+    if (match) {
+      setMatchedAssignment(match);
+      if (match.designation_key) setDesignation(match.designation_key);
+      if (match.preg_status) setPregStatus(match.preg_status);
+      if (match.sex) setSex(match.sex);
+      if (match.quick_notes?.length) setQuickNotes(match.quick_notes);
+      if (match.back_tag) setBackTag(match.back_tag);
+      if (match.tag_number) setTagNumber(match.tag_number);
+      if (match.memo) setMemo(match.memo);
+    } else {
+      setMatchedAssignment(null);
+    }
+  }, [isBuyer, assignedEidMap]);
 
   const toggleNote = (n: string) => {
     if (BREED_NOTES.includes(n)) {
@@ -257,6 +295,7 @@ const ChutesideEntry: React.FC = () => {
       quick_notes: quickNotes,
       sorted,
       sort_dest_pen: sorted ? sortDestPen : null,
+      source_animal_id: matchedAssignment?.id ?? null,
     };
 
     const { error } = await (supabase.from("sale_barn_animals") as any).insert(animalRow);
@@ -351,13 +390,19 @@ const ChutesideEntry: React.FC = () => {
       {/* Entry Card */}
       <div style={{ padding: "6px 16px 0" }}>
         <div style={CARD}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>Animal #{worked + 1}</span>
             {sorted && (
               <span style={{
                 fontSize: 10, fontWeight: 700, color: "#7B68EE",
                 background: "rgba(168,168,240,0.15)", borderRadius: 9999, padding: "2px 8px",
               }}>SORT PENDING</span>
+            )}
+            {isBuyer && eid.length === 15 && matchedAssignment && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#55BAAA", background: "rgba(85,186,170,0.12)", borderRadius: 9999, padding: "2px 8px" }}>ASSIGNED</span>
+            )}
+            {isBuyer && eid.length === 15 && !matchedAssignment && assignedAnimals.length > 0 && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#B8860B", background: "rgba(184,134,11,0.12)", borderRadius: 9999, padding: "2px 8px" }}>NOT IN ASSIGNMENT</span>
             )}
           </div>
 
@@ -374,6 +419,7 @@ const ChutesideEntry: React.FC = () => {
                     const v = e.target.value.replace(/\D/g, "");
                     setEid(v);
                     if (eidError) setEidError("");
+                    tryAutoPopulate(v);
                   }}
                   onFocus={focusGold}
                   onBlur={(e) => {

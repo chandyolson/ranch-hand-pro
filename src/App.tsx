@@ -52,6 +52,7 @@ import DayBillingPage from "@/pages/sale-barn/DayBillingPage";
 import WorkOrderAnimalsReport from "@/pages/sale-barn/WorkOrderAnimalsReport";
 import WorkOrderCviReport from "@/pages/sale-barn/WorkOrderCviReport";
 import ReviewClosePage from "@/pages/sale-barn/ReviewClosePage";
+import AssignAnimals from "@/pages/sale-barn/AssignAnimals";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
@@ -110,6 +111,7 @@ const App = () => (
           <Route path="sale-barn/:id/work-order/:woId/animals" element={<WorkOrderAnimalsReport />} />
           <Route path="sale-barn/:id/work-order/:woId/cvi" element={<WorkOrderCviReport />} />
           <Route path="sale-barn/:id/work-order/:woId/review" element={<ReviewClosePage />} />
+          <Route path="sale-barn/:id/work-order/:woId/assign" element={<AssignAnimals />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

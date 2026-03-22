@@ -933,6 +933,100 @@ const SpecialChargesSheet: React.FC<{
   );
 };
 
+// ── Assign Animals Section (buyer only) ──
+const AssignAnimalsSection: React.FC<{
+  woId: string; saleDayId: string; buyerName: string;
+  navigate: (path: string) => void;
+}> = ({ woId, saleDayId, buyerName, navigate }) => {
+  const [showAll, setShowAll] = useState(false);
+
+  const { data: assignedAnimals } = useQuery({
+    queryKey: ["assigned_animals", woId],
+    queryFn: async () => {
+      const { data } = await (supabase.from("sale_barn_animals") as any)
+        .select("id,eid,tag_number,designation_key,work_order_id")
+        .eq("buyer_work_order_id", woId)
+        .order("created_at", { ascending: true });
+      return (data ?? []) as { id: string; eid: string; tag_number: string | null; designation_key: string | null; work_order_id: string }[];
+    },
+  });
+
+  // Fetch seller names for assigned animals
+  const sellerWoIds = useMemo(() => [...new Set((assignedAnimals ?? []).map(a => a.work_order_id))], [assignedAnimals]);
+  const { data: sellerWos } = useQuery({
+    queryKey: ["assigned_seller_wos", sellerWoIds],
+    enabled: sellerWoIds.length > 0,
+    queryFn: async () => {
+      const { data: wos } = await (supabase.from("work_orders") as any).select("id,customer_id").in("id", sellerWoIds);
+      if (!wos?.length) return {};
+      const custIds = wos.map((w: any) => w.customer_id).filter(Boolean);
+      const { data: custs } = await (supabase.from("sale_barn_customers") as any).select("id,name").in("id", custIds);
+      const custMap: Record<string, string> = {};
+      (custs ?? []).forEach((c: any) => { custMap[c.id] = c.name; });
+      const woMap: Record<string, string> = {};
+      wos.forEach((w: any) => { woMap[w.id] = custMap[w.customer_id] ?? "Unknown"; });
+      return woMap;
+    },
+  });
+
+  const count = assignedAnimals?.length ?? 0;
+  const sellerNameMap = sellerWos ?? {};
+
+  return (
+    <>
+      <button
+        type="button"
+        className="active:scale-[0.98]"
+        onClick={() => navigate(`/sale-barn/${saleDayId}/work-order/${woId}/assign`)}
+        style={{
+          width: "100%", height: 44, borderRadius: 10, marginBottom: 10,
+          background: "rgba(85,186,170,0.06)", border: "1.5px solid #55BAAA",
+          color: "#55BAAA", fontSize: 14, fontWeight: 600, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 2v5M5 4l3 3 3-3M3 9h10v4H3z" stroke="#55BAAA" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Assign Animals from Sellers
+        {count > 0 && (
+          <span style={{
+            fontSize: 11, fontWeight: 700, borderRadius: 9999, padding: "2px 8px",
+            background: "rgba(85,186,170,0.15)", color: "#55BAAA", marginLeft: 4,
+          }}>{count} assigned</span>
+        )}
+      </button>
+
+      {count > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#0E2646" }}>Assigned animals</span>
+            <span style={{
+              fontSize: 11, fontWeight: 700, borderRadius: 9999, padding: "1px 7px",
+              background: "rgba(85,186,170,0.12)", color: "#55BAAA",
+            }}>{count}</span>
+          </div>
+          {(showAll ? assignedAnimals! : assignedAnimals!.slice(0, 3)).map(a => (
+            <div key={a.id} style={{
+              padding: "6px 12px", background: "#F5F5F0", borderRadius: 8, marginBottom: 3,
+              display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{a.tag_number || (a.eid ? a.eid.slice(-6) : "—")}</span>
+              {a.designation_key && <span style={{ fontSize: 10, color: "#717182" }}>{a.designation_key}</span>}
+              <span style={{ fontSize: 12, color: "#717182", marginLeft: "auto" }}>{sellerNameMap[a.work_order_id] ?? ""}</span>
+            </div>
+          ))}
+          {count > 3 && !showAll && (
+            <button onClick={() => setShowAll(true)} style={{
+              background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#55BAAA", padding: "4px 0",
+            }}>View all {count} →</button>
+          )}
+        </div>
+      )}
+    </>
+  );
+};
+
 // ── Main Form ──
 const WorkOrderForm: React.FC = () => {
   const { id: saleDayId, woId } = useParams<{ id: string; woId: string }>();
@@ -1150,6 +1244,11 @@ const WorkOrderForm: React.FC = () => {
           </FieldRow>
         )}
       </div>
+
+      {/* Assign Animals Button (buyer edit only) */}
+      {isEdit && woId && entityType === "buyer" && (
+        <AssignAnimalsSection woId={woId} saleDayId={saleDayId!} buyerName={customer?.name ?? "Buyer"} navigate={navigate} />
+      )}
 
       {/* Report Buttons */}
       {isEdit && woId && <ReportButtons woId={woId} wo={existingWo ?? null} customer={customer} saleDayDate={saleDay?.date ?? ""} />}

@@ -55,6 +55,8 @@ export interface SaleBarnAnimal {
   quick_notes: string[];
   sorted: boolean;
   sort_dest_pen: string | null;
+  buyer_work_order_id: string | null;
+  source_animal_id: string | null;
   created_at: string;
 }
 
