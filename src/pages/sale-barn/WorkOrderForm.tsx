@@ -1152,7 +1152,7 @@ const WorkOrderForm: React.FC = () => {
       </div>
 
       {/* Report Buttons */}
-      {isEdit && woId && <ReportButtons saleDayId={saleDayId!} woId={woId} />}
+      {isEdit && woId && <ReportButtons woId={woId} wo={existingWo ?? null} customer={customer} saleDayDate={saleDay?.date ?? ""} />}
 
       {/* Work Section */}
       <div style={CARD}>
