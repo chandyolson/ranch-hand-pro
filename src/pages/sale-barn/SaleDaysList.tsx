@@ -235,6 +235,93 @@ const SaleDaysList: React.FC = () => {
         </div>
       </div>
 
+      {/* New Sale Day Inline Form */}
+      {formOpen && (
+        <div style={{
+          background: "#FFFFFF", borderRadius: 12, border: "1px solid #F3D12A",
+          boxShadow: "0 0 0 2px rgba(243,209,42,0.15)", padding: "12px 14px", marginBottom: 12,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#0E2646", marginBottom: 10 }}>New Sale Day</div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <FieldRow label="Date" req>
+              <input
+                type="date"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+                onFocus={() => setFocusedField("date")}
+                onBlur={() => setFocusedField(null)}
+                style={{ ...INPUT_STYLE, ...(focusedField === "date" ? FOCUS_STYLE : {}) }}
+              />
+            </FieldRow>
+
+            <FieldRow label="Vet Crew">
+              <input
+                value={formCrew}
+                onChange={(e) => setFormCrew(e.target.value)}
+                placeholder="e.g. Dr. Collins, Jake, Maria"
+                onFocus={() => setFocusedField("crew")}
+                onBlur={() => setFocusedField(null)}
+                style={{ ...INPUT_STYLE, ...(focusedField === "crew" ? FOCUS_STYLE : {}) }}
+              />
+            </FieldRow>
+
+            <FieldRow label="Status">
+              <div style={{
+                display: "flex", gap: 0, flex: 1, border: "1px solid #D4D4D0",
+                borderRadius: 8, overflow: "hidden", height: 36,
+              }}>
+                {[
+                  { value: "scheduled", label: "Scheduled" },
+                  { value: "active", label: "Active" },
+                  { value: "completed", label: "Completed" },
+                ].map((opt, i) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setFormStatus(opt.value)}
+                    style={{
+                      flex: 1, minWidth: 0, padding: 0, fontSize: 13, fontWeight: 600,
+                      border: "none", borderRight: i < 2 ? "1px solid #D4D4D0" : "none",
+                      borderRadius: 0, cursor: "pointer",
+                      backgroundColor: formStatus === opt.value ? "#0E2646" : "transparent",
+                      color: formStatus === opt.value ? "#FFFFFF" : "#717182",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </FieldRow>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button
+              onClick={() => setFormOpen(false)}
+              style={{
+                flex: 1, height: 38, borderRadius: 9999, border: "1px solid #D4D4D0",
+                background: "transparent", fontSize: 13, fontWeight: 600, color: "#717182", cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={formSaving}
+              className="active:scale-[0.97]"
+              style={{
+                flex: 1, height: 38, borderRadius: 9999, border: "none",
+                background: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A",
+                boxShadow: "0 2px 8px rgba(243,209,42,0.30)", cursor: "pointer",
+                opacity: formSaving ? 0.6 : 1,
+              }}
+            >
+              {formSaving ? "Creating..." : "Create Sale Day"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Toolbar Row 2: Search */}
       <div style={{ position: "relative", marginBottom: 10 }}>
         <svg
