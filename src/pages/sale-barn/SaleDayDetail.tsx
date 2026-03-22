@@ -890,7 +890,7 @@ const SaleDayDetail: React.FC = () => {
       );
     }
     return list;
-  }, [workOrders, woFilter, woSearch]);
+  }, [workOrders, woFilter, woSearch, customerMap]);
 
   const filterCounts = useMemo(() => ({
     All: workOrders.length,
