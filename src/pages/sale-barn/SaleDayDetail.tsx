@@ -917,6 +917,223 @@ const FlaggedNotesBanner: React.FC<{
   );
 };
 
+// ── Work Order Card with 3-dot menu ──
+const WoCard: React.FC<{
+  wo: WorkOrder; saleDayId: string; customerName: string | null; flagCount: number;
+  navigate: (to: string) => void; showToast: (v: string, m: string) => void;
+  queryClient: ReturnType<typeof useQueryClient>;
+}> = ({ wo, saleDayId, customerName, flagCount, navigate, showToast, queryClient }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    await (supabase.from("sale_barn_animals") as any).delete().eq("work_order_id", wo.id);
+    await (supabase.from("work_order_notes") as any).delete().eq("work_order_id", wo.id);
+    await (supabase.from("work_orders") as any).delete().eq("id", wo.id);
+    queryClient.invalidateQueries({ queryKey: ["work_orders"] });
+    setDeleting(false);
+    setConfirmDelete(false);
+    showToast("success", "Work order deleted");
+    try { navigator.vibrate(50); } catch {}
+  };
+
+  if (confirmDelete) {
+    return (
+      <div style={{
+        borderRadius: 12, border: "2px solid #D4183D", background: "rgba(212,24,61,0.03)",
+        padding: "14px 16px",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2L18.66 17H1.34L10 2z" stroke="#D4183D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M10 8v4M10 14h.01" stroke="#D4183D" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#D4183D" }}>Delete this work order?</span>
+        </div>
+        <div style={{ fontSize: 13, color: "#717182", marginTop: 4 }}>
+          {customerName || "Unknown"} · {wo.work_type || "—"} · {wo.head_count || 0} hd
+        </div>
+        <div style={{ fontSize: 12, color: "#717182", lineHeight: 1.4, marginTop: 8 }}>
+          This will permanently delete the work order and all associated animal records. This cannot be undone.
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <button
+            onClick={() => setConfirmDelete(false)}
+            style={{
+              flex: 1, height: 40, borderRadius: 9999, border: "1px solid #D4D4D0",
+              background: "transparent", fontSize: 13, fontWeight: 600, color: "#717182", cursor: "pointer",
+            }}
+          >Cancel</button>
+          <button
+            onClick={handleDelete} disabled={deleting}
+            className="active:scale-[0.97]"
+            style={{
+              flex: 1, height: 40, borderRadius: 9999, border: "none",
+              background: "#D4183D", fontSize: 13, fontWeight: 700, color: "#FFFFFF",
+              cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.6 : 1,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}
+          >
+            {deleting && <span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#FFF", borderRadius: "50%", animation: "spin 0.6s linear infinite", display: "inline-block" }} />}
+            Delete
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const workedHead = wo.work_complete ? wo.head_count : 0;
+  const pens = (wo.pens || []).join(", ");
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        className="active:scale-[0.98]"
+        onClick={() => navigate(`/sale-barn/${saleDayId}/work-order/${wo.id}`)}
+        style={{
+          background: "#0E2646", borderRadius: 12, padding: "12px 14px",
+          border: "none", cursor: "pointer", textAlign: "left", width: "100%",
+        }}
+      >
+        {/* Row 1 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: "#F0F0F0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {customerName || <em style={{ fontWeight: 400, opacity: 0.5 }}>No Customer</em>}
+          </span>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
+            padding: "3px 8px",
+            background: wo.entity_type === "seller" ? "rgba(243,209,42,0.12)" : "rgba(85,186,170,0.15)",
+            color: wo.entity_type === "seller" ? "#F3D12A" : "#55BAAA",
+          }}>
+            {wo.entity_type === "seller" ? "SELLER" : "BUYER"}
+          </span>
+          {flagCount > 0 && (
+            <span style={{
+              padding: "3px 6px", borderRadius: 9999,
+              background: "rgba(243,209,42,0.25)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <FlagSvg size={10} fill="#F3D12A" stroke="#F3D12A" />
+            </span>
+          )}
+          {(() => {
+            const isDone = wo.work_complete && (wo.entity_type === "seller" || wo.health_complete);
+            const needsWork = !wo.work_complete;
+            const needsHealth = !wo.health_complete && wo.entity_type === "buyer";
+            if (isDone) return (
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999, padding: "3px 8px", background: "rgba(85,186,170,0.15)", color: "#55BAAA" }}>DONE</span>
+            );
+            return (<>
+              {needsWork && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999, padding: "3px 8px", background: "rgba(184,134,11,0.12)", color: "#B8860B" }}>NEEDS WORK</span>}
+              {needsHealth && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999, padding: "3px 8px", background: "rgba(155,35,53,0.12)", color: "#9B2335" }}>NEEDS HEALTH</span>}
+            </>);
+          })()}
+          {/* Three-dot menu button */}
+          <div
+            ref={menuRef}
+            style={{ position: "relative", flexShrink: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setMenuOpen(!menuOpen); }}
+              style={{
+                width: 28, height: 28, borderRadius: 14,
+                background: "rgba(240,240,240,0.10)", border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="7" cy="3" r="1.2" fill="rgba(240,240,240,0.50)" />
+                <circle cx="7" cy="7" r="1.2" fill="rgba(240,240,240,0.50)" />
+                <circle cx="7" cy="11" r="1.2" fill="rgba(240,240,240,0.50)" />
+              </svg>
+            </button>
+            {menuOpen && (
+              <div style={{
+                position: "absolute", top: 32, right: 0, zIndex: 50,
+                background: "#FFFFFF", borderRadius: 10, border: "1px solid rgba(212,212,208,0.60)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.10)", padding: 4, minWidth: 160,
+              }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen(false); navigate(`/sale-barn/${saleDayId}/work-order/${wo.id}`); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8, width: "100%",
+                    padding: "10px 12px", borderRadius: 8, border: "none", background: "none", cursor: "pointer",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M10.08 1.92a1.5 1.5 0 0 1 2.12 2.12L5.12 11.12 2 12l.88-3.12 7.2-6.96z" stroke="#0E2646" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: "#1A1A1A" }}>Edit Work Order</span>
+                </button>
+                <div style={{ height: 1, background: "rgba(212,212,208,0.30)", margin: "2px 4px" }} />
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setConfirmDelete(true); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8, width: "100%",
+                    padding: "10px 12px", borderRadius: 8, border: "none", background: "none", cursor: "pointer",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M2 4h10M5 4V2.5A.5.5 0 0 1 5.5 2h3a.5.5 0 0 1 .5.5V4M11 4v7.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4" stroke="#D4183D" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: "#D4183D" }}>Delete Work Order</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2 */}
+        <div style={{ fontSize: 13, fontWeight: 400, color: "rgba(240,240,240,0.65)", marginTop: 4 }}>
+          {[wo.work_type, wo.animal_type, wo.entity_type === "buyer" && wo.buyer_num ? `#${wo.buyer_num}` : null]
+            .filter(Boolean)
+            .join(" · ")}
+        </div>
+
+        {/* Row 3 */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {pens && (
+              <span style={{ fontSize: 12, fontWeight: 400, color: "rgba(240,240,240,0.45)" }}>
+                Pen {pens}
+              </span>
+            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <div style={{ width: 80, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div style={{
+                  width: wo.head_count ? `${(workedHead / wo.head_count) * 100}%` : "0%",
+                  height: "100%", background: "#55BAAA", borderRadius: 2,
+                }} />
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(168,230,218,0.70)" }}>
+                {workedHead}/{wo.head_count || 0}
+              </span>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>TOTAL</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#55BAAA" }}>{fmtCurrency(wo.total_charge || 0)}</span>
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+};
+
 const SaleDayDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
