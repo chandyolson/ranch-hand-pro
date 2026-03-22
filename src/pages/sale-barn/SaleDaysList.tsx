@@ -84,6 +84,31 @@ const SaleDaysList: React.FC = () => {
     },
   });
 
+  // Fetch consignments for all sale days
+  const { data: allConsignments } = useQuery({
+    queryKey: ["consignments_for_sale_days", saleDayIds],
+    enabled: saleDayIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("consignments") as any)
+        .select("*")
+        .in("sale_day_id", saleDayIds);
+      if (error) throw error;
+      return (data ?? []) as unknown as Consignment[];
+    },
+  });
+
+  // Group consignments by sale_day_id
+  const consignMap = useMemo(() => {
+    const m: Record<string, Consignment[]> = {};
+    (allConsignments ?? []).forEach((c) => {
+      if (c.sale_day_id) {
+        if (!m[c.sale_day_id]) m[c.sale_day_id] = [];
+        m[c.sale_day_id].push(c);
+      }
+    });
+    return m;
+  }, [allConsignments]);
+
   // Group work orders by sale_day_id
   const woMap = useMemo(() => {
     const m: Record<string, WorkOrder[]> = {};
