@@ -2859,6 +2859,9 @@ export type Database = {
           author: string
           created_at: string
           id: string
+          is_flagged: boolean
+          resolved_at: string | null
+          resolved_by: string | null
           text: string
           work_order_id: string
         }
@@ -2866,6 +2869,9 @@ export type Database = {
           author: string
           created_at?: string
           id?: string
+          is_flagged?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
           text: string
           work_order_id: string
         }
@@ -2873,6 +2879,9 @@ export type Database = {
           author?: string
           created_at?: string
           id?: string
+          is_flagged?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
           text?: string
           work_order_id?: string
         }
