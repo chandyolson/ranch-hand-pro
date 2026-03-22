@@ -1473,6 +1473,65 @@ const WorkOrderForm: React.FC = () => {
             </button>
           )
         )}
+        {/* Delete Work Order (edit mode) */}
+        {isEdit && woId && !showDeleteConfirm && (
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              width: "100%", background: "none", border: "none", cursor: "pointer",
+              padding: 12, fontSize: 13, fontWeight: 600, color: "#D4183D",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 4h10M5 4V2.5A.5.5 0 0 1 5.5 2h3a.5.5 0 0 1 .5.5V4M11 4v7.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4" stroke="#D4183D" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Delete Work Order
+          </button>
+        )}
+        {isEdit && woId && showDeleteConfirm && (
+          <div style={{
+            borderRadius: 12, border: "2px solid #D4183D", background: "rgba(212,24,61,0.03)",
+            padding: "14px 16px", marginTop: 4,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2L18.66 17H1.34L10 2z" stroke="#D4183D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 8v4M10 14h.01" stroke="#D4183D" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#D4183D" }}>Delete this work order?</span>
+            </div>
+            <div style={{ fontSize: 12, color: "#717182", lineHeight: 1.4, marginTop: 8 }}>
+              This will permanently delete the work order and all associated animal records. This cannot be undone.
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{
+                  flex: 1, height: 40, borderRadius: 9999, border: "1px solid #D4D4D0",
+                  background: "transparent", fontSize: 13, fontWeight: 600, color: "#717182", cursor: "pointer",
+                }}
+              >Cancel</button>
+              <button
+                type="button"
+                onClick={handleDeleteWo}
+                disabled={woDeleting}
+                className="active:scale-[0.97]"
+                style={{
+                  flex: 1, height: 40, borderRadius: 9999, border: "none",
+                  background: "#D4183D", fontSize: 13, fontWeight: 700, color: "#FFFFFF",
+                  cursor: woDeleting ? "not-allowed" : "pointer", opacity: woDeleting ? 0.6 : 1,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}
+              >
+                {woDeleting && <span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#FFF", borderRadius: "50%", animation: "spin 0.6s linear infinite", display: "inline-block" }} />}
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       </div>
 
