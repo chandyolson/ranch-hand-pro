@@ -70,7 +70,7 @@ const ConsignmentsPage: React.FC = () => {
   const { id: saleDayId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { operationId } = useOperation();
-  const toast = useToast();
+  const { showToast } = useToast();
   const qc = useQueryClient();
 
   const [showForm, setShowForm] = useState(false);
