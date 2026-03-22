@@ -333,7 +333,11 @@ const ConsignmentsTab: React.FC<{
               </div>
               {/* Row 2 */}
               <div style={{ fontSize: 13, fontWeight: 400, color: "#717182", marginTop: 4 }}>
-                {c.head_count} hd{c.animal_type ? ` · ${c.animal_type}` : ""}
+                {c.expected_sale_date
+                  ? new Date(c.expected_sale_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                  : <span style={{ fontStyle: "italic" }}>No date set</span>
+                }
+                {" · "}{c.head_count} hd{c.animal_type ? ` · ${c.animal_type}` : ""}
               </div>
               {/* Row 3 */}
               <div style={{ fontSize: 12, fontWeight: 400, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
