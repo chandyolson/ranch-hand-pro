@@ -1338,24 +1338,41 @@ const WorkOrderForm: React.FC = () => {
         </button>
         </div>
         {isEdit && woId && (
-          <button
-            type="button"
-            className="active:scale-[0.97]"
-            onClick={() => navigate(`/sale-barn/${saleDayId}/work-order/${woId}/chute`)}
-            style={{
-              width: "100%", height: 48, borderRadius: 9999,
-              background: "#0E2646", border: "none",
-              fontSize: 16, fontWeight: 700, color: "#FFFFFF",
-              boxShadow: "0 2px 10px rgba(14,38,70,0.25)",
-              cursor: "pointer", display: "flex", alignItems: "center",
-              justifyContent: "center", gap: 8,
-            }}
-          >
-            Start Working
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8H13M10 5L13 8L10 11" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+          workComplete ? (
+            <div
+              style={{
+                width: "100%", height: 48, borderRadius: 9999,
+                background: "rgba(85,186,170,0.12)", border: "1px solid rgba(85,186,170,0.30)",
+                fontSize: 16, fontWeight: 700, color: "#55BAAA",
+                pointerEvents: "none",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8.5L6.5 12L13 4" stroke="#55BAAA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Work Complete
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="active:scale-[0.97]"
+              onClick={() => navigate(`/sale-barn/${saleDayId}/work-order/${woId}/chute`)}
+              style={{
+                width: "100%", height: 48, borderRadius: 9999,
+                background: "#0E2646", border: "none",
+                fontSize: 16, fontWeight: 700, color: "#FFFFFF",
+                boxShadow: "0 2px 10px rgba(14,38,70,0.25)",
+                cursor: "pointer", display: "flex", alignItems: "center",
+                justifyContent: "center", gap: 8,
+              }}
+            >
+              Start Working
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8H13M10 5L13 8L10 11" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )
         )}
       </div>
       </div>
