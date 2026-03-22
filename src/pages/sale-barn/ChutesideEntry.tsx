@@ -295,6 +295,7 @@ const ChutesideEntry: React.FC = () => {
       quick_notes: quickNotes,
       sorted,
       sort_dest_pen: sorted ? sortDestPen : null,
+      source_animal_id: matchedAssignment?.id ?? null,
     };
 
     const { error } = await (supabase.from("sale_barn_animals") as any).insert(animalRow);
