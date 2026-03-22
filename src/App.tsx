@@ -57,6 +57,18 @@ import WorkOrderCviReport from "@/pages/sale-barn/WorkOrderCviReport";
 import ReviewClosePage from "@/pages/sale-barn/ReviewClosePage";
 import AssignAnimals from "@/pages/sale-barn/AssignAnimals";
 import NotFound from "@/pages/NotFound";
+const SaleBarnGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { operationType } = useOperation();
+  const { showToast } = useToast();
+  if (operationType && operationType !== 'vet_practice') {
+    React.useEffect(() => {
+      showToast("error", "Sale Barn is only available for veterinary practice accounts.");
+    }, []);
+    return <Navigate to="/" replace />;
+  }
+  if (!operationType) return null; // still loading
+  return <>{children}</>;
+};
 
 const App = () => (
   <ToastProvider>
