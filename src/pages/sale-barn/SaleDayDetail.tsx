@@ -721,7 +721,8 @@ const SaleDayDetail: React.FC = () => {
       list = list.filter((wo) =>
         (wo.buyer_num || "").toLowerCase().includes(q) ||
         (wo.work_type || "").toLowerCase().includes(q) ||
-        (wo.group_notes || "").toLowerCase().includes(q)
+        (wo.group_notes || "").toLowerCase().includes(q) ||
+        (wo.customer_id && customerMap?.[wo.customer_id] || "").toLowerCase().includes(q)
       );
     }
     return list;
