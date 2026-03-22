@@ -756,7 +756,7 @@ const FlaggedNotesBanner: React.FC<{
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <FlagSvg size={18} fill="#F3D12A" stroke="#B8860B" />
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>Flagged notes</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>Flagged messages</span>
           <span style={{
             fontSize: 10, fontWeight: 700, color: "#FFFFFF", background: "#B8860B",
             borderRadius: 9999, padding: "2px 7px", minWidth: 16, textAlign: "center",
