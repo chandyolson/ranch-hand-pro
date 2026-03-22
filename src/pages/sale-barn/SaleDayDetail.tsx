@@ -713,7 +713,7 @@ const FlaggedNotesBanner: React.FC<{
       .eq("id", noteId);
     qc.invalidateQueries({ queryKey: ["flagged_notes"] });
     qc.invalidateQueries({ queryKey: ["flagged_replies"] });
-    showToast("success", "Note resolved");
+    showToast("success", "Message resolved");
   };
 
   const handleSendReply = async (parentNote: WorkOrderNote) => {
@@ -756,7 +756,7 @@ const FlaggedNotesBanner: React.FC<{
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <FlagSvg size={18} fill="#F3D12A" stroke="#B8860B" />
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>Flagged notes</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>Flagged messages</span>
           <span style={{
             fontSize: 10, fontWeight: 700, color: "#FFFFFF", background: "#B8860B",
             borderRadius: 9999, padding: "2px 7px", minWidth: 16, textAlign: "center",
@@ -871,7 +871,7 @@ const FlaggedNotesBanner: React.FC<{
                             value={replyText}
                             onChange={e => setReplyText(e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") handleSendReply(note); }}
-                            placeholder="Reply to this note..."
+                            placeholder="Reply to this message..."
                             style={{
                               flex: 1, height: 36, borderRadius: 8, border: "1px solid #D4D4D0",
                               fontSize: 16, fontFamily: "Inter, sans-serif", padding: "0 12px",
