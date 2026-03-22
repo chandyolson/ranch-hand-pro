@@ -672,6 +672,13 @@ const WorkOrderForm: React.FC = () => {
     if (error) {
       showToast("error", error.message);
     } else {
+      // If created from a consignment, mark it as converted
+      const consignmentId = searchParams.get("consignmentId");
+      if (consignmentId && !isEdit) {
+        await (supabase.from("consignments") as any)
+          .update({ status: "converted" })
+          .eq("id", consignmentId);
+      }
       showToast("success", isEdit ? "Work order updated" : "Work order created");
       navigate(`/sale-barn/${saleDayId}`);
     }
