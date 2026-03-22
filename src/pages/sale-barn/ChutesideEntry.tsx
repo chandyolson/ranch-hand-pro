@@ -233,9 +233,27 @@ const ChutesideEntry: React.FC = () => {
   const clearForm = useCallback(() => {
     setEid(""); setEidError(""); setBackTag(""); setTagNumber(""); setDesignation("");
     setPregStatus(""); setSex(""); setMemo(""); setQuickNotes([]); setEid2("");
-    setSorted(false); setSortDestPen("");
+    setSorted(false); setSortDestPen(""); setMatchedAssignment(null);
     setTimeout(() => eidRef.current?.focus(), 50);
   }, []);
+
+  /* Auto-populate from assigned animal when EID matches */
+  const tryAutoPopulate = useCallback((value: string) => {
+    if (!isBuyer || value.length !== 15) { setMatchedAssignment(null); return; }
+    const match = assignedEidMap[value];
+    if (match) {
+      setMatchedAssignment(match);
+      if (match.designation_key) setDesignation(match.designation_key);
+      if (match.preg_status) setPregStatus(match.preg_status);
+      if (match.sex) setSex(match.sex);
+      if (match.quick_notes?.length) setQuickNotes(match.quick_notes);
+      if (match.back_tag) setBackTag(match.back_tag);
+      if (match.tag_number) setTagNumber(match.tag_number);
+      if (match.memo) setMemo(match.memo);
+    } else {
+      setMatchedAssignment(null);
+    }
+  }, [isBuyer, assignedEidMap]);
 
   const toggleNote = (n: string) => {
     if (BREED_NOTES.includes(n)) {
