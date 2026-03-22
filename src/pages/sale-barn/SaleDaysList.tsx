@@ -6,7 +6,7 @@ import { useSaleDays } from "@/hooks/sale-barn/useSaleDays";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import FieldRow from "@/components/calving/FieldRow";
-import type { SaleDay, WorkOrder } from "@/types/sale-barn";
+import type { SaleDay, WorkOrder, Consignment } from "@/types/sale-barn";
 
 const STATUS_OPTIONS = ["All", "Active", "Completed", "Scheduled"] as const;
 
