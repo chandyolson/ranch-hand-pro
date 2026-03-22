@@ -51,6 +51,7 @@ export interface SaleBarnAnimal {
   preg_status: string | null;
   sex: string | null;
   breed: string | null;
+  memo: string | null;
   quick_notes: string[];
   sorted: boolean;
   sort_dest_pen: string | null;
