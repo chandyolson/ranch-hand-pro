@@ -735,7 +735,7 @@ const WorkOrderForm: React.FC = () => {
     <div style={{ paddingBottom: 90 }}>
       {/* Customer Section */}
       <div style={CARD}>
-        <FieldRow label={<>Customer<span style={{ color: "#9B2335", marginLeft: 2 }}>*</span></>}>
+        <FieldRow label="Customer" req>
           <CustomerSearch operationId={operationId} selected={customer} onSelect={setCustomer} />
         </FieldRow>
 
