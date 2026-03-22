@@ -277,8 +277,9 @@ const NotesThread: React.FC<{ woId: string | undefined; showToast: (v: string, m
 const LabelPreview: React.FC<{
   pen: string; customerName: string; buyerNum: string;
   headCount: number; workType: string; isBuyer: boolean;
+  entityType: "seller" | "buyer";
   showToast: (v: string, m: string) => void;
-}> = ({ pen, customerName, buyerNum, headCount, workType, isBuyer, showToast }) => (
+}> = ({ pen, customerName, buyerNum, headCount, workType, isBuyer, entityType, showToast }) => (
   <CollapsibleSection title="Label Preview" defaultOpen={false}>
     <div style={{
       border: "2px dashed #D4D4D0", borderRadius: 10, padding: 16,
@@ -286,8 +287,20 @@ const LabelPreview: React.FC<{
       <div style={{ fontSize: 10, fontWeight: 600, color: "#717182", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>
         DYMO PEN CARD
       </div>
+      {customerName && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: "#1A1A1A" }}>{customerName}</span>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+            borderRadius: 9999, padding: "2px 8px",
+            background: entityType === "seller" ? "rgba(243,209,42,0.12)" : "rgba(85,186,170,0.15)",
+            color: entityType === "seller" ? "#B8860B" : "#55BAAA",
+          }}>
+            {entityType}
+          </span>
+        </div>
+      )}
       <div style={{ fontSize: 28, fontWeight: 800, color: "#1A1A1A", marginBottom: 2 }}>{pen || "—"}</div>
-      <div style={{ fontSize: 16, fontWeight: 600, color: "#1A1A1A", marginBottom: 2 }}>{customerName || "—"}</div>
       {isBuyer && buyerNum && (
         <div style={{ fontSize: 14, fontWeight: 500, color: "#717182", marginBottom: 4 }}>#{buyerNum}</div>
       )}
@@ -571,6 +584,7 @@ const WorkOrderForm: React.FC = () => {
   const [healthComplete, setHealthComplete] = useState(false);
   const [specialLumpSum, setSpecialLumpSum] = useState(0);
   const [calcOpen, setCalcOpen] = useState(false);
+  const [groupNotes, setGroupNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Populate for edit
@@ -585,6 +599,7 @@ const WorkOrderForm: React.FC = () => {
     setWorkComplete(existingWo.work_complete);
     setHealthComplete(existingWo.health_complete);
     setSpecialLumpSum(existingWo.special_lump_sum || 0);
+    setGroupNotes(existingWo.group_notes || "");
     if (existingWo.customer_id) {
       (supabase.from("sale_barn_customers") as any)
         .select("*").eq("id", existingWo.customer_id).single()
@@ -658,7 +673,7 @@ const WorkOrderForm: React.FC = () => {
       special_lump_sum: specialLumpSum,
       work_complete: workComplete,
       health_complete: healthComplete,
-      group_notes: null,
+      group_notes: groupNotes.trim() || null,
     };
 
     let error: any;
@@ -802,6 +817,17 @@ const WorkOrderForm: React.FC = () => {
             {specialLumpSum > 0 && <span style={{ marginLeft: 6 }}>({fmt$(specialLumpSum)})</span>}
           </button>
         )}
+
+        <FieldRow label="Notes">
+          <textarea
+            style={{ ...INPUT, height: "auto", minHeight: 80, padding: "8px 12px", resize: "vertical" }}
+            rows={3}
+            placeholder="General work order notes…"
+            value={groupNotes}
+            onChange={(e) => setGroupNotes(e.target.value)}
+            onFocus={focusGold as any} onBlur={blurReset as any}
+          />
+        </FieldRow>
       </div>
 
       {/* Billing Auto-Calc */}
@@ -869,6 +895,7 @@ const WorkOrderForm: React.FC = () => {
         headCount={hc}
         workType={workType}
         isBuyer={entityType === "buyer"}
+        entityType={entityType}
         showToast={showToast}
       />
 
