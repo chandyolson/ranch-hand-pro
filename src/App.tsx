@@ -113,23 +113,23 @@ const App = () => (
           <Route path="reference/templates/new" element={<WorkTemplateEditScreen />} />
           <Route path="reference/templates/edit" element={<WorkTemplateEditScreen />} />
           <Route path="cow-cleaner" element={<CowCleanerScreen />} />
-          <Route path="sale-barn" element={<SaleDaysList />} />
-          <Route path="sale-barn/customers" element={<CustomerDirectory />} />
-          <Route path="sale-barn/buyers" element={<BuyerDirectory />} />
-          <Route path="sale-barn/settings/prices" element={<PriceSchedule />} />
-          <Route path="sale-barn/settings/designations" element={<DesignationKeyConfig />} />
-          <Route path="sale-barn/:id" element={<SaleDayDetail />} />
-          <Route path="sale-barn/:id/consignments" element={<ConsignmentsPage />} />
-          <Route path="sale-barn/:id/billing" element={<DayBillingPage />} />
-          <Route path="sale-barn/:id/reports" element={<ReportsPage />} />
-          <Route path="sale-barn/:id/animals" element={<WorkedAnimalsPage />} />
-          <Route path="sale-barn/:id/work-order/new" element={<WorkOrderForm />} />
-          <Route path="sale-barn/:id/work-order/:woId" element={<WorkOrderForm />} />
-          <Route path="sale-barn/:id/work-order/:woId/chute" element={<ChutesideEntry />} />
-          <Route path="sale-barn/:id/work-order/:woId/animals" element={<WorkOrderAnimalsReport />} />
-          <Route path="sale-barn/:id/work-order/:woId/cvi" element={<WorkOrderCviReport />} />
-          <Route path="sale-barn/:id/work-order/:woId/review" element={<ReviewClosePage />} />
-          <Route path="sale-barn/:id/work-order/:woId/assign" element={<AssignAnimals />} />
+          <Route path="sale-barn" element={<SaleBarnGuard><SaleDaysList /></SaleBarnGuard>} />
+          <Route path="sale-barn/customers" element={<SaleBarnGuard><CustomerDirectory /></SaleBarnGuard>} />
+          <Route path="sale-barn/buyers" element={<SaleBarnGuard><BuyerDirectory /></SaleBarnGuard>} />
+          <Route path="sale-barn/settings/prices" element={<SaleBarnGuard><PriceSchedule /></SaleBarnGuard>} />
+          <Route path="sale-barn/settings/designations" element={<SaleBarnGuard><DesignationKeyConfig /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id" element={<SaleBarnGuard><SaleDayDetail /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/consignments" element={<SaleBarnGuard><ConsignmentsPage /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/billing" element={<SaleBarnGuard><DayBillingPage /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/reports" element={<SaleBarnGuard><ReportsPage /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/animals" element={<SaleBarnGuard><WorkedAnimalsPage /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/work-order/new" element={<SaleBarnGuard><WorkOrderForm /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/work-order/:woId" element={<SaleBarnGuard><WorkOrderForm /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/work-order/:woId/chute" element={<SaleBarnGuard><ChutesideEntry /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/work-order/:woId/animals" element={<SaleBarnGuard><WorkOrderAnimalsReport /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/work-order/:woId/cvi" element={<SaleBarnGuard><WorkOrderCviReport /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/work-order/:woId/review" element={<SaleBarnGuard><ReviewClosePage /></SaleBarnGuard>} />
+          <Route path="sale-barn/:id/work-order/:woId/assign" element={<SaleBarnGuard><AssignAnimals /></SaleBarnGuard>} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
