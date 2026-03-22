@@ -277,8 +277,9 @@ const NotesThread: React.FC<{ woId: string | undefined; showToast: (v: string, m
 const LabelPreview: React.FC<{
   pen: string; customerName: string; buyerNum: string;
   headCount: number; workType: string; isBuyer: boolean;
+  entityType: "seller" | "buyer";
   showToast: (v: string, m: string) => void;
-}> = ({ pen, customerName, buyerNum, headCount, workType, isBuyer, showToast }) => (
+}> = ({ pen, customerName, buyerNum, headCount, workType, isBuyer, entityType, showToast }) => (
   <CollapsibleSection title="Label Preview" defaultOpen={false}>
     <div style={{
       border: "2px dashed #D4D4D0", borderRadius: 10, padding: 16,
@@ -286,8 +287,20 @@ const LabelPreview: React.FC<{
       <div style={{ fontSize: 10, fontWeight: 600, color: "#717182", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>
         DYMO PEN CARD
       </div>
+      {customerName && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: "#1A1A1A" }}>{customerName}</span>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+            borderRadius: 9999, padding: "2px 8px",
+            background: entityType === "seller" ? "rgba(243,209,42,0.12)" : "rgba(85,186,170,0.15)",
+            color: entityType === "seller" ? "#B8860B" : "#55BAAA",
+          }}>
+            {entityType}
+          </span>
+        </div>
+      )}
       <div style={{ fontSize: 28, fontWeight: 800, color: "#1A1A1A", marginBottom: 2 }}>{pen || "—"}</div>
-      <div style={{ fontSize: 16, fontWeight: 600, color: "#1A1A1A", marginBottom: 2 }}>{customerName || "—"}</div>
       {isBuyer && buyerNum && (
         <div style={{ fontSize: 14, fontWeight: 500, color: "#717182", marginBottom: 4 }}>#{buyerNum}</div>
       )}
