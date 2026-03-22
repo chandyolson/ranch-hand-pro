@@ -964,6 +964,7 @@ const WorkOrderForm: React.FC = () => {
           {saving ? "Saving…" : isEdit ? "Update Work Order" : "Save Work Order"}
         </button>
       </div>
+      </div>
 
       {/* Special Charges Bottom Sheet */}
       <SpecialChargesSheet
