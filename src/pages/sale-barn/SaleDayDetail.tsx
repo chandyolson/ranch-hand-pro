@@ -116,16 +116,18 @@ const ConsignCustomerSearch: React.FC<{
 const ConsignmentsTab: React.FC<{
   consignments: Consignment[];
   saleDayId: string;
+  saleDayDate: string;
   operationId: string;
   activeTab: string;
   showToast: (v: string, m: string) => void;
   navigate: (to: string) => void;
-}> = ({ consignments, saleDayId, operationId, activeTab, showToast, navigate }) => {
+}> = ({ consignments, saleDayId, saleDayDate, operationId, activeTab, showToast, navigate }) => {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [custName, setCustName] = useState("");
   const [custId, setCustId] = useState<string | null>(null);
+  const [expectedDate, setExpectedDate] = useState(saleDayDate || "");
   const [headCount, setHeadCount] = useState("");
   const [animalType, setAnimalType] = useState("");
   const [takenBy, setTakenBy] = useState("");
