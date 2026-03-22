@@ -934,7 +934,7 @@ const SaleDayDetail: React.FC = () => {
                     {/* Row 1 */}
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 600, color: "#F0F0F0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {wo.buyer_num ? `#${wo.buyer_num}` : "Customer"}
+                        {getCustomerName(wo) || <em style={{ fontWeight: 400, opacity: 0.5 }}>No Customer</em>}
                       </span>
                       <span style={{
                         fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
