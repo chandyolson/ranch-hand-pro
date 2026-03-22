@@ -1112,6 +1112,15 @@ const SaleDayDetail: React.FC = () => {
                       }}>
                         {wo.entity_type === "seller" ? "SELLER" : "BUYER"}
                       </span>
+                      {(flaggedCountMap?.[wo.id] ?? 0) > 0 && (
+                        <span style={{
+                          padding: "3px 6px", borderRadius: 9999,
+                          background: "rgba(243,209,42,0.25)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <FlagSvg size={10} fill="#F3D12A" stroke="#F3D12A" />
+                        </span>
+                      )}
                       {wo.work_complete && (
                         <span style={{
                           fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
