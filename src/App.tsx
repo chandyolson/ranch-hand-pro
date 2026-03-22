@@ -49,6 +49,8 @@ import ConsignmentsPage from "@/pages/sale-barn/ConsignmentsPage";
 import ReportsPage from "@/pages/sale-barn/ReportsPage";
 import WorkedAnimalsPage from "@/pages/sale-barn/WorkedAnimalsPage";
 import DayBillingPage from "@/pages/sale-barn/DayBillingPage";
+import WorkOrderAnimalsReport from "@/pages/sale-barn/WorkOrderAnimalsReport";
+import WorkOrderCviReport from "@/pages/sale-barn/WorkOrderCviReport";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
@@ -104,6 +106,8 @@ const App = () => (
           <Route path="sale-barn/:id/work-order/new" element={<WorkOrderForm />} />
           <Route path="sale-barn/:id/work-order/:woId" element={<WorkOrderForm />} />
           <Route path="sale-barn/:id/work-order/:woId/chute" element={<ChutesideEntry />} />
+          <Route path="sale-barn/:id/work-order/:woId/animals" element={<WorkOrderAnimalsReport />} />
+          <Route path="sale-barn/:id/work-order/:woId/cvi" element={<WorkOrderCviReport />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

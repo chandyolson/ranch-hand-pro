@@ -8,6 +8,60 @@ import { useChuteSideToast as useToast } from "@/components/ToastContext";
 import { focusGold, blurReset } from "@/lib/styles";
 import type { SaleDay, WorkOrder, SaleBarnCustomer, WorkOrderNote } from "@/types/sale-barn";
 
+// ── Report Buttons (Animals + Health Cert) ──
+const ReportButtons: React.FC<{ saleDayId: string; woId: string }> = ({ saleDayId, woId }) => {
+  const navigate = useNavigate();
+  const { data: animalCount } = useQuery({
+    queryKey: ["wo_animal_count", woId],
+    queryFn: async () => {
+      const { count, error } = await (supabase.from("sale_barn_animals") as any)
+        .select("id", { count: "exact", head: true })
+        .eq("work_order_id", woId);
+      if (error) return 0;
+      return count ?? 0;
+    },
+  });
+
+  if (!animalCount || animalCount < 1) return null;
+
+  return (
+    <div style={{ display: "flex", gap: 10, padding: "0 16px", marginBottom: 10 }}>
+      <button
+        type="button"
+        className="active:scale-[0.97]"
+        onClick={() => navigate(`/sale-barn/${saleDayId}/work-order/${woId}/animals`)}
+        style={{
+          flex: 1, height: 44, borderRadius: 12, background: "#0E2646", border: "none",
+          color: "#FFFFFF", fontSize: 13, fontWeight: 600, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M2 4h12M2 8h12M2 12h8" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        Animals ({animalCount})
+      </button>
+      <button
+        type="button"
+        className="active:scale-[0.97]"
+        onClick={() => navigate(`/sale-barn/${saleDayId}/work-order/${woId}/cvi`)}
+        style={{
+          flex: 1, height: 44, borderRadius: 12,
+          background: "rgba(85,186,170,0.10)", border: "1.5px solid #55BAAA",
+          color: "#55BAAA", fontSize: 13, fontWeight: 600, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z" stroke="#55BAAA" strokeWidth="1.2" strokeLinejoin="round" />
+          <path d="M9 2v4h4" stroke="#55BAAA" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Health Cert
+      </button>
+    </div>
+  );
+};
+
 const fmtDate = (iso: string) => {
   const d = new Date(iso + "T12:00:00");
   return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
@@ -781,6 +835,9 @@ const WorkOrderForm: React.FC = () => {
           </FieldRow>
         )}
       </div>
+
+      {/* Report Buttons */}
+      {isEdit && woId && <ReportButtons saleDayId={saleDayId!} woId={woId} />}
 
       {/* Work Section */}
       <div style={CARD}>
