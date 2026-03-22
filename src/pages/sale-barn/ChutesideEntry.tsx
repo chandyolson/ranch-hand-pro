@@ -413,6 +413,7 @@ const ChutesideEntry: React.FC = () => {
                     const v = e.target.value.replace(/\D/g, "");
                     setEid(v);
                     if (eidError) setEidError("");
+                    tryAutoPopulate(v);
                   }}
                   onFocus={focusGold}
                   onBlur={(e) => {
