@@ -239,6 +239,16 @@ const ConsignmentsTab: React.FC<{
                 onChange={(name, id) => { setCustName(name); setCustId(id); }}
               />
             </FieldRow>
+            <FieldRow label="Sale Date">
+              <input
+                type="date"
+                value={expectedDate}
+                onChange={(e) => setExpectedDate(e.target.value)}
+                style={CONSIGN_INPUT}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "#F3D12A"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(243,209,42,0.25)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "#D4D4D0"; e.currentTarget.style.boxShadow = "none"; }}
+              />
+            </FieldRow>
             <FieldRow label="Head Ct" req>
               <input
                 type="number" min="1" value={headCount}
