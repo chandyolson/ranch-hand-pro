@@ -76,6 +76,10 @@ const AppLayout: React.FC = () => {
       config = { title: "Cow Work", subtitle: "Project Detail" };
     } else if (/^\/cow-work\/[^/]+\/close-out$/.test(path)) {
       config = { title: "Close Out", subtitle: "Finalize Project" };
+    } else if (/^\/sale-barn\/[^/]+\/consignments$/.test(path)) {
+      config = { title: "Consignments", subtitle: "Sale Day" };
+    } else if (/^\/sale-barn\/[^/]+\/reports$/.test(path)) {
+      config = { title: "Reports", subtitle: "Sale Day" };
     } else if (/^\/sale-barn\/[^/]+\/work-order/.test(path)) {
       const woMatch = path.match(/\/work-order\/([^/]+)/);
       const isEditWo = woMatch && woMatch[1] !== "new";
