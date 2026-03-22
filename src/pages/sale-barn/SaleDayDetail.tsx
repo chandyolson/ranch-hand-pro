@@ -388,7 +388,7 @@ const statusColors: Record<string, { bg: string; border: string; text: string }>
   sort: { bg: "rgba(168,168,240,0.10)", border: "rgba(168,168,240,0.30)", text: "#7B68EE" },
 };
 
-const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; activeTab: string }> = ({ workOrders, saleDayId, activeTab }) => {
+const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; activeTab: string; customerMap?: Record<string, string> }> = ({ workOrders, saleDayId, activeTab, customerMap }) => {
   const woIds = useMemo(() => workOrders.map((wo) => wo.id), [workOrders]);
 
   const { data: animals } = useQuery({
