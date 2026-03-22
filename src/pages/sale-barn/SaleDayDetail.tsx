@@ -1260,91 +1260,18 @@ const SaleDayDetail: React.FC = () => {
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {filteredWOs.map((wo) => {
-                const workedHead = wo.work_complete ? wo.head_count : 0;
-                const pens = (wo.pens || []).join(", ");
-                return (
-                  <button
-                    key={wo.id}
-                    className="active:scale-[0.98]"
-                    onClick={() => navigate(`/sale-barn/${id}/work-order/${wo.id}`)}
-                    style={{
-                      background: "#0E2646", borderRadius: 12, padding: "12px 14px",
-                      border: "none", cursor: "pointer", textAlign: "left", width: "100%",
-                    }}
-                  >
-                    {/* Row 1 */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: "#F0F0F0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {getCustomerName(wo) || <em style={{ fontWeight: 400, opacity: 0.5 }}>No Customer</em>}
-                      </span>
-                      <span style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
-                        padding: "3px 8px",
-                        background: wo.entity_type === "seller" ? "rgba(243,209,42,0.12)" : "rgba(85,186,170,0.15)",
-                        color: wo.entity_type === "seller" ? "#F3D12A" : "#55BAAA",
-                      }}>
-                        {wo.entity_type === "seller" ? "SELLER" : "BUYER"}
-                      </span>
-                      {(flaggedCountMap?.[wo.id] ?? 0) > 0 && (
-                        <span style={{
-                          padding: "3px 6px", borderRadius: 9999,
-                          background: "rgba(243,209,42,0.25)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>
-                          <FlagSvg size={10} fill="#F3D12A" stroke="#F3D12A" />
-                        </span>
-                      )}
-                      {(() => {
-                        const isDone = wo.work_complete && (wo.entity_type === "seller" || wo.health_complete);
-                        const needsWork = !wo.work_complete;
-                        const needsHealth = !wo.health_complete && wo.entity_type === "buyer";
-                        if (isDone) return (
-                          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999, padding: "3px 8px", background: "rgba(85,186,170,0.15)", color: "#55BAAA" }}>DONE</span>
-                        );
-                        return (<>
-                          {needsWork && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999, padding: "3px 8px", background: "rgba(184,134,11,0.12)", color: "#B8860B" }}>NEEDS WORK</span>}
-                          {needsHealth && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999, padding: "3px 8px", background: "rgba(155,35,53,0.12)", color: "#9B2335" }}>NEEDS HEALTH</span>}
-                        </>);
-                      })()}
-                    </div>
-
-                    {/* Row 2 */}
-                    <div style={{ fontSize: 13, fontWeight: 400, color: "rgba(240,240,240,0.65)", marginTop: 4 }}>
-                      {[wo.work_type, wo.animal_type, wo.entity_type === "buyer" && wo.buyer_num ? `#${wo.buyer_num}` : null]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </div>
-
-                    {/* Row 3 */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {pens && (
-                          <span style={{ fontSize: 12, fontWeight: 400, color: "rgba(240,240,240,0.45)" }}>
-                            Pen {pens}
-                          </span>
-                        )}
-                        {/* Progress */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <div style={{ width: 80, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-                            <div style={{
-                              width: wo.head_count ? `${(workedHead / wo.head_count) * 100}%` : "0%",
-                              height: "100%", background: "#55BAAA", borderRadius: 2,
-                            }} />
-                          </div>
-                          <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(168,230,218,0.70)" }}>
-                            {workedHead}/{wo.head_count || 0}
-                          </span>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                        <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>TOTAL</span>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: "#55BAAA" }}>{fmtCurrency(wo.total_charge || 0)}</span>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+              {filteredWOs.map((wo) => (
+                <WoCard
+                  key={wo.id}
+                  wo={wo}
+                  saleDayId={id!}
+                  customerName={getCustomerName(wo)}
+                  flagCount={flaggedCountMap?.[wo.id] ?? 0}
+                  navigate={navigate}
+                  showToast={showToast}
+                  queryClient={queryClient}
+                />
+              ))}
             </div>
           )}
         </div>
