@@ -49,6 +49,8 @@ import ConsignmentsPage from "@/pages/sale-barn/ConsignmentsPage";
 import ReportsPage from "@/pages/sale-barn/ReportsPage";
 import WorkedAnimalsPage from "@/pages/sale-barn/WorkedAnimalsPage";
 import DayBillingPage from "@/pages/sale-barn/DayBillingPage";
+import WorkOrderAnimalsReport from "@/pages/sale-barn/WorkOrderAnimalsReport";
+import WorkOrderCviReport from "@/pages/sale-barn/WorkOrderCviReport";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
