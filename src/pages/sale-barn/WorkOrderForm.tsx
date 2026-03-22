@@ -586,6 +586,7 @@ const WorkOrderForm: React.FC = () => {
     setWorkComplete(existingWo.work_complete);
     setHealthComplete(existingWo.health_complete);
     setSpecialLumpSum(existingWo.special_lump_sum || 0);
+    setGroupNotes(existingWo.group_notes || "");
     if (existingWo.customer_id) {
       (supabase.from("sale_barn_customers") as any)
         .select("*").eq("id", existingWo.customer_id).single()
