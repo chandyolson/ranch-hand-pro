@@ -691,7 +691,7 @@ const WorkOrderForm: React.FC = () => {
     <div style={{ paddingBottom: 90 }}>
       {/* Customer Section */}
       <div style={CARD}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>
             Customer<span style={{ color: "#9B2335", marginLeft: 2 }}>*</span>
           </span>
