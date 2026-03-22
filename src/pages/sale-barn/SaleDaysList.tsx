@@ -479,12 +479,11 @@ const SaleDaysList: React.FC = () => {
                 {/* Row 1 */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: 16, fontWeight: 600, color: "#F0F0F0" }}>{fmtDate(sd.date)}</span>
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
-                    padding: "3px 8px", ...badgeStyle,
-                  }}>
-                    {statusUpper}
-                  </span>
+                  <SaleDayStatusPicker
+                    saleDayId={sd.id}
+                    currentStatus={sd.status}
+                    showToast={showToast}
+                  />
                 </div>
 
                 {/* Row 2 */}
