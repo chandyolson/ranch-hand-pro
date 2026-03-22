@@ -25,6 +25,7 @@ interface ColumnFlag {
   confidence: "high" | "medium" | "low";
   likelyMapsTo: string | null;
   status: "pending" | "accepted" | "rejected";
+  userNote: string;
 }
 
 type Purpose =
@@ -214,6 +215,7 @@ const CowCleanerScreen: React.FC = () => {
 
   // Questions state
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [currentNote, setCurrentNote] = useState("");
 
   // Export state
   const [exporting, setExporting] = useState(false);
@@ -562,6 +564,7 @@ const CowCleanerScreen: React.FC = () => {
           confidence: (col.confidence || "medium") as ColumnFlag["confidence"],
           likelyMapsTo: col.likelyMapsTo || null,
           status: col.status === "clean" ? "accepted" : "pending",
+          userNote: "",
         })
       );
 
@@ -1179,11 +1182,45 @@ const CowCleanerScreen: React.FC = () => {
               padding: "10px 12px",
               backgroundColor: "rgba(85,186,170,0.08)",
               borderRadius: 8,
-              marginBottom: 16,
+              marginBottom: 12,
               lineHeight: 1.4,
             }}
           >
             Suggestion: {flag.suggestion}
+          </div>
+
+          {/* User comment */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.45)", marginBottom: 6, fontFamily: "'Inter', sans-serif" }}>
+              YOUR NOTES (optional)
+            </div>
+            <textarea
+              value={currentNote}
+              onChange={(e) => setCurrentNote(e.target.value)}
+              placeholder="Explain what this column is, add corrections, or tell us what to do with it..."
+              style={{
+                width: "100%",
+                height: 72,
+                borderRadius: 8,
+                border: "1px solid #D4D4D0",
+                padding: 10,
+                fontSize: 16,
+                fontFamily: "'Inter', sans-serif",
+                color: "#1A1A1A",
+                outline: "none",
+                resize: "none",
+                boxSizing: "border-box",
+                backgroundColor: "#FFFFFF",
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = "#F3D12A";
+                e.currentTarget.style.boxShadow = "0 0 0 2px rgba(243,209,42,0.25)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = "#D4D4D0";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            />
           </div>
 
           {/* Accept / Reject */}
@@ -1192,8 +1229,9 @@ const CowCleanerScreen: React.FC = () => {
               onClick={() => {
                 const updated = [...flags];
                 const idx = flags.indexOf(flag);
-                updated[idx] = { ...flag, status: "rejected" };
+                updated[idx] = { ...flag, status: "rejected", userNote: currentNote };
                 setFlags(updated);
+                setCurrentNote("");
                 if (currentQuestion < pendingFlags.length - 1) {
                   setCurrentQuestion(currentQuestion + 1);
                 } else {
@@ -1220,8 +1258,9 @@ const CowCleanerScreen: React.FC = () => {
               onClick={() => {
                 const updated = [...flags];
                 const idx = flags.indexOf(flag);
-                updated[idx] = { ...flag, status: "accepted" };
+                updated[idx] = { ...flag, status: "accepted", userNote: currentNote };
                 setFlags(updated);
+                setCurrentNote("");
                 if (currentQuestion < pendingFlags.length - 1) {
                   setCurrentQuestion(currentQuestion + 1);
                 } else {
@@ -1308,11 +1347,16 @@ const CowCleanerScreen: React.FC = () => {
                   borderBottom: "1px solid rgba(212,212,208,0.30)",
                 }}
               >
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, minWidth: 0 }}>
                   <span style={{ fontSize: 13, fontWeight: 500, color: "#0E2646", fontFamily: "'Inter', sans-serif" }}>{flag.column}</span>
                   {flag.likelyMapsTo && (
                     <span style={{ fontSize: 10, color: "rgba(26,26,26,0.40)", fontFamily: "'Inter', sans-serif" }}>
                       → {flag.likelyMapsTo}
+                    </span>
+                  )}
+                  {flag.userNote && (
+                    <span style={{ fontSize: 11, color: "rgba(26,26,26,0.50)", fontFamily: "'Inter', sans-serif", fontStyle: "italic", lineHeight: 1.3 }}>
+                      "{flag.userNote}"
                     </span>
                   )}
                 </div>
