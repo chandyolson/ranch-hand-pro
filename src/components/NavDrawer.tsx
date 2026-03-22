@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useOperation } from "@/contexts/OperationContext";
 
 const NAV_ITEMS = [
   "Operation Dashboard",
@@ -23,6 +24,8 @@ interface NavDrawerProps {
 }
 
 const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operationName, onItemSelect, onSignOut, onSwitchOperation }) => {
+  const { operationType } = useOperation();
+  const showSaleBarn = operationType === 'vet_practice';
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -118,56 +121,60 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
             );
           })}
 
-          {/* Sale Barn parent item */}
-          {(() => {
-            const isSBActive = activeItem === "Sale Barn";
-            return (
-              <button
-                key="Sale Barn"
-                className="w-full text-left relative block"
-                style={{
-                  padding: "12px 24px",
-                  marginTop: 8,
-                  fontSize: 15,
-                  fontWeight: isSBActive ? 600 : 400,
-                  color: isSBActive ? "#F3D12A" : "rgba(240,240,240,0.6)",
-                  backgroundColor: isSBActive ? "rgba(243,209,42,0.06)" : "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-                onClick={() => onItemSelect?.("Sale Days")}
-              >
-                {isSBActive && (
-                  <span className="absolute left-0 rounded-r-sm" style={{ width: 3, height: 24, backgroundColor: "#F3D12A", top: "50%", transform: "translateY(-50%)" }} />
-                )}
-                Sale Barn
-              </button>
-            );
-          })()}
-          {["Sale Days", "Customers", "Buyers"].map((item) => {
-            const isActive = activeItem === item;
-            return (
-              <button
-                key={item}
-                className="w-full text-left relative block"
-                style={{
-                  padding: "10px 40px",
-                  fontSize: 14,
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? "#F3D12A" : "rgba(240,240,240,0.45)",
-                  backgroundColor: isActive ? "rgba(243,209,42,0.06)" : "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-                onClick={() => onItemSelect?.(item)}
-              >
-                {isActive && (
-                  <span className="absolute left-0 rounded-r-sm" style={{ width: 3, height: 24, backgroundColor: "#F3D12A", top: "50%", transform: "translateY(-50%)" }} />
-                )}
-                {item}
-              </button>
-            );
-          })}
+          {/* Sale Barn section — only for vet_practice operations */}
+          {showSaleBarn && (
+            <>
+              {(() => {
+                const isSBActive = activeItem === "Sale Barn";
+                return (
+                  <button
+                    key="Sale Barn"
+                    className="w-full text-left relative block"
+                    style={{
+                      padding: "12px 24px",
+                      marginTop: 8,
+                      fontSize: 15,
+                      fontWeight: isSBActive ? 600 : 400,
+                      color: isSBActive ? "#F3D12A" : "rgba(240,240,240,0.6)",
+                      backgroundColor: isSBActive ? "rgba(243,209,42,0.06)" : "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => onItemSelect?.("Sale Days")}
+                  >
+                    {isSBActive && (
+                      <span className="absolute left-0 rounded-r-sm" style={{ width: 3, height: 24, backgroundColor: "#F3D12A", top: "50%", transform: "translateY(-50%)" }} />
+                    )}
+                    Sale Barn
+                  </button>
+                );
+              })()}
+              {["Sale Days", "Customers", "Buyers"].map((item) => {
+                const isActive = activeItem === item;
+                return (
+                  <button
+                    key={item}
+                    className="w-full text-left relative block"
+                    style={{
+                      padding: "10px 40px",
+                      fontSize: 14,
+                      fontWeight: isActive ? 600 : 400,
+                      color: isActive ? "#F3D12A" : "rgba(240,240,240,0.45)",
+                      backgroundColor: isActive ? "rgba(243,209,42,0.06)" : "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => onItemSelect?.(item)}
+                  >
+                    {isActive && (
+                      <span className="absolute left-0 rounded-r-sm" style={{ width: 3, height: 24, backgroundColor: "#F3D12A", top: "50%", transform: "translateY(-50%)" }} />
+                    )}
+                    {item}
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
 
         <div className="mx-5 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
