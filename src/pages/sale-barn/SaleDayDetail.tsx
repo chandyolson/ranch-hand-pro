@@ -141,7 +141,7 @@ const ConsignmentsTab: React.FC<{
   const arrivedCount = consignments.filter((c) => c.status === "arrived").length;
 
   const resetForm = () => {
-    setCustName(""); setCustId(null); setHeadCount(""); setAnimalType("");
+    setCustName(""); setCustId(null); setExpectedDate(saleDayDate || ""); setHeadCount(""); setAnimalType("");
     setTakenBy(""); setNotes(""); setEditId(null);
   };
 
