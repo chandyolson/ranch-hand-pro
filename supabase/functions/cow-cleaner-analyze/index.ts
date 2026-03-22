@@ -35,7 +35,6 @@ serve(async (req) => {
 
     // Build a readable data sample for Claude
     const dataSample = sampleRows
-      .slice(0, 10)
       .map((row, i) => {
         const vals = columns.map((col) => `${col}: "${row[col] || ""}"`).join(", ");
         return `Row ${i + 1}: { ${vals} }`;
@@ -56,7 +55,7 @@ THEIR GOAL: ${purposeMap[purpose] || purpose}
 TOTAL ROWS: ${totalRows}
 COLUMNS DETECTED: ${columns.join(", ")}
 
-SAMPLE DATA (up to 10 rows):
+SAMPLE DATA (up to 30 rows sampled from beginning, middle, and end of file):
 ${dataSample}
 
 CATTLE DATA KNOWLEDGE — use this to interpret columns and values:

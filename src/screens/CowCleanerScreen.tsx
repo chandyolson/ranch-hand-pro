@@ -532,10 +532,38 @@ const CowCleanerScreen: React.FC = () => {
     setAnalysisError(null);
 
     try {
+      // Build a representative sample: first 10, 10 from middle, 10 from end
+      const all = fileInfo.allData;
+      const len = all.length;
+      let sample: Record<string, string>[];
+      if (len <= 30) {
+        sample = all;
+      } else {
+        const mid = Math.floor(len / 2);
+        const first = all.slice(0, 10);
+        const middle = all.slice(mid - 5, mid + 5);
+        const end = all.slice(len - 10);
+        // Deduplicate in case of overlap on tiny files
+        const seen = new Set<number>();
+        sample = [];
+        const addRange = (start: number, rows: Record<string, string>[]) => {
+          rows.forEach((row, i) => {
+            const idx = start + i;
+            if (!seen.has(idx)) {
+              seen.add(idx);
+              sample.push(row);
+            }
+          });
+        };
+        addRange(0, first);
+        addRange(mid - 5, middle);
+        addRange(len - 10, end);
+      }
+
       const { data, error } = await supabase.functions.invoke("cow-cleaner-analyze", {
         body: {
           columns: fileInfo.columns,
-          sampleRows: fileInfo.preview,
+          sampleRows: sample,
           totalRows: fileInfo.rows,
           purpose,
           purposeDescription: purpose === "custom" ? customDescription : undefined,
