@@ -1151,6 +1151,11 @@ const WorkOrderForm: React.FC = () => {
         )}
       </div>
 
+      {/* Assign Animals Button (buyer edit only) */}
+      {isEdit && woId && entityType === "buyer" && (
+        <AssignAnimalsSection woId={woId} saleDayId={saleDayId!} buyerName={customer?.name ?? "Buyer"} navigate={navigate} />
+      )}
+
       {/* Report Buttons */}
       {isEdit && woId && <ReportButtons woId={woId} wo={existingWo ?? null} customer={customer} saleDayDate={saleDay?.date ?? ""} />}
 

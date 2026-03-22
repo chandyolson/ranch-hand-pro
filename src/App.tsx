@@ -111,6 +111,7 @@ const App = () => (
           <Route path="sale-barn/:id/work-order/:woId/animals" element={<WorkOrderAnimalsReport />} />
           <Route path="sale-barn/:id/work-order/:woId/cvi" element={<WorkOrderCviReport />} />
           <Route path="sale-barn/:id/work-order/:woId/review" element={<ReviewClosePage />} />
+          <Route path="sale-barn/:id/work-order/:woId/assign" element={<AssignAnimals />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
