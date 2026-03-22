@@ -17,7 +17,7 @@ const fmtDate = (iso: string) => {
 const fmtCurrency = (n: number) =>
   `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const TABS = ["Consignments", "Work Orders", "Reconciliation", "Reports"] as const;
+const TABS = ["Work Orders", "Reconciliation"] as const;
 const WO_FILTERS = ["All", "Sellers", "Buyers", "Incomplete"] as const;
 
 const ANIMAL_TYPES = ["Bred Heifers", "Feeder Calves", "Pairs", "Bull", "Bred Cows", "Weigh Up Cows", "Baby Calf", "Heifers", "Yearling Bull"];
