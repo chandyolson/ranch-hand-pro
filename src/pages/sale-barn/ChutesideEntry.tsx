@@ -209,6 +209,7 @@ const ChutesideEntry: React.FC = () => {
   const [sortModalOpen, setSortModalOpen] = useState(false);
   const [groupNotes, setGroupNotes] = useState(wo?.group_notes ?? "");
   const [saving, setSaving] = useState(false);
+  const [matchedAssignment, setMatchedAssignment] = useState<SaleBarnAnimal | null>(null);
 
   useEffect(() => { if (wo?.group_notes) setGroupNotes(wo.group_notes); }, [wo]);
 
