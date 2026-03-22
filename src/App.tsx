@@ -45,6 +45,7 @@ import CustomerDirectory from "@/pages/sale-barn/CustomerDirectory";
 import BuyerDirectory from "@/pages/sale-barn/BuyerDirectory";
 import PriceSchedule from "@/pages/sale-barn/PriceSchedule";
 import DesignationKeyConfig from "@/pages/sale-barn/DesignationKeyConfig";
+import ConsignmentsPage from "@/pages/sale-barn/ConsignmentsPage";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
@@ -93,7 +94,7 @@ const App = () => (
           <Route path="sale-barn/settings/prices" element={<PriceSchedule />} />
           <Route path="sale-barn/settings/designations" element={<DesignationKeyConfig />} />
           <Route path="sale-barn/:id" element={<SaleDayDetail />} />
-          <Route path="sale-barn/:id/consignments" element={<PlaceholderScreen title="Consignments" />} />
+          <Route path="sale-barn/:id/consignments" element={<ConsignmentsPage />} />
           <Route path="sale-barn/:id/billing" element={<PlaceholderScreen title="Day Billing" />} />
           <Route path="sale-barn/:id/reports" element={<PlaceholderScreen title="Reports" />} />
           <Route path="sale-barn/:id/work-order/new" element={<WorkOrderForm />} />
