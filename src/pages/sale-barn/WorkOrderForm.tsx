@@ -660,7 +660,7 @@ const WorkOrderForm: React.FC = () => {
       special_lump_sum: specialLumpSum,
       work_complete: workComplete,
       health_complete: healthComplete,
-      group_notes: null,
+      group_notes: groupNotes.trim() || null,
     };
 
     let error: any;
