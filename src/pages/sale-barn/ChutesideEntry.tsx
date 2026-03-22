@@ -157,6 +157,25 @@ const ChutesideEntry: React.FC = () => {
   const { data: dkData } = useDesignationKeys();
   const desKeys = dkData?.data ?? [];
 
+  /* Assigned animals for buyer work orders */
+  const isBuyer = wo?.entity_type === "buyer";
+  const { data: assignedAnimalsData } = useQuery({
+    queryKey: ["chute_assigned_animals", woId],
+    enabled: !!woId && isBuyer,
+    queryFn: async () => {
+      const { data } = await (supabase.from("sale_barn_animals") as any)
+        .select("*").eq("buyer_work_order_id", woId!)
+        .order("created_at", { ascending: true });
+      return (data ?? []) as unknown as SaleBarnAnimal[];
+    },
+  });
+  const assignedAnimals = assignedAnimalsData ?? [];
+  const assignedEidMap = useMemo(() => {
+    const m: Record<string, SaleBarnAnimal> = {};
+    assignedAnimals.forEach(a => { if (a.eid) m[a.eid] = a; });
+    return m;
+  }, [assignedAnimals]);
+
   /* customer name */
   const { data: customerName } = useQuery({
     queryKey: ["chute_customer", wo?.customer_id],
@@ -168,7 +187,7 @@ const ChutesideEntry: React.FC = () => {
     },
   });
 
-  const expected = wo?.head_count ?? 0;
+  const expected = isBuyer && assignedAnimals.length > 0 ? assignedAnimals.length : (wo?.head_count ?? 0);
   const worked = animals.length;
   const pct = expected > 0 ? Math.min((worked / expected) * 100, 100) : 0;
   const pensLabel = (wo?.pens ?? []).join(", ");
