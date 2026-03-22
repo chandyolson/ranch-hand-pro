@@ -113,6 +113,7 @@ export interface Consignment {
   notes: string | null;
   taken_by: string | null;
   status: 'pending' | 'arrived' | 'converted' | 'cancelled';
+  expected_sale_date: string | null;
   created_at: string;
 }
 
