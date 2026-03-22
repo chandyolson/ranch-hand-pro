@@ -867,15 +867,15 @@ const SaleDayDetail: React.FC = () => {
           </div>
 
           {/* Filter Pills */}
-          <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
             {WO_FILTERS.map((f) => (
               <button
                 key={f}
                 className="active:scale-[0.97]"
                 onClick={() => setWoFilter(f)}
                 style={{
-                  height: 30, borderRadius: 9999, padding: "0 12px",
-                  fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  height: 32, borderRadius: 9999, padding: "0 14px",
+                  fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
                   border: woFilter === f ? "none" : "1px solid #D4D4D0",
                   background: woFilter === f ? "#0E2646" : "#FFFFFF",
                   color: woFilter === f ? "#FFFFFF" : "rgba(26,26,26,0.50)",
