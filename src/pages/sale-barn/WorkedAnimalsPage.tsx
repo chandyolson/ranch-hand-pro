@@ -245,7 +245,7 @@ const WorkedAnimalsPage: React.FC = () => {
     a.download = `worked_animals_${saleDay?.date || "export"}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast("CSV downloaded");
+    showToast("success", "CSV downloaded");
   };
 
   return (
