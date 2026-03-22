@@ -6,8 +6,9 @@ interface SaleDayStatusPickerProps {
   saleDayId: string;
   currentStatus: string;
   showToast: (variant: string, message: string) => void;
-  /** Style variant for the badge */
   variant?: "light" | "dark";
+  /** Override the badge label (e.g. "UPCOMING" instead of "SCHEDULED") */
+  displayLabel?: string;
 }
 
 const STATUS_CONFIG: Record<string, { dot: string; badgeBg: string; badgeText: string }> = {
