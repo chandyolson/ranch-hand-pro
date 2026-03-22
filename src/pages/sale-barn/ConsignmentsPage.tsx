@@ -120,8 +120,8 @@ const ConsignmentsPage: React.FC = () => {
       notes: notes.trim() || null, status: "pending",
     });
     setSaving(false);
-    if (error) { toast("Error saving consignment"); return; }
-    toast("Consignment saved");
+    if (error) { showToast("error", "Error saving consignment"); return; }
+    showToast("success", "Consignment saved");
     resetForm(); setShowForm(false);
     qc.invalidateQueries({ queryKey: ["consignments"] });
   };
@@ -129,7 +129,7 @@ const ConsignmentsPage: React.FC = () => {
   const markArrived = async (c: Consignment) => {
     await (supabase.from("consignments") as any).update({ status: "arrived" }).eq("id", c.id);
     qc.invalidateQueries({ queryKey: ["consignments"] });
-    toast("Marked as arrived");
+    showToast("success", "Marked as arrived");
   };
 
   const createWorkOrder = (c: Consignment) => {
