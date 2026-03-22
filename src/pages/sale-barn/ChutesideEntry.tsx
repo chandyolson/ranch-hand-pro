@@ -35,18 +35,21 @@ const PREG_OPTIONS = ["Pregnant", "Open", "Out", "Not Checked"];
 const RED_NOTES = ["Horns", "Lame", "Lump Jaw", "Bad Eye", "Cancer Eye"];
 const GOLD_NOTES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const TEAL_NOTES = ["Thin", "Old", "Broken Mouth"];
+const BREED_NOTES = ["Hereford", "Red", "Baldy", "Dairy", "Roping", "Charolais"];
 
-type NoteColor = "#9B2335" | "#B8860B" | "#55BAAA";
+type NoteColor = "#9B2335" | "#B8860B" | "#55BAAA" | "#0E2646";
 const NOTE_MAP: { notes: string[]; color: NoteColor }[] = [
   { notes: RED_NOTES, color: "#9B2335" },
   { notes: GOLD_NOTES, color: "#B8860B" },
   { notes: TEAL_NOTES, color: "#55BAAA" },
+  { notes: BREED_NOTES, color: "#0E2646" },
 ];
 
-const noteColor = (n: string): NoteColor => {
-  if (RED_NOTES.includes(n)) return "#9B2335";
-  if (GOLD_NOTES.includes(n)) return "#B8860B";
-  return "#55BAAA";
+const COLOR_RGB: Record<NoteColor, string> = {
+  "#9B2335": "155,35,53",
+  "#B8860B": "184,134,11",
+  "#55BAAA": "85,186,170",
+  "#0E2646": "14,38,70",
 };
 
 /* ── Collapsible ── */
@@ -178,7 +181,7 @@ const ChutesideEntry: React.FC = () => {
   const [designation, setDesignation] = useState("");
   const [pregStatus, setPregStatus] = useState("");
   const [sex, setSex] = useState("");
-  const [breed, setBreed] = useState("");
+  const [memo, setMemo] = useState("");
   const [quickNotes, setQuickNotes] = useState<string[]>([]);
   const [eid2, setEid2] = useState("");
   const [sorted, setSorted] = useState(false);
@@ -191,19 +194,30 @@ const ChutesideEntry: React.FC = () => {
 
   const clearForm = useCallback(() => {
     setEid(""); setBackTag(""); setTagNumber(""); setDesignation("");
-    setPregStatus(""); setSex(""); setBreed(""); setQuickNotes([]); setEid2("");
+    setPregStatus(""); setSex(""); setMemo(""); setQuickNotes([]); setEid2("");
     setSorted(false); setSortDestPen("");
     setTimeout(() => eidRef.current?.focus(), 50);
   }, []);
 
-  const toggleNote = (n: string) => setQuickNotes((prev) =>
-    prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]
-  );
+  const toggleNote = (n: string) => {
+    if (BREED_NOTES.includes(n)) {
+      setQuickNotes((prev) => {
+        const withoutBreeds = prev.filter((x) => !BREED_NOTES.includes(x));
+        return prev.includes(n) ? withoutBreeds : [...withoutBreeds, n];
+      });
+    } else {
+      setQuickNotes((prev) =>
+        prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]
+      );
+    }
+  };
 
   /* save */
   const handleSave = useCallback(async () => {
     if (!eid.trim()) { showToast("error", "EID is required"); eidRef.current?.focus(); return; }
     setSaving(true);
+
+    const breedVal = quickNotes.find((n) => BREED_NOTES.includes(n)) ?? null;
 
     const animalRow: Record<string, any> = {
       work_order_id: woId,
@@ -214,7 +228,8 @@ const ChutesideEntry: React.FC = () => {
       designation_key: designation || null,
       preg_status: pregStatus || null,
       sex: sex || null,
-      breed: breed.trim() || null,
+      breed: breedVal,
+      memo: memo.trim() || null,
       quick_notes: quickNotes,
       sorted,
       sort_dest_pen: sorted ? sortDestPen : null,
@@ -238,12 +253,13 @@ const ChutesideEntry: React.FC = () => {
     showToast("success", `Saved #${newCount} of ${expected} — Next`);
     try { navigator.vibrate?.(50); } catch {}
     clearForm();
-  }, [eid, backTag, eid2, tagNumber, designation, pregStatus, sex, breed, quickNotes, sorted, sortDestPen, woId, wo, worked, expected, clearForm, showToast, refetchAnimals]);
+  }, [eid, backTag, eid2, tagNumber, designation, pregStatus, sex, memo, quickNotes, sorted, sortDestPen, woId, wo, worked, expected, clearForm, showToast, refetchAnimals]);
 
   /* detail summary for badge */
+  const selectedBreed = quickNotes.find((n) => BREED_NOTES.includes(n)) ?? "";
   const detailParts: string[] = [];
   if (sex) detailParts.push(sex);
-  if (breed) detailParts.push(breed);
+  if (selectedBreed) detailParts.push(selectedBreed);
   if (quickNotes.length) detailParts.push(`${quickNotes.length} notes`);
   const detailBadge = detailParts.length > 0 ? detailParts.join(" · ") : undefined;
 
@@ -381,29 +397,40 @@ const ChutesideEntry: React.FC = () => {
               })}
             </div>
           </FR>
+
+          {/* Memo */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0, marginBottom: 8 }}>
+            <span style={{ ...LABEL_S, paddingTop: 8 }}>Memo</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <textarea
+                rows={2}
+                style={{
+                  width: "100%", borderRadius: 8, border: "1px solid #D4D4D0",
+                  fontSize: 16, fontFamily: "Inter, sans-serif", padding: "8px 12px",
+                  outline: "none", resize: "vertical", boxSizing: "border-box",
+                }}
+                placeholder="Notes for this animal…"
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                onFocus={focusGold as any} onBlur={blurReset as any}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Details Collapsible */}
         <Collapsible title="Details" badge={detailBadge} defaultOpen={false}>
-          {/* Collapsed preview: sex, breed, quick note pills */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#717182", marginBottom: 4 }}>Sex</div>
-              <select style={{ ...INPUT, width: "100%", flex: "none", appearance: "none", WebkitAppearance: "none" }}
-                value={sex} onChange={(e) => setSex(e.target.value)}
-                onFocus={focusGold as any} onBlur={blurReset as any}>
-                <option value="">—</option>
-                <option value="Bull">Bull</option>
-                <option value="Heifer">Heifer</option>
-                <option value="Steer">Steer</option>
-              </select>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#717182", marginBottom: 4 }}>Breed</div>
-              <input style={{ ...INPUT, width: "100%", flex: "none" }} placeholder="Breed"
-                value={breed} onChange={(e) => setBreed(e.target.value)}
-                onFocus={focusGold} onBlur={blurReset} />
-            </div>
+          {/* Sex — full width */}
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#717182", marginBottom: 4 }}>Sex</div>
+            <select style={{ ...INPUT, width: "100%", flex: "none", appearance: "none", WebkitAppearance: "none" }}
+              value={sex} onChange={(e) => setSex(e.target.value)}
+              onFocus={focusGold as any} onBlur={blurReset as any}>
+              <option value="">—</option>
+              <option value="Bull">Bull</option>
+              <option value="Heifer">Heifer</option>
+              <option value="Steer">Steer</option>
+            </select>
           </div>
 
           {/* Quick Notes */}
@@ -412,11 +439,12 @@ const ChutesideEntry: React.FC = () => {
             <div key={color} style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
               {notes.map((n) => {
                 const sel = quickNotes.includes(n);
+                const rgb = COLOR_RGB[color];
                 return (
                   <button key={n} type="button" onClick={() => toggleNote(n)} style={{
                     height: 30, borderRadius: 9999, padding: "0 12px", fontSize: 12, fontWeight: sel ? 700 : 500,
                     cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
-                    background: sel ? color : `rgba(${color === "#9B2335" ? "155,35,53" : color === "#B8860B" ? "184,134,11" : "85,186,170"},0.12)`,
+                    background: sel ? color : `rgba(${rgb},0.12)`,
                     color: sel ? "#FFFFFF" : color,
                     border: sel ? `2px solid ${color}` : "1px solid transparent",
                   }}>

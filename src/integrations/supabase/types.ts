@@ -2210,6 +2210,7 @@ export type Database = {
           eid: string
           eid_2: string | null
           id: string
+          memo: string | null
           preg_status: string | null
           quick_notes: string[] | null
           sex: string | null
@@ -2226,6 +2227,7 @@ export type Database = {
           eid: string
           eid_2?: string | null
           id?: string
+          memo?: string | null
           preg_status?: string | null
           quick_notes?: string[] | null
           sex?: string | null
@@ -2242,6 +2244,7 @@ export type Database = {
           eid?: string
           eid_2?: string | null
           id?: string
+          memo?: string | null
           preg_status?: string | null
           quick_notes?: string[] | null
           sex?: string | null
