@@ -443,6 +443,7 @@ const SaleDaysList: React.FC = () => {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {filtered.map((sd) => {
             const ws = getWoStats(sd.id);
+            const sdConsignments = consignMap[sd.id] || [];
             const statusUpper = sd.status.toUpperCase();
             const badgeStyle: React.CSSProperties =
               sd.status === "active"
