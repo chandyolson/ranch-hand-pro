@@ -458,13 +458,6 @@ const SaleDaysList: React.FC = () => {
           {filtered.map((sd) => {
             const ws = getWoStats(sd.id);
             const sdConsignments = consignMap[sd.id] || [];
-            const statusUpper = sd.status.toUpperCase();
-            const badgeStyle: React.CSSProperties =
-              sd.status === "active"
-                ? { background: "rgba(85,186,170,0.15)", color: "#55BAAA" }
-                : sd.status === "completed"
-                ? { background: "rgba(243,209,42,0.12)", color: "#F3D12A" }
-                : { background: "rgba(240,240,240,0.10)", color: "rgba(240,240,240,0.50)" };
 
             return (
               <button
