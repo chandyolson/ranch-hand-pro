@@ -6,7 +6,7 @@ import { ALL_TEMPLATES, type BreedTemplate } from "@/lib/breed-templates";
 import * as XLSX from "xlsx";
 
 // === TYPES ===
-type WizardStep = "upload" | "confirm" | "analysis" | "questions" | "summary" | "export";
+type WizardStep = "upload" | "confirm" | "analysis" | "questions" | "review" | "summary" | "export";
 
 interface FileInfo {
   name: string;
@@ -50,6 +50,7 @@ const STEPS: { key: WizardStep; label: string }[] = [
   { key: "confirm", label: "Confirm" },
   { key: "analysis", label: "Analysis" },
   { key: "questions", label: "Questions" },
+  { key: "review", label: "Review" },
   { key: "summary", label: "Summary" },
   { key: "export", label: "Export" },
 ];
@@ -217,6 +218,10 @@ const CowCleanerScreen: React.FC = () => {
   // Questions state
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [currentNote, setCurrentNote] = useState("");
+
+  // Review state
+  const [reviewPage, setReviewPage] = useState(0);
+  const REVIEW_PAGE_SIZE = 25;
 
   // Export state
   const [exporting, setExporting] = useState(false);
@@ -1103,11 +1108,11 @@ const CowCleanerScreen: React.FC = () => {
         <GoldButton
           onClick={() => {
             setCurrentQuestion(0);
-            setStep(pendingFlags.length > 0 ? "questions" : "summary");
+            setStep(pendingFlags.length > 0 ? "questions" : "review");
           }}
           style={{ flex: 2 }}
         >
-          {pendingFlags.length > 0 ? `Answer ${pendingFlags.length} Questions` : "Continue to Summary"}
+          {pendingFlags.length > 0 ? `Answer ${pendingFlags.length} Questions` : "Continue to Review"}
         </GoldButton>
       </div>
     </div>
@@ -1116,7 +1121,7 @@ const CowCleanerScreen: React.FC = () => {
   const renderQuestions = () => {
     const flag = pendingFlags[currentQuestion];
     if (!flag) {
-      setStep("summary");
+      setStep("review");
       return null;
     }
     return (
@@ -1262,7 +1267,7 @@ const CowCleanerScreen: React.FC = () => {
                 if (currentQuestion < pendingFlags.length - 1) {
                   setCurrentQuestion(currentQuestion + 1);
                 } else {
-                  setStep("summary");
+                  setStep("review");
                 }
               }}
               className="active:scale-[0.97]"
@@ -1291,7 +1296,7 @@ const CowCleanerScreen: React.FC = () => {
                 if (currentQuestion < pendingFlags.length - 1) {
                   setCurrentQuestion(currentQuestion + 1);
                 } else {
-                  setStep("summary");
+                  setStep("review");
                 }
               }}
               className="active:scale-[0.97]"
@@ -1324,6 +1329,138 @@ const CowCleanerScreen: React.FC = () => {
               transition: "width 0.3s ease",
             }}
           />
+        </div>
+      </div>
+    );
+  };
+
+  const renderReview = () => {
+    const cleanedData = buildCleanedData();
+    const totalPages = Math.ceil(cleanedData.length / REVIEW_PAGE_SIZE);
+    const pageData = cleanedData.slice(reviewPage * REVIEW_PAGE_SIZE, (reviewPage + 1) * REVIEW_PAGE_SIZE);
+    const visibleColumns = fileInfo?.columns.filter(
+      (col) => !flags.some((f) => f.column === col && f.issue === "empty" && f.status !== "rejected")
+    ) || [];
+
+    return (
+      <div style={{ padding: "0 16px" }}>
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#0E2646", fontFamily: "'Inter', sans-serif" }}>
+              Review Cleaned Data
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.40)", fontFamily: "'Inter', sans-serif" }}>
+              {cleanedData.length} rows
+            </span>
+          </div>
+          <div style={{ fontSize: 13, color: "rgba(26,26,26,0.50)", marginBottom: 12, fontFamily: "'Inter', sans-serif" }}>
+            Scroll through your data and make sure everything looks right before moving on.
+          </div>
+
+          {/* Scrollable table */}
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", borderRadius: 8, border: "1px solid #D4D4D0" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontFamily: "'Inter', sans-serif" }}>
+              <thead>
+                <tr>
+                  <th style={{
+                    textAlign: "center", padding: "8px 6px", fontWeight: 700, color: "rgba(26,26,26,0.40)",
+                    borderBottom: "2px solid #D4D4D0", backgroundColor: "#FAFAF8", position: "sticky", top: 0,
+                    fontSize: 10, whiteSpace: "nowrap", minWidth: 32,
+                  }}>
+                    #
+                  </th>
+                  {visibleColumns.map((col) => {
+                    const flag = flags.find((f) => f.column === col);
+                    return (
+                      <th
+                        key={col}
+                        style={{
+                          textAlign: "left", padding: "8px 8px", fontWeight: 700, color: "#0E2646",
+                          borderBottom: "2px solid #D4D4D0", backgroundColor: "#FAFAF8", position: "sticky", top: 0,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {col}
+                        {flag?.likelyMapsTo && (
+                          <span style={{ display: "block", fontSize: 9, fontWeight: 500, color: "rgba(26,26,26,0.35)" }}>
+                            → {flag.likelyMapsTo}
+                          </span>
+                        )}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {pageData.map((row, i) => (
+                  <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#FFFFFF" : "#FAFAF8" }}>
+                    <td style={{
+                      textAlign: "center", padding: "6px", color: "rgba(26,26,26,0.30)",
+                      borderBottom: "1px solid rgba(212,212,208,0.30)", fontSize: 10, fontWeight: 600,
+                    }}>
+                      {reviewPage * REVIEW_PAGE_SIZE + i + 1}
+                    </td>
+                    {visibleColumns.map((col) => (
+                      <td
+                        key={col}
+                        style={{
+                          padding: "6px 8px", color: "#1A1A1A",
+                          borderBottom: "1px solid rgba(212,212,208,0.30)",
+                          whiteSpace: "nowrap", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis",
+                        }}
+                      >
+                        {row[col] || <span style={{ color: "rgba(26,26,26,0.15)" }}>—</span>}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginTop: 12 }}>
+              <button
+                onClick={() => setReviewPage(Math.max(0, reviewPage - 1))}
+                disabled={reviewPage === 0}
+                className="active:scale-[0.97]"
+                style={{
+                  padding: "6px 14px", borderRadius: 9999, border: "1px solid #D4D4D0",
+                  backgroundColor: "#FFFFFF", color: reviewPage === 0 ? "rgba(26,26,26,0.20)" : "#0E2646",
+                  fontSize: 13, fontWeight: 600, fontFamily: "'Inter', sans-serif",
+                  cursor: reviewPage === 0 ? "default" : "pointer",
+                }}
+              >
+                Prev
+              </button>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(26,26,26,0.45)", fontFamily: "'Inter', sans-serif" }}>
+                {reviewPage + 1} / {totalPages}
+              </span>
+              <button
+                onClick={() => setReviewPage(Math.min(totalPages - 1, reviewPage + 1))}
+                disabled={reviewPage >= totalPages - 1}
+                className="active:scale-[0.97]"
+                style={{
+                  padding: "6px 14px", borderRadius: 9999, border: "1px solid #D4D4D0",
+                  backgroundColor: "#FFFFFF", color: reviewPage >= totalPages - 1 ? "rgba(26,26,26,0.20)" : "#0E2646",
+                  fontSize: 13, fontWeight: 600, fontFamily: "'Inter', sans-serif",
+                  cursor: reviewPage >= totalPages - 1 ? "default" : "pointer",
+                }}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </Card>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <SecondaryButton onClick={() => setStep("questions")} style={{ flex: 1 }}>
+            Back
+          </SecondaryButton>
+          <GoldButton onClick={() => setStep("summary")} style={{ flex: 2 }}>
+            Looks Good
+          </GoldButton>
         </div>
       </div>
     );
@@ -1394,7 +1531,7 @@ const CowCleanerScreen: React.FC = () => {
         </Card>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <SecondaryButton onClick={() => setStep("analysis")} style={{ flex: 1 }}>
+          <SecondaryButton onClick={() => setStep("review")} style={{ flex: 1 }}>
             Back
           </SecondaryButton>
           <GoldButton onClick={() => setStep("export")} style={{ flex: 2 }}>
@@ -1636,6 +1773,7 @@ const CowCleanerScreen: React.FC = () => {
       {step === "confirm" && renderConfirm()}
       {step === "analysis" && renderAnalysis()}
       {step === "questions" && renderQuestions()}
+      {step === "review" && renderReview()}
       {step === "summary" && renderSummary()}
       {step === "export" && renderExport()}
     </div>
