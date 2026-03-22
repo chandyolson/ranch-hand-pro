@@ -804,6 +804,17 @@ const WorkOrderForm: React.FC = () => {
             {specialLumpSum > 0 && <span style={{ marginLeft: 6 }}>({fmt$(specialLumpSum)})</span>}
           </button>
         )}
+
+        <FieldRow label="Notes">
+          <textarea
+            style={{ ...INPUT, height: "auto", minHeight: 80, padding: "8px 12px", resize: "vertical" }}
+            rows={3}
+            placeholder="General work order notes…"
+            value={groupNotes}
+            onChange={(e) => setGroupNotes(e.target.value)}
+            onFocus={focusGold as any} onBlur={blurReset as any}
+          />
+        </FieldRow>
       </div>
 
       {/* Billing Auto-Calc */}
