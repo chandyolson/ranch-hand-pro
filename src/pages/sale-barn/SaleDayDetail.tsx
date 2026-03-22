@@ -165,6 +165,7 @@ const ConsignmentsTab: React.FC<{
       animal_type: animalType || null,
       taken_by: takenBy || null,
       notes: notes || null,
+      expected_sale_date: expectedDate || null,
       status: "pending",
     };
     let error: any;
