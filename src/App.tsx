@@ -46,6 +46,7 @@ import BuyerDirectory from "@/pages/sale-barn/BuyerDirectory";
 import PriceSchedule from "@/pages/sale-barn/PriceSchedule";
 import DesignationKeyConfig from "@/pages/sale-barn/DesignationKeyConfig";
 import ConsignmentsPage from "@/pages/sale-barn/ConsignmentsPage";
+import ReportsPage from "@/pages/sale-barn/ReportsPage";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
