@@ -146,7 +146,7 @@ const ConsignmentsTab: React.FC<{
   };
 
   const openEdit = (c: Consignment) => {
-    setCustName(c.customer_name); setCustId(c.customer_id); setHeadCount(String(c.head_count));
+    setCustName(c.customer_name); setCustId(c.customer_id); setExpectedDate(c.expected_sale_date || ""); setHeadCount(String(c.head_count));
     setAnimalType(c.animal_type || ""); setTakenBy(c.taken_by || ""); setNotes(c.notes || "");
     setEditId(c.id); setFormOpen(true);
   };
