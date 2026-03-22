@@ -922,6 +922,7 @@ const SaleDayDetail: React.FC = () => {
   const navigate = useNavigate();
   const { operationId } = useOperation();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: saleDay, isLoading: sdLoading } = useQuery({
     queryKey: ["sale_day", id],
