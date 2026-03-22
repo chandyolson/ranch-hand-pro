@@ -1075,6 +1075,21 @@ const WorkOrderForm: React.FC = () => {
   const [calcOpen, setCalcOpen] = useState(false);
   const [groupNotes, setGroupNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [woDeleting, setWoDeleting] = useState(false);
+
+  const handleDeleteWo = async () => {
+    if (!woId) return;
+    setWoDeleting(true);
+    await (supabase.from("sale_barn_animals") as any).delete().eq("work_order_id", woId);
+    await (supabase.from("work_order_notes") as any).delete().eq("work_order_id", woId);
+    await (supabase.from("work_orders") as any).delete().eq("id", woId);
+    queryClient.invalidateQueries({ queryKey: ["work_orders"] });
+    setWoDeleting(false);
+    showToast("success", "Work order deleted");
+    try { navigator.vibrate(50); } catch {}
+    navigate(`/sale-barn/${saleDayId}`);
+  };
 
   // Populate for edit
   useEffect(() => {
