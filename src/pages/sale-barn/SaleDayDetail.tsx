@@ -802,48 +802,6 @@ const SaleDayDetail: React.FC = () => {
       {/* Tab Content */}
       {activeTab === "Work Orders" && (
         <div style={{ marginTop: 14 }}>
-          {/* Day Billing Card */}
-          <div style={{
-            background: "#FFFFFF", borderRadius: 12,
-            border: "1px solid rgba(212,212,208,0.60)",
-            padding: "12px 14px", marginBottom: 14,
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>Day Billing</span>
-              <span style={{ fontSize: 16, fontWeight: 700, color: "#55BAAA" }}>
-                {fmtCurrency(billing.seller.total + billing.buyer.total)}
-              </span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "4px 10px", fontSize: 12 }}>
-              {/* Header */}
-              <span style={{ color: "rgba(26,26,26,0.40)", fontWeight: 600 }}></span>
-              <span style={{ color: "rgba(26,26,26,0.40)", fontWeight: 600, textAlign: "right" }}>Seller</span>
-              <span style={{ color: "rgba(26,26,26,0.40)", fontWeight: 600, textAlign: "right" }}>Buyer</span>
-              <span style={{ color: "#55BAAA", fontWeight: 600, textAlign: "right" }}>Total</span>
-              {/* Vet */}
-              <span style={{ color: "#1A1A1A", fontWeight: 500 }}>Vet</span>
-              <span style={{ color: "#1A1A1A", textAlign: "right" }}>{fmtCurrency(billing.seller.vet)}</span>
-              <span style={{ color: "#1A1A1A", textAlign: "right" }}>{fmtCurrency(billing.buyer.vet)}</span>
-              <span style={{ color: "#55BAAA", fontWeight: 600, textAlign: "right" }}>{fmtCurrency(billing.seller.vet + billing.buyer.vet)}</span>
-              {/* Admin */}
-              <span style={{ color: "#1A1A1A", fontWeight: 500 }}>Admin 5%</span>
-              <span style={{ color: "#1A1A1A", textAlign: "right" }}>{fmtCurrency(billing.seller.admin)}</span>
-              <span style={{ color: "#1A1A1A", textAlign: "right" }}>{fmtCurrency(billing.buyer.admin)}</span>
-              <span style={{ color: "#55BAAA", fontWeight: 600, textAlign: "right" }}>{fmtCurrency(billing.seller.admin + billing.buyer.admin)}</span>
-              {/* SOL */}
-              <span style={{ color: "#1A1A1A", fontWeight: 500 }}>SOL</span>
-              <span style={{ color: "#1A1A1A", textAlign: "right" }}>{fmtCurrency(billing.seller.sol)}</span>
-              <span style={{ color: "#1A1A1A", textAlign: "right" }}>{fmtCurrency(billing.buyer.sol)}</span>
-              <span style={{ color: "#55BAAA", fontWeight: 600, textAlign: "right" }}>{fmtCurrency(billing.seller.sol + billing.buyer.sol)}</span>
-              {/* Divider */}
-              <div style={{ gridColumn: "1 / -1", height: 1, background: "rgba(26,26,26,0.08)", margin: "4px 0" }} />
-              {/* Total */}
-              <span style={{ color: "#0E2646", fontWeight: 700 }}>Total</span>
-              <span style={{ color: "#1A1A1A", fontWeight: 600, textAlign: "right" }}>{fmtCurrency(billing.seller.total)}</span>
-              <span style={{ color: "#1A1A1A", fontWeight: 600, textAlign: "right" }}>{fmtCurrency(billing.buyer.total)}</span>
-              <span style={{ color: "#55BAAA", fontWeight: 700, textAlign: "right" }}>{fmtCurrency(billing.seller.total + billing.buyer.total)}</span>
-            </div>
-          </div>
 
           {/* Vet Crew Bar */}
           {saleDay?.vet_crew && (
