@@ -490,11 +490,19 @@ const SaleDaysList: React.FC = () => {
                 {/* Row 1 */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: 16, fontWeight: 600, color: "#F0F0F0" }}>{fmtDate(sd.date)}</span>
-                  <SaleDayStatusPicker
-                    saleDayId={sd.id}
-                    currentStatus={sd.status}
-                    showToast={showToast}
-                  />
+                  {(() => {
+                    const p = getPriority(sd);
+                    const badgeLabel = p === 0 ? "ACTIVE" : p === 1 ? "UPCOMING" : "COMPLETED";
+                    const badgeStatus = p === 2 ? "completed" : sd.status;
+                    return (
+                      <SaleDayStatusPicker
+                        saleDayId={sd.id}
+                        currentStatus={badgeStatus}
+                        showToast={showToast}
+                        displayLabel={badgeLabel}
+                      />
+                    );
+                  })()}
                 </div>
 
                 {/* Row 2 */}
