@@ -24,6 +24,7 @@ const SaleDayStatusPicker: React.FC<SaleDayStatusPickerProps> = ({
   currentStatus,
   showToast,
   variant = "light",
+  displayLabel,
 }) => {
   const [open, setOpen] = useState(false);
   const [confirmComplete, setConfirmComplete] = useState(false);
