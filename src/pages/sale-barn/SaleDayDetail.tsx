@@ -967,6 +967,7 @@ const SaleDayDetail: React.FC = () => {
       <ConsignmentsTab
         consignments={consignments}
         saleDayId={id!}
+        saleDayDate={saleDay?.date || ""}
         operationId={operationId}
         activeTab={activeTab}
         showToast={showToast}
