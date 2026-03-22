@@ -6,11 +6,321 @@ import { useOperation } from "@/contexts/OperationContext";
 import { useSaleBarnPrices } from "@/hooks/sale-barn/useSaleBarnPrices";
 import { useChuteSideToast as useToast } from "@/components/ToastContext";
 import { focusGold, blurReset } from "@/lib/styles";
-import type { SaleDay, WorkOrder, SaleBarnCustomer, WorkOrderNote } from "@/types/sale-barn";
+import type { SaleDay, WorkOrder, SaleBarnCustomer, SaleBarnAnimal, WorkOrderNote } from "@/types/sale-barn";
 
-// ── Report Buttons (Animals + Health Cert) ──
-const ReportButtons: React.FC<{ saleDayId: string; woId: string }> = ({ saleDayId, woId }) => {
-  const navigate = useNavigate();
+// ── Bottom Sheet Shell ──
+const BottomSheet: React.FC<{
+  open: boolean; onClose: () => void; children: React.ReactNode;
+}> = ({ open, onClose, children }) => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (open) requestAnimationFrame(() => setVisible(true));
+    else setVisible(false);
+  }, [open]);
+  if (!open) return null;
+  return (
+    <>
+      <div onClick={onClose} style={{
+        position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.52)",
+        opacity: visible ? 1 : 0, transition: "opacity 250ms",
+      }} />
+      <div className="report-sheet" style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 101,
+        background: "#FFFFFF", borderRadius: "20px 20px 0 0",
+        boxShadow: "0 -4px 30px rgba(0,0,0,0.15)",
+        maxHeight: "85vh", display: "flex", flexDirection: "column",
+        transform: visible ? "translateY(0)" : "translateY(100%)",
+        transition: "transform 300ms ease-out",
+      }}>
+        <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px", flexShrink: 0 }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: "#D4D4D0" }} />
+        </div>
+        {children}
+      </div>
+    </>
+  );
+};
+
+// ── Animals Worked Sheet ──
+const AnimalsWorkedSheet: React.FC<{
+  open: boolean; onClose: () => void; woId: string;
+  wo: WorkOrder | null; customer: SaleBarnCustomer | null; saleDayDate: string;
+}> = ({ open, onClose, woId, wo, customer, saleDayDate }) => {
+  const [search, setSearch] = useState("");
+
+  const { data: animals } = useQuery({
+    queryKey: ["wo_sheet_animals", woId],
+    enabled: open && !!woId,
+    queryFn: async () => {
+      const { data } = await (supabase.from("sale_barn_animals") as any)
+        .select("*").eq("work_order_id", woId)
+        .order("created_at", { ascending: true });
+      return (data ?? []) as unknown as SaleBarnAnimal[];
+    },
+  });
+
+  const list = animals ?? [];
+  const filtered = useMemo(() => {
+    if (!search.trim()) return list;
+    const q = search.toLowerCase();
+    return list.filter((a) =>
+      a.eid?.toLowerCase().includes(q) || a.back_tag?.toLowerCase().includes(q) || a.tag_number?.toLowerCase().includes(q)
+    );
+  }, [list, search]);
+
+  const exportCsv = () => {
+    const headers = ["#","EID","Back Tag","Tag #","EID 2","Designation","Preg Status","Sex","Breed","Quick Notes","Sorted","Sort Dest Pen","Timestamp"];
+    const rows = filtered.map((a, i) => [
+      i + 1, a.eid ?? "", a.back_tag ?? "", a.tag_number ?? "", a.eid_2 ?? "",
+      a.designation_key ?? "", a.preg_status ?? "", a.sex ?? "", a.breed ?? "",
+      (a.quick_notes ?? []).join("; "), a.sorted ? "Yes" : "No",
+      a.sort_dest_pen ?? "", new Date(a.created_at).toLocaleString(),
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `animals_worked_${(customer?.name ?? "unknown").replace(/\s+/g, "_")}_${saleDayDate}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
+  const customerName = customer?.name ?? "Customer";
+  const entityType = wo?.entity_type ?? "seller";
+
+  return (
+    <BottomSheet open={open} onClose={onClose}>
+      <style>{`
+        @media print {
+          .sheet-no-print { display: none !important; }
+          .report-sheet { position: static !important; max-height: none !important; border-radius: 0 !important; box-shadow: none !important; transform: none !important; }
+          .sheet-print-header { display: block !important; }
+        }
+        .sheet-print-header { display: none; }
+      `}</style>
+      {/* Header */}
+      <div className="sheet-no-print" style={{ padding: "0 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: "#0E2646" }}>Animals Worked</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#0E2646", background: "rgba(14,38,70,0.08)", borderRadius: 9999, padding: "3px 10px" }}>
+            {filtered.length} head
+          </span>
+        </div>
+        <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 14, border: "none", background: "rgba(26,26,26,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2L12 12M12 2L2 12" stroke="#717182" strokeWidth="1.5" strokeLinecap="round" /></svg>
+        </button>
+      </div>
+      <div className="sheet-print-header" style={{ padding: "0 16px 8px", fontSize: 16, fontWeight: 700 }}>Animals Worked — {customerName} — {saleDayDate}</div>
+
+      <div style={{ overflowY: "auto", flex: 1, padding: "0 16px" }}>
+        {/* Customer info bar */}
+        <div style={{ background: "#F5F5F0", borderRadius: 8, padding: "8px 12px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{customerName}</span>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", borderRadius: 9999, padding: "2px 8px",
+            background: entityType === "seller" ? "rgba(243,209,42,0.12)" : "rgba(85,186,170,0.15)",
+            color: entityType === "seller" ? "#B8860B" : "#55BAAA",
+          }}>{entityType}</span>
+          {wo?.work_type && <span style={{ fontSize: 12, color: "#717182" }}>{wo.work_type}</span>}
+          {wo?.pens && wo.pens.length > 0 && <span style={{ fontSize: 12, color: "#717182" }}>Pen {wo.pens.join(", ")}</span>}
+        </div>
+
+        {/* Search */}
+        <div className="sheet-no-print" style={{ position: "relative", marginBottom: 10 }}>
+          <svg style={{ position: "absolute", left: 10, top: 12 }} width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="4.5" stroke="#717182" strokeWidth="1.3" /><path d="M10.5 10.5L14 14" stroke="#717182" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+          <input
+            style={{ width: "100%", height: 40, borderRadius: 10, border: "1px solid rgba(212,212,208,0.60)", fontSize: 16, padding: "0 12px 0 32px", outline: "none", boxSizing: "border-box" }}
+            placeholder="Search EID, back tag, tag #..."
+            value={search} onChange={(e) => setSearch(e.target.value)}
+            onFocus={focusGold} onBlur={blurReset}
+          />
+        </div>
+
+        {/* Table header */}
+        <div style={{ display: "flex", padding: "6px 12px", gap: 8 }}>
+          {["#","TAG / EID","BACK TAG","DESIGNATION","PREG"].map((h, i) => (
+            <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.40)", letterSpacing: "0.06em", textTransform: "uppercase",
+              width: i === 0 ? 30 : undefined, flex: i > 0 ? 1 : undefined, minWidth: 0 }}>{h}</span>
+          ))}
+        </div>
+
+        {/* Animal rows */}
+        {filtered.map((a, idx) => (
+          <div key={a.id} style={{ display: "flex", alignItems: "center", padding: "8px 12px", gap: 8, borderBottom: "1px solid rgba(212,212,208,0.30)" }}>
+            <span style={{ width: 30, fontSize: 11, fontWeight: 600, color: "#717182", flexShrink: 0 }}>{idx + 1}</span>
+            <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1A1A1A", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {a.tag_number || (a.eid ? a.eid.slice(-6) : "—")}
+            </span>
+            <span style={{ flex: 1, fontSize: 12, color: "#717182", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.back_tag ?? ""}</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              {a.designation_key && (
+                <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 9999, padding: "2px 6px", background: "rgba(14,38,70,0.06)", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: 3, background: "#0E2646" }} />{a.designation_key}
+                </span>
+              )}
+            </span>
+            <span style={{ flex: 1, fontSize: 11, color: "#717182", minWidth: 0 }}>{a.preg_status ?? ""}</span>
+            {a.sorted && <span style={{ fontSize: 9, fontWeight: 700, color: "#7B68EE", background: "rgba(123,104,238,0.12)", borderRadius: 9999, padding: "2px 5px" }}>S</span>}
+          </div>
+        ))}
+        {filtered.length === 0 && <div style={{ textAlign: "center", padding: 30, color: "#717182", fontSize: 13 }}>{search ? "No matches" : "No animals"}</div>}
+      </div>
+
+      {/* Export bar */}
+      <div className="sheet-no-print" style={{ padding: "12px 16px", display: "flex", gap: 8, borderTop: "1px solid rgba(212,212,208,0.30)", flexShrink: 0 }}>
+        <button onClick={exportCsv} className="active:scale-[0.97]" style={{
+          flex: 1, height: 40, borderRadius: 9999, border: "1.5px solid #0E2646", background: "#FFFFFF",
+          color: "#0E2646", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+        }}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 12h10" stroke="#0E2646" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Export CSV
+        </button>
+        <button onClick={() => window.print()} className="active:scale-[0.97]" style={{
+          flex: 1, height: 40, borderRadius: 9999, border: "1.5px solid #717182", background: "#FFFFFF",
+          color: "#717182", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+        }}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 6V2h8v4M4 12H2.667A.667.667 0 0 1 2 11.333V8.667A.667.667 0 0 1 2.667 8h10.666a.667.667 0 0 1 .667.667v2.666a.667.667 0 0 1-.667.667H12M4 10h8v4H4v-4z" stroke="#717182" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Export PDF
+        </button>
+      </div>
+    </BottomSheet>
+  );
+};
+
+// ── Health Certificate (CVI) Sheet ──
+const CviSheet: React.FC<{
+  open: boolean; onClose: () => void; woId: string;
+  wo: WorkOrder | null; customer: SaleBarnCustomer | null; saleDayDate: string;
+}> = ({ open, onClose, woId, wo, customer, saleDayDate }) => {
+  const { data: animals } = useQuery({
+    queryKey: ["cvi_sheet_animals", woId],
+    enabled: open && !!woId,
+    queryFn: async () => {
+      const { data } = await (supabase.from("sale_barn_animals") as any)
+        .select("*").eq("work_order_id", woId)
+        .order("created_at", { ascending: true });
+      return (data ?? []) as unknown as SaleBarnAnimal[];
+    },
+  });
+
+  const list = animals ?? [];
+  const customerName = customer?.name ?? "—";
+
+  const exportCsv = () => {
+    const headers = ["#","EID","Back Tag","Tag #","Buyer Name","Buyer Address","Buyer Phone","Buyer State","Buyer #"];
+    const rows = list.map((a, i) => [
+      i + 1, a.eid ?? "", a.back_tag ?? "", a.tag_number ?? "",
+      customerName, customer?.address ?? "", customer?.phone ?? "",
+      customer?.state ?? "", wo?.buyer_num ?? "",
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cvi_prep_${customerName.replace(/\s+/g, "_")}_${saleDayDate}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
+  const infoRows: [string, string][] = [
+    ["Name", customerName],
+    ["Address", customer?.address ?? "—"],
+    ["Phone", customer?.phone ?? "—"],
+    ["State", customer?.state ?? "—"],
+  ];
+  if (wo?.entity_type === "buyer" && wo.buyer_num) infoRows.push(["Buyer #", wo.buyer_num]);
+
+  return (
+    <BottomSheet open={open} onClose={onClose}>
+      <style>{`
+        @media print {
+          .sheet-no-print { display: none !important; }
+          .report-sheet { position: static !important; max-height: none !important; border-radius: 0 !important; box-shadow: none !important; transform: none !important; }
+          .sheet-print-header { display: block !important; }
+        }
+        .sheet-print-header { display: none; }
+      `}</style>
+      <div className="sheet-no-print" style={{ padding: "0 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <span style={{ fontSize: 18, fontWeight: 700, color: "#0E2646" }}>Health Certificate</span>
+        <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 14, border: "none", background: "rgba(26,26,26,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2L12 12M12 2L2 12" stroke="#717182" strokeWidth="1.5" strokeLinecap="round" /></svg>
+        </button>
+      </div>
+      <div className="sheet-print-header" style={{ padding: "0 16px 8px", fontSize: 16, fontWeight: 700 }}>CVI Prep Sheet — {customerName} — {saleDayDate}</div>
+
+      <div style={{ overflowY: "auto", flex: 1, padding: "0 16px" }}>
+        {/* Buyer Information */}
+        <div style={{ background: "#FFFFFF", borderRadius: 10, border: "1px solid rgba(212,212,208,0.60)", padding: "12px 14px", marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.40)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>BUYER INFORMATION</div>
+          {infoRows.map(([label, val]) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: "#717182" }}>{label}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{val}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Animal Summary */}
+        <div style={{ background: "#FFFFFF", borderRadius: 10, border: "1px solid rgba(212,212,208,0.60)", padding: "12px 14px", marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.40)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>ANIMAL SUMMARY</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#0E2646", marginBottom: 4 }}>{list.length} head</div>
+          <div style={{ fontSize: 13, color: "#717182" }}>{wo?.animal_type ?? "—"} · {wo?.work_type ?? "—"}</div>
+        </div>
+
+        {/* Animal Identification */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.40)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6, padding: "0 2px" }}>ANIMAL IDENTIFICATION</div>
+          <div style={{ display: "flex", padding: "6px 12px", gap: 8 }}>
+            {["#","EID","BACK TAG","TAG #"].map((h, i) => (
+              <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.40)", letterSpacing: "0.06em",
+                width: i === 0 ? 30 : undefined, flex: i > 0 ? 1 : undefined }}>{h}</span>
+            ))}
+          </div>
+          {list.map((a, idx) => (
+            <div key={a.id} style={{
+              display: "flex", alignItems: "center", padding: "6px 12px", gap: 8,
+              background: idx % 2 === 1 ? "#F5F5F0" : "#FFFFFF",
+            }}>
+              <span style={{ width: 30, fontSize: 11, fontWeight: 600, color: "#717182", flexShrink: 0 }}>{idx + 1}</span>
+              <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: "#1A1A1A", fontFamily: "monospace", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.eid ?? "—"}</span>
+              <span style={{ flex: 1, fontSize: 12, color: "#717182", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.back_tag ?? "—"}</span>
+              <span style={{ flex: 1, fontSize: 12, color: "#717182", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.tag_number ?? "—"}</span>
+            </div>
+          ))}
+          {list.length === 0 && <div style={{ textAlign: "center", padding: 30, color: "#717182", fontSize: 13 }}>No animals</div>}
+        </div>
+      </div>
+
+      {/* Export bar */}
+      <div className="sheet-no-print" style={{ padding: "12px 16px", display: "flex", gap: 8, borderTop: "1px solid rgba(212,212,208,0.30)", flexShrink: 0 }}>
+        <button onClick={exportCsv} className="active:scale-[0.97]" style={{
+          flex: 1, height: 40, borderRadius: 9999, border: "1.5px solid #0E2646", background: "#FFFFFF",
+          color: "#0E2646", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+        }}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 12h10" stroke="#0E2646" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Export CSV
+        </button>
+        <button onClick={() => window.print()} className="active:scale-[0.97]" style={{
+          flex: 1, height: 40, borderRadius: 9999, border: "1.5px solid #717182", background: "#FFFFFF",
+          color: "#717182", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+        }}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 6V2h8v4M4 12H2.667A.667.667 0 0 1 2 11.333V8.667A.667.667 0 0 1 2.667 8h10.666a.667.667 0 0 1 .667.667v2.666a.667.667 0 0 1-.667.667H12M4 10h8v4H4v-4z" stroke="#717182" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Print Report
+        </button>
+      </div>
+    </BottomSheet>
+  );
+};
+
+// ── Report Buttons ──
+const ReportButtons: React.FC<{
+  woId: string; wo: WorkOrder | null; customer: SaleBarnCustomer | null; saleDayDate: string;
+}> = ({ woId, wo, customer, saleDayDate }) => {
+  const [animalsOpen, setAnimalsOpen] = useState(false);
+  const [cviOpen, setCviOpen] = useState(false);
+
   const { data: animalCount } = useQuery({
     queryKey: ["wo_animal_count", woId],
     queryFn: async () => {
@@ -25,40 +335,45 @@ const ReportButtons: React.FC<{ saleDayId: string; woId: string }> = ({ saleDayI
   if (!animalCount || animalCount < 1) return null;
 
   return (
-    <div style={{ display: "flex", gap: 10, padding: "0 16px", marginBottom: 10 }}>
-      <button
-        type="button"
-        className="active:scale-[0.97]"
-        onClick={() => navigate(`/sale-barn/${saleDayId}/work-order/${woId}/animals`)}
-        style={{
-          flex: 1, height: 44, borderRadius: 12, background: "#0E2646", border: "none",
-          color: "#FFFFFF", fontSize: 13, fontWeight: 600, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-        }}
-      >
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <path d="M2 4h12M2 8h12M2 12h8" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-        Animals ({animalCount})
-      </button>
-      <button
-        type="button"
-        className="active:scale-[0.97]"
-        onClick={() => navigate(`/sale-barn/${saleDayId}/work-order/${woId}/cvi`)}
-        style={{
-          flex: 1, height: 44, borderRadius: 12,
-          background: "rgba(85,186,170,0.10)", border: "1.5px solid #55BAAA",
-          color: "#55BAAA", fontSize: 13, fontWeight: 600, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-        }}
-      >
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z" stroke="#55BAAA" strokeWidth="1.2" strokeLinejoin="round" />
-          <path d="M9 2v4h4" stroke="#55BAAA" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        Health Cert
-      </button>
-    </div>
+    <>
+      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+        <button
+          type="button" className="active:scale-[0.98]"
+          onClick={() => setAnimalsOpen(true)}
+          style={{
+            flex: 1, height: 44, borderRadius: 10,
+            background: "rgba(14,38,70,0.04)", border: "1px solid rgba(212,212,208,0.60)",
+            cursor: "pointer", display: "flex", alignItems: "center", gap: 8, padding: "0 12px",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="#0E2646" strokeWidth="1.5" strokeLinecap="round" /></svg>
+          <div style={{ textAlign: "left" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#0E2646" }}>Animals Worked</div>
+            <div style={{ fontSize: 11, fontWeight: 400, color: "#717182" }}>{animalCount} head</div>
+          </div>
+        </button>
+        <button
+          type="button" className="active:scale-[0.98]"
+          onClick={() => setCviOpen(true)}
+          style={{
+            flex: 1, height: 44, borderRadius: 10,
+            background: "rgba(85,186,170,0.04)", border: "1px solid rgba(85,186,170,0.30)",
+            cursor: "pointer", display: "flex", alignItems: "center", gap: 8, padding: "0 12px",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z" stroke="#55BAAA" strokeWidth="1.2" strokeLinejoin="round" />
+            <path d="M9 2v4h4" stroke="#55BAAA" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div style={{ textAlign: "left" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#55BAAA" }}>Health Cert</div>
+            <div style={{ fontSize: 11, fontWeight: 400, color: "#717182" }}>CVI Report</div>
+          </div>
+        </button>
+      </div>
+      <AnimalsWorkedSheet open={animalsOpen} onClose={() => setAnimalsOpen(false)} woId={woId} wo={wo} customer={customer} saleDayDate={saleDayDate} />
+      <CviSheet open={cviOpen} onClose={() => setCviOpen(false)} woId={woId} wo={wo} customer={customer} saleDayDate={saleDayDate} />
+    </>
   );
 };
 
@@ -837,7 +1152,7 @@ const WorkOrderForm: React.FC = () => {
       </div>
 
       {/* Report Buttons */}
-      {isEdit && woId && <ReportButtons saleDayId={saleDayId!} woId={woId} />}
+      {isEdit && woId && <ReportButtons woId={woId} wo={existingWo ?? null} customer={customer} saleDayDate={saleDay?.date ?? ""} />}
 
       {/* Work Section */}
       <div style={CARD}>
