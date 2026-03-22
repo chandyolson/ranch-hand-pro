@@ -646,6 +646,10 @@ const FlaggedNotesBanner: React.FC<{
 }> = ({ workOrders, customerMap, showToast }) => {
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState(true);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyAuthor, setReplyAuthor] = useState<"Office" | "CATL">("Office");
+  const [sending, setSending] = useState(false);
 
   const woIds = useMemo(() => workOrders.map(wo => wo.id), [workOrders]);
   const woMap = useMemo(() => {
@@ -668,6 +672,30 @@ const FlaggedNotesBanner: React.FC<{
   });
 
   const notes = flaggedNotes ?? [];
+  const flaggedIds = useMemo(() => notes.map(n => n.id), [notes]);
+
+  // Fetch replies to flagged notes
+  const { data: repliesData } = useQuery({
+    queryKey: ["flagged_replies", flaggedIds],
+    enabled: flaggedIds.length > 0,
+    queryFn: async () => {
+      const { data } = await (supabase.from("work_order_notes") as any)
+        .select("*")
+        .in("parent_id", flaggedIds)
+        .order("created_at", { ascending: true });
+      return (data ?? []) as unknown as (WorkOrderNote & { parent_id: string })[];
+    },
+  });
+
+  const repliesByParent = useMemo(() => {
+    const m: Record<string, (WorkOrderNote & { parent_id: string })[]> = {};
+    (repliesData ?? []).forEach(r => {
+      if (!m[r.parent_id]) m[r.parent_id] = [];
+      m[r.parent_id].push(r);
+    });
+    return m;
+  }, [repliesData]);
+
   const unresolved = notes.filter(n => !n.resolved_at);
   const resolved = notes.filter(n => !!n.resolved_at);
   const sorted = [...unresolved, ...resolved];
@@ -679,13 +707,38 @@ const FlaggedNotesBanner: React.FC<{
       .update({ resolved_at: new Date().toISOString(), resolved_by: "Office" })
       .eq("id", noteId);
     qc.invalidateQueries({ queryKey: ["flagged_notes"] });
+    qc.invalidateQueries({ queryKey: ["flagged_replies"] });
     showToast("success", "Note resolved");
+  };
+
+  const handleSendReply = async (parentNote: WorkOrderNote) => {
+    if (!replyText.trim() || sending) return;
+    setSending(true);
+    await (supabase.from("work_order_notes") as any).insert({
+      work_order_id: parentNote.work_order_id,
+      parent_id: parentNote.id,
+      author: replyAuthor,
+      text: replyText.trim(),
+      is_flagged: false,
+    });
+    setSending(false);
+    setReplyText("");
+    setReplyingTo(null);
+    qc.invalidateQueries({ queryKey: ["flagged_replies"] });
+    showToast("success", "Reply sent");
   };
 
   const fmtTime = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   };
+
+  const ReplySvg = () => (
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+      <path d="M6 3L2 7L6 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M2 7H10C12.2 7 14 8.8 14 11V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 
   return (
     <div style={{ background: "#FFF8E6", borderBottom: "2px solid #F3D12A", padding: "10px 16px", marginLeft: -16, marginRight: -16 }}>
@@ -719,52 +772,137 @@ const FlaggedNotesBanner: React.FC<{
             const custName = wo?.customer_id && customerMap?.[wo.customer_id]
               ? customerMap[wo.customer_id]
               : wo?.buyer_num ? `#${wo.buyer_num}` : "Unknown";
+            const replies = repliesByParent[note.id] ?? [];
+            const isReplying = replyingTo === note.id;
 
             return (
-              <div key={note.id} style={{
-                background: "#FFFFFF", borderRadius: 10, padding: "10px 12px", marginBottom: 8,
-                border: isResolved ? "1px solid #D4D4D0" : "1.5px solid #F3D12A",
-                opacity: isResolved ? 0.55 : 1,
-              }}>
-                {/* Row 1: Badge + Customer */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
-                    padding: "2px 8px", textTransform: "uppercase",
-                    background: wo?.entity_type === "buyer" ? "rgba(85,186,170,0.15)" : "rgba(243,209,42,0.12)",
-                    color: wo?.entity_type === "buyer" ? "#55BAAA" : "#B8860B",
-                  }}>
-                    {wo?.entity_type === "buyer" ? "BUYER" : "SELLER"}
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{custName}</span>
+              <div key={note.id} style={{ opacity: isResolved ? 0.55 : 1 }}>
+                <div style={{
+                  background: "#FFFFFF", borderRadius: 10, padding: "10px 12px",
+                  border: isResolved ? "1px solid #D4D4D0" : "1.5px solid #F3D12A",
+                  marginBottom: replies.length > 0 || isReplying ? 0 : 8,
+                  borderBottomLeftRadius: (replies.length > 0 || isReplying) ? 0 : 10,
+                  borderBottomRightRadius: (replies.length > 0 || isReplying) ? 0 : 10,
+                }}>
+                  {/* Row 1: Badge + Customer */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
+                      padding: "2px 8px", textTransform: "uppercase",
+                      background: wo?.entity_type === "buyer" ? "rgba(85,186,170,0.15)" : "rgba(243,209,42,0.12)",
+                      color: wo?.entity_type === "buyer" ? "#55BAAA" : "#B8860B",
+                    }}>
+                      {wo?.entity_type === "buyer" ? "BUYER" : "SELLER"}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{custName}</span>
+                  </div>
+                  {/* Row 2: Note text */}
+                  <div style={{ fontSize: 13, color: "#1A1A1A", lineHeight: 1.4, marginBottom: 4 }}>{note.text}</div>
+                  {/* Row 3: Author + time + buttons */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: isCatl ? "#55BAAA" : "#0E2646" }}>{note.author}</span>
+                    <span style={{ fontSize: 11, color: "#717182" }}>{fmtTime(note.created_at)}</span>
+                    <div style={{ flex: 1 }} />
+                    {isResolved ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#55BAAA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#55BAAA" }}>
+                          Resolved · {note.resolved_by} {fmtTime(note.resolved_at!)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => { setReplyingTo(isReplying ? null : note.id); setReplyText(""); setReplyAuthor("Office"); }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 4,
+                            border: "1px solid #0E2646", background: "transparent", color: "#0E2646",
+                            fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 9999, cursor: "pointer",
+                          }}
+                        >
+                          <ReplySvg /> Reply
+                        </button>
+                        <button
+                          onClick={() => handleResolve(note.id)}
+                          style={{
+                            border: "1px solid #55BAAA", background: "transparent", color: "#55BAAA",
+                            fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 9999, cursor: "pointer",
+                          }}
+                        >Resolve</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {/* Row 2: Note text */}
-                <div style={{ fontSize: 13, color: "#1A1A1A", lineHeight: 1.4, marginBottom: 4 }}>{note.text}</div>
-                {/* Row 3: Author + time + resolve */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: isCatl ? "#55BAAA" : "#0E2646" }}>{note.author}</span>
-                  <span style={{ fontSize: 11, color: "#717182" }}>{fmtTime(note.created_at)}</span>
-                  <div style={{ flex: 1 }} />
-                  {isResolved ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#55BAAA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: "#55BAAA" }}>
-                        Resolved · {note.resolved_by} {fmtTime(note.resolved_at!)}
-                      </span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleResolve(note.id)}
-                      style={{
-                        border: "1px solid #55BAAA", background: "transparent", color: "#55BAAA",
-                        fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 9999,
-                        cursor: "pointer",
-                      }}
-                    >Resolve</button>
-                  )}
-                </div>
+
+                {/* Replies thread */}
+                {(replies.length > 0 || isReplying) && (
+                  <div style={{ paddingLeft: 16, marginBottom: 8 }}>
+                    {replies.map(reply => {
+                      const rCatl = reply.author?.toUpperCase() === "CATL";
+                      return (
+                        <div key={reply.id} style={{
+                          background: "rgba(14,38,70,0.03)", borderRadius: 8,
+                          padding: "8px 10px", marginBottom: 4,
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: rCatl ? "#55BAAA" : "#0E2646" }}>{reply.author}</span>
+                            <span style={{ fontSize: 11, color: "#717182" }}>{fmtTime(reply.created_at)}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: "#1A1A1A", lineHeight: 1.4 }}>{reply.text}</div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Reply input */}
+                    {isReplying && !isResolved && (
+                      <div style={{
+                        background: "#FFFFFF", borderRadius: 8, border: "1px solid #D4D4D0",
+                        padding: 8, marginTop: 4, marginBottom: 8,
+                      }}>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <input
+                            value={replyText}
+                            onChange={e => setReplyText(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") handleSendReply(note); }}
+                            placeholder="Reply to this note..."
+                            style={{
+                              flex: 1, height: 36, borderRadius: 8, border: "1px solid #D4D4D0",
+                              fontSize: 16, fontFamily: "Inter, sans-serif", padding: "0 12px",
+                              outline: "none", minWidth: 0,
+                            }}
+                          />
+                          <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+                            {(["Office", "CATL"] as const).map(a => (
+                              <button
+                                key={a}
+                                onClick={() => setReplyAuthor(a)}
+                                style={{
+                                  fontSize: 10, fontWeight: 600, color: "#FFFFFF", padding: "4px 8px",
+                                  borderRadius: 9999, border: "none", cursor: "pointer",
+                                  background: replyAuthor === a
+                                    ? (a === "Office" ? "#0E2646" : "#55BAAA")
+                                    : "rgba(26,26,26,0.15)",
+                                }}
+                              >{a}</button>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => handleSendReply(note)}
+                            disabled={!replyText.trim() || sending}
+                            style={{
+                              height: 32, borderRadius: 8, background: "#0E2646", color: "#FFFFFF",
+                              fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none",
+                              cursor: !replyText.trim() || sending ? "not-allowed" : "pointer",
+                              opacity: !replyText.trim() || sending ? 0.5 : 1, flexShrink: 0,
+                            }}
+                          >Send</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

@@ -2860,6 +2860,7 @@ export type Database = {
           created_at: string
           id: string
           is_flagged: boolean
+          parent_id: string | null
           resolved_at: string | null
           resolved_by: string | null
           text: string
@@ -2870,6 +2871,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_flagged?: boolean
+          parent_id?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           text: string
@@ -2880,12 +2882,20 @@ export type Database = {
           created_at?: string
           id?: string
           is_flagged?: boolean
+          parent_id?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           text?: string
           work_order_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "work_order_notes_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_notes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_order_notes_work_order_id_fkey"
             columns: ["work_order_id"]
