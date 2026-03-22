@@ -18,7 +18,11 @@ const fmtCurrency = (n: number) =>
   `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const TABS = ["Work Orders", "Reconciliation"] as const;
-const WO_FILTERS = ["All", "Sellers", "Buyers", "Incomplete"] as const;
+const WO_FILTERS = ["all", "sellers", "buyers", "needs_work", "needs_health"] as const;
+const WO_FILTER_LABELS: Record<string, string> = {
+  all: "All", sellers: "Sellers", buyers: "Buyers",
+  needs_work: "Needs Work", needs_health: "Needs Health",
+};
 
 const ANIMAL_TYPES = ["Bred Heifers", "Feeder Calves", "Pairs", "Bull", "Bred Cows", "Weigh Up Cows", "Baby Calf", "Heifers", "Yearling Bull"];
 
