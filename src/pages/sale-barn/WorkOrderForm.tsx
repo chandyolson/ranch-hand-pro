@@ -187,9 +187,17 @@ const CustomerSearch: React.FC<{
 };
 
 // ── Notes Thread ──
+const FlagSvg: React.FC<{ size?: number; fill?: string; stroke?: string }> = ({ size = 14, fill = "none", stroke = "#717182" }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <line x1="2" y1="2" x2="2" y2="14" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M2 2.5H12L10 5.5L12 8.5H2V2.5Z" fill={fill} stroke={stroke} strokeWidth="1.2" strokeLinejoin="round" />
+  </svg>
+);
+
 const NotesThread: React.FC<{ woId: string | undefined; showToast: (v: string, m: string) => void }> = ({ woId, showToast }) => {
   const qc = useQueryClient();
   const [text, setText] = useState("");
+  const [flagged, setFlagged] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const { data: notes } = useQuery({
@@ -210,12 +218,15 @@ const NotesThread: React.FC<{ woId: string | undefined; showToast: (v: string, m
       work_order_id: woId,
       author: "Office",
       text: text.trim(),
+      is_flagged: flagged,
     });
     setSubmitting(false);
     if (error) { showToast("error", error.message); return; }
     setText("");
+    setFlagged(false);
     qc.invalidateQueries({ queryKey: ["work_order_notes", woId] });
-  }, [text, woId, qc, showToast]);
+    qc.invalidateQueries({ queryKey: ["flagged_notes"] });
+  }, [text, woId, flagged, qc, showToast]);
 
   const fmtTime = (iso: string) => {
     const d = new Date(iso);
@@ -236,6 +247,7 @@ const NotesThread: React.FC<{ woId: string | undefined; showToast: (v: string, m
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: isCatl ? "#55BAAA" : "#0E2646" }}>{n.author}</span>
+              {n.is_flagged && <FlagSvg size={12} fill="#F3D12A" stroke="#B8860B" />}
               <span style={{ fontSize: 11, color: "#717182" }}>{fmtTime(n.created_at)}</span>
             </div>
             <div style={{ fontSize: 13, color: "#1A1A1A", lineHeight: 1.4 }}>{n.text}</div>
@@ -252,6 +264,19 @@ const NotesThread: React.FC<{ woId: string | undefined; showToast: (v: string, m
             onKeyDown={(e) => { if (e.key === "Enter") addNote(); }}
             onFocus={focusGold} onBlur={blurReset}
           />
+          <button
+            type="button"
+            onClick={() => setFlagged(!flagged)}
+            style={{
+              width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+              border: flagged ? "1px solid #F3D12A" : "1px solid #D4D4D0",
+              background: flagged ? "rgba(243,209,42,0.15)" : "transparent",
+              cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <FlagSvg size={16} fill={flagged ? "#F3D12A" : "none"} stroke={flagged ? "#F3D12A" : "#717182"} />
+          </button>
           <button
             type="button" onClick={addNote} disabled={submitting || !text.trim()}
             style={{

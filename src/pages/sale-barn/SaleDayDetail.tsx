@@ -7,7 +7,7 @@ import { useWorkOrders } from "@/hooks/sale-barn/useWorkOrders";
 import { useConsignments } from "@/hooks/sale-barn/useConsignments";
 import { useChuteSideToast as useToast } from "@/components/ToastContext";
 import FieldRow from "@/components/calving/FieldRow";
-import type { SaleDay, WorkOrder, SaleBarnAnimal, SortRecord, Consignment, SaleBarnCustomer } from "@/types/sale-barn";
+import type { SaleDay, WorkOrder, SaleBarnAnimal, SortRecord, Consignment, SaleBarnCustomer, WorkOrderNote } from "@/types/sale-barn";
 
 const fmtDate = (iso: string) => {
   const d = new Date(iso + "T12:00:00");
@@ -630,6 +630,150 @@ const ReportsTab: React.FC<{ activeTab: string; showToast: (v: string, m: string
   );
 };
 
+// ── Flag SVG helper ──
+const FlagSvg: React.FC<{ size?: number; fill?: string; stroke?: string }> = ({ size = 14, fill = "none", stroke = "#717182" }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <line x1="2" y1="2" x2="2" y2="14" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M2 2.5H12L10 5.5L12 8.5H2V2.5Z" fill={fill} stroke={stroke} strokeWidth="1.2" strokeLinejoin="round" />
+  </svg>
+);
+
+// ── Flagged Notes Banner ──
+const FlaggedNotesBanner: React.FC<{
+  workOrders: WorkOrder[];
+  customerMap?: Record<string, string>;
+  showToast: (v: string, m: string) => void;
+}> = ({ workOrders, customerMap, showToast }) => {
+  const qc = useQueryClient();
+  const [expanded, setExpanded] = useState(true);
+
+  const woIds = useMemo(() => workOrders.map(wo => wo.id), [workOrders]);
+  const woMap = useMemo(() => {
+    const m: Record<string, WorkOrder> = {};
+    workOrders.forEach(wo => { m[wo.id] = wo; });
+    return m;
+  }, [workOrders]);
+
+  const { data: flaggedNotes } = useQuery({
+    queryKey: ["flagged_notes", woIds],
+    enabled: woIds.length > 0,
+    queryFn: async () => {
+      const { data } = await (supabase.from("work_order_notes") as any)
+        .select("*")
+        .in("work_order_id", woIds)
+        .eq("is_flagged", true)
+        .order("created_at", { ascending: false });
+      return (data ?? []) as unknown as WorkOrderNote[];
+    },
+  });
+
+  const notes = flaggedNotes ?? [];
+  const unresolved = notes.filter(n => !n.resolved_at);
+  const resolved = notes.filter(n => !!n.resolved_at);
+  const sorted = [...unresolved, ...resolved];
+
+  if (unresolved.length === 0) return null;
+
+  const handleResolve = async (noteId: string) => {
+    await (supabase.from("work_order_notes") as any)
+      .update({ resolved_at: new Date().toISOString(), resolved_by: "Office" })
+      .eq("id", noteId);
+    qc.invalidateQueries({ queryKey: ["flagged_notes"] });
+    showToast("success", "Note resolved");
+  };
+
+  const fmtTime = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  };
+
+  return (
+    <div style={{ background: "#FFF8E6", borderBottom: "2px solid #F3D12A", padding: "10px 16px", marginLeft: -16, marginRight: -16 }}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <FlagSvg size={18} fill="#F3D12A" stroke="#B8860B" />
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>Flagged notes</span>
+          <span style={{
+            fontSize: 10, fontWeight: 700, color: "#FFFFFF", background: "#B8860B",
+            borderRadius: 9999, padding: "2px 7px", minWidth: 16, textAlign: "center",
+          }}>{unresolved.length}</span>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+          style={{ transition: "transform 200ms", transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}>
+          <path d="M4 6L8 10L12 6" stroke="#717182" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {expanded && (
+        <div style={{ marginTop: 10 }}>
+          {sorted.map(note => {
+            const wo = woMap[note.work_order_id];
+            const isResolved = !!note.resolved_at;
+            const isCatl = note.author?.toUpperCase() === "CATL";
+            const custName = wo?.customer_id && customerMap?.[wo.customer_id]
+              ? customerMap[wo.customer_id]
+              : wo?.buyer_num ? `#${wo.buyer_num}` : "Unknown";
+
+            return (
+              <div key={note.id} style={{
+                background: "#FFFFFF", borderRadius: 10, padding: "10px 12px", marginBottom: 8,
+                border: isResolved ? "1px solid #D4D4D0" : "1.5px solid #F3D12A",
+                opacity: isResolved ? 0.55 : 1,
+              }}>
+                {/* Row 1: Badge + Customer */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
+                    padding: "2px 8px", textTransform: "uppercase",
+                    background: wo?.entity_type === "buyer" ? "rgba(85,186,170,0.15)" : "rgba(243,209,42,0.12)",
+                    color: wo?.entity_type === "buyer" ? "#55BAAA" : "#B8860B",
+                  }}>
+                    {wo?.entity_type === "buyer" ? "BUYER" : "SELLER"}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{custName}</span>
+                </div>
+                {/* Row 2: Note text */}
+                <div style={{ fontSize: 13, color: "#1A1A1A", lineHeight: 1.4, marginBottom: 4 }}>{note.text}</div>
+                {/* Row 3: Author + time + resolve */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: isCatl ? "#55BAAA" : "#0E2646" }}>{note.author}</span>
+                  <span style={{ fontSize: 11, color: "#717182" }}>{fmtTime(note.created_at)}</span>
+                  <div style={{ flex: 1 }} />
+                  {isResolved ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#55BAAA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "#55BAAA" }}>
+                        Resolved · {note.resolved_by} {fmtTime(note.resolved_at!)}
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleResolve(note.id)}
+                      style={{
+                        border: "1px solid #55BAAA", background: "transparent", color: "#55BAAA",
+                        fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 9999,
+                        cursor: "pointer",
+                      }}
+                    >Resolve</button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const SaleDayDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -677,6 +821,26 @@ const SaleDayDetail: React.FC = () => {
     if (wo.buyer_num) return `#${wo.buyer_num}`;
     return null;
   };
+
+  // Flagged notes count per work order
+  const woIds = useMemo(() => workOrders.map(wo => wo.id), [workOrders]);
+  const { data: flaggedCountMap } = useQuery({
+    queryKey: ["flagged_notes_counts", woIds],
+    enabled: woIds.length > 0,
+    queryFn: async () => {
+      const { data } = await (supabase.from("work_order_notes") as any)
+        .select("work_order_id, id, resolved_at")
+        .in("work_order_id", woIds)
+        .eq("is_flagged", true);
+      const map: Record<string, number> = {};
+      (data ?? []).forEach((n: any) => {
+        if (!n.resolved_at) {
+          map[n.work_order_id] = (map[n.work_order_id] || 0) + 1;
+        }
+      });
+      return map;
+    },
+  });
 
   const { data: consignmentsResult } = useConsignments(id, saleDay?.date);
   const consignments = consignmentsResult?.data ?? [];
@@ -741,6 +905,9 @@ const SaleDayDetail: React.FC = () => {
 
   return (
     <div className="px-4">
+      {/* Flagged Notes Alert Banner */}
+      <FlaggedNotesBanner workOrders={workOrders} customerMap={customerMap} showToast={showToast} />
+
       {/* 2x2 Stat Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "0 0 12px" }}>
         {/* Consignments */}
@@ -945,6 +1112,15 @@ const SaleDayDetail: React.FC = () => {
                       }}>
                         {wo.entity_type === "seller" ? "SELLER" : "BUYER"}
                       </span>
+                      {(flaggedCountMap?.[wo.id] ?? 0) > 0 && (
+                        <span style={{
+                          padding: "3px 6px", borderRadius: 9999,
+                          background: "rgba(243,209,42,0.25)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <FlagSvg size={10} fill="#F3D12A" stroke="#F3D12A" />
+                        </span>
+                      )}
                       {wo.work_complete && (
                         <span style={{
                           fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
