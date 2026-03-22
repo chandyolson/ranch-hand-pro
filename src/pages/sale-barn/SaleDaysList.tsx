@@ -6,7 +6,7 @@ import { useSaleDays } from "@/hooks/sale-barn/useSaleDays";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import FieldRow from "@/components/calving/FieldRow";
-import type { SaleDay, WorkOrder } from "@/types/sale-barn";
+import type { SaleDay, WorkOrder, Consignment } from "@/types/sale-barn";
 
 const STATUS_OPTIONS = ["All", "Active", "Completed", "Scheduled"] as const;
 
@@ -83,6 +83,31 @@ const SaleDaysList: React.FC = () => {
       return (data ?? []) as unknown as WorkOrder[];
     },
   });
+
+  // Fetch consignments for all sale days
+  const { data: allConsignments } = useQuery({
+    queryKey: ["consignments_for_sale_days", saleDayIds],
+    enabled: saleDayIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("consignments") as any)
+        .select("*")
+        .in("sale_day_id", saleDayIds);
+      if (error) throw error;
+      return (data ?? []) as unknown as Consignment[];
+    },
+  });
+
+  // Group consignments by sale_day_id
+  const consignMap = useMemo(() => {
+    const m: Record<string, Consignment[]> = {};
+    (allConsignments ?? []).forEach((c) => {
+      if (c.sale_day_id) {
+        if (!m[c.sale_day_id]) m[c.sale_day_id] = [];
+        m[c.sale_day_id].push(c);
+      }
+    });
+    return m;
+  }, [allConsignments]);
 
   // Group work orders by sale_day_id
   const woMap = useMemo(() => {
@@ -418,6 +443,7 @@ const SaleDaysList: React.FC = () => {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {filtered.map((sd) => {
             const ws = getWoStats(sd.id);
+            const sdConsignments = consignMap[sd.id] || [];
             const statusUpper = sd.status.toUpperCase();
             const badgeStyle: React.CSSProperties =
               sd.status === "active"
@@ -453,6 +479,13 @@ const SaleDaysList: React.FC = () => {
                   <span style={{ margin: "0 6px", color: "rgba(240,240,240,0.25)" }}>|</span>
                   {ws.buyerLots} buyer lot{ws.buyerLots !== 1 ? "s" : ""} · {ws.buyerHead} hd
                 </div>
+
+                {/* Consignments */}
+                {sdConsignments.length > 0 && (
+                  <div style={{ fontSize: 12, fontWeight: 500, color: "rgba(240,240,240,0.45)", marginTop: 2 }}>
+                    {sdConsignments.length} consignment{sdConsignments.length !== 1 ? "s" : ""}
+                  </div>
+                )}
 
                 {/* Row 3 */}
                 <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 8 }}>

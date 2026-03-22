@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
@@ -529,6 +529,7 @@ const SpecialChargesSheet: React.FC<{
 // ── Main Form ──
 const WorkOrderForm: React.FC = () => {
   const { id: saleDayId, woId } = useParams<{ id: string; woId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { operationId } = useOperation();
   const { showToast } = useToast();
@@ -591,6 +592,25 @@ const WorkOrderForm: React.FC = () => {
     }
   }, [existingWo]);
 
+  // Pre-fill from query params (consignment flow)
+  useEffect(() => {
+    if (isEdit || existingWo) return;
+    const qCustomer = searchParams.get("customer");
+    const qHeadCount = searchParams.get("headCount");
+    const qAnimalType = searchParams.get("animalType");
+    if (qCustomer && !customer) {
+      // Search for customer by name to get the full object
+      (supabase.from("sale_barn_customers") as any)
+        .select("*").eq("operation_id", operationId)
+        .ilike("name", qCustomer).limit(1)
+        .then(({ data }: any) => {
+          if (data && data.length > 0) setCustomer(data[0] as SaleBarnCustomer);
+        });
+    }
+    if (qHeadCount && !headCount) setHeadCount(qHeadCount);
+    if (qAnimalType && !animalType) setAnimalType(qAnimalType);
+  }, [searchParams, isEdit, existingWo]);
+
   // Price lookup & billing calc
   const priceRow = useMemo(() => {
     if (!workType) return null;
@@ -652,6 +672,13 @@ const WorkOrderForm: React.FC = () => {
     if (error) {
       showToast("error", error.message);
     } else {
+      // If created from a consignment, mark it as converted
+      const consignmentId = searchParams.get("consignmentId");
+      if (consignmentId && !isEdit) {
+        await (supabase.from("consignments") as any)
+          .update({ status: "converted" })
+          .eq("id", consignmentId);
+      }
       showToast("success", isEdit ? "Work order updated" : "Work order created");
       navigate(`/sale-barn/${saleDayId}`);
     }

@@ -102,6 +102,20 @@ export interface DesignationKey {
   created_at: string;
 }
 
+export interface Consignment {
+  id: string;
+  operation_id: string;
+  sale_day_id: string | null;
+  customer_id: string | null;
+  customer_name: string;
+  head_count: number;
+  animal_type: string | null;
+  notes: string | null;
+  taken_by: string | null;
+  status: 'pending' | 'arrived' | 'converted' | 'cancelled';
+  created_at: string;
+}
+
 export interface SortRecord {
   id: string;
   animal_id: string;

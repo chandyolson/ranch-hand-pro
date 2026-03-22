@@ -1,10 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOperation } from "@/contexts/OperationContext";
 import { useWorkOrders } from "@/hooks/sale-barn/useWorkOrders";
+import { useConsignments } from "@/hooks/sale-barn/useConsignments";
 import { useChuteSideToast as useToast } from "@/components/ToastContext";
-import type { SaleDay, WorkOrder, SaleBarnAnimal, SortRecord } from "@/types/sale-barn";
+import FieldRow from "@/components/calving/FieldRow";
+import type { SaleDay, WorkOrder, SaleBarnAnimal, SortRecord, Consignment, SaleBarnCustomer } from "@/types/sale-barn";
 
 const fmtDate = (iso: string) => {
   const d = new Date(iso + "T12:00:00");
@@ -14,8 +17,342 @@ const fmtDate = (iso: string) => {
 const fmtCurrency = (n: number) =>
   `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const TABS = ["Work Orders", "Reconciliation", "Reports"] as const;
+const TABS = ["Consignments", "Work Orders", "Reconciliation", "Reports"] as const;
 const WO_FILTERS = ["All", "Sellers", "Buyers", "Incomplete"] as const;
+
+const ANIMAL_TYPES = ["Bred Heifers", "Feeder Calves", "Pairs", "Bull", "Bred Cows", "Weigh Up Cows", "Baby Calf", "Heifers", "Yearling Bull"];
+
+const CONSIGN_INPUT: React.CSSProperties = {
+  height: 36, borderRadius: 8, border: "1px solid #D4D4D0",
+  fontSize: 16, fontFamily: "Inter, sans-serif", padding: "0 12px",
+  outline: "none", width: "100%", boxSizing: "border-box",
+};
+
+const CONSIGN_BADGE: Record<string, { bg: string; text: string }> = {
+  pending: { bg: "rgba(243,209,42,0.12)", text: "#B8860B" },
+  arrived: { bg: "rgba(85,186,170,0.15)", text: "#55BAAA" },
+  converted: { bg: "rgba(14,38,70,0.10)", text: "#0E2646" },
+  cancelled: { bg: "rgba(26,26,26,0.06)", text: "#717182" },
+};
+
+// ── Customer Typeahead for Consignment ──
+const ConsignCustomerSearch: React.FC<{
+  operationId: string;
+  value: string;
+  customerId: string | null;
+  onChange: (name: string, id: string | null) => void;
+}> = ({ operationId, value, customerId, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const { data: suggestions } = useQuery({
+    queryKey: ["consign_cust_search", operationId, value],
+    enabled: value.length >= 2 && !customerId,
+    queryFn: async () => {
+      const { data } = await (supabase.from("sale_barn_customers") as any)
+        .select("*").eq("operation_id", operationId)
+        .ilike("name", `%${value}%`).limit(20);
+      return (data ?? []) as unknown as SaleBarnCustomer[];
+    },
+  });
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ flex: 1, minWidth: 0, position: "relative" }}>
+      <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
+        <input
+          style={{
+            ...CONSIGN_INPUT,
+            background: customerId ? "rgba(85,186,170,0.06)" : "#FFFFFF",
+          }}
+          placeholder="Search customer…"
+          value={value}
+          onChange={(e) => { onChange(e.target.value, null); setOpen(true); }}
+          onFocus={() => { if (value.length >= 2 && !customerId) setOpen(true); }}
+        />
+        {customerId && (
+          <button
+            onClick={() => { onChange("", null); }}
+            style={{
+              position: "absolute", right: 8, background: "none", border: "none",
+              cursor: "pointer", fontSize: 16, color: "#717182", lineHeight: 1,
+            }}
+          >×</button>
+        )}
+      </div>
+      {open && suggestions && suggestions.length > 0 && (
+        <div style={{
+          position: "absolute", top: 40, left: 0, right: 0, zIndex: 50,
+          background: "#FFFFFF", borderRadius: 10, border: "1px solid #D4D4D0",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.10)", maxHeight: 200, overflowY: "auto",
+        }}>
+          {suggestions.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => { onChange(c.name, c.id); setOpen(false); }}
+              style={{
+                display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
+                border: "none", background: "none", cursor: "pointer",
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{c.name}</div>
+              {c.address && <div style={{ fontSize: 12, color: "#717182" }}>{c.address}</div>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Consignments Tab ──
+const ConsignmentsTab: React.FC<{
+  consignments: Consignment[];
+  saleDayId: string;
+  operationId: string;
+  activeTab: string;
+  showToast: (v: string, m: string) => void;
+  navigate: (to: string) => void;
+}> = ({ consignments, saleDayId, operationId, activeTab, showToast, navigate }) => {
+  const queryClient = useQueryClient();
+  const [formOpen, setFormOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [custName, setCustName] = useState("");
+  const [custId, setCustId] = useState<string | null>(null);
+  const [headCount, setHeadCount] = useState("");
+  const [animalType, setAnimalType] = useState("");
+  const [takenBy, setTakenBy] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  if (activeTab !== "Consignments") return null;
+
+  const totalHead = consignments.reduce((s, c) => s + (c.head_count || 0), 0);
+  const pendingCount = consignments.filter((c) => c.status === "pending").length;
+  const arrivedCount = consignments.filter((c) => c.status === "arrived").length;
+
+  const resetForm = () => {
+    setCustName(""); setCustId(null); setHeadCount(""); setAnimalType("");
+    setTakenBy(""); setNotes(""); setEditId(null);
+  };
+
+  const openEdit = (c: Consignment) => {
+    setCustName(c.customer_name); setCustId(c.customer_id); setHeadCount(String(c.head_count));
+    setAnimalType(c.animal_type || ""); setTakenBy(c.taken_by || ""); setNotes(c.notes || "");
+    setEditId(c.id); setFormOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!custName.trim()) { showToast("error", "Customer name is required"); return; }
+    const hc = parseInt(headCount) || 0;
+    if (hc < 1) { showToast("error", "Enter head count"); return; }
+    setSaving(true);
+    const row: Record<string, any> = {
+      operation_id: operationId,
+      sale_day_id: saleDayId,
+      customer_id: custId,
+      customer_name: custName.trim(),
+      head_count: hc,
+      animal_type: animalType || null,
+      taken_by: takenBy || null,
+      notes: notes || null,
+      status: "pending",
+    };
+    let error: any;
+    if (editId) {
+      ({ error } = await (supabase.from("consignments") as any).update(row).eq("id", editId));
+    } else {
+      ({ error } = await (supabase.from("consignments") as any).insert(row));
+    }
+    setSaving(false);
+    if (error) { showToast("error", error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ["consignments"] });
+    showToast("success", editId ? "Consignment updated" : "Consignment saved");
+    setFormOpen(false); resetForm();
+  };
+
+  const fmtTime = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " +
+      d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  };
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      {/* Stats row */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+        {[
+          { label: `${consignments.length} total`, bg: "rgba(14,38,70,0.06)", text: "#0E2646" },
+          { label: `${totalHead} hd`, bg: "rgba(14,38,70,0.06)", text: "#0E2646" },
+          { label: `${pendingCount} pending`, bg: "rgba(243,209,42,0.12)", text: "#B8860B" },
+          { label: `${arrivedCount} arrived`, bg: "rgba(85,186,170,0.15)", text: "#55BAAA" },
+        ].map((p) => (
+          <span key={p.label} style={{
+            fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 9999,
+            background: p.bg, color: p.text,
+          }}>{p.label}</span>
+        ))}
+      </div>
+
+      {/* Title + Add */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontSize: 16, fontWeight: 700, color: "#0E2646" }}>Consignments</span>
+        <button
+          className="active:scale-[0.95]"
+          onClick={() => { if (formOpen && !editId) { setFormOpen(false); } else { resetForm(); setFormOpen(true); } }}
+          style={{
+            width: 36, height: 36, borderRadius: "50%",
+            background: "#F3D12A", border: "none",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", fontSize: 20, fontWeight: 700, color: "#1A1A1A", lineHeight: 1,
+          }}
+        >
+          {formOpen && !editId ? "×" : "+"}
+        </button>
+      </div>
+
+      {/* Inline Form */}
+      {formOpen && (
+        <div style={{
+          background: "#FFFFFF", borderRadius: 12, border: "1px solid #F3D12A",
+          boxShadow: "0 0 0 2px rgba(243,209,42,0.15)", padding: "12px 14px", marginBottom: 12,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#0E2646", marginBottom: 10 }}>
+            {editId ? "Edit Consignment" : "New Consignment"}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <FieldRow label="Customer" req>
+              <ConsignCustomerSearch
+                operationId={operationId}
+                value={custName}
+                customerId={custId}
+                onChange={(name, id) => { setCustName(name); setCustId(id); }}
+              />
+            </FieldRow>
+            <FieldRow label="Head Ct" req>
+              <input
+                type="number" min="1" value={headCount}
+                onChange={(e) => setHeadCount(e.target.value)}
+                style={CONSIGN_INPUT}
+              />
+            </FieldRow>
+            <FieldRow label="Animal Type">
+              <select
+                value={animalType}
+                onChange={(e) => setAnimalType(e.target.value)}
+                style={CONSIGN_INPUT}
+              >
+                <option value="">Select type</option>
+                {ANIMAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </FieldRow>
+            <FieldRow label="Taken By">
+              <input
+                value={takenBy}
+                onChange={(e) => setTakenBy(e.target.value)}
+                placeholder="Who took the call"
+                style={CONSIGN_INPUT}
+              />
+            </FieldRow>
+            <FieldRow label="Notes">
+              <input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any details from the caller"
+                style={CONSIGN_INPUT}
+              />
+            </FieldRow>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button
+              onClick={() => { setFormOpen(false); resetForm(); }}
+              style={{
+                flex: 1, height: 38, borderRadius: 9999, border: "1px solid #D4D4D0",
+                background: "transparent", fontSize: 13, fontWeight: 600, color: "#717182", cursor: "pointer",
+              }}
+            >Cancel</button>
+            <button
+              onClick={handleSave} disabled={saving}
+              className="active:scale-[0.97]"
+              style={{
+                flex: 1, height: 38, borderRadius: 9999, border: "none",
+                background: "#F3D12A", fontSize: 13, fontWeight: 700, color: "#1A1A1A",
+                boxShadow: "0 2px 8px rgba(243,209,42,0.30)", cursor: "pointer",
+                opacity: saving ? 0.6 : 1,
+              }}
+            >{saving ? "Saving..." : editId ? "Update Consignment" : "Save Consignment"}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Consignment Cards */}
+      {consignments.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "30px 0", color: "rgba(26,26,26,0.35)", fontSize: 14 }}>
+          No consignments yet
+        </div>
+      ) : (
+        consignments.map((c) => {
+          const badge = CONSIGN_BADGE[c.status] || CONSIGN_BADGE.pending;
+          return (
+            <div
+              key={c.id}
+              onClick={() => openEdit(c)}
+              style={{
+                background: "#FFFFFF", borderRadius: 10,
+                border: "1px solid rgba(212,212,208,0.60)",
+                padding: "12px 14px", marginBottom: 8, cursor: "pointer",
+              }}
+            >
+              {/* Row 1 */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>{c.customer_name}</span>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
+                  padding: "3px 8px", background: badge.bg, color: badge.text, textTransform: "uppercase",
+                }}>{c.status}</span>
+              </div>
+              {/* Row 2 */}
+              <div style={{ fontSize: 13, fontWeight: 400, color: "#717182", marginTop: 4 }}>
+                {c.head_count} hd{c.animal_type ? ` · ${c.animal_type}` : ""}
+              </div>
+              {/* Row 3 */}
+              <div style={{ fontSize: 12, fontWeight: 400, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
+                {c.taken_by ? `Taken by ${c.taken_by} · ` : ""}{fmtTime(c.created_at)}
+              </div>
+              {/* Notes */}
+              {c.notes && (
+                <div style={{
+                  fontSize: 12, fontWeight: 400, color: "#717182", marginTop: 4,
+                  padding: "6px 10px", background: "#F5F5F0", borderRadius: 8,
+                }}>{c.notes}</div>
+              )}
+              {/* Create WO action */}
+              {c.status === "arrived" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/sale-barn/${saleDayId}/work-order/new?customer=${encodeURIComponent(c.customer_name)}&headCount=${c.head_count}&animalType=${encodeURIComponent(c.animal_type || "")}&consignmentId=${c.id}`);
+                  }}
+                  style={{
+                    marginTop: 8, background: "none", border: "none", cursor: "pointer",
+                    fontSize: 12, fontWeight: 700, color: "#55BAAA", padding: 0,
+                  }}
+                >Create Work Order →</button>
+              )}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+};
 
 // ── RECONCILIATION TAB ──
 interface PenRow {
@@ -279,6 +616,7 @@ const ReportsTab: React.FC<{ activeTab: string; showToast: (v: string, m: string
 const SaleDayDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { operationId } = useOperation();
   const { showToast } = useToast();
 
   const { data: saleDay, isLoading: sdLoading } = useQuery({
@@ -298,7 +636,10 @@ const SaleDayDetail: React.FC = () => {
   const { data: workOrdersResult } = useWorkOrders(id);
   const workOrders = workOrdersResult?.data ?? [];
 
-  const [activeTab, setActiveTab] = useState<string>("Work Orders");
+  const { data: consignmentsResult } = useConsignments(id);
+  const consignments = consignmentsResult?.data ?? [];
+
+  const [activeTab, setActiveTab] = useState<string>("Consignments");
   const [woFilter, setWoFilter] = useState<string>("All");
   const [woSearch, setWoSearch] = useState("");
 
@@ -358,8 +699,9 @@ const SaleDayDetail: React.FC = () => {
   return (
     <div className="px-4">
       {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 14 }}>
         {[
+          { label: "CONSIGN", value: consignments.length, subtitle: `${consignments.reduce((s, c) => s + (c.head_count || 0), 0)} hd expected`, angle: 125 },
           { label: "ORDERS", value: stats.orders, subtitle: `${stats.sellers}S / ${stats.buyers}B`, angle: 130 },
           { label: "TOTAL HD", value: stats.totalHead, subtitle: `${stats.worked} worked`, angle: 140 },
           { label: "CATL", value: fmtCurrency(stats.totalCharge), subtitle: "Revenue", angle: 155 },
@@ -619,6 +961,14 @@ const SaleDayDetail: React.FC = () => {
         </div>
       )}
 
+      <ConsignmentsTab
+        consignments={consignments}
+        saleDayId={id!}
+        operationId={operationId}
+        activeTab={activeTab}
+        showToast={showToast}
+        navigate={navigate}
+      />
       <ReconciliationTab workOrders={workOrders} saleDayId={id!} activeTab={activeTab} />
       <ReportsTab activeTab={activeTab} showToast={showToast} />
     </div>
