@@ -636,7 +636,7 @@ const SaleDayDetail: React.FC = () => {
   const { data: workOrdersResult } = useWorkOrders(id);
   const workOrders = workOrdersResult?.data ?? [];
 
-  const { data: consignmentsResult } = useConsignments(id);
+  const { data: consignmentsResult } = useConsignments(id, saleDay?.date);
   const consignments = consignmentsResult?.data ?? [];
 
   const [activeTab, setActiveTab] = useState<string>("Consignments");
