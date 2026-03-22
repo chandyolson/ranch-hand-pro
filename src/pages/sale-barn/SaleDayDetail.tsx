@@ -871,7 +871,7 @@ const FlaggedNotesBanner: React.FC<{
                             value={replyText}
                             onChange={e => setReplyText(e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") handleSendReply(note); }}
-                            placeholder="Reply to this note..."
+                            placeholder="Reply to this message..."
                             style={{
                               flex: 1, height: 36, borderRadius: 8, border: "1px solid #D4D4D0",
                               fontSize: 16, fontFamily: "Inter, sans-serif", padding: "0 12px",
