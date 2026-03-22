@@ -48,6 +48,7 @@ import DesignationKeyConfig from "@/pages/sale-barn/DesignationKeyConfig";
 import ConsignmentsPage from "@/pages/sale-barn/ConsignmentsPage";
 import ReportsPage from "@/pages/sale-barn/ReportsPage";
 import WorkedAnimalsPage from "@/pages/sale-barn/WorkedAnimalsPage";
+import DayBillingPage from "@/pages/sale-barn/DayBillingPage";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
@@ -97,7 +98,7 @@ const App = () => (
           <Route path="sale-barn/settings/designations" element={<DesignationKeyConfig />} />
           <Route path="sale-barn/:id" element={<SaleDayDetail />} />
           <Route path="sale-barn/:id/consignments" element={<ConsignmentsPage />} />
-          <Route path="sale-barn/:id/billing" element={<PlaceholderScreen title="Day Billing" />} />
+          <Route path="sale-barn/:id/billing" element={<DayBillingPage />} />
           <Route path="sale-barn/:id/reports" element={<ReportsPage />} />
           <Route path="sale-barn/:id/animals" element={<WorkedAnimalsPage />} />
           <Route path="sale-barn/:id/work-order/new" element={<WorkOrderForm />} />
