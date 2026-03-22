@@ -2205,6 +2205,7 @@ export type Database = {
         Row: {
           back_tag: string | null
           breed: string | null
+          buyer_work_order_id: string | null
           created_at: string
           designation_key: string | null
           eid: string
@@ -2216,12 +2217,14 @@ export type Database = {
           sex: string | null
           sort_dest_pen: string | null
           sorted: boolean
+          source_animal_id: string | null
           tag_number: string | null
           work_order_id: string
         }
         Insert: {
           back_tag?: string | null
           breed?: string | null
+          buyer_work_order_id?: string | null
           created_at?: string
           designation_key?: string | null
           eid: string
@@ -2233,12 +2236,14 @@ export type Database = {
           sex?: string | null
           sort_dest_pen?: string | null
           sorted?: boolean
+          source_animal_id?: string | null
           tag_number?: string | null
           work_order_id: string
         }
         Update: {
           back_tag?: string | null
           breed?: string | null
+          buyer_work_order_id?: string | null
           created_at?: string
           designation_key?: string | null
           eid?: string
@@ -2250,10 +2255,25 @@ export type Database = {
           sex?: string | null
           sort_dest_pen?: string | null
           sorted?: boolean
+          source_animal_id?: string | null
           tag_number?: string | null
           work_order_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sale_barn_animals_buyer_work_order_id_fkey"
+            columns: ["buyer_work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_barn_animals_source_animal_id_fkey"
+            columns: ["source_animal_id"]
+            isOneToOne: false
+            referencedRelation: "sale_barn_animals"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sale_barn_animals_work_order_id_fkey"
             columns: ["work_order_id"]
