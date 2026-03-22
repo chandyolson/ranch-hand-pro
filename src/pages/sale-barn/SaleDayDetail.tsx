@@ -713,7 +713,7 @@ const FlaggedNotesBanner: React.FC<{
       .eq("id", noteId);
     qc.invalidateQueries({ queryKey: ["flagged_notes"] });
     qc.invalidateQueries({ queryKey: ["flagged_replies"] });
-    showToast("success", "Note resolved");
+    showToast("success", "Message resolved");
   };
 
   const handleSendReply = async (parentNote: WorkOrderNote) => {
