@@ -927,15 +927,20 @@ const SaleDayDetail: React.FC = () => {
         </button>
 
         {/* Total Head */}
-        <div style={{
-          background: "#0E2646", borderRadius: 12, padding: 14, minHeight: 80,
-          display: "flex", flexDirection: "column", justifyContent: "flex-end",
-        }}>
+        <button
+          onClick={() => navigate(`/sale-barn/${id}/animals`)}
+          className="active:scale-[0.97]"
+          style={{
+            background: "#0E2646", borderRadius: 12, padding: 14, minHeight: 80,
+            display: "flex", flexDirection: "column", justifyContent: "flex-end",
+            border: "none", cursor: "pointer", textAlign: "left",
+          }}
+        >
           <div style={{ fontSize: 22, fontWeight: 700, color: "#FFFFFF", lineHeight: 1 }}>
             {stats.totalHead}
           </div>
           <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(240,240,240,0.55)", marginTop: 4 }}>Total Head</div>
-        </div>
+        </button>
 
         {/* Revenue */}
         <button
