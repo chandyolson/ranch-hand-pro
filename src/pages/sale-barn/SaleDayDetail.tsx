@@ -1277,14 +1277,18 @@ const SaleDayDetail: React.FC = () => {
                           <FlagSvg size={10} fill="#F3D12A" stroke="#F3D12A" />
                         </span>
                       )}
-                      {wo.work_complete && (
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
-                          padding: "3px 8px", background: "rgba(243,209,42,0.12)", color: "#F3D12A",
-                        }}>
-                          DONE
-                        </span>
-                      )}
+                      {(() => {
+                        const isDone = wo.work_complete && (wo.entity_type === "seller" || wo.health_complete);
+                        const needsWork = !wo.work_complete;
+                        const needsHealth = !wo.health_complete && wo.entity_type === "buyer";
+                        if (isDone) return (
+                          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999, padding: "3px 8px", background: "rgba(85,186,170,0.15)", color: "#55BAAA" }}>DONE</span>
+                        );
+                        return (<>
+                          {needsWork && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999, padding: "3px 8px", background: "rgba(184,134,11,0.12)", color: "#B8860B" }}>NEEDS WORK</span>}
+                          {needsHealth && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999, padding: "3px 8px", background: "rgba(155,35,53,0.12)", color: "#9B2335" }}>NEEDS HEALTH</span>}
+                        </>);
+                      })()}
                     </div>
 
                     {/* Row 2 */}
