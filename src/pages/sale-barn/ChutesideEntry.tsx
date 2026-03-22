@@ -176,6 +176,7 @@ const ChutesideEntry: React.FC = () => {
   /* form state */
   const eidRef = useRef<HTMLInputElement>(null);
   const [eid, setEid] = useState("");
+  const [eidError, setEidError] = useState("");
   const [backTag, setBackTag] = useState("");
   const [tagNumber, setTagNumber] = useState("");
   const [designation, setDesignation] = useState("");
@@ -192,8 +193,25 @@ const ChutesideEntry: React.FC = () => {
 
   useEffect(() => { if (wo?.group_notes) setGroupNotes(wo.group_notes); }, [wo]);
 
+  /* EID duplicate set — built from fetched animals */
+  const usedEids = useMemo(() => new Set(animals.map((a) => a.eid)), [animals]);
+  const localEidsRef = useRef<Set<string>>(new Set());
+  useEffect(() => { localEidsRef.current = new Set(animals.map((a) => a.eid)); }, [animals]);
+
+  /* EID validation helper */
+  const validateEid = useCallback((value: string): string => {
+    if (!value.trim()) return "EID is required";
+    if (!/^\d+$/.test(value)) return "EID must be numbers only";
+    if (value.length !== 15) return "EID must be 15 digits";
+    if (!value.startsWith("840")) return "EID must start with 840";
+    if (localEidsRef.current.has(value)) return "Duplicate EID — already scanned in this work order";
+    return "";
+  }, []);
+
+  const eidIsValid = eid.length === 15 && /^\d{15}$/.test(eid) && eid.startsWith("840") && !localEidsRef.current.has(eid);
+
   const clearForm = useCallback(() => {
-    setEid(""); setBackTag(""); setTagNumber(""); setDesignation("");
+    setEid(""); setEidError(""); setBackTag(""); setTagNumber(""); setDesignation("");
     setPregStatus(""); setSex(""); setMemo(""); setQuickNotes([]); setEid2("");
     setSorted(false); setSortDestPen("");
     setTimeout(() => eidRef.current?.focus(), 50);
@@ -214,7 +232,13 @@ const ChutesideEntry: React.FC = () => {
 
   /* save */
   const handleSave = useCallback(async () => {
-    if (!eid.trim()) { showToast("error", "EID is required"); eidRef.current?.focus(); return; }
+    const err = validateEid(eid);
+    if (err) {
+      setEidError(err);
+      eidRef.current?.focus();
+      try { navigator.vibrate?.(err.startsWith("Duplicate") ? [100, 50, 100] : 100); } catch {}
+      return;
+    }
     setSaving(true);
 
     const breedVal = quickNotes.find((n) => BREED_NOTES.includes(n)) ?? null;
@@ -236,7 +260,13 @@ const ChutesideEntry: React.FC = () => {
     };
 
     const { error } = await (supabase.from("sale_barn_animals") as any).insert(animalRow);
-    if (error) { setSaving(false); showToast("error", error.message); return; }
+    if (error) {
+      setSaving(false);
+      console.error("Save failed:", error);
+      showToast("error", `Save failed: ${error.message}`);
+      eidRef.current?.focus();
+      return;
+    }
 
     if (sorted && sortDestPen) {
       await (supabase.from("sort_records") as any).insert({
@@ -247,13 +277,16 @@ const ChutesideEntry: React.FC = () => {
       });
     }
 
+    /* track new EID locally */
+    localEidsRef.current.add(eid.trim());
+
     setSaving(false);
     refetchAnimals();
     const newCount = worked + 1;
     showToast("success", `Saved #${newCount} of ${expected} — Next`);
     try { navigator.vibrate?.(50); } catch {}
     clearForm();
-  }, [eid, backTag, eid2, tagNumber, designation, pregStatus, sex, memo, quickNotes, sorted, sortDestPen, woId, wo, worked, expected, clearForm, showToast, refetchAnimals]);
+  }, [eid, backTag, eid2, tagNumber, designation, pregStatus, sex, memo, quickNotes, sorted, sortDestPen, woId, wo, worked, expected, clearForm, showToast, refetchAnimals, validateEid]);
 
   /* detail summary for badge */
   const selectedBreed = quickNotes.find((n) => BREED_NOTES.includes(n)) ?? "";
