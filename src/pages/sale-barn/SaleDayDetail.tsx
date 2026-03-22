@@ -699,8 +699,9 @@ const SaleDayDetail: React.FC = () => {
   return (
     <div className="px-4">
       {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 14 }}>
         {[
+          { label: "CONSIGN", value: consignments.length, subtitle: `${consignments.reduce((s, c) => s + (c.head_count || 0), 0)} hd expected`, angle: 125 },
           { label: "ORDERS", value: stats.orders, subtitle: `${stats.sellers}S / ${stats.buyers}B`, angle: 130 },
           { label: "TOTAL HD", value: stats.totalHead, subtitle: `${stats.worked} worked`, angle: 140 },
           { label: "CATL", value: fmtCurrency(stats.totalCharge), subtitle: "Revenue", angle: 155 },
