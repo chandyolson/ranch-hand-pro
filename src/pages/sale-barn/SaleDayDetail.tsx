@@ -905,6 +905,9 @@ const SaleDayDetail: React.FC = () => {
 
   return (
     <div className="px-4">
+      {/* Flagged Notes Alert Banner */}
+      <FlaggedNotesBanner workOrders={workOrders} customerMap={customerMap} showToast={showToast} />
+
       {/* 2x2 Stat Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "0 0 12px" }}>
         {/* Consignments */}
