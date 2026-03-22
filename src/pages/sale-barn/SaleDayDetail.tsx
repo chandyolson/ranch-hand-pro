@@ -988,7 +988,7 @@ const SaleDayDetail: React.FC = () => {
   const consignments = consignmentsResult?.data ?? [];
 
   const [activeTab, setActiveTab] = useState<string>("Work Orders");
-  const [woFilter, setWoFilter] = useState<string>("All");
+  const [woFilter, setWoFilter] = useState<string>("all");
   const [woSearch, setWoSearch] = useState("");
 
   // Billing calculations
