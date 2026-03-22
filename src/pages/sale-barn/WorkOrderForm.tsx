@@ -929,7 +929,11 @@ const WorkOrderForm: React.FC = () => {
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 40,
         background: "#FFFFFF", borderTop: "1px solid #D4D4D0",
-        padding: "12px 16px", boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
+        boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
+      }}>
+      <div style={{
+        maxWidth: 600, margin: "0 auto",
+        padding: "12px 16px",
         display: "flex", gap: 10,
       }}>
         <button
