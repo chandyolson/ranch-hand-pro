@@ -1210,22 +1210,29 @@ const SaleDayDetail: React.FC = () => {
 
           {/* Filter Pills */}
           <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
-            {WO_FILTERS.map((f) => (
-              <button
-                key={f}
-                className="active:scale-[0.97]"
-                onClick={() => setWoFilter(f)}
-                style={{
-                  height: 32, borderRadius: 9999, padding: "0 14px",
-                  fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
-                  border: woFilter === f ? "none" : "1px solid #D4D4D0",
-                  background: woFilter === f ? "#0E2646" : "#FFFFFF",
-                  color: woFilter === f ? "#FFFFFF" : "rgba(26,26,26,0.50)",
-                }}
-              >
-                {f} ({filterCounts[f as keyof typeof filterCounts]})
-              </button>
-            ))}
+            {WO_FILTERS.map((f) => {
+              const isActive = woFilter === f;
+              const count = filterCounts[f as keyof typeof filterCounts];
+              let bg = isActive ? "#0E2646" : "#FFFFFF";
+              let color = isActive ? "#FFFFFF" : "rgba(26,26,26,0.50)";
+              let border = isActive ? "none" : "1px solid #D4D4D0";
+              if (isActive && f === "needs_work") { bg = "#B8860B"; color = "#FFFFFF"; border = "none"; }
+              if (isActive && f === "needs_health") { bg = "#9B2335"; color = "#FFFFFF"; border = "none"; }
+              return (
+                <button
+                  key={f}
+                  className="active:scale-[0.97]"
+                  onClick={() => setWoFilter(f)}
+                  style={{
+                    height: 32, borderRadius: 9999, padding: "0 14px",
+                    fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+                    border, background: bg, color,
+                  }}
+                >
+                  {WO_FILTER_LABELS[f]} ({count})
+                </button>
+              );
+            })}
           </div>
 
           {/* Work Order Cards */}
