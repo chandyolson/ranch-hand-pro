@@ -129,12 +129,12 @@ const PriceScheduleTab: React.FC = () => {
 
               {isExpanded && (
                 <div style={{ padding: "10px 14px 12px", background: detailBg, borderBottom: "1px solid rgba(212,212,208,0.30)" }}>
-                  {([
-                    { label: "SOL Charge", value: sol, editable: true, field: "sol" as const },
-                    { label: "Vet Charge", value: vet, editable: true, field: "vet" as const },
-                    { label: "Admin", value: p.admin_pct, editable: false, suffix: "%" },
-                    { label: "Tax", value: p.tax_rate, editable: false, suffix: "%" },
-                  ] as const).map((line) => (
+                  {[
+                    { label: "SOL Charge", value: sol, editable: true, field: "sol", suffix: "" },
+                    { label: "Vet Charge", value: vet, editable: true, field: "vet", suffix: "" },
+                    { label: "Admin", value: p.admin_pct, editable: false, field: "", suffix: "%" },
+                    { label: "Tax", value: p.tax_rate, editable: false, field: "", suffix: "%" },
+                  ].map((line) => (
                     <div key={line.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 0" }}>
                       <span style={{ fontSize: 13, fontWeight: 400, color: "#717182" }}>{line.label}</span>
                       {isEditing && line.editable ? (
