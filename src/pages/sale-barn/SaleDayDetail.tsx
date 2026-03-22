@@ -18,7 +18,11 @@ const fmtCurrency = (n: number) =>
   `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const TABS = ["Work Orders", "Reconciliation"] as const;
-const WO_FILTERS = ["All", "Sellers", "Buyers", "Incomplete"] as const;
+const WO_FILTERS = ["all", "sellers", "buyers", "needs_work", "needs_health"] as const;
+const WO_FILTER_LABELS: Record<string, string> = {
+  all: "All", sellers: "Sellers", buyers: "Buyers",
+  needs_work: "Needs Work", needs_health: "Needs Health",
+};
 
 const ANIMAL_TYPES = ["Bred Heifers", "Feeder Calves", "Pairs", "Bull", "Bred Cows", "Weigh Up Cows", "Baby Calf", "Heifers", "Yearling Bull"];
 
@@ -984,7 +988,7 @@ const SaleDayDetail: React.FC = () => {
   const consignments = consignmentsResult?.data ?? [];
 
   const [activeTab, setActiveTab] = useState<string>("Work Orders");
-  const [woFilter, setWoFilter] = useState<string>("All");
+  const [woFilter, setWoFilter] = useState<string>("all");
   const [woSearch, setWoSearch] = useState("");
 
   // Billing calculations
@@ -1015,9 +1019,10 @@ const SaleDayDetail: React.FC = () => {
   // Filter work orders
   const filteredWOs = useMemo(() => {
     let list = workOrders;
-    if (woFilter === "Sellers") list = list.filter((wo) => wo.entity_type === "seller");
-    else if (woFilter === "Buyers") list = list.filter((wo) => wo.entity_type === "buyer");
-    else if (woFilter === "Incomplete") list = list.filter((wo) => !wo.work_complete || !wo.health_complete);
+    if (woFilter === "sellers") list = list.filter((wo) => wo.entity_type === "seller");
+    else if (woFilter === "buyers") list = list.filter((wo) => wo.entity_type === "buyer");
+    else if (woFilter === "needs_work") list = list.filter((wo) => wo.work_complete === false);
+    else if (woFilter === "needs_health") list = list.filter((wo) => wo.health_complete === false && wo.entity_type === "buyer");
     if (woSearch.trim()) {
       const q = woSearch.toLowerCase();
       list = list.filter((wo) =>
@@ -1031,10 +1036,11 @@ const SaleDayDetail: React.FC = () => {
   }, [workOrders, woFilter, woSearch, customerMap]);
 
   const filterCounts = useMemo(() => ({
-    All: workOrders.length,
-    Sellers: workOrders.filter((wo) => wo.entity_type === "seller").length,
-    Buyers: workOrders.filter((wo) => wo.entity_type === "buyer").length,
-    Incomplete: workOrders.filter((wo) => !wo.work_complete || !wo.health_complete).length,
+    all: workOrders.length,
+    sellers: workOrders.filter((wo) => wo.entity_type === "seller").length,
+    buyers: workOrders.filter((wo) => wo.entity_type === "buyer").length,
+    needs_work: workOrders.filter((wo) => wo.work_complete === false).length,
+    needs_health: workOrders.filter((wo) => wo.health_complete === false && wo.entity_type === "buyer").length,
   }), [workOrders]);
 
   if (sdLoading) {
@@ -1204,22 +1210,29 @@ const SaleDayDetail: React.FC = () => {
 
           {/* Filter Pills */}
           <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
-            {WO_FILTERS.map((f) => (
-              <button
-                key={f}
-                className="active:scale-[0.97]"
-                onClick={() => setWoFilter(f)}
-                style={{
-                  height: 32, borderRadius: 9999, padding: "0 14px",
-                  fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
-                  border: woFilter === f ? "none" : "1px solid #D4D4D0",
-                  background: woFilter === f ? "#0E2646" : "#FFFFFF",
-                  color: woFilter === f ? "#FFFFFF" : "rgba(26,26,26,0.50)",
-                }}
-              >
-                {f} ({filterCounts[f as keyof typeof filterCounts]})
-              </button>
-            ))}
+            {WO_FILTERS.map((f) => {
+              const isActive = woFilter === f;
+              const count = filterCounts[f as keyof typeof filterCounts];
+              let bg = isActive ? "#0E2646" : "#FFFFFF";
+              let color = isActive ? "#FFFFFF" : "rgba(26,26,26,0.50)";
+              let border = isActive ? "none" : "1px solid #D4D4D0";
+              if (isActive && f === "needs_work") { bg = "#B8860B"; color = "#FFFFFF"; border = "none"; }
+              if (isActive && f === "needs_health") { bg = "#9B2335"; color = "#FFFFFF"; border = "none"; }
+              return (
+                <button
+                  key={f}
+                  className="active:scale-[0.97]"
+                  onClick={() => setWoFilter(f)}
+                  style={{
+                    height: 32, borderRadius: 9999, padding: "0 14px",
+                    fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+                    border, background: bg, color,
+                  }}
+                >
+                  {WO_FILTER_LABELS[f]} ({count})
+                </button>
+              );
+            })}
           </div>
 
           {/* Work Order Cards */}
