@@ -35,17 +35,20 @@ const PREG_OPTIONS = ["Pregnant", "Open", "Out", "Not Checked"];
 const RED_NOTES = ["Horns", "Lame", "Lump Jaw", "Bad Eye", "Cancer Eye"];
 const GOLD_NOTES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const TEAL_NOTES = ["Thin", "Old", "Broken Mouth"];
+const BREED_NOTES = ["Hereford", "Red", "Baldy", "Dairy", "Roping", "Charolais"];
 
-type NoteColor = "#9B2335" | "#B8860B" | "#55BAAA";
-const NOTE_MAP: { notes: string[]; color: NoteColor }[] = [
+type NoteColor = "#9B2335" | "#B8860B" | "#55BAAA" | "#0E2646";
+const NOTE_MAP: { notes: string[]; color: NoteColor; singleSelect?: boolean }[] = [
   { notes: RED_NOTES, color: "#9B2335" },
   { notes: GOLD_NOTES, color: "#B8860B" },
   { notes: TEAL_NOTES, color: "#55BAAA" },
+  { notes: BREED_NOTES, color: "#0E2646", singleSelect: true },
 ];
 
 const noteColor = (n: string): NoteColor => {
   if (RED_NOTES.includes(n)) return "#9B2335";
   if (GOLD_NOTES.includes(n)) return "#B8860B";
+  if (BREED_NOTES.includes(n)) return "#0E2646";
   return "#55BAAA";
 };
 
