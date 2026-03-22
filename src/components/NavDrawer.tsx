@@ -24,6 +24,8 @@ interface NavDrawerProps {
 }
 
 const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operationName, onItemSelect, onSignOut, onSwitchOperation }) => {
+  const { operationType } = useOperation();
+  const showSaleBarn = operationType === 'vet_practice';
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
