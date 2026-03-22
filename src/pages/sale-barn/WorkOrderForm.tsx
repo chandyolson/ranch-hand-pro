@@ -895,6 +895,7 @@ const WorkOrderForm: React.FC = () => {
         headCount={hc}
         workType={workType}
         isBuyer={entityType === "buyer"}
+        entityType={entityType}
         showToast={showToast}
       />
 
