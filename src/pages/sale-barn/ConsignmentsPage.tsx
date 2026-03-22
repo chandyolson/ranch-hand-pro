@@ -321,7 +321,7 @@ const ConsignmentsPage: React.FC = () => {
       {/* Toolbar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={() => navigate(`/sale-barn/${id}`)} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", background: "rgba(14,38,70,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button onClick={() => navigate(`/sale-barn/${saleDayId}`)} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", background: "rgba(14,38,70,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="#0E2646" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
           <span style={{ fontSize: 20, fontWeight: 800, color: "#0E2646" }}>Consignments</span>
