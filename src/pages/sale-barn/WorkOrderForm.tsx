@@ -546,6 +546,7 @@ const WorkOrderForm: React.FC = () => {
   const navigate = useNavigate();
   const { operationId } = useOperation();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
   const isEdit = !!woId;
 
   // Fetch sale day
@@ -685,6 +686,7 @@ const WorkOrderForm: React.FC = () => {
 
     setSaving(false);
     if (error) {
+      console.error("Work order save error:", error);
       showToast("error", error.message);
     } else {
       // If created from a consignment, mark it as converted
@@ -693,7 +695,9 @@ const WorkOrderForm: React.FC = () => {
         await (supabase.from("consignments") as any)
           .update({ status: "converted" })
           .eq("id", consignmentId);
+        queryClient.invalidateQueries({ queryKey: ["consignments"] });
       }
+      queryClient.invalidateQueries({ queryKey: ["work_orders", saleDayId] });
       showToast("success", isEdit ? "Work order updated" : "Work order created");
       navigate(`/sale-barn/${saleDayId}`);
     }

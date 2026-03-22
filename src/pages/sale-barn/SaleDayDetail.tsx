@@ -388,7 +388,7 @@ const statusColors: Record<string, { bg: string; border: string; text: string }>
   sort: { bg: "rgba(168,168,240,0.10)", border: "rgba(168,168,240,0.30)", text: "#7B68EE" },
 };
 
-const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; activeTab: string }> = ({ workOrders, saleDayId, activeTab }) => {
+const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; activeTab: string; customerMap?: Record<string, string> }> = ({ workOrders, saleDayId, activeTab, customerMap }) => {
   const woIds = useMemo(() => workOrders.map((wo) => wo.id), [workOrders]);
 
   const { data: animals } = useQuery({
@@ -430,7 +430,7 @@ const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; 
         const expected = wo.head_count || 0;
         rows.push({
           pen: "—",
-          customerName: wo.buyer_num ? `#${wo.buyer_num}` : "Customer",
+          customerName: (wo.customer_id && customerMap?.[wo.customer_id]) || (wo.buyer_num ? `#${wo.buyer_num}` : "No Customer"),
           expected,
           actual,
           status: !wo.work_complete ? "pending" : actual >= expected ? "matched" : "short",
@@ -446,7 +446,7 @@ const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; 
           else if (actual >= headPerPen) status = "matched";
           else status = "short";
 
-          rows.push({ pen, customerName: wo.buyer_num ? `#${wo.buyer_num}` : "Customer", expected: headPerPen, actual, status, woId: wo.id });
+          rows.push({ pen, customerName: (wo.customer_id && customerMap?.[wo.customer_id]) || (wo.buyer_num ? `#${wo.buyer_num}` : "No Customer"), expected: headPerPen, actual, status, woId: wo.id });
         });
       }
     });
@@ -653,6 +653,31 @@ const SaleDayDetail: React.FC = () => {
   const { data: workOrdersResult } = useWorkOrders(id);
   const workOrders = workOrdersResult?.data ?? [];
 
+  // Fetch customer names for work orders
+  const customerIds = useMemo(() => {
+    const ids = workOrders.map(wo => wo.customer_id).filter((cid): cid is string => !!cid);
+    return [...new Set(ids)];
+  }, [workOrders]);
+
+  const { data: customerMap } = useQuery({
+    queryKey: ["wo_customers", customerIds],
+    enabled: customerIds.length > 0,
+    queryFn: async () => {
+      const { data } = await (supabase.from("sale_barn_customers") as any)
+        .select("id, name")
+        .in("id", customerIds);
+      const map: Record<string, string> = {};
+      (data ?? []).forEach((c: any) => { map[c.id] = c.name; });
+      return map;
+    },
+  });
+
+  const getCustomerName = (wo: WorkOrder) => {
+    if (wo.customer_id && customerMap?.[wo.customer_id]) return customerMap[wo.customer_id];
+    if (wo.buyer_num) return `#${wo.buyer_num}`;
+    return null;
+  };
+
   const { data: consignmentsResult } = useConsignments(id, saleDay?.date);
   const consignments = consignmentsResult?.data ?? [];
 
@@ -696,7 +721,8 @@ const SaleDayDetail: React.FC = () => {
       list = list.filter((wo) =>
         (wo.buyer_num || "").toLowerCase().includes(q) ||
         (wo.work_type || "").toLowerCase().includes(q) ||
-        (wo.group_notes || "").toLowerCase().includes(q)
+        (wo.group_notes || "").toLowerCase().includes(q) ||
+        (wo.customer_id && customerMap?.[wo.customer_id] || "").toLowerCase().includes(q)
       );
     }
     return list;
@@ -909,7 +935,7 @@ const SaleDayDetail: React.FC = () => {
                     {/* Row 1 */}
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 600, color: "#F0F0F0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {wo.buyer_num ? `#${wo.buyer_num}` : "Customer"}
+                        {getCustomerName(wo) || <em style={{ fontWeight: 400, opacity: 0.5 }}>No Customer</em>}
                       </span>
                       <span style={{
                         fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
@@ -970,7 +996,7 @@ const SaleDayDetail: React.FC = () => {
         </div>
       )}
 
-      <ReconciliationTab workOrders={workOrders} saleDayId={id!} activeTab={activeTab} />
+      <ReconciliationTab workOrders={workOrders} saleDayId={id!} activeTab={activeTab} customerMap={customerMap} />
     </div>
   );
 };
