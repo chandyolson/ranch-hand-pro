@@ -529,6 +529,7 @@ const SpecialChargesSheet: React.FC<{
 // ── Main Form ──
 const WorkOrderForm: React.FC = () => {
   const { id: saleDayId, woId } = useParams<{ id: string; woId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { operationId } = useOperation();
   const { showToast } = useToast();
