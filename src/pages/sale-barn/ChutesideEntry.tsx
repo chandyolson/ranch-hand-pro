@@ -612,12 +612,24 @@ const ChutesideEntry: React.FC = () => {
       <SortModal open={sortModalOpen} onClose={() => setSortModalOpen(false)}
         onConfirm={(pen) => { setSorted(true); setSortDestPen(pen); setSortModalOpen(false); }} />
 
-      {/* Sticky Save & Next */}
+      {/* Review & Close + Sticky Save & Next */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 40,
         padding: "10px 16px 14px",
         background: "linear-gradient(0deg, #FFFFFF 70%, rgba(255,255,255,0) 100%)",
       }}>
+        <button
+          type="button"
+          className="active:scale-[0.97]"
+          onClick={() => navigate(`/sale-barn/${saleDayId}/work-order/${woId}/review`)}
+          style={{
+            width: "100%", height: 44, borderRadius: 9999, marginBottom: 8,
+            background: "rgba(85,186,170,0.08)", border: "1.5px solid #55BAAA",
+            color: "#55BAAA", fontSize: 14, fontWeight: 600, cursor: "pointer",
+          }}
+        >
+          Review &amp; Close ({worked}/{expected})
+        </button>
         <button
           type="button"
           className="active:scale-[0.97]"
