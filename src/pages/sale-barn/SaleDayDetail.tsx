@@ -653,6 +653,31 @@ const SaleDayDetail: React.FC = () => {
   const { data: workOrdersResult } = useWorkOrders(id);
   const workOrders = workOrdersResult?.data ?? [];
 
+  // Fetch customer names for work orders
+  const customerIds = useMemo(() => {
+    const ids = workOrders.map(wo => wo.customer_id).filter((cid): cid is string => !!cid);
+    return [...new Set(ids)];
+  }, [workOrders]);
+
+  const { data: customerMap } = useQuery({
+    queryKey: ["wo_customers", customerIds],
+    enabled: customerIds.length > 0,
+    queryFn: async () => {
+      const { data } = await (supabase.from("sale_barn_customers") as any)
+        .select("id, name")
+        .in("id", customerIds);
+      const map: Record<string, string> = {};
+      (data ?? []).forEach((c: any) => { map[c.id] = c.name; });
+      return map;
+    },
+  });
+
+  const getCustomerName = (wo: WorkOrder) => {
+    if (wo.customer_id && customerMap?.[wo.customer_id]) return customerMap[wo.customer_id];
+    if (wo.buyer_num) return `#${wo.buyer_num}`;
+    return null;
+  };
+
   const { data: consignmentsResult } = useConsignments(id, saleDay?.date);
   const consignments = consignmentsResult?.data ?? [];
 
