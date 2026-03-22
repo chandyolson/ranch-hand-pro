@@ -7,6 +7,7 @@ import { useWorkOrders } from "@/hooks/sale-barn/useWorkOrders";
 import { useConsignments } from "@/hooks/sale-barn/useConsignments";
 import { useChuteSideToast as useToast } from "@/components/ToastContext";
 import FieldRow from "@/components/calving/FieldRow";
+import SaleDayStatusPicker from "@/components/sale-barn/SaleDayStatusPicker";
 import type { SaleDay, WorkOrder, SaleBarnAnimal, SortRecord, Consignment, SaleBarnCustomer, WorkOrderNote } from "@/types/sale-barn";
 
 const fmtDate = (iso: string) => {
@@ -1051,6 +1052,23 @@ const SaleDayDetail: React.FC = () => {
     <div className="px-4">
       {/* Flagged Notes Alert Banner */}
       <FlaggedNotesBanner workOrders={workOrders} customerMap={customerMap} showToast={showToast} />
+
+      {/* Sale Day Info Bar with Status Picker */}
+      {saleDay && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "10px 0 12px",
+        }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#0E2646" }}>
+            {fmtDate(saleDay.date)}
+          </div>
+          <SaleDayStatusPicker
+            saleDayId={saleDay.id}
+            currentStatus={saleDay.status}
+            showToast={showToast}
+          />
+        </div>
+      )}
 
       {/* 2x2 Stat Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "0 0 12px" }}>

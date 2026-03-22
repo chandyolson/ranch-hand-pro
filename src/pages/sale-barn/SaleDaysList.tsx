@@ -6,6 +6,7 @@ import { useSaleDays } from "@/hooks/sale-barn/useSaleDays";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import FieldRow from "@/components/calving/FieldRow";
+import SaleDayStatusPicker from "@/components/sale-barn/SaleDayStatusPicker";
 import type { SaleDay, WorkOrder, Consignment } from "@/types/sale-barn";
 
 const STATUS_OPTIONS = ["All", "Active", "Completed", "Scheduled"] as const;
@@ -457,13 +458,6 @@ const SaleDaysList: React.FC = () => {
           {filtered.map((sd) => {
             const ws = getWoStats(sd.id);
             const sdConsignments = consignMap[sd.id] || [];
-            const statusUpper = sd.status.toUpperCase();
-            const badgeStyle: React.CSSProperties =
-              sd.status === "active"
-                ? { background: "rgba(85,186,170,0.15)", color: "#55BAAA" }
-                : sd.status === "completed"
-                ? { background: "rgba(243,209,42,0.12)", color: "#F3D12A" }
-                : { background: "rgba(240,240,240,0.10)", color: "rgba(240,240,240,0.50)" };
 
             return (
               <button
@@ -478,12 +472,11 @@ const SaleDaysList: React.FC = () => {
                 {/* Row 1 */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: 16, fontWeight: 600, color: "#F0F0F0" }}>{fmtDate(sd.date)}</span>
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", borderRadius: 9999,
-                    padding: "3px 8px", ...badgeStyle,
-                  }}>
-                    {statusUpper}
-                  </span>
+                  <SaleDayStatusPicker
+                    saleDayId={sd.id}
+                    currentStatus={sd.status}
+                    showToast={showToast}
+                  />
                 </div>
 
                 {/* Row 2 */}
