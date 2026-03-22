@@ -430,7 +430,7 @@ const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; 
         const expected = wo.head_count || 0;
         rows.push({
           pen: "—",
-          customerName: wo.buyer_num ? `#${wo.buyer_num}` : "Customer",
+          customerName: (wo.customer_id && customerMap?.[wo.customer_id]) || (wo.buyer_num ? `#${wo.buyer_num}` : "No Customer"),
           expected,
           actual,
           status: !wo.work_complete ? "pending" : actual >= expected ? "matched" : "short",
