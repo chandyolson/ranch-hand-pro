@@ -85,7 +85,7 @@ const SaleDayStatusPicker: React.FC<SaleDayStatusPickerProps> = ({
           textTransform: "uppercase", border: "none", cursor: "pointer",
         }}
       >
-        {currentStatus.toUpperCase()}
+        {displayLabel || currentStatus.toUpperCase()}
         <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
           <path d="M2 3L4 5L6 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
         </svg>
