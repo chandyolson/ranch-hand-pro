@@ -84,30 +84,43 @@ const SaleDaysList: React.FC = () => {
     },
   });
 
-  // Fetch consignments for all sale days
+  // Fetch consignments for all sale days (by sale_day_id OR expected_sale_date)
+  const saleDayDates = useMemo(() => saleDays.map((sd) => sd.date), [saleDays]);
   const { data: allConsignments } = useQuery({
-    queryKey: ["consignments_for_sale_days", saleDayIds],
+    queryKey: ["consignments_for_sale_days", saleDayIds, saleDayDates],
     enabled: saleDayIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await (supabase.from("consignments") as any)
+      // Fetch by sale_day_id
+      const { data: byId, error: e1 } = await (supabase.from("consignments") as any)
         .select("*")
         .in("sale_day_id", saleDayIds);
-      if (error) throw error;
-      return (data ?? []) as unknown as Consignment[];
+      if (e1) throw e1;
+      // Fetch unlinked by expected_sale_date
+      const { data: byDate, error: e2 } = await (supabase.from("consignments") as any)
+        .select("*")
+        .is("sale_day_id", null)
+        .in("expected_sale_date", saleDayDates)
+        .eq("operation_id", operationId);
+      if (e2) throw e2;
+      const idSet = new Set((byId ?? []).map((c: any) => c.id));
+      return [...(byId ?? []), ...(byDate ?? []).filter((c: any) => !idSet.has(c.id))] as unknown as Consignment[];
     },
   });
 
-  // Group consignments by sale_day_id
+  // Group consignments by sale_day_id or matching date
   const consignMap = useMemo(() => {
     const m: Record<string, Consignment[]> = {};
+    const dateToSdId: Record<string, string> = {};
+    saleDays.forEach((sd) => { dateToSdId[sd.date] = sd.id; });
     (allConsignments ?? []).forEach((c) => {
-      if (c.sale_day_id) {
-        if (!m[c.sale_day_id]) m[c.sale_day_id] = [];
-        m[c.sale_day_id].push(c);
+      const sdId = c.sale_day_id || (c.expected_sale_date ? dateToSdId[c.expected_sale_date] : null);
+      if (sdId) {
+        if (!m[sdId]) m[sdId] = [];
+        m[sdId].push(c);
       }
     });
     return m;
-  }, [allConsignments]);
+  }, [allConsignments, saleDays]);
 
   // Group work orders by sale_day_id
   const woMap = useMemo(() => {

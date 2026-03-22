@@ -116,16 +116,18 @@ const ConsignCustomerSearch: React.FC<{
 const ConsignmentsTab: React.FC<{
   consignments: Consignment[];
   saleDayId: string;
+  saleDayDate: string;
   operationId: string;
   activeTab: string;
   showToast: (v: string, m: string) => void;
   navigate: (to: string) => void;
-}> = ({ consignments, saleDayId, operationId, activeTab, showToast, navigate }) => {
+}> = ({ consignments, saleDayId, saleDayDate, operationId, activeTab, showToast, navigate }) => {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [custName, setCustName] = useState("");
   const [custId, setCustId] = useState<string | null>(null);
+  const [expectedDate, setExpectedDate] = useState(saleDayDate || "");
   const [headCount, setHeadCount] = useState("");
   const [animalType, setAnimalType] = useState("");
   const [takenBy, setTakenBy] = useState("");
@@ -139,12 +141,12 @@ const ConsignmentsTab: React.FC<{
   const arrivedCount = consignments.filter((c) => c.status === "arrived").length;
 
   const resetForm = () => {
-    setCustName(""); setCustId(null); setHeadCount(""); setAnimalType("");
+    setCustName(""); setCustId(null); setExpectedDate(saleDayDate || ""); setHeadCount(""); setAnimalType("");
     setTakenBy(""); setNotes(""); setEditId(null);
   };
 
   const openEdit = (c: Consignment) => {
-    setCustName(c.customer_name); setCustId(c.customer_id); setHeadCount(String(c.head_count));
+    setCustName(c.customer_name); setCustId(c.customer_id); setExpectedDate(c.expected_sale_date || ""); setHeadCount(String(c.head_count));
     setAnimalType(c.animal_type || ""); setTakenBy(c.taken_by || ""); setNotes(c.notes || "");
     setEditId(c.id); setFormOpen(true);
   };
@@ -163,6 +165,7 @@ const ConsignmentsTab: React.FC<{
       animal_type: animalType || null,
       taken_by: takenBy || null,
       notes: notes || null,
+      expected_sale_date: expectedDate || null,
       status: "pending",
     };
     let error: any;
@@ -234,6 +237,16 @@ const ConsignmentsTab: React.FC<{
                 value={custName}
                 customerId={custId}
                 onChange={(name, id) => { setCustName(name); setCustId(id); }}
+              />
+            </FieldRow>
+            <FieldRow label="Sale Date">
+              <input
+                type="date"
+                value={expectedDate}
+                onChange={(e) => setExpectedDate(e.target.value)}
+                style={CONSIGN_INPUT}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "#F3D12A"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(243,209,42,0.25)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "#D4D4D0"; e.currentTarget.style.boxShadow = "none"; }}
               />
             </FieldRow>
             <FieldRow label="Head Ct" req>
@@ -320,7 +333,11 @@ const ConsignmentsTab: React.FC<{
               </div>
               {/* Row 2 */}
               <div style={{ fontSize: 13, fontWeight: 400, color: "#717182", marginTop: 4 }}>
-                {c.head_count} hd{c.animal_type ? ` · ${c.animal_type}` : ""}
+                {c.expected_sale_date
+                  ? new Date(c.expected_sale_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                  : <span style={{ fontStyle: "italic" }}>No date set</span>
+                }
+                {" · "}{c.head_count} hd{c.animal_type ? ` · ${c.animal_type}` : ""}
               </div>
               {/* Row 3 */}
               <div style={{ fontSize: 12, fontWeight: 400, color: "rgba(26,26,26,0.40)", marginTop: 2 }}>
@@ -636,7 +653,7 @@ const SaleDayDetail: React.FC = () => {
   const { data: workOrdersResult } = useWorkOrders(id);
   const workOrders = workOrdersResult?.data ?? [];
 
-  const { data: consignmentsResult } = useConsignments(id);
+  const { data: consignmentsResult } = useConsignments(id, saleDay?.date);
   const consignments = consignmentsResult?.data ?? [];
 
   const [activeTab, setActiveTab] = useState<string>("Consignments");
@@ -964,6 +981,7 @@ const SaleDayDetail: React.FC = () => {
       <ConsignmentsTab
         consignments={consignments}
         saleDayId={id!}
+        saleDayDate={saleDay?.date || ""}
         operationId={operationId}
         activeTab={activeTab}
         showToast={showToast}
