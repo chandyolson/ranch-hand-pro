@@ -1019,9 +1019,10 @@ const SaleDayDetail: React.FC = () => {
   // Filter work orders
   const filteredWOs = useMemo(() => {
     let list = workOrders;
-    if (woFilter === "Sellers") list = list.filter((wo) => wo.entity_type === "seller");
-    else if (woFilter === "Buyers") list = list.filter((wo) => wo.entity_type === "buyer");
-    else if (woFilter === "Incomplete") list = list.filter((wo) => !wo.work_complete || !wo.health_complete);
+    if (woFilter === "sellers") list = list.filter((wo) => wo.entity_type === "seller");
+    else if (woFilter === "buyers") list = list.filter((wo) => wo.entity_type === "buyer");
+    else if (woFilter === "needs_work") list = list.filter((wo) => wo.work_complete === false);
+    else if (woFilter === "needs_health") list = list.filter((wo) => wo.health_complete === false && wo.entity_type === "buyer");
     if (woSearch.trim()) {
       const q = woSearch.toLowerCase();
       list = list.filter((wo) =>
@@ -1035,10 +1036,11 @@ const SaleDayDetail: React.FC = () => {
   }, [workOrders, woFilter, woSearch, customerMap]);
 
   const filterCounts = useMemo(() => ({
-    All: workOrders.length,
-    Sellers: workOrders.filter((wo) => wo.entity_type === "seller").length,
-    Buyers: workOrders.filter((wo) => wo.entity_type === "buyer").length,
-    Incomplete: workOrders.filter((wo) => !wo.work_complete || !wo.health_complete).length,
+    all: workOrders.length,
+    sellers: workOrders.filter((wo) => wo.entity_type === "seller").length,
+    buyers: workOrders.filter((wo) => wo.entity_type === "buyer").length,
+    needs_work: workOrders.filter((wo) => wo.work_complete === false).length,
+    needs_health: workOrders.filter((wo) => wo.health_complete === false && wo.entity_type === "buyer").length,
   }), [workOrders]);
 
   if (sdLoading) {
