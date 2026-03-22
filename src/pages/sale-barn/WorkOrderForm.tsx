@@ -571,6 +571,7 @@ const WorkOrderForm: React.FC = () => {
   const [healthComplete, setHealthComplete] = useState(false);
   const [specialLumpSum, setSpecialLumpSum] = useState(0);
   const [calcOpen, setCalcOpen] = useState(false);
+  const [groupNotes, setGroupNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Populate for edit
