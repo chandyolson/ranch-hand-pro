@@ -6,8 +6,9 @@ interface SaleDayStatusPickerProps {
   saleDayId: string;
   currentStatus: string;
   showToast: (variant: string, message: string) => void;
-  /** Style variant for the badge */
   variant?: "light" | "dark";
+  /** Override the badge label (e.g. "UPCOMING" instead of "SCHEDULED") */
+  displayLabel?: string;
 }
 
 const STATUS_CONFIG: Record<string, { dot: string; badgeBg: string; badgeText: string }> = {
@@ -23,6 +24,7 @@ const SaleDayStatusPicker: React.FC<SaleDayStatusPickerProps> = ({
   currentStatus,
   showToast,
   variant = "light",
+  displayLabel,
 }) => {
   const [open, setOpen] = useState(false);
   const [confirmComplete, setConfirmComplete] = useState(false);
@@ -83,7 +85,7 @@ const SaleDayStatusPicker: React.FC<SaleDayStatusPickerProps> = ({
           textTransform: "uppercase", border: "none", cursor: "pointer",
         }}
       >
-        {currentStatus.toUpperCase()}
+        {displayLabel || currentStatus.toUpperCase()}
         <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
           <path d="M2 3L4 5L6 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
         </svg>

@@ -149,8 +149,26 @@ const SaleDaysList: React.FC = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  const getPriority = (sd: SaleDay) => {
+    if (sd.status === 'active') return 0;
+    if (sd.status === 'scheduled' && sd.date >= today) return 1;
+    return 2;
+  };
+
+  const sorted = useMemo(() => {
+    return [...saleDays].sort((a, b) => {
+      const pA = getPriority(a);
+      const pB = getPriority(b);
+      if (pA !== pB) return pA - pB;
+      if (pA === 1) return a.date.localeCompare(b.date);
+      return b.date.localeCompare(a.date);
+    });
+  }, [saleDays, today]);
+
   const filtered = useMemo(() => {
-    let list = saleDays;
+    let list = sorted;
     if (statusFilter !== "All") {
       list = list.filter((sd) => sd.status === statusFilter.toLowerCase());
     }
@@ -159,7 +177,7 @@ const SaleDaysList: React.FC = () => {
       list = list.filter((sd) => sd.date.toLowerCase().includes(q) || fmtDate(sd.date).toLowerCase().includes(q));
     }
     return list;
-  }, [saleDays, statusFilter, search]);
+  }, [sorted, statusFilter, search]);
 
   // Aggregate stats
   const stats = useMemo(() => {
@@ -472,11 +490,19 @@ const SaleDaysList: React.FC = () => {
                 {/* Row 1 */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: 16, fontWeight: 600, color: "#F0F0F0" }}>{fmtDate(sd.date)}</span>
-                  <SaleDayStatusPicker
-                    saleDayId={sd.id}
-                    currentStatus={sd.status}
-                    showToast={showToast}
-                  />
+                  {(() => {
+                    const p = getPriority(sd);
+                    const badgeLabel = p === 0 ? "ACTIVE" : p === 1 ? "UPCOMING" : "COMPLETED";
+                    const badgeStatus = p === 2 ? "completed" : sd.status;
+                    return (
+                      <SaleDayStatusPicker
+                        saleDayId={sd.id}
+                        currentStatus={badgeStatus}
+                        showToast={showToast}
+                        displayLabel={badgeLabel}
+                      />
+                    );
+                  })()}
                 </div>
 
                 {/* Row 2 */}
