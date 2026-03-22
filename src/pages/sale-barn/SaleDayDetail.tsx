@@ -7,7 +7,7 @@ import { useWorkOrders } from "@/hooks/sale-barn/useWorkOrders";
 import { useConsignments } from "@/hooks/sale-barn/useConsignments";
 import { useChuteSideToast as useToast } from "@/components/ToastContext";
 import FieldRow from "@/components/calving/FieldRow";
-import type { SaleDay, WorkOrder, SaleBarnAnimal, SortRecord, Consignment, SaleBarnCustomer } from "@/types/sale-barn";
+import type { SaleDay, WorkOrder, SaleBarnAnimal, SortRecord, Consignment, SaleBarnCustomer, WorkOrderNote } from "@/types/sale-barn";
 
 const fmtDate = (iso: string) => {
   const d = new Date(iso + "T12:00:00");
