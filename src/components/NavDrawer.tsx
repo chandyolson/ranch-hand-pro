@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useOperation } from "@/contexts/OperationContext";
 
 const NAV_ITEMS = [
   "Operation Dashboard",
