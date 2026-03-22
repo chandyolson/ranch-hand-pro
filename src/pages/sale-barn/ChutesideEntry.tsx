@@ -612,23 +612,27 @@ const ChutesideEntry: React.FC = () => {
       <SortModal open={sortModalOpen} onClose={() => setSortModalOpen(false)}
         onConfirm={(pen) => { setSorted(true); setSortDestPen(pen); setSortModalOpen(false); }} />
 
-      {/* Review & Close + Sticky Save & Next */}
+      {/* Sticky bottom bar */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 40,
-        padding: "10px 16px 14px",
-        background: "linear-gradient(0deg, #FFFFFF 70%, rgba(255,255,255,0) 100%)",
+        padding: "12px 16px",
+        background: "#FFFFFF", borderTop: "1px solid #D4D4D0",
+        boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
+        display: "flex", gap: 10,
       }}>
         <button
           type="button"
           className="active:scale-[0.97]"
           onClick={() => navigate(`/sale-barn/${saleDayId}/work-order/${woId}/review`)}
           style={{
-            width: "100%", height: 44, borderRadius: 9999, marginBottom: 8,
+            flex: 0.45, height: 52, borderRadius: 9999,
             background: "rgba(85,186,170,0.08)", border: "1.5px solid #55BAAA",
-            color: "#55BAAA", fontSize: 14, fontWeight: 600, cursor: "pointer",
+            color: "#55BAAA", fontSize: 14, fontWeight: 700, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}
         >
-          Review &amp; Close ({worked}/{expected})
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.3 4L6 11.3L2.7 8" stroke="#55BAAA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Review
         </button>
         <button
           type="button"
@@ -636,7 +640,7 @@ const ChutesideEntry: React.FC = () => {
           onClick={handleSave}
           disabled={saving}
           style={{
-            width: "100%", height: 52, borderRadius: 9999,
+            flex: 1, height: 52, borderRadius: 9999,
             background: "#F3D12A", border: "none",
             fontSize: 17, fontWeight: 700, color: "#1A1A1A",
             boxShadow: "0 2px 10px rgba(243,209,42,0.35)",
