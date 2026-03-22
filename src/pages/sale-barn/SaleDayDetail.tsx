@@ -616,6 +616,7 @@ const ReportsTab: React.FC<{ activeTab: string; showToast: (v: string, m: string
 const SaleDayDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { operationId } = useOperation();
   const { showToast } = useToast();
 
   const { data: saleDay, isLoading: sdLoading } = useQuery({
@@ -635,7 +636,10 @@ const SaleDayDetail: React.FC = () => {
   const { data: workOrdersResult } = useWorkOrders(id);
   const workOrders = workOrdersResult?.data ?? [];
 
-  const [activeTab, setActiveTab] = useState<string>("Work Orders");
+  const { data: consignmentsResult } = useConsignments(id);
+  const consignments = consignmentsResult?.data ?? [];
+
+  const [activeTab, setActiveTab] = useState<string>("Consignments");
   const [woFilter, setWoFilter] = useState<string>("All");
   const [woSearch, setWoSearch] = useState("");
 
