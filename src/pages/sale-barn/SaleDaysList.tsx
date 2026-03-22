@@ -21,11 +21,53 @@ const fmtCurrency = (n: number) =>
 const fmtCurrencyFull = (n: number) =>
   `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+const INPUT_STYLE: React.CSSProperties = {
+  height: 36, borderRadius: 8, border: "1px solid #D4D4D0",
+  fontSize: 16, fontFamily: "Inter, sans-serif", padding: "0 12px",
+  outline: "none", width: "100%", boxSizing: "border-box",
+};
+
+const FOCUS_STYLE: React.CSSProperties = { borderColor: "#F3D12A", boxShadow: "0 0 0 2px rgba(243,209,42,0.25)" };
+
 const SaleDaysList: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { operationId } = useOperation();
   const { showToast } = useToast();
   const { data: saleDaysResult, isLoading } = useSaleDays();
   const saleDays = saleDaysResult?.data ?? [];
+
+  // New Sale Day form state
+  const [formOpen, setFormOpen] = useState(false);
+  const [formDate, setFormDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [formCrew, setFormCrew] = useState("");
+  const [formStatus, setFormStatus] = useState("active");
+  const [formSaving, setFormSaving] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const handleCreate = async () => {
+    if (!formDate) { showToast("error", "Date is required"); return; }
+    setFormSaving(true);
+    try {
+      const { data, error } = await (supabase.from("sale_days" as any).insert({
+        operation_id: operationId,
+        date: formDate,
+        vet_crew: formCrew || null,
+        status: formStatus,
+      } as any).select().single() as any);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["sale_days"] });
+      showToast("success", "Sale day created");
+      setFormOpen(false);
+      setFormCrew("");
+      setFormStatus("active");
+      navigate(`/sale-barn/${(data as any).id}`);
+    } catch (e: any) {
+      showToast("error", e.message || "Failed to create sale day");
+    } finally {
+      setFormSaving(false);
+    }
+  };
 
   // Fetch all work orders for all sale days in one query
   const saleDayIds = useMemo(() => saleDays.map((sd) => sd.id), [saleDays]);
