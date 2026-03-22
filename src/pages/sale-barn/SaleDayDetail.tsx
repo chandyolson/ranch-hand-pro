@@ -996,7 +996,7 @@ const SaleDayDetail: React.FC = () => {
         </div>
       )}
 
-      <ReconciliationTab workOrders={workOrders} saleDayId={id!} activeTab={activeTab} />
+      <ReconciliationTab workOrders={workOrders} saleDayId={id!} activeTab={activeTab} customerMap={customerMap} />
     </div>
   );
 };
