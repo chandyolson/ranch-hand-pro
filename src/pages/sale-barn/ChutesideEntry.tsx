@@ -361,17 +361,50 @@ const ChutesideEntry: React.FC = () => {
             )}
           </div>
 
-          <FR label="EID" req>
-            <input ref={eidRef} style={INPUT} placeholder="Scan or type EID" value={eid}
-              onChange={(e) => setEid(e.target.value)} onFocus={focusGold} onBlur={blurReset} autoFocus />
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ position: "absolute", right: 10, top: 9 }}>
-              <rect x="2" y="4" width="2" height="10" rx="0.5" fill="#717182" />
-              <rect x="5" y="4" width="1.5" height="10" rx="0.5" fill="#717182" />
-              <rect x="8" y="4" width="2.5" height="10" rx="0.5" fill="#717182" />
-              <rect x="12" y="4" width="1" height="10" rx="0.5" fill="#717182" />
-              <rect x="14.5" y="4" width="1.5" height="10" rx="0.5" fill="#717182" />
-            </svg>
-          </FR>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <span style={LABEL_S}>EID<span style={{ color: "#9B2335", marginLeft: 2 }}>*</span></span>
+              <div style={{ flex: 1, minWidth: 0, display: "flex", position: "relative" }}>
+                <input ref={eidRef}
+                  inputMode="numeric"
+                  maxLength={15}
+                  style={{ ...INPUT, border: eidError ? "1.5px solid #D4183D" : INPUT.border }}
+                  placeholder="Scan or type EID" value={eid}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, "");
+                    setEid(v);
+                    if (eidError) setEidError("");
+                  }}
+                  onFocus={focusGold}
+                  onBlur={(e) => {
+                    blurReset(e);
+                    if (eid.trim()) {
+                      const err = validateEid(eid);
+                      if (err) setEidError(err);
+                    }
+                  }}
+                  autoFocus
+                />
+                {eidIsValid && !eidError && (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ position: "absolute", right: 10, top: 10 }}>
+                    <path d="M3 8L6.5 11.5L13 5" stroke="#55BAAA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+                {!eidIsValid && (
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ position: "absolute", right: 10, top: 9 }}>
+                    <rect x="2" y="4" width="2" height="10" rx="0.5" fill="#717182" />
+                    <rect x="5" y="4" width="1.5" height="10" rx="0.5" fill="#717182" />
+                    <rect x="8" y="4" width="2.5" height="10" rx="0.5" fill="#717182" />
+                    <rect x="12" y="4" width="1" height="10" rx="0.5" fill="#717182" />
+                    <rect x="14.5" y="4" width="1.5" height="10" rx="0.5" fill="#717182" />
+                  </svg>
+                )}
+              </div>
+            </div>
+            {eidError && (
+              <div style={{ fontSize: 12, fontWeight: 500, color: "#D4183D", marginTop: 2, marginLeft: 93 }}>{eidError}</div>
+            )}
+          </div>
 
           <FR label="Back Tag">
             <input style={INPUT} placeholder="Back tag" value={backTag}
