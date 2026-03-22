@@ -1100,8 +1100,8 @@ const WorkOrderForm: React.FC = () => {
     setAnimalType(existingWo.animal_type || "");
     setPensStr((existingWo.pens || []).join(", "));
     setHeadCount(String(existingWo.head_count || ""));
-    setWorkComplete(existingWo.work_complete);
-    setHealthComplete(existingWo.health_complete);
+    setWorkComplete(existingWo.work_complete ?? false);
+    setHealthComplete(existingWo.health_complete ?? false);
     setSpecialLumpSum(existingWo.special_lump_sum || 0);
     setGroupNotes(existingWo.group_notes || "");
     if (existingWo.customer_id) {
