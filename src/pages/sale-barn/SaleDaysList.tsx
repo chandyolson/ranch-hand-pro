@@ -480,6 +480,13 @@ const SaleDaysList: React.FC = () => {
                   {ws.buyerLots} buyer lot{ws.buyerLots !== 1 ? "s" : ""} · {ws.buyerHead} hd
                 </div>
 
+                {/* Consignments */}
+                {sdConsignments.length > 0 && (
+                  <div style={{ fontSize: 12, fontWeight: 500, color: "rgba(240,240,240,0.45)", marginTop: 2 }}>
+                    {sdConsignments.length} consignment{sdConsignments.length !== 1 ? "s" : ""}
+                  </div>
+                )}
+
                 {/* Row 3 */}
                 <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 8 }}>
                   <div>
