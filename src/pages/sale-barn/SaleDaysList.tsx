@@ -222,7 +222,7 @@ const SaleDaysList: React.FC = () => {
           {/* Gold + button */}
           <button
             className="active:scale-[0.95]"
-            onClick={() => showToast("info", "New sale day coming soon")}
+            onClick={() => setFormOpen(!formOpen)}
             style={{
               width: 36, height: 36, borderRadius: "50%",
               background: "#F3D12A", border: "none",
@@ -230,7 +230,7 @@ const SaleDaysList: React.FC = () => {
               fontSize: 20, fontWeight: 700, color: "#1A1A1A", lineHeight: 1,
             }}
           >
-            +
+            {formOpen ? "×" : "+"}
           </button>
         </div>
       </div>
