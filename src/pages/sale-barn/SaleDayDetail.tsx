@@ -961,6 +961,14 @@ const SaleDayDetail: React.FC = () => {
         </div>
       )}
 
+      <ConsignmentsTab
+        consignments={consignments}
+        saleDayId={id!}
+        operationId={operationId}
+        activeTab={activeTab}
+        showToast={showToast}
+        navigate={navigate}
+      />
       <ReconciliationTab workOrders={workOrders} saleDayId={id!} activeTab={activeTab} />
       <ReportsTab activeTab={activeTab} showToast={showToast} />
     </div>
