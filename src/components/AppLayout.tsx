@@ -28,6 +28,7 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/reference/breeds": { title: "Breeds", subtitle: "Breed Library" },
   "/reference/templates": { title: "Templates", subtitle: "Work Templates" },
   "/cow-cleaner": { title: "Cow Cleaner", subtitle: "Import & Clean Data" },
+  "/customers": { title: "Customers", subtitle: "Practice Clients" },
 };
 
 const navRouteMap: Record<string, string> = {
@@ -91,12 +92,16 @@ const AppLayout: React.FC = () => {
       config = { title: isEditWo ? "Edit Work Order" : "New Work Order", subtitle: "Work Order" };
     } else if (/^\/sale-barn\/[^/]+/.test(path)) {
       config = { title: "Sale Day", subtitle: "Sale Day Detail" };
+    } else if (/^\/customers\/[^/]+$/.test(path)) {
+      config = { title: "Customer", subtitle: "Client Detail" };
     } else {
       config = { title: "ChuteSide", subtitle: "" };
     }
   }
 
-  const activeItem = reverseNavMap[path] || (path.startsWith("/animals") ? "Animals" : undefined);
+  const activeItem = reverseNavMap[path]
+    || (path.startsWith("/animals") ? "Animals" : undefined)
+    || (path.startsWith("/customers") ? "Customers" : undefined);
 
   return (
     <div className="min-h-screen font-inter" style={{ backgroundColor: "#F5F5F0" }}>
@@ -141,6 +146,8 @@ const AppLayout: React.FC = () => {
                 navigate(`/sale-barn/${sdId}`);
               }
               else if (/^\/sale-barn\/[^/]+/.test(path)) { navigate("/sale-barn"); }
+              else if (/^\/customers\/[^/]+$/.test(path)) { navigate("/customers"); }
+              else if (path === "/customers") { navigate("/"); }
               else if (window.history.length > 1) { navigate(-1); }
               else { navigate("/"); }
             }}
