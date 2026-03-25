@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { useOperation } from "@/contexts/OperationContext";
+import { useOperation, OperationProvider } from "@/contexts/OperationContext";
 import { useChuteSideToast as useToast } from "@/components/ToastContext";
 import { ToastProvider } from "@/components/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
