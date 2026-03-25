@@ -4,8 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 const OP_TYPES = [
-  { label: 'Commercial Ranch', value: 'Commercial' },
-  { label: 'Registered Ranch', value: 'Registered' },
+  { label: 'Ranch', value: 'ranch' },
   { label: 'Vet Practice', value: 'vet_practice' },
 ] as const;
 
@@ -14,7 +13,7 @@ const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
-  const [opType, setOpType] = useState<string>('Commercial');
+  const [opType, setOpType] = useState<string>('ranch');
   const [ownerName, setOwnerName] = useState('');
   const [email, setEmail] = useState(user?.email ?? '');
   const [error, setError] = useState('');

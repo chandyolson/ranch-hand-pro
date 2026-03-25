@@ -123,7 +123,7 @@ const ReferenceSettingsScreen: React.FC = () => {
         <div className="flex items-center gap-2 min-w-0">
           <span style={LABEL_STYLE}>Type</span>
           <select value={operationType} onChange={e => setOperationType(e.target.value)} className={INPUT_CLS} style={{ fontSize: 16 }}>
-            {["Commercial", "Cow-Calf", "Stocker", "Feedlot", "Dairy", "Mixed"].map(t => <option key={t} value={t}>{t}</option>)}
+            {["Commercial", "Registered", "Cow-Calf", "Stocker", "Feedlot", "Dairy", "Mixed"].map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
       </div>
