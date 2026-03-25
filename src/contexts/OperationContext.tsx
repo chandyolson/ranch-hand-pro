@@ -1,40 +1,29 @@
 import React, { createContext, useContext } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { DEV_OPERATION_ID, DEV_OPERATION_NAME } from '@/lib/dev-context';
+import { useAuth } from './AuthContext';
 
 interface OperationContextValue {
   operationId: string;
   operationName: string;
   operationType: string;
+  userRole: string;
 }
 
 const OperationContext = createContext<OperationContextValue>({
-  operationId: DEV_OPERATION_ID,
-  operationName: DEV_OPERATION_NAME,
+  operationId: '',
+  operationName: '',
   operationType: '',
+  userRole: '',
 });
 
 export function OperationProvider({ children }: { children: React.ReactNode }) {
-  const { data } = useQuery({
-    queryKey: ['operation_meta', DEV_OPERATION_ID],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('operations')
-        .select('operation_type')
-        .eq('id', DEV_OPERATION_ID)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    staleTime: 10 * 60 * 1000,
-  });
+  const { activeOperation } = useAuth();
 
   return (
     <OperationContext.Provider value={{
-      operationId: DEV_OPERATION_ID,
-      operationName: DEV_OPERATION_NAME,
-      operationType: data?.operation_type ?? '',
+      operationId: activeOperation?.id ?? '',
+      operationName: activeOperation?.name ?? '',
+      operationType: activeOperation?.operation_type ?? '',
+      userRole: activeOperation?.user_type ?? '',
     }}>
       {children}
     </OperationContext.Provider>
@@ -43,4 +32,24 @@ export function OperationProvider({ children }: { children: React.ReactNode }) {
 
 export function useOperation() {
   return useContext(OperationContext);
+}
+
+export function useCanEdit() {
+  const { userRole } = useOperation();
+  return ['admin', 'operator', 'veterinarian', 'member'].includes(userRole);
+}
+
+export function useCanDelete() {
+  const { userRole } = useOperation();
+  return ['admin', 'operator'].includes(userRole);
+}
+
+export function useIsAdmin() {
+  const { userRole } = useOperation();
+  return ['admin', 'operator'].includes(userRole);
+}
+
+export function useIsVet() {
+  const { userRole } = useOperation();
+  return userRole === 'veterinarian';
 }
