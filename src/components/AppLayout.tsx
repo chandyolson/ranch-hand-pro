@@ -40,8 +40,11 @@ const navRouteMap: Record<string, string> = {
   "Red Book": "/red-book",
   "Cow Cleaner": "/cow-cleaner",
   Reference: "/reference",
+  Products: "/reference/products",
+  Customers: "/customers",
+  "Sale Barn": "/sale-barn",
   "Sale Days": "/sale-barn",
-  Customers: "/sale-barn/customers",
+  "SB Customers": "/sale-barn/customers",
   Buyers: "/sale-barn/buyers",
 };
 

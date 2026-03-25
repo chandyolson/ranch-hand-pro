@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOperation } from "@/contexts/OperationContext";
 import { ChevronDown } from "lucide-react";
 
-const NAV_ITEMS = [
+const RANCH_NAV_ITEMS = [
   "Operation Dashboard",
   "Animals",
   "Bulls",
@@ -13,6 +13,17 @@ const NAV_ITEMS = [
   "Calving",
   "Red Book",
   "Cow Cleaner",
+  "Reference",
+];
+
+const VET_NAV_ITEMS = [
+  "Operation Dashboard",
+  "Customers",
+  "Cow Work",
+  "Sale Barn",
+  "Protocols",
+  "Red Book",
+  "Products",
   "Reference",
 ];
 
@@ -30,7 +41,8 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
   const { operationType, userRole } = useOperation();
   const { operations, signOut } = useAuth();
   const navigate = useNavigate();
-  const showSaleBarn = operationType === 'vet_practice';
+  const isVet = operationType === 'vet_practice';
+  const showSaleBarn = isVet;
   const hasMultipleOps = operations.length > 1;
 
   useEffect(() => {
@@ -146,7 +158,7 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
 
         {/* Nav Items */}
         <div className="flex-1 py-4 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
+          {(isVet ? VET_NAV_ITEMS : RANCH_NAV_ITEMS).map((item) => {
             const isActive = activeItem === item;
             return (
               <button
@@ -174,8 +186,8 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
             );
           })}
 
-          {/* Sale Barn section */}
-          {showSaleBarn && (
+          {/* Sale Barn sub-nav — only if Sale Barn isn't already in the main nav list */}
+          {showSaleBarn && !isVet && (
             <>
               {(() => {
                 const isSBActive = activeItem === "Sale Barn";
@@ -202,8 +214,9 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
                   </button>
                 );
               })()}
-              {["Sale Days", "Customers", "Buyers"].map((item) => {
+              {["Sale Days", "SB Customers", "Buyers"].map((item) => {
                 const isActive = activeItem === item;
+                const displayLabel = item === "SB Customers" ? "Customers" : item;
                 return (
                   <button
                     key={item}
@@ -222,7 +235,7 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
                     {isActive && (
                       <span className="absolute left-0 rounded-r-sm" style={{ width: 3, height: 24, backgroundColor: "#F3D12A", top: "50%", transform: "translateY(-50%)" }} />
                     )}
-                    {item}
+                    {displayLabel}
                   </button>
                 );
               })}

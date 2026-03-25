@@ -11,6 +11,7 @@ import { useCalvingCounts } from "@/hooks/useCalvingRecords";
 import { useFlagCounts } from "@/hooks/useAnimalFlags";
 import { useOperation } from "@/contexts/OperationContext";
 import { supabase } from "@/integrations/supabase/client";
+import VetDashboardScreen from "@/screens/VetDashboardScreen";
 
 function SectionHeading({ text }: { text: string }) {
   return (
@@ -28,6 +29,17 @@ const FLAG_CONFIG = {
 };
 
 const DashboardScreen: React.FC = () => {
+  const { operationType } = useOperation();
+
+  // Vet practices get a completely different dashboard
+  if (operationType === "vet_practice") {
+    return <VetDashboardScreen />;
+  }
+
+  return <RanchDashboardScreen />;
+};
+
+const RanchDashboardScreen: React.FC = () => {
   const [search, setSearch] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
