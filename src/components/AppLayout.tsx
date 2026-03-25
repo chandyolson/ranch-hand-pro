@@ -191,8 +191,6 @@ const AppLayout: React.FC = () => {
           if (route) navigate(route);
           setDrawerOpen(false);
         }}
-        onSignOut={() => setDrawerOpen(false)}
-        onSwitchOperation={() => setDrawerOpen(false)}
       />
 
       <main className="py-5">
