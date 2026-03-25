@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -11,21 +11,52 @@ const ResetPasswordPage: React.FC = () => {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [ready, setReady] = useState(false);
+  const [expired, setExpired] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Listen for the PASSWORD_RECOVERY event — this fires when Supabase
+    // finishes consuming the recovery token from the URL hash fragment.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setReady(true);
       }
+      // Some Supabase versions fire SIGNED_IN instead of PASSWORD_RECOVERY
+      if (event === 'SIGNED_IN' && session?.user?.recovery_sent_at) {
+        setReady(true);
+      }
     });
-    // Also check if already in recovery state
-    setReady(true);
-    return () => subscription.unsubscribe();
+
+    // Check if the URL has a recovery hash — if not, user navigated here
+    // directly without a reset link
+    const hash = window.location.hash;
+    const hasRecoveryToken = hash.includes('type=recovery') || hash.includes('type=magiclink');
+
+    if (!hasRecoveryToken) {
+      // No token — give onAuthStateChange a moment, then show expired
+      safetyTimer = setTimeout(() => setExpired(true), 2000);
+    } else {
+      // Have a token but PASSWORD_RECOVERY might not fire (expired link)
+      safetyTimer = setTimeout(() => {
+        setExpired((prev) => { if (!ready) return true; return prev; });
+      }, 8000);
+    }
+
+    return () => {
+      if (safetyTimer) clearTimeout(safetyTimer);
+      subscription.unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -35,19 +66,66 @@ const ResetPasswordPage: React.FC = () => {
     if (err) {
       setError(err.message);
     } else {
+      // Sign out so they log in fresh with the new password
+      await supabase.auth.signOut();
       navigate('/sign-in', { state: { message: 'Password updated — please sign in' } });
     }
     setSubmitting(false);
   };
 
-  if (!ready) {
+  // Expired / no token state
+  if (expired && !ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-10 h-10 border-4 rounded-full animate-spin" style={{ borderColor: '#E8E4DC', borderTopColor: '#0E2646' }} />
+      <div className="min-h-screen flex items-center justify-center bg-white px-4 font-inter">
+        <div className="w-full max-w-[400px] border border-[#E8E4DC] rounded-2xl shadow-sm p-8 text-center">
+          <div className="mb-6">
+            <h1 style={{ color: '#0E2646', fontSize: 24, fontWeight: 800 }}>HerdWork</h1>
+          </div>
+          <p style={{ color: '#1A1A1A', fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+            Reset link expired or invalid
+          </p>
+          <p style={{ color: '#717182', fontSize: 14, marginBottom: 24 }}>
+            Password reset links are single-use and expire after 1 hour. Request a new one below.
+          </p>
+          <Link
+            to="/forgot-password"
+            className="inline-block w-full rounded-full font-inter text-center"
+            style={{
+              height: 48,
+              lineHeight: '48px',
+              backgroundColor: '#F3D12A',
+              color: '#1A1A1A',
+              fontWeight: 700,
+              fontSize: 16,
+              textDecoration: 'none',
+            }}
+          >
+            Request New Link
+          </Link>
+          <Link to="/sign-in" style={{ color: '#55BAAA', fontSize: 14 }} className="block mt-4">
+            Back to Sign In
+          </Link>
+        </div>
       </div>
     );
   }
 
+  // Loading / waiting for token consumption
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div
+            className="w-10 h-10 border-4 rounded-full animate-spin mx-auto mb-4"
+            style={{ borderColor: '#E8E4DC', borderTopColor: '#0E2646' }}
+          />
+          <p style={{ color: '#717182', fontSize: 14 }}>Verifying reset link…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Ready — show the reset form
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4 font-inter">
       <div className="w-full max-w-[400px] border border-[#E8E4DC] rounded-2xl shadow-sm p-8">
