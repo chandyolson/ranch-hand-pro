@@ -1,23 +1,38 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 
 const SignInPage: React.FC = () => {
-  const { signIn } = useAuth();
+  const { signIn, session } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // If user is already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (session) {
+      navigate('/', { replace: true });
+    }
+  }, [session, navigate]);
+
+  // Show success message from password reset
+  const successMessage = (location.state as any)?.message;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
     const { error: err } = await signIn(email, password);
-    if (err) setError(err.message);
-    setSubmitting(false);
+    if (err) {
+      setError(err.message);
+      setSubmitting(false);
+    }
+    // On success, onAuthStateChange sets session → useEffect redirects to /
   };
 
   return (
@@ -27,6 +42,12 @@ const SignInPage: React.FC = () => {
           <h1 style={{ color: '#0E2646', fontSize: 24, fontWeight: 800 }}>HerdWork</h1>
           <p style={{ color: '#717182', fontSize: 14, marginTop: 4 }}>Sign in to your account</p>
         </div>
+
+        {successMessage && (
+          <div className="mb-4 p-3 rounded-xl text-center" style={{ backgroundColor: 'rgba(85,186,170,0.1)', color: '#55BAAA', fontSize: 14, fontWeight: 600 }}>
+            {successMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

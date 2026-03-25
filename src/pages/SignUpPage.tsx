@@ -1,22 +1,34 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 
 const SignUpPage: React.FC = () => {
-  const { signUp } = useAuth();
+  const { signUp, session } = useAuth();
+  const navigate = useNavigate();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // With email confirmation disabled, signup auto-logs in.
+  // Redirect to onboarding (AuthGuard will handle routing from there).
+  useEffect(() => {
+    if (session) {
+      navigate('/', { replace: true });
+    }
+  }, [session, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -25,10 +37,9 @@ const SignUpPage: React.FC = () => {
     const { error: err } = await signUp(email, password, displayName);
     if (err) {
       setError(err.message);
-    } else {
-      setSuccess(true);
+      setSubmitting(false);
     }
-    setSubmitting(false);
+    // On success, auto-login fires → session set → useEffect redirects
   };
 
   return (
@@ -39,16 +50,7 @@ const SignUpPage: React.FC = () => {
           <p style={{ color: '#717182', fontSize: 14, marginTop: 4 }}>Create your account</p>
         </div>
 
-        {success ? (
-          <div className="text-center py-6">
-            <p style={{ color: '#55BAAA', fontSize: 16, fontWeight: 600 }}>Check your email to confirm your account</p>
-            <Link to="/sign-in" style={{ color: '#55BAAA', fontSize: 14, marginTop: 16 }} className="block mt-4">
-              Back to Sign In
-            </Link>
-          </div>
-        ) : (
-          <>
-            <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Full Name</label>
                 <input
@@ -127,8 +129,6 @@ const SignUpPage: React.FC = () => {
                 Already have an account? Sign in
               </Link>
             </div>
-          </>
-        )}
       </div>
     </div>
   );
