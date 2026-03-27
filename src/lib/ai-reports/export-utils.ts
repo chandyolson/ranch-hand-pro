@@ -182,7 +182,7 @@ export async function exportPDF(params: {
   }
 
   // FOOTER on every page
-  const pageCount = doc.internal.getNumberOfPages();
+  const pageCount = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setDrawColor("#D4D4D0");
