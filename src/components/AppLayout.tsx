@@ -28,6 +28,7 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/reference/breeds": { title: "Breeds", subtitle: "Breed Library" },
   "/reference/templates": { title: "Templates", subtitle: "Work Templates" },
   "/cow-cleaner": { title: "Cow Cleaner", subtitle: "Import & Clean Data" },
+  "/ai-reports": { title: "AI Reports", subtitle: "" },
   "/customers": { title: "Customers", subtitle: "Practice Clients" },
 };
 
