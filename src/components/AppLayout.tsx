@@ -62,7 +62,7 @@ const AppLayout: React.FC = () => {
   const { data: counts } = useAnimalCounts();
   const path = location.pathname;
 
-  const isHome = path === "/" || path === "/sale-barn";
+  const isHome = path === "/" || path === "/sale-barn" || path === "/ai-reports";
   const isAnimalDetail = /^\/animals\/[^/]+$/.test(path) && path !== "/animals/new";
 
   let config = routeConfig[path];
@@ -102,7 +102,8 @@ const AppLayout: React.FC = () => {
 
   const activeItem = reverseNavMap[path]
     || (path.startsWith("/animals") ? "Animals" : undefined)
-    || (path.startsWith("/customers") ? "Customers" : undefined);
+    || (path.startsWith("/customers") ? "Customers" : undefined)
+    || (path === "/ai-reports" ? "AI Reports" : undefined);
 
   return (
     <div className="min-h-screen font-inter" style={{ backgroundColor: "#F5F5F0" }}>
