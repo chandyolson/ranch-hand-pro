@@ -3037,6 +3037,7 @@ export type Database = {
     Functions: {
       auth_user_operation_ids: { Args: never; Returns: string[] }
       bulk_insert_customers: { Args: { data: Json }; Returns: number }
+      execute_readonly_query: { Args: { query_text: string }; Returns: Json }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
