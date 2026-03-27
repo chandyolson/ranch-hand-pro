@@ -18,9 +18,13 @@ interface ChartConfig {
 }
 
 const ChatChart: React.FC<{ config: ChartConfig }> = ({ config }) => {
+  if (!config || !config.data || config.data.length === 0) return null;
+
   const { chart_type, title, data, x_axis, y_axis, colors } = config;
   const palette = colors?.length ? colors : PALETTE;
   const yKeys = Array.isArray(y_axis) ? y_axis : y_axis ? [y_axis] : Object.keys(data[0] || {}).filter((k) => k !== x_axis);
+
+  console.log('ChatChart rendering:', chart_type, 'x:', x_axis, 'y:', y_axis, 'keys:', Object.keys(data[0]));
 
   return (
     <div style={{ marginTop: 10 }}>
