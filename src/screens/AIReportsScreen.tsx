@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useOperation } from "@/contexts/OperationContext";
 import { supabase } from "@/integrations/supabase/client";
 import TemplatePills from "@/components/ai-reports/TemplatePills";
@@ -16,7 +15,6 @@ const EXAMPLE_QUESTIONS = [
 
 const AIReportsScreen: React.FC = () => {
   const { operationId } = useOperation();
-  const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -64,59 +62,17 @@ const AIReportsScreen: React.FC = () => {
     }
   };
 
-  const handleNewChat = () => {
-    setMessages([]);
-  };
-
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
-        fontFamily: "'Inter', sans-serif",
+        height: "calc(100vh - 60px)",
+        marginTop: -20,
+        marginLeft: -16,
+        marginRight: -16,
       }}
     >
-      {/* Header */}
-      <header
-        style={{
-          background: "linear-gradient(180deg, #153566 0%, #081020 100%)",
-          padding: "12px 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-            aria-label="Go back"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M12.5 15L7.5 10L12.5 5" stroke="#F0F0F0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <span style={{ color: "#fff", fontSize: 17, fontWeight: 700 }}>AI Reports</span>
-        </div>
-        <button
-          onClick={handleNewChat}
-          style={{
-            background: "#F3D12A",
-            color: "#0E2646",
-            border: "none",
-            borderRadius: 20,
-            padding: "6px 16px",
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          New Chat
-        </button>
-      </header>
-
       {/* Template pills */}
       <TemplatePills onSelect={sendMessage} disabled={isLoading} />
 
