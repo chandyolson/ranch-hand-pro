@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import ChatChart from "./ChatChart";
 import ChatTable from "./ChatTable";
 import { useChuteSideToast } from "@/components/ToastContext";
+import { useOperation } from "@/contexts/OperationContext";
+import { exportPDF, exportCSV, generateReportFilename } from "@/lib/ai-reports/export-utils";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -20,7 +22,12 @@ interface Props {
 
 const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp }) => {
   const { showToast } = useChuteSideToast();
+  const { operationName } = useOperation();
   const isUser = message.role === "user";
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState<"pdf" | "csv" | null>(null);
+
+  const showExports = message.export_available !== false && !isUser && !message.isError;
 
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", marginBottom: 12 }}>
@@ -52,15 +59,69 @@ const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp }) => {
         >
           <div style={{ whiteSpace: "pre-wrap" }}>{message.content}</div>
 
-          {message.chart_config && <ChatChart config={message.chart_config} />}
+          {message.chart_config && (
+            <div ref={chartRef}>
+              <ChatChart config={message.chart_config} />
+            </div>
+          )}
           {message.table_data && <ChatTable data={message.table_data} />}
 
-          {message.export_available && (
+          {showExports && (
             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-              {["Export PDF", "Export CSV"].map((label) => (
+              <button
+                disabled={!!exporting}
+                onClick={async () => {
+                  setExporting("pdf");
+                  try {
+                    await exportPDF({
+                      operationName: operationName || "ChuteSide Operation",
+                      summary: message.content || "",
+                      table_data: message.table_data || null,
+                      chartRef: chartRef.current,
+                      filename: generateReportFilename(message.content || "", "pdf"),
+                    });
+                    if (navigator.vibrate) navigator.vibrate(15);
+                    showToast("success", "PDF exported — check your downloads folder.");
+                  } catch {
+                    showToast("error", "Export failed. Try again or contact support.");
+                  } finally {
+                    setExporting(null);
+                  }
+                }}
+                style={{
+                  borderRadius: 20,
+                  border: "1.5px solid #55BAAA",
+                  background: "transparent",
+                  color: "#55BAAA",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  padding: "5px 14px",
+                  cursor: exporting ? "not-allowed" : "pointer",
+                  opacity: exporting ? 0.5 : 1,
+                }}
+              >
+                {exporting === "pdf" ? "Exporting..." : "Export PDF"}
+              </button>
+
+              {message.table_data && (
                 <button
-                  key={label}
-                  onClick={() => showToast("info", "Export coming soon")}
+                  disabled={!!exporting}
+                  onClick={() => {
+                    if (!message.table_data) return;
+                    setExporting("csv");
+                    try {
+                      exportCSV(
+                        message.table_data,
+                        generateReportFilename(message.content || "", "csv")
+                      );
+                      if (navigator.vibrate) navigator.vibrate(15);
+                      showToast("success", "CSV exported — check your downloads folder.");
+                    } catch {
+                      showToast("error", "Export failed. Try again or contact support.");
+                    } finally {
+                      setExporting(null);
+                    }
+                  }}
                   style={{
                     borderRadius: 20,
                     border: "1.5px solid #55BAAA",
@@ -69,12 +130,13 @@ const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp }) => {
                     fontSize: 12,
                     fontWeight: 600,
                     padding: "5px 14px",
-                    cursor: "pointer",
+                    cursor: exporting ? "not-allowed" : "pointer",
+                    opacity: exporting ? 0.5 : 1,
                   }}
                 >
-                  {label}
+                  {exporting === "csv" ? "Exporting..." : "Export CSV"}
                 </button>
-              ))}
+              )}
             </div>
           )}
 
