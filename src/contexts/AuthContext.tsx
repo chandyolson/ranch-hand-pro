@@ -25,6 +25,7 @@ interface AuthContextValue {
   operations: UserOperation[];
   activeOperation: UserOperation | null;
   isLoading: boolean;
+  loadError: string | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, displayName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -40,6 +41,7 @@ const AuthContext = createContext<AuthContextValue>({
   operations: [],
   activeOperation: null,
   isLoading: true,
+  loadError: null,
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
   signOut: async () => {},
@@ -55,11 +57,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [operations, setOperations] = useState<UserOperation[]>([]);
   const [activeOperation, setActiveOperation] = useState<UserOperation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadUserData = useCallback(async (userId: string) => {
     try {
       // Load user profile
-      const { data: profile } = await (supabase as any)
+      const { data: profile } = await supabase
         .from('user_profiles')
         .select('id, user_id, display_name, phone, avatar_url, default_operation_id')
         .eq('user_id', userId)
@@ -68,19 +71,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(profile ?? null);
 
       // Load operations via operation_teams
-      const { data: teams } = await (supabase as any)
+      const { data: teams } = await supabase
         .from('operation_teams')
         .select('user_type, operation_id, operations(id, name, operation_type)')
         .eq('user_id', userId);
 
       const ops: UserOperation[] = (teams ?? [])
-        .filter((t: any) => t.operations)
-        .map((t: any) => ({
-          id: t.operations.id,
-          name: t.operations.name,
-          operation_type: t.operations.operation_type,
-          user_type: t.user_type,
-        }));
+        .filter((t) => t.operations)
+        .map((t) => {
+          const op = t.operations as { id: string; name: string; operation_type: string };
+          return {
+            id: op.id,
+            name: op.name,
+            operation_type: op.operation_type,
+            user_type: t.user_type,
+          };
+        });
 
       setOperations(ops);
 
@@ -96,13 +102,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err) {
       console.error('Error loading user data:', err);
+      setLoadError('Failed to load your account data. Please refresh the page.');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // onAuthStateChange fires immediately with INITIAL_SESSION, covering the
+    // existing-session case. No separate getSession() call is needed, which
+    // would otherwise trigger a redundant loadUserData on startup.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
@@ -113,17 +122,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(null);
         setOperations([]);
         setActiveOperation(null);
-        setIsLoading(false);
-      }
-    });
-
-    // Then check existing session
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
-      if (existingSession?.user) {
-        loadUserData(existingSession.user.id);
-      } else {
         setIsLoading(false);
       }
     });
@@ -162,11 +160,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (op) {
       setActiveOperation(op);
       // Save preference
-      if (userProfile) {
-        await (supabase as any)
+      if (userProfile && user) {
+        await supabase
           .from('user_profiles')
           .update({ default_operation_id: operationId })
-          .eq('user_id', user?.id);
+          .eq('user_id', user.id);
       }
     }
   };
@@ -185,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       operations,
       activeOperation,
       isLoading,
+      loadError,
       signIn,
       signUp,
       signOut: signOutFn,

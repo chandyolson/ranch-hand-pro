@@ -60,7 +60,7 @@ export function useFilterPresets(presetStorageKey: string) {
 
   const addPreset = useCallback((name: string, filters: ActiveFilter[]) => {
     const newPreset: FilterPreset = {
-      id: crypto.randomUUID?.() || String(Date.now()),
+      id: crypto.randomUUID(),
       name,
       filters: [...filters],
       createdAt: new Date().toISOString(),
