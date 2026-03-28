@@ -2,6 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import StatsBar from "@/components/StatsBar";
+import EmptyState from "@/components/EmptyState";
+import LoadingGrid from "@/components/LoadingGrid";
 import { useOperation } from "@/contexts/OperationContext";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
 import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
@@ -130,32 +133,12 @@ export default function CalvingScreen() {
 
   return (
     <div className="px-4 pt-1 pb-10 space-y-2">
-      {/* Season stats bar */}
-      <div
-        className="rounded-xl px-3 py-2.5 flex items-center justify-between"
-        style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
-      >
-        {[
-          { label: "TOTAL",   value: isLoading ? "…" : calvingStats.total },
-          { label: "HEIFERS", value: isLoading ? "…" : calvingStats.heifers },
-          { label: "BULLS",   value: isLoading ? "…" : calvingStats.bulls },
-          { label: "DEAD",    value: isLoading ? "…" : calvingStats.dead },
-        ].map((stat, i, arr) => (
-          <div key={stat.label} className="flex items-center gap-3">
-            <div className="flex flex-col items-center">
-              <span style={{ fontSize: 18, fontWeight: 600, color: "white", lineHeight: 1 }}>
-                {stat.value}
-              </span>
-              <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(168,230,218,0.60)", letterSpacing: "0.08em", marginTop: 4 }}>
-                {stat.label}
-              </span>
-            </div>
-            {i < arr.length - 1 && (
-              <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.12)" }} />
-            )}
-          </div>
-        ))}
-      </div>
+      <StatsBar isLoading={isLoading} stats={[
+        { label: "TOTAL",   value: calvingStats.total },
+        { label: "HEIFERS", value: calvingStats.heifers },
+        { label: "BULLS",   value: calvingStats.bulls },
+        { label: "DEAD",    value: calvingStats.dead },
+      ]} />
 
       {/* Year picker — collapsed shows selected year, tap to expand */}
       <div style={{ display: "flex", gap: 6, paddingTop: 2, alignItems: "center" }}>
@@ -263,14 +246,7 @@ export default function CalvingScreen() {
         </div>
       </div>
 
-      {/* Loading skeletons */}
-      {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-[#0E2646] rounded-xl px-4 py-3.5 animate-pulse" style={{ height: 72 }} />
-          ))}
-        </div>
-      )}
+      {isLoading && <LoadingGrid count={4} columns={2} height={72} />}
 
       {/* Record list */}
       {!isLoading && (
@@ -333,10 +309,10 @@ export default function CalvingScreen() {
       )}
 
       {!isLoading && filtered.length === 0 && (
-        <div className="py-12 text-center space-y-1.5">
-          <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No records found</div>
-          <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or filter</div>
-        </div>
+        <EmptyState
+          title={isFiltering ? "No records match your search" : "No calving records yet"}
+          subtitle={isFiltering ? "Try a different search or filter" : undefined}
+        />
       )}
     </div>
   );

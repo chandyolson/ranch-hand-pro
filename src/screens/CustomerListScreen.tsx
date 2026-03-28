@@ -27,6 +27,7 @@ const CustomerListScreen: React.FC = () => {
   // ── Vet practice lookup ──
   const { data: vetPractice } = useQuery({
     queryKey: ["vet-practice", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data } = await supabase
         .from("vet_practices")
@@ -41,96 +42,98 @@ const CustomerListScreen: React.FC = () => {
   // ── Clients ──
   const { data: customers, isLoading } = useQuery({
     queryKey: ["vet-customers", vetPractice?.id],
+    enabled: !!vetPractice?.id,
     queryFn: async () => {
-      if (!vetPractice?.id) return [];
       const { data } = await supabase
         .from("vet_practice_clients")
         .select("id, operation_id, clinic_client_id, premise_id, notes, operations(id, name, owner_name, email, phone, address)")
-        .eq("vet_practice_id", vetPractice.id);
-      return data || [];
+        .eq("vet_practice_id", vetPractice!.id);
+      return data ?? [];
     },
-    enabled: !!vetPractice?.id,
   });
 
-  // ── Head counts per client operation ──
-  const clientOpIds = (customers || []).map((c: any) => c.operation_id).filter(Boolean);
+  const clientOpIds = (customers ?? [])
+    .map((c) => (c as { operation_id: string }).operation_id)
+    .filter(Boolean);
+
+  // ── Head counts — one parallel COUNT per operation ──
   const { data: headCounts } = useQuery({
     queryKey: ["vet-head-counts", clientOpIds],
-    queryFn: async () => {
-      if (clientOpIds.length === 0) return {};
-      const counts: Record<string, number> = {};
-      for (const opId of clientOpIds) {
-        const { count } = await supabase
-          .from("animals")
-          .select("*", { count: "exact", head: true })
-          .eq("operation_id", opId)
-          .eq("status", "Active");
-        counts[opId] = count || 0;
-      }
-      return counts;
-    },
     enabled: clientOpIds.length > 0,
+    queryFn: async () => {
+      const results = await Promise.all(
+        clientOpIds.map((opId) =>
+          supabase
+            .from("animals")
+            .select("*", { count: "exact", head: true })
+            .eq("operation_id", opId)
+            .eq("status", "Active")
+            .then(({ count }) => [opId, count ?? 0] as const)
+        )
+      );
+      return Object.fromEntries(results) as Record<string, number>;
+    },
   });
 
-  // ── Last worked date per client ──
+  // ── Last worked date — single batch query, pick max date per operation ──
   const { data: lastWorkedMap } = useQuery({
     queryKey: ["vet-last-worked", clientOpIds],
+    enabled: clientOpIds.length > 0,
     queryFn: async () => {
-      if (clientOpIds.length === 0) return {};
+      const { data } = await supabase
+        .from("projects")
+        .select("operation_id, date")
+        .in("operation_id", clientOpIds)
+        .eq("project_status", "Completed")
+        .order("date", { ascending: false });
+
       const map: Record<string, string> = {};
-      for (const opId of clientOpIds) {
-        const { data } = await supabase
-          .from("projects")
-          .select("date")
-          .eq("operation_id", opId)
-          .eq("project_status", "Completed")
-          .order("date", { ascending: false })
-          .limit(1);
-        if (data?.[0]?.date) {
-          map[opId] = data[0].date;
-        }
+      for (const row of data ?? []) {
+        if (!map[row.operation_id]) map[row.operation_id] = row.date;
       }
       return map;
     },
-    enabled: clientOpIds.length > 0,
   });
 
-  // ── Project count per client (all time) ──
+  // ── Project counts — single batch query, count per operation ──
   const { data: projectCounts } = useQuery({
     queryKey: ["vet-project-counts", clientOpIds],
+    enabled: clientOpIds.length > 0,
     queryFn: async () => {
-      if (clientOpIds.length === 0) return {};
+      const { data } = await supabase
+        .from("projects")
+        .select("operation_id")
+        .in("operation_id", clientOpIds);
+
       const counts: Record<string, number> = {};
-      for (const opId of clientOpIds) {
-        const { count } = await supabase
-          .from("projects")
-          .select("*", { count: "exact", head: true })
-          .eq("operation_id", opId);
-        counts[opId] = count || 0;
+      for (const row of data ?? []) {
+        counts[row.operation_id] = (counts[row.operation_id] ?? 0) + 1;
       }
       return counts;
     },
-    enabled: clientOpIds.length > 0,
   });
 
   // Filter by search
-  const filtered = (customers || []).filter((c: any) => {
+  const filtered = (customers ?? []).filter((c) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    const name = c.operations?.name?.toLowerCase() || "";
-    const owner = c.operations?.owner_name?.toLowerCase() || "";
-    const clientId = c.clinic_client_id?.toLowerCase() || "";
-    return name.includes(q) || owner.includes(q) || clientId.includes(q);
+    const rec = c as { clinic_client_id?: string; operations?: { name?: string; owner_name?: string } };
+    const name  = rec.operations?.name?.toLowerCase() ?? "";
+    const owner = rec.operations?.owner_name?.toLowerCase() ?? "";
+    const id    = rec.clinic_client_id?.toLowerCase() ?? "";
+    return name.includes(q) || owner.includes(q) || id.includes(q);
   });
 
   // Sort: most recently worked first, then alphabetical
-  const sorted = [...filtered].sort((a: any, b: any) => {
-    const dateA = lastWorkedMap?.[a.operation_id] || "";
-    const dateB = lastWorkedMap?.[b.operation_id] || "";
+  const sorted = [...filtered].sort((a, b) => {
+    const recA = a as { operation_id: string; operations?: { name?: string } };
+    const recB = b as { operation_id: string; operations?: { name?: string } };
+    const dateA = lastWorkedMap?.[recA.operation_id] ?? "";
+    const dateB = lastWorkedMap?.[recB.operation_id] ?? "";
     if (dateA && dateB) return dateB.localeCompare(dateA);
     if (dateA) return -1;
     if (dateB) return 1;
-    return (a.operations?.name || "").localeCompare(b.operations?.name || "");
+    return (recA.operations?.name ?? "").localeCompare(recB.operations?.name ?? "");
   });
 
   return (
@@ -182,71 +185,55 @@ const CustomerListScreen: React.FC = () => {
       {/* Customer cards */}
       {!isLoading && sorted.length > 0 && (
         <div className="space-y-3">
-          {sorted.map((c: any) => {
-            const op = c.operations;
-            const name = op?.name || "Unknown";
-            const owner = op?.owner_name;
-            const head = headCounts?.[c.operation_id] ?? "—";
-            const projects = projectCounts?.[c.operation_id] ?? 0;
-            const lastDate = lastWorkedMap?.[c.operation_id];
+          {sorted.map((c) => {
+            const rec  = c as { id: string; operation_id: string; operations?: { name?: string; owner_name?: string } };
+            const name = rec.operations?.name ?? "Unknown";
+            const owner = rec.operations?.owner_name;
+            const head = headCounts?.[rec.operation_id] ?? "—";
+            const projects = projectCounts?.[rec.operation_id] ?? 0;
+            const lastDate = lastWorkedMap?.[rec.operation_id];
             const fmtDate = lastDate
               ? new Date(lastDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
               : null;
 
             return (
               <div
-                key={c.id}
+                key={rec.id}
                 className="rounded-xl cursor-pointer active:scale-[0.99] transition-transform duration-100"
                 style={{ backgroundColor: C.navy, padding: "14px 16px" }}
-                onClick={() => navigate(`/customers/${c.operation_id}`)}
+                onClick={() => navigate(`/customers/${rec.operation_id}`)}
               >
                 <div className="flex items-center gap-3">
                   {/* Avatar */}
                   <div
                     className="flex-shrink-0 flex items-center justify-center rounded-lg"
                     style={{
-                      width: 40,
-                      height: 40,
+                      width: 40, height: 40,
                       background: "linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "rgba(255,255,255,0.6)",
+                      fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.6)",
                     }}
                   >
                     {getInitials(name)}
                   </div>
-
                   {/* Name + owner */}
                   <div className="flex-1 min-w-0">
-                    <div className="truncate" style={{ fontSize: 15, fontWeight: 600, color: "#F0F0F0" }}>
-                      {name}
-                    </div>
+                    <div className="truncate" style={{ fontSize: 15, fontWeight: 600, color: "#F0F0F0" }}>{name}</div>
                     {owner && (
-                      <div className="truncate" style={{ fontSize: 12, color: "rgba(240,240,240,0.45)" }}>
-                        {owner}
-                      </div>
+                      <div className="truncate" style={{ fontSize: 12, color: "rgba(240,240,240,0.45)" }}>{owner}</div>
                     )}
                   </div>
                 </div>
 
                 {/* Stats row */}
                 <div className="flex items-center gap-3 mt-2.5" style={{ paddingLeft: 52 }}>
-                  <span
-                    className="rounded-full"
-                    style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(85,186,170,0.15)", color: "#A8E6DA", textTransform: "uppercase", letterSpacing: "0.06em" }}
-                  >
+                  <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(85,186,170,0.15)", color: "#A8E6DA", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     {head} head
                   </span>
-                  <span
-                    className="rounded-full"
-                    style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(240,240,240,0.45)", textTransform: "uppercase", letterSpacing: "0.06em" }}
-                  >
+                  <span className="rounded-full" style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(240,240,240,0.45)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     {projects} project{projects !== 1 ? "s" : ""}
                   </span>
                   {fmtDate && (
-                    <span style={{ fontSize: 10, color: "rgba(240,240,240,0.3)", marginLeft: "auto" }}>
-                      Last: {fmtDate}
-                    </span>
+                    <span style={{ fontSize: 10, color: "rgba(240,240,240,0.3)", marginLeft: "auto" }}>Last: {fmtDate}</span>
                   )}
                 </div>
               </div>

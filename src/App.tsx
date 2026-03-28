@@ -1,75 +1,77 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { useOperation, OperationProvider } from "@/contexts/OperationContext";
 import { useChuteSideToast as useToast } from "@/components/ToastContext";
 import { ToastProvider } from "@/components/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AuthGuard from "@/components/auth/AuthGuard";
-import CowWorkCloseOutScreen from "@/screens/CowWorkCloseOutScreen";
 import AppLayout from "@/components/AppLayout";
-import DashboardScreen from "@/screens/DashboardScreen";
-import AnimalsDashboardScreen from "@/screens/AnimalsDashboardScreen";
-import AnimalDetailScreen from "@/screens/AnimalDetailScreen";
-import AddAnimalScreen from "@/screens/AddAnimalScreen";
-import BullsDashboardScreen from "@/screens/BullsDashboardScreen";
-import CowWorkScreen from "@/screens/CowWorkScreen";
-import CowWorkNewProjectScreen from "@/screens/CowWorkNewProjectScreen";
-import CowWorkProjectDetailScreen from "@/screens/CowWorkProjectDetailScreen";
-import ProtocolHubScreen from "@/screens/ProtocolHubScreen";
-import CustomerProtocolScreen from "@/screens/CustomerProtocolScreen";
-import CalvingDashboardScreen from "@/screens/CalvingDashboardScreen";
-import CalvingNewScreen from "@/screens/CalvingNewScreen";
-import CalvingRecordScreen from "@/screens/CalvingRecordScreen";
-import RedBookScreen from "@/screens/RedBookScreen";
-import RedBookNewScreen from "@/screens/RedBookNewScreen";
-import RedBookDetailScreen from "@/screens/RedBookDetailScreen";
-import ReferenceScreen from "@/screens/ReferenceScreen";
-import ReferenceGroupsScreen from "@/screens/ReferenceGroupsScreen";
-import ReferenceGroupDetailScreen from "@/screens/ReferenceGroupDetailScreen";
-import ReferenceLocationsScreen from "@/screens/ReferenceLocationsScreen";
-import ReferenceLocationDetailScreen from "@/screens/ReferenceLocationDetailScreen";
-import ReferenceQuickNotesScreen from "@/screens/ReferenceQuickNotesScreen";
-import ReferencePregStagesScreen from "@/screens/ReferencePregStagesScreen";
-import ReferenceTreatmentsScreen from "@/screens/ReferenceTreatmentsScreen";
-import ReferenceProductDetailScreen from "@/screens/ReferenceProductDetailScreen";
-import ReferenceTeamScreen from "@/screens/ReferenceTeamScreen";
-import ReferenceSettingsScreen from "@/screens/ReferenceSettingsScreen";
-import ProtocolTemplateBuilderScreen from "@/screens/ProtocolTemplateBuilderScreen";
-import ProtocolTemplateDetailScreen from "@/screens/ProtocolTemplateDetailScreen";
-import ReferenceBreedsScreen from "@/screens/ReferenceBreedsScreen";
-import WorkTemplateListScreen from "@/screens/WorkTemplateListScreen";
-import WorkTemplateEditScreen from "@/screens/WorkTemplateEditScreen";
-import CowCleanerScreen from "@/screens/CowCleanerScreen";
-import AIReportsScreen from "@/screens/AIReportsScreen";
-import DataQualityScreen from "@/screens/DataQualityScreen";
-import ImportDataScreen from "@/screens/ImportDataScreen";
-import RegistrationAssistantScreen from "@/screens/RegistrationAssistantScreen";
-import CustomerListScreen from "@/screens/CustomerListScreen";
-import CustomerDetailScreen from "@/screens/CustomerDetailScreen";
-import PlaceholderScreen from "@/components/PlaceholderScreen";
-import SaleDaysList from "@/pages/sale-barn/SaleDaysList";
-import SaleDayDetail from "@/pages/sale-barn/SaleDayDetail";
-import WorkOrderForm from "@/pages/sale-barn/WorkOrderForm";
-import ChutesideEntry from "@/pages/sale-barn/ChutesideEntry";
-import CustomerDirectory from "@/pages/sale-barn/CustomerDirectory";
-import BuyerDirectory from "@/pages/sale-barn/BuyerDirectory";
-import PriceSchedule from "@/pages/sale-barn/PriceSchedule";
-import DesignationKeyConfig from "@/pages/sale-barn/DesignationKeyConfig";
-import ConsignmentsPage from "@/pages/sale-barn/ConsignmentsPage";
-import ReportsPage from "@/pages/sale-barn/ReportsPage";
-import WorkedAnimalsPage from "@/pages/sale-barn/WorkedAnimalsPage";
-import DayBillingPage from "@/pages/sale-barn/DayBillingPage";
-import WorkOrderAnimalsReport from "@/pages/sale-barn/WorkOrderAnimalsReport";
-import WorkOrderCviReport from "@/pages/sale-barn/WorkOrderCviReport";
-import ReviewClosePage from "@/pages/sale-barn/ReviewClosePage";
-import AssignAnimals from "@/pages/sale-barn/AssignAnimals";
+
+// Auth pages — small, needed immediately on cold load
 import SignInPage from "@/pages/SignInPage";
 import SignUpPage from "@/pages/SignUpPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import OperationPickerPage from "@/pages/OperationPickerPage";
-import NotFound from "@/pages/NotFound";
+
+// Lazy-loaded screens — only downloaded when the route is first visited
+const DashboardScreen             = lazy(() => import("@/screens/DashboardScreen"));
+const AnimalsDashboardScreen      = lazy(() => import("@/screens/AnimalsDashboardScreen"));
+const AnimalDetailScreen          = lazy(() => import("@/screens/AnimalDetailScreen"));
+const AddAnimalScreen             = lazy(() => import("@/screens/AddAnimalScreen"));
+const BullsDashboardScreen        = lazy(() => import("@/screens/BullsDashboardScreen"));
+const CowWorkScreen               = lazy(() => import("@/screens/CowWorkScreen"));
+const CowWorkNewProjectScreen     = lazy(() => import("@/screens/CowWorkNewProjectScreen"));
+const CowWorkProjectDetailScreen  = lazy(() => import("@/screens/CowWorkProjectDetailScreen"));
+const CowWorkCloseOutScreen       = lazy(() => import("@/screens/CowWorkCloseOutScreen"));
+const ProtocolHubScreen           = lazy(() => import("@/screens/ProtocolHubScreen"));
+const CustomerProtocolScreen      = lazy(() => import("@/screens/CustomerProtocolScreen"));
+const ProtocolTemplateBuilderScreen = lazy(() => import("@/screens/ProtocolTemplateBuilderScreen"));
+const ProtocolTemplateDetailScreen  = lazy(() => import("@/screens/ProtocolTemplateDetailScreen"));
+const CalvingDashboardScreen      = lazy(() => import("@/screens/CalvingDashboardScreen"));
+const CalvingNewScreen            = lazy(() => import("@/screens/CalvingNewScreen"));
+const CalvingRecordScreen         = lazy(() => import("@/screens/CalvingRecordScreen"));
+const RedBookScreen               = lazy(() => import("@/screens/RedBookScreen"));
+const RedBookNewScreen            = lazy(() => import("@/screens/RedBookNewScreen"));
+const RedBookDetailScreen         = lazy(() => import("@/screens/RedBookDetailScreen"));
+const ReferenceScreen             = lazy(() => import("@/screens/ReferenceScreen"));
+const ReferenceGroupsScreen       = lazy(() => import("@/screens/ReferenceGroupsScreen"));
+const ReferenceGroupDetailScreen  = lazy(() => import("@/screens/ReferenceGroupDetailScreen"));
+const ReferenceLocationsScreen    = lazy(() => import("@/screens/ReferenceLocationsScreen"));
+const ReferenceLocationDetailScreen = lazy(() => import("@/screens/ReferenceLocationDetailScreen"));
+const ReferenceQuickNotesScreen   = lazy(() => import("@/screens/ReferenceQuickNotesScreen"));
+const ReferencePregStagesScreen   = lazy(() => import("@/screens/ReferencePregStagesScreen"));
+const ReferenceTreatmentsScreen   = lazy(() => import("@/screens/ReferenceTreatmentsScreen"));
+const ReferenceProductDetailScreen = lazy(() => import("@/screens/ReferenceProductDetailScreen"));
+const ReferenceTeamScreen         = lazy(() => import("@/screens/ReferenceTeamScreen"));
+const ReferenceSettingsScreen     = lazy(() => import("@/screens/ReferenceSettingsScreen"));
+const ReferenceBreedsScreen       = lazy(() => import("@/screens/ReferenceBreedsScreen"));
+const WorkTemplateListScreen      = lazy(() => import("@/screens/WorkTemplateListScreen"));
+const WorkTemplateEditScreen      = lazy(() => import("@/screens/WorkTemplateEditScreen"));
+const CustomerListScreen          = lazy(() => import("@/screens/CustomerListScreen"));
+const CustomerDetailScreen        = lazy(() => import("@/screens/CustomerDetailScreen"));
+const CowCleanerScreen            = lazy(() => import("@/screens/CowCleanerScreen"));
+const AIReportsScreen             = lazy(() => import("@/screens/AIReportsScreen"));
+const DataQualityScreen           = lazy(() => import("@/screens/DataQualityScreen"));
+const ImportDataScreen            = lazy(() => import("@/screens/ImportDataScreen"));
+const RegistrationAssistantScreen = lazy(() => import("@/screens/RegistrationAssistantScreen"));
+const SaleDaysList                = lazy(() => import("@/pages/sale-barn/SaleDaysList"));
+const SaleDayDetail               = lazy(() => import("@/pages/sale-barn/SaleDayDetail"));
+const WorkOrderForm               = lazy(() => import("@/pages/sale-barn/WorkOrderForm"));
+const ChutesideEntry              = lazy(() => import("@/pages/sale-barn/ChutesideEntry"));
+const CustomerDirectory           = lazy(() => import("@/pages/sale-barn/CustomerDirectory"));
+const BuyerDirectory              = lazy(() => import("@/pages/sale-barn/BuyerDirectory"));
+const PriceSchedule               = lazy(() => import("@/pages/sale-barn/PriceSchedule"));
+const DesignationKeyConfig        = lazy(() => import("@/pages/sale-barn/DesignationKeyConfig"));
+const ConsignmentsPage            = lazy(() => import("@/pages/sale-barn/ConsignmentsPage"));
+const ReportsPage                 = lazy(() => import("@/pages/sale-barn/ReportsPage"));
+const WorkedAnimalsPage           = lazy(() => import("@/pages/sale-barn/WorkedAnimalsPage"));
+const DayBillingPage              = lazy(() => import("@/pages/sale-barn/DayBillingPage"));
+const WorkOrderAnimalsReport      = lazy(() => import("@/pages/sale-barn/WorkOrderAnimalsReport"));
+const WorkOrderCviReport          = lazy(() => import("@/pages/sale-barn/WorkOrderCviReport"));
+const ReviewClosePage             = lazy(() => import("@/pages/sale-barn/ReviewClosePage"));
+const AssignAnimals               = lazy(() => import("@/pages/sale-barn/AssignAnimals"));
 
 const SaleBarnGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { operationType } = useOperation();
@@ -92,6 +94,7 @@ const App = () => (
     <OperationProvider>
       <ToastProvider>
         <BrowserRouter>
+          <Suspense fallback={<div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }} />}>
           <Routes>
             {/* Public auth routes */}
             <Route path="/sign-in" element={<SignInPage />} />
@@ -166,6 +169,7 @@ const App = () => (
             {/* Catch-all */}
             <Route path="*" element={<Navigate to="/sign-in" replace />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </ToastProvider>
     </OperationProvider>

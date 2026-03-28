@@ -4,35 +4,39 @@ import DataCard from "@/components/DataCard";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
 import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { useChuteSideToast } from "@/components/ToastContext";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAnimals } from "@/hooks/useAnimals";
+import StatsBar from "@/components/StatsBar";
+import EmptyState from "@/components/EmptyState";
+import LoadingGrid from "@/components/LoadingGrid";
+import { useAnimals, useAnimalCounts } from "@/hooks/useAnimals";
 import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilters";
-import { applyFilters } from "@/lib/filter-utils";
+import type { AnimalSortKey } from "@/hooks/useAnimals";
 import type { FilterFieldConfig } from "@/lib/filter-types";
 import {
   SEX_OPTIONS, ANIMAL_TYPE_OPTIONS, STATUS_OPTIONS, BREED_OPTIONS, TAG_COLOR_OPTIONS,
 } from "@/lib/constants";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const ANIMAL_FILTER_FIELDS: FilterFieldConfig[] = [
-  { key: "tag", label: "Tag", type: "text", group: "Identity" },
-  { key: "tag_color", label: "Tag Color", type: "select", options: [...TAG_COLOR_OPTIONS], group: "Identity" },
-  { key: "eid", label: "EID", type: "text", group: "Identity" },
-  { key: "sex", label: "Sex", type: "select", options: [...SEX_OPTIONS], group: "Identity" },
-  { key: "type", label: "Type", type: "select", options: [...ANIMAL_TYPE_OPTIONS], group: "Identity" },
-  { key: "breed", label: "Breed", type: "select", options: [...BREED_OPTIONS], group: "Identity" },
-  { key: "year_born", label: "Year Born", type: "range", group: "Identity" },
-  { key: "status", label: "Status", type: "select", options: [...STATUS_OPTIONS], group: "Identity" },
+  { key: "tag",        label: "Tag",        type: "text",   group: "Identity" },
+  { key: "tag_color",  label: "Tag Color",  type: "select", options: [...TAG_COLOR_OPTIONS], group: "Identity" },
+  { key: "eid",        label: "EID",        type: "text",   group: "Identity" },
+  { key: "sex",        label: "Sex",        type: "select", options: [...SEX_OPTIONS],        group: "Identity" },
+  { key: "type",       label: "Type",       type: "select", options: [...ANIMAL_TYPE_OPTIONS], group: "Identity" },
+  { key: "breed",      label: "Breed",      type: "select", options: [...BREED_OPTIONS],      group: "Identity" },
+  { key: "year_born",  label: "Year Born",  type: "range",  group: "Identity" },
+  { key: "status",     label: "Status",     type: "select", options: [...STATUS_OPTIONS],     group: "Identity" },
   { key: "lifetime_id", label: "Lifetime ID", type: "text", group: "IDs" },
-  { key: "reg_name", label: "Reg Name", type: "text", group: "IDs" },
-  { key: "reg_number", label: "Reg Number", type: "text", group: "IDs" },
-  { key: "memo", label: "Memo", type: "text", group: "Notes" },
+  { key: "reg_name",   label: "Reg Name",   type: "text",   group: "IDs" },
+  { key: "reg_number", label: "Reg Number", type: "text",   group: "IDs" },
+  { key: "memo",       label: "Memo",       type: "text",   group: "Notes" },
 ];
+
 const TYPE_BADGE_COLORS: Record<string, { bg: string; text: string }> = {
-  Calf:        { bg: "rgba(85,186,170,0.25)", text: "#55BAAA" },
-  Feeder:      { bg: "rgba(243,209,42,0.20)", text: "#F3D12A" },
-  Replacement: { bg: "rgba(91,141,239,0.25)", text: "#5B8DEF" },
+  Calf:        { bg: "rgba(85,186,170,0.25)",  text: "#55BAAA" },
+  Feeder:      { bg: "rgba(243,209,42,0.20)",  text: "#F3D12A" },
+  Replacement: { bg: "rgba(91,141,239,0.25)",  text: "#5B8DEF" },
   Cow:         { bg: "rgba(240,240,240,0.15)", text: "rgba(240,240,240,0.75)" },
-  Bull:        { bg: "rgba(232,138,58,0.25)", text: "#E88A3A" },
+  Bull:        { bg: "rgba(232,138,58,0.25)",  text: "#E88A3A" },
 };
 
 const getTypeBadge = (type?: string | null) => {
@@ -42,72 +46,37 @@ const getTypeBadge = (type?: string | null) => {
 };
 
 const AnimalsScreen: React.FC = () => {
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("tag-asc");
-  const navigate = useNavigate();
-  const { showToast } = useChuteSideToast();
+  const [search, setSearch]   = useState("");
+  const [sort, setSort]       = useState<AnimalSortKey>("tag-asc");
+  const navigate              = useNavigate();
+  const { showToast }         = useChuteSideToast();
 
-  const { data: animals, isLoading, error, refetch } = useAnimals();
   const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_animals");
-  const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_animals");
+  const { presets, addPreset, deletePreset }  = useFilterPresets("chuteside_presets_animals");
 
-  const filtered = applyFilters(
-    (animals || [])
-      .filter(a =>
-        !search ||
-        a.tag.toLowerCase().includes(search.toLowerCase()) ||
-        (a.breed || "").toLowerCase().includes(search.toLowerCase()) ||
-        (a.eid || "").toLowerCase().includes(search.toLowerCase())
-      ),
-    filters
-  )
-    .sort((a, b) => {
-      switch (sort) {
-        case "tag-asc": return a.tag.localeCompare(b.tag);
-        case "tag-desc": return b.tag.localeCompare(a.tag);
-        case "breed": return (a.breed || "").localeCompare(b.breed || "");
-        default: return 0;
-      }
-    });
+  // Debounce so we don't fire a query on every keystroke
+  const debouncedSearch = useDebounce(search, 300);
+
+  const { data: animals, isLoading, error, refetch } = useAnimals({
+    search:  debouncedSearch,
+    filters,
+    sort,
+  });
+
+  // Stats always reflect the full herd, not the current search result
+  const { data: counts } = useAnimalCounts();
 
   const isFiltering = search.length > 0 || filters.length > 0;
 
-  const allAnimals = animals || [];
-  const stats = {
-    total: allAnimals.length,
-    active: allAnimals.filter(a => a.status === "Active").length,
-    cows: allAnimals.filter(a => a.sex === "Cow").length,
-    bulls: allAnimals.filter(a => a.sex === "Bull").length,
-  };
-
   return (
     <div className="px-4 pt-1 pb-10 space-y-2">
-      {/* Totals bar */}
-      <div
-        className="rounded-xl px-3 py-2.5 flex items-center justify-between"
-        style={{ background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}
-      >
-        {[
-          { label: "TOTAL",  value: isLoading ? "—" : stats.total },
-          { label: "ACTIVE", value: isLoading ? "—" : stats.active },
-          { label: "COWS",   value: isLoading ? "—" : stats.cows },
-          { label: "BULLS",  value: isLoading ? "—" : stats.bulls },
-        ].map((stat, i, arr) => (
-          <div key={stat.label} className="flex items-center gap-3">
-            <div className="flex flex-col items-center">
-              <span style={{ fontSize: 18, fontWeight: 600, color: "white", lineHeight: 1 }}>
-                {stat.value}
-              </span>
-              <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(168,230,218,0.60)", letterSpacing: "0.08em", marginTop: 4 }}>
-                {stat.label}
-              </span>
-            </div>
-            {i < arr.length - 1 && (
-              <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.12)" }} />
-            )}
-          </div>
-        ))}
-      </div>
+      {/* Totals bar — sourced from count queries, never from the filtered page */}
+      <StatsBar stats={[
+        { label: "TOTAL",  value: counts?.total  },
+        { label: "ACTIVE", value: counts?.active },
+        { label: "COWS",   value: counts?.cows   },
+        { label: "BULLS",  value: counts?.bulls  },
+      ]} />
 
       <ListScreenToolbar
         title="Animals"
@@ -122,17 +91,17 @@ const AnimalsScreen: React.FC = () => {
         activeFilter=""
         onFilterChange={() => {}}
         sortOptions={[
-          { value: "tag-asc", label: "Tag ↑" },
+          { value: "tag-asc",  label: "Tag ↑" },
           { value: "tag-desc", label: "Tag ↓" },
-          { value: "breed", label: "Breed" },
+          { value: "breed",    label: "Breed" },
         ]}
         activeSort={sort}
-        onSortChange={setSort}
+        onSortChange={(v) => setSort(v as AnimalSortKey)}
         onImport={() => showToast("info", "Import — coming soon")}
         onExport={() => showToast("info", "Export — coming soon")}
         onMassSelect={() => showToast("info", "Mass Select — coming soon")}
         onMassEdit={() => showToast("info", "Mass Edit — coming soon")}
-        resultCount={filtered.length}
+        resultCount={animals?.length ?? 0}
         isFiltering={isFiltering}
         advancedFilter={
           <AdvancedSearchPanel
@@ -147,13 +116,7 @@ const AnimalsScreen: React.FC = () => {
         }
       />
 
-      {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-[72px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.15)" }} />
-          ))}
-        </div>
-      )}
+      {isLoading && <LoadingGrid count={6} columns={2} height={72} />}
 
       {error && !isLoading && (
         <div className="py-12 text-center space-y-3">
@@ -170,7 +133,7 @@ const AnimalsScreen: React.FC = () => {
 
       {!isLoading && !error && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {filtered.map(animal => (
+          {(animals ?? []).map(animal => (
             <div
               key={animal.id}
               className="cursor-pointer active:scale-[0.99] transition-transform duration-100"
@@ -186,11 +149,11 @@ const AnimalsScreen: React.FC = () => {
         </div>
       )}
 
-      {!isLoading && !error && filtered.length === 0 && (
-        <div className="py-12 text-center space-y-1.5">
-          <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No animals found</div>
-          <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)" }}>Try a different search or filter</div>
-        </div>
+      {!isLoading && !error && (animals ?? []).length === 0 && (
+        <EmptyState
+          title={isFiltering ? "No animals match your search" : "No animals yet"}
+          subtitle={isFiltering ? "Try a different search or filter" : undefined}
+        />
       )}
     </div>
   );

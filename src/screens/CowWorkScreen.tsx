@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import CowWorkProjectCard from "@/components/CowWorkProjectCard";
-import { Skeleton } from "@/components/ui/skeleton";
+import StatsBar from "@/components/StatsBar";
+import EmptyState from "@/components/EmptyState";
+import LoadingGrid from "@/components/LoadingGrid";
 
 const STATUS_ORDER: Record<string, number> = { "in-progress": 0, pending: 1, completed: 2 };
 
@@ -19,6 +21,7 @@ export default function CowWorkScreen() {
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ["projects", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
@@ -32,6 +35,7 @@ export default function CowWorkScreen() {
 
   const { data: workCounts } = useQuery({
     queryKey: ["project-work-counts", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cow_work")
@@ -131,23 +135,12 @@ export default function CowWorkScreen() {
         </button>
       </div>
 
-      {/* Stats bar */}
-      <div style={{ borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(145deg, #0E2646 0%, #163A5E 55%, #55BAAA 100%)" }}>
-        {[
-          { label: "TOTAL", value: isLoading ? "—" : stats.total },
-          { label: "ACTIVE", value: isLoading ? "—" : stats.inProgress },
-          { label: "PENDING", value: isLoading ? "—" : stats.pending },
-          { label: "DONE", value: isLoading ? "—" : stats.completed },
-        ].map((stat, i, arr) => (
-          <div key={stat.label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <span style={{ fontSize: 18, fontWeight: 600, color: "white", lineHeight: 1 }}>{stat.value}</span>
-              <span style={{ fontSize: 9, fontWeight: 500, color: "rgba(168,230,218,0.60)", letterSpacing: "0.08em", marginTop: 4 }}>{stat.label}</span>
-            </div>
-            {i < arr.length - 1 && <div style={{ width: 1, height: 22, backgroundColor: "rgba(255,255,255,0.12)" }} />}
-          </div>
-        ))}
-      </div>
+      <StatsBar isLoading={isLoading} stats={[
+        { label: "TOTAL",   value: stats.total },
+        { label: "ACTIVE",  value: stats.inProgress },
+        { label: "PENDING", value: stats.pending },
+        { label: "DONE",    value: stats.completed },
+      ]} />
 
       {/* Filter toggle + active filter pills */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -227,31 +220,25 @@ export default function CowWorkScreen() {
       )}
 
       {/* Project list */}
-      {isLoading && (
+      {isLoading && <LoadingGrid count={3} columns={1} height={100} />}
+
+      {!isLoading && filtered.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-[100px] rounded-xl" style={{ backgroundColor: "rgba(14,38,70,0.15)" }} />
+          {filtered.map(p => (
+            <CowWorkProjectCard
+              key={p.id}
+              {...p}
+              onClick={() => navigate("/cow-work/" + p.id)}
+            />
           ))}
         </div>
       )}
 
-      {!isLoading && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {filtered.length > 0 ? (
-            filtered.map(p => (
-              <CowWorkProjectCard
-                key={p.id}
-                {...p}
-                onClick={() => navigate("/cow-work/" + p.id)}
-              />
-            ))
-          ) : (
-            <div style={{ padding: "48px 0", textAlign: "center" }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(26,26,26,0.40)" }}>No projects found</div>
-              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.30)", marginTop: 4 }}>Try a different search or filter</div>
-            </div>
-          )}
-        </div>
+      {!isLoading && filtered.length === 0 && (
+        <EmptyState
+          title="No projects found"
+          subtitle="Try a different search or filter"
+        />
       )}
     </div>
   );

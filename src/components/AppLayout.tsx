@@ -5,35 +5,53 @@ import ToastContainer from "./ToastContainer";
 import { useOperation } from "@/contexts/OperationContext";
 import { useAnimalCounts } from "@/hooks/useAnimals";
 
-const routeConfig: Record<string, { title: string; subtitle: string }> = {
-  "/": { title: "", subtitle: "" },
-  "/animals": { title: "Animals", subtitle: "" },
-  "/bulls": { title: "Bulls", subtitle: "Herd Sires" },
-  "/calving": { title: "Calving", subtitle: "" },
-  "/calving/new": { title: "Calving", subtitle: "" },
-  "/cow-work": { title: "Cow Work", subtitle: "5 Active Projects" },
-  "/cow-work/new": { title: "New Project", subtitle: "Create Work Project" },
-  "/protocols": { title: "Protocols", subtitle: "Vaccination Programs" },
-  "/protocols/new": { title: "New Protocol", subtitle: "Create Protocol" },
-  "/red-book": { title: "Red Book", subtitle: "Ranch Notes & Records" },
-  "/red-book/new": { title: "New Note", subtitle: "Red Book Entry" },
-  "/reference": { title: "Reference", subtitle: "Settings & Lookups" },
-  "/reference/groups": { title: "Groups", subtitle: "Animal Groupings" },
-  "/reference/locations": { title: "Locations", subtitle: "Pastures & Facilities" },
-  "/reference/quick-notes": { title: "Quick Notes", subtitle: "Reusable Phrases" },
-  "/reference/preg-stages": { title: "Preg Stages", subtitle: "Pregnancy Stages" },
-  "/reference/treatments": { title: "Products", subtitle: "Product Library" },
-  "/reference/team": { title: "Team", subtitle: "Members & Roles" },
-  "/reference/settings": { title: "Settings", subtitle: "Operation Config" },
-  "/reference/breeds": { title: "Breeds", subtitle: "Breed Library" },
-  "/reference/templates": { title: "Templates", subtitle: "Work Templates" },
-  "/cow-cleaner": { title: "Cow Cleaner", subtitle: "Import & Clean Data" },
-  "/ai-reports": { title: "AI Reports", subtitle: "" },
-  "/data-quality": { title: "Data Quality", subtitle: "Automated data integrity checks" },
-  "/import": { title: "Import Data", subtitle: "CSV & Excel Import" },
-  "/registration": { title: "Registration Assistant", subtitle: "Pre-fill breed association forms" },
-  "/customers": { title: "Customers", subtitle: "Practice Clients" },
+interface RouteConfig { title: string; subtitle: string; back?: string }
+
+const routeConfig: Record<string, RouteConfig> = {
+  "/":                        { title: "",                       subtitle: "" },
+  "/animals":                 { title: "Animals",                subtitle: "",                               back: "/" },
+  "/animals/new":             { title: "Add Animal",             subtitle: "New Record",                    back: "/animals" },
+  "/bulls":                   { title: "Bulls",                  subtitle: "Herd Sires",                    back: "/" },
+  "/calving":                 { title: "Calving",                subtitle: "",                               back: "/" },
+  "/calving/new":             { title: "Calving",                subtitle: "",                               back: "/calving" },
+  "/cow-work":                { title: "Cow Work",               subtitle: "",                               back: "/" },
+  "/cow-work/new":            { title: "New Project",            subtitle: "Create Work Project",           back: "/cow-work" },
+  "/protocols":               { title: "Protocols",              subtitle: "Vaccination Programs",          back: "/" },
+  "/protocols/new":           { title: "New Protocol",           subtitle: "Create Protocol",               back: "/protocols" },
+  "/red-book":                { title: "Red Book",               subtitle: "Ranch Notes & Records",         back: "/" },
+  "/red-book/new":            { title: "New Note",               subtitle: "Red Book Entry",                back: "/red-book" },
+  "/reference":               { title: "Reference",              subtitle: "Settings & Lookups",            back: "/" },
+  "/reference/groups":        { title: "Groups",                 subtitle: "Animal Groupings",              back: "/reference" },
+  "/reference/locations":     { title: "Locations",              subtitle: "Pastures & Facilities",         back: "/reference" },
+  "/reference/quick-notes":   { title: "Quick Notes",            subtitle: "Reusable Phrases",              back: "/reference" },
+  "/reference/preg-stages":   { title: "Preg Stages",            subtitle: "Pregnancy Stages",              back: "/reference" },
+  "/reference/treatments":    { title: "Products",               subtitle: "Product Library",               back: "/reference" },
+  "/reference/team":          { title: "Team",                   subtitle: "Members & Roles",               back: "/reference" },
+  "/reference/settings":      { title: "Settings",               subtitle: "Operation Config",              back: "/reference" },
+  "/reference/breeds":        { title: "Breeds",                 subtitle: "Breed Library",                 back: "/reference" },
+  "/reference/templates":     { title: "Templates",              subtitle: "Work Templates",                back: "/reference" },
+  "/cow-cleaner":             { title: "Cow Cleaner",            subtitle: "Import & Clean Data",           back: "/" },
+  "/ai-reports":              { title: "AI Reports",             subtitle: "",                               back: "/" },
+  "/data-quality":            { title: "Data Quality",           subtitle: "Automated data integrity checks", back: "/" },
+  "/import":                  { title: "Import Data",            subtitle: "CSV & Excel Import",            back: "/" },
+  "/registration":            { title: "Registration Assistant", subtitle: "Pre-fill breed association forms", back: "/" },
+  "/customers":               { title: "Customers",              subtitle: "Practice Clients",              back: "/" },
 };
+
+/** Resolve the back destination for dynamic routes not in routeConfig. */
+function getDynamicBackPath(path: string): string | null {
+  if (/^\/animals\/[^/]+$/.test(path))                          return "/animals";
+  if (/^\/cow-work\/[^/]+\/close-out$/.test(path))             return path.replace(/\/close-out$/, "");
+  if (/^\/cow-work\/[^/]+$/.test(path))                        return "/cow-work";
+  if (/^\/calving\/[^/]+$/.test(path))                         return "/calving";
+  if (/^\/red-book\/[^/]+$/.test(path))                        return "/red-book";
+  if (/^\/protocols\/[^/]+$/.test(path))                       return "/protocols";
+  if (/^\/reference\/[^/]+$/.test(path))                       return "/reference";
+  if (/^\/sale-barn\/[^/]+\/work-order/.test(path))            return `/sale-barn/${path.split("/")[2]}`;
+  if (/^\/sale-barn\/[^/]+/.test(path))                        return "/sale-barn";
+  if (/^\/customers\/[^/]+$/.test(path))                       return "/customers";
+  return null;
+}
 
 const navRouteMap: Record<string, string> = {
   "Operation Dashboard": "/",
@@ -72,40 +90,32 @@ const AppLayout: React.FC = () => {
   const isHome = path === "/" || path === "/sale-barn" || path === "/ai-reports";
   const isAnimalDetail = /^\/animals\/[^/]+$/.test(path) && path !== "/animals/new";
 
-  let config = routeConfig[path];
-  if (path === "/") {
-    config = { title: operationName, subtitle: `Ranch · ${counts?.total ?? '...'} Head · Active` };
-  } else if (path === "/sale-barn") {
-    config = { title: "Sale Barn", subtitle: operationName };
-  } else if (path === "/animals") {
-    config = { title: "Animals", subtitle: `${counts?.total ?? '...'} Total · ${counts?.active ?? '...'} Active` };
-  } else if (!config) {
-    if (isAnimalDetail) {
-      config = { title: "Animal Record", subtitle: "Animal Detail" };
-    } else if (path === "/animals/new") {
-      config = { title: "Add Animal", subtitle: "New Record" };
-    } else if (/^\/cow-work\/[^/]+$/.test(path) && path !== "/cow-work/new") {
-      config = { title: "Cow Work", subtitle: "Project Detail" };
-    } else if (/^\/cow-work\/[^/]+\/close-out$/.test(path)) {
-      config = { title: "Close Out", subtitle: "Finalize Project" };
-    } else if (/^\/sale-barn\/[^/]+\/consignments$/.test(path)) {
-      config = { title: "Consignments", subtitle: "Sale Day" };
-    } else if (/^\/sale-barn\/[^/]+\/billing$/.test(path)) {
-      config = { title: "Day Billing", subtitle: "Sale Day" };
-    } else if (/^\/sale-barn\/[^/]+\/reports$/.test(path)) {
-      config = { title: "Reports", subtitle: "Sale Day" };
-    } else if (/^\/sale-barn\/[^/]+\/work-order/.test(path)) {
-      const woMatch = path.match(/\/work-order\/([^/]+)/);
-      const isEditWo = woMatch && woMatch[1] !== "new";
-      config = { title: isEditWo ? "Edit Work Order" : "New Work Order", subtitle: "Work Order" };
-    } else if (/^\/sale-barn\/[^/]+/.test(path)) {
-      config = { title: "Sale Day", subtitle: "Sale Day Detail" };
-    } else if (/^\/customers\/[^/]+$/.test(path)) {
-      config = { title: "Customer", subtitle: "Client Detail" };
-    } else {
-      config = { title: "ChuteSide", subtitle: "" };
-    }
-  }
+  // Dynamic title overrides for routes whose text depends on runtime data
+  const dynamicConfig: RouteConfig | null =
+    path === "/"
+      ? { title: operationName, subtitle: `Ranch · ${counts?.total ?? "..."} Head · Active` }
+    : path === "/sale-barn"
+      ? { title: "Sale Barn", subtitle: operationName }
+    : path === "/animals"
+      ? { title: "Animals", subtitle: `${counts?.total ?? "..."} Total · ${counts?.active ?? "..."} Active` }
+    : null;
+
+  // Static fallback for dynamic path segments not in routeConfig
+  const dynamicPathConfig: RouteConfig | null =
+    isAnimalDetail                                    ? { title: "Animal Record",   subtitle: "Animal Detail" }
+    : /^\/cow-work\/[^/]+$/.test(path)               ? { title: "Cow Work",        subtitle: "Project Detail" }
+    : /^\/cow-work\/[^/]+\/close-out$/.test(path)    ? { title: "Close Out",       subtitle: "Finalize Project" }
+    : /^\/sale-barn\/[^/]+\/consignments$/.test(path)? { title: "Consignments",    subtitle: "Sale Day" }
+    : /^\/sale-barn\/[^/]+\/billing$/.test(path)     ? { title: "Day Billing",     subtitle: "Sale Day" }
+    : /^\/sale-barn\/[^/]+\/reports$/.test(path)     ? { title: "Reports",         subtitle: "Sale Day" }
+    : /^\/sale-barn\/[^/]+\/work-order\/new/.test(path) ? { title: "New Work Order", subtitle: "Work Order" }
+    : /^\/sale-barn\/[^/]+\/work-order/.test(path)   ? { title: "Edit Work Order", subtitle: "Work Order" }
+    : /^\/sale-barn\/[^/]+/.test(path)               ? { title: "Sale Day",        subtitle: "Sale Day Detail" }
+    : /^\/customers\/[^/]+$/.test(path)              ? { title: "Customer",        subtitle: "Client Detail" }
+    : null;
+
+  const config: RouteConfig =
+    dynamicConfig ?? routeConfig[path] ?? dynamicPathConfig ?? { title: "ChuteSide", subtitle: "" };
 
   const activeItem = reverseNavMap[path]
     || (path.startsWith("/animals") ? "Animals" : undefined)
@@ -136,29 +146,11 @@ const AppLayout: React.FC = () => {
             className="flex items-center justify-center active:scale-[0.97]"
             style={{ width: 36, height: 36, background: "none", border: "none", cursor: "pointer" }}
             onClick={() => {
-              if (isAnimalDetail) { navigate("/animals"); }
-              else if (path === "/animals") { navigate("/"); }
-              else if (path === "/bulls") { navigate("/"); }
-              else if (path === "/calving") { navigate("/"); }
-              else if (path === "/cow-work") { navigate("/"); }
-              else if (path === "/protocols") { navigate("/"); }
-              else if (path.startsWith("/protocols/")) { navigate("/protocols"); }
-              else if (path === "/red-book") { navigate("/"); }
-              else if (path === "/cow-cleaner") { navigate("/"); }
-              else if (path === "/reference") { navigate("/"); }
-              else if (path.startsWith("/reference/")) { navigate("/reference"); }
-              else if (path.startsWith("/red-book/")) { navigate("/red-book"); }
-              else if (path.startsWith("/cow-work/")) { navigate("/cow-work"); }
-              else if (path.startsWith("/calving/")) { navigate("/calving"); }
-              else if (/^\/sale-barn\/[^/]+\/work-order/.test(path)) {
-                const sdId = path.split("/")[2];
-                navigate(`/sale-barn/${sdId}`);
-              }
-              else if (/^\/sale-barn\/[^/]+/.test(path)) { navigate("/sale-barn"); }
-              else if (/^\/customers\/[^/]+$/.test(path)) { navigate("/customers"); }
-              else if (path === "/customers") { navigate("/"); }
-              else if (window.history.length > 1) { navigate(-1); }
-              else { navigate("/"); }
+              const dest =
+                routeConfig[path]?.back ??
+                getDynamicBackPath(path) ??
+                (window.history.length > 1 ? -1 : "/");
+              navigate(dest as string);
             }}
             aria-label="Go back"
           >

@@ -1,4 +1,56 @@
 import type { ActiveFilter, FilterFieldConfig } from "./filter-types";
+import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+
+/**
+ * Translate an ActiveFilter array into Supabase query conditions.
+ * Mirrors the logic in applyFilters() but runs server-side.
+ * Use this instead of applyFilters() when data is fetched from Supabase.
+ */
+export function applyFiltersToQuery<T>(
+  query: PostgrestFilterBuilder<any, any, T[]>,
+  filters: ActiveFilter[]
+): PostgrestFilterBuilder<any, any, T[]> {
+  for (const f of filters) {
+    const { key, type, value } = f;
+    switch (type) {
+      case "text": {
+        const v = String(value).trim();
+        if (v) query = query.ilike(key, `%${v}%`) as typeof query;
+        break;
+      }
+      case "select": {
+        const v = String(value);
+        if (v === "none" || v === "None") {
+          query = query.is(key, null) as typeof query;
+        } else {
+          query = query.eq(key, v) as typeof query;
+        }
+        break;
+      }
+      case "multi-select": {
+        const vals = (value as string[]).filter(Boolean);
+        if (vals.length) query = query.in(key, vals) as typeof query;
+        break;
+      }
+      case "range": {
+        const [min, max] = value as [string, string];
+        if (min) query = query.gte(key, min) as typeof query;
+        if (max) query = query.lte(key, max) as typeof query;
+        break;
+      }
+      case "date-range": {
+        const [from, to] = value as [string, string];
+        if (from) query = query.gte(key, from) as typeof query;
+        if (to) query = query.lte(key, to) as typeof query;
+        break;
+      }
+      case "boolean":
+        query = query.eq(key, value) as typeof query;
+        break;
+    }
+  }
+  return query;
+}
 
 /**
  * Apply an array of active filters to a data array.
