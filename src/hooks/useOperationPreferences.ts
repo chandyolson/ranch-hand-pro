@@ -48,6 +48,7 @@ export function useOperationPreferences() {
 
   return useQuery({
     queryKey: ["operation-preferences", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("operation_preferences")

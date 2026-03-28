@@ -7,6 +7,7 @@ export function useConsignments(saleDayId?: string, saleDayDate?: string) {
   const { operationId } = useOperation();
   return useQuery({
     queryKey: ["consignments", operationId, saleDayId, saleDayDate],
+    enabled: !!operationId,
     queryFn: async () => {
       if (saleDayId) {
         // Fetch linked consignments

@@ -58,9 +58,9 @@ const RanchDashboardScreen: React.FC = () => {
   // ── Search results query ──
   const { data: searchResults } = useQuery({
     queryKey: ["dashboard-search", debouncedSearch, operationId],
+    enabled: !!operationId && debouncedSearch.length >= 2,
     queryFn: async () => {
       const q = debouncedSearch;
-      if (q.length < 2) return { animals: [], projects: [] };
 
       const [animalsRes, projectsRes] = await Promise.all([
         supabase
@@ -84,7 +84,6 @@ const RanchDashboardScreen: React.FC = () => {
         projects: projectsRes.data || [],
       };
     },
-    enabled: debouncedSearch.length >= 2,
   });
 
   const showDropdown = searchFocused && debouncedSearch.length >= 2 &&
@@ -96,19 +95,22 @@ const RanchDashboardScreen: React.FC = () => {
   const { data: flagCounts } = useFlagCounts();
   const { data: projectCounts } = useQuery({
     queryKey: ["project-counts", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
-      const { count } = await supabase
+      const { count, error } = await supabase
         .from("projects")
         .select("*", { count: "exact", head: true })
         .eq("operation_id", operationId)
         .neq("project_status", "Completed");
-      return count || 0;
+      if (error) throw error;
+      return count ?? 0;
     },
   });
 
   // ── Calving-per-day chart data (last 30 days) ──
   const { data: calvingByDay } = useQuery({
     queryKey: ["dashboard-calving-by-day", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -126,6 +128,7 @@ const RanchDashboardScreen: React.FC = () => {
   // ── Upcoming work (next 3 pending/in-progress projects) ──
   const { data: upcomingWork } = useQuery({
     queryKey: ["dashboard-upcoming-work", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
@@ -142,6 +145,7 @@ const RanchDashboardScreen: React.FC = () => {
   // ── Action items (red book notes with has_action = true) ──
   const { data: actionItems } = useQuery({
     queryKey: ["dashboard-action-items", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("red_book_notes")
@@ -158,6 +162,7 @@ const RanchDashboardScreen: React.FC = () => {
   // ── Recent activity (last 5 calving records) ──
   const { data: recentActivity } = useQuery({
     queryKey: ["dashboard-recent-activity", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("calving_records")
@@ -173,14 +178,16 @@ const RanchDashboardScreen: React.FC = () => {
   // ── Herd status sample animals (one per flag tier) ──
   const { data: flagSamples } = useQuery({
     queryKey: ["dashboard-flag-samples", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("animal_flags")
         .select("flag_tier, animal_id, animal:animals(id, tag, type, memo)")
         .eq("operation_id", operationId)
         .in("flag_tier", ["cull", "production", "management"])
         .is("resolved_at", null)
         .limit(3);
+      if (error) throw error;
       const results: Record<string, { id: string; tag: string; type: string; memo: string }> = {};
       (data || []).forEach((row: any) => {
         if (!results[row.flag_tier] && row.animal) {

@@ -6,6 +6,7 @@ export function useGroups() {
   const { operationId } = useOperation();
   return useQuery({
     queryKey: ['groups', operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('groups')

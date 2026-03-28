@@ -7,6 +7,7 @@ export function useBuyerDirectory() {
   const { operationId } = useOperation();
   return useQuery({
     queryKey: ["buyer_directory", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from("buyer_directory" as any)

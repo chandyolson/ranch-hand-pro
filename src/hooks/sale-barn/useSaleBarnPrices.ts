@@ -7,6 +7,7 @@ export function useSaleBarnPrices() {
   const { operationId } = useOperation();
   return useQuery({
     queryKey: ["sale_barn_prices", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from("sale_barn_prices" as any)

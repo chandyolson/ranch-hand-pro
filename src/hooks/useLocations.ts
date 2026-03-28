@@ -6,6 +6,7 @@ export function useLocations() {
   const { operationId } = useOperation();
   return useQuery({
     queryKey: ['locations', operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('locations')

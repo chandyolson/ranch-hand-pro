@@ -7,6 +7,7 @@ export function useSaleDays() {
   const { operationId } = useOperation();
   return useQuery({
     queryKey: ["sale_days", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from("sale_days" as any)

@@ -7,6 +7,7 @@ export function useDesignationKeys() {
   const { operationId } = useOperation();
   return useQuery({
     queryKey: ["designation_keys", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from("designation_keys" as any)

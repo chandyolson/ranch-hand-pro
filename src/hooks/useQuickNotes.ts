@@ -6,6 +6,7 @@ export function useQuickNotes() {
   const { operationId } = useOperation();
   return useQuery({
     queryKey: ['quick-notes', operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('quick_notes')

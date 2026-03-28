@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+const CALVING_PAGE_LIMIT = 500;
 import { useOperation } from "@/contexts/OperationContext";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
 import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
@@ -56,6 +58,7 @@ export default function CalvingScreen() {
 
   const { data: rawRecords, isLoading } = useQuery({
     queryKey: ["calving-list", operationId, selectedYear],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("calving_records")
@@ -64,7 +67,7 @@ export default function CalvingScreen() {
         .gte("calving_date", `${selectedYear}-01-01`)
         .lte("calving_date", `${selectedYear}-12-31`)
         .order("calving_date", { ascending: false })
-        .limit(5000);
+        .limit(CALVING_PAGE_LIMIT);
       if (error) throw error;
       return data;
     },

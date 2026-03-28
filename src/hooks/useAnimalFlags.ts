@@ -25,18 +25,31 @@ export function useFlagCounts() {
   const { operationId } = useOperation();
   return useQuery({
     queryKey: ['flag-counts', operationId],
+    enabled: !!operationId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const base = supabase
         .from('animal_flags')
-        .select('flag_tier')
+        .select('*', { count: 'exact', head: true })
         .eq('operation_id', operationId)
         .is('resolved_at', null);
-      if (error) throw error;
-      const rows = data || [];
+
+      const [
+        { count: management, error: e1 },
+        { count: production, error: e2 },
+        { count: cull, error: e3 },
+      ] = await Promise.all([
+        base.eq('flag_tier', 'management'),
+        base.eq('flag_tier', 'production'),
+        base.eq('flag_tier', 'cull'),
+      ]);
+      if (e1) throw e1;
+      if (e2) throw e2;
+      if (e3) throw e3;
+
       return {
-        management: rows.filter(r => r.flag_tier === 'management').length,
-        production: rows.filter(r => r.flag_tier === 'production').length,
-        cull: rows.filter(r => r.flag_tier === 'cull').length,
+        management: management ?? 0,
+        production: production ?? 0,
+        cull: cull ?? 0,
       };
     },
   });

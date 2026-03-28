@@ -8,6 +8,7 @@ export function useSaleBarnCustomers(search: string = "", page: number = 0) {
   const pageSize = 50;
   return useQuery({
     queryKey: ["sale_barn_customers", operationId, search, page],
+    enabled: !!operationId,
     queryFn: async () => {
       let query = supabase
         .from("sale_barn_customers" as any)
