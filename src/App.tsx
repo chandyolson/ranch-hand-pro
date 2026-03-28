@@ -41,6 +41,7 @@ import WorkTemplateListScreen from "@/screens/WorkTemplateListScreen";
 import WorkTemplateEditScreen from "@/screens/WorkTemplateEditScreen";
 import CowCleanerScreen from "@/screens/CowCleanerScreen";
 import AIReportsScreen from "@/screens/AIReportsScreen";
+import DataQualityScreen from "@/screens/DataQualityScreen";
 import CustomerListScreen from "@/screens/CustomerListScreen";
 import CustomerDetailScreen from "@/screens/CustomerDetailScreen";
 import PlaceholderScreen from "@/components/PlaceholderScreen";
@@ -138,6 +139,7 @@ const App = () => (
               <Route path="customers/:id" element={<CustomerDetailScreen />} />
               <Route path="cow-cleaner" element={<CowCleanerScreen />} />
               <Route path="ai-reports" element={<AIReportsScreen />} />
+              <Route path="data-quality" element={<DataQualityScreen />} />
               <Route path="sale-barn" element={<SaleBarnGuard><SaleDaysList /></SaleBarnGuard>} />
               <Route path="sale-barn/customers" element={<SaleBarnGuard><CustomerDirectory /></SaleBarnGuard>} />
               <Route path="sale-barn/buyers" element={<SaleBarnGuard><BuyerDirectory /></SaleBarnGuard>} />
