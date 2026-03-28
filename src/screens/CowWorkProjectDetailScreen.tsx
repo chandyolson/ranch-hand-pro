@@ -1128,9 +1128,9 @@ export default function CowWorkProjectDetailScreen() {
                     {/* Active flags */}
                     {(animalActiveFlags || []).length > 0 && (
                       <div className="flex items-center gap-1 ml-1">
-                        {(animalActiveFlags || []).some((f: any) => f.flag_tier === "cull") && <FlagIcon color="red" size="sm" />}
-                        {(animalActiveFlags || []).some((f: any) => f.flag_tier === "production") && <FlagIcon color="gold" size="sm" />}
-                        {(animalActiveFlags || []).some((f: any) => f.flag_tier === "management") && <FlagIcon color="teal" size="sm" />}
+                        {(animalActiveFlags || []).some((f) => f.flag_tier === "cull") && <FlagIcon color="red" size="sm" />}
+                        {(animalActiveFlags || []).some((f) => f.flag_tier === "production") && <FlagIcon color="gold" size="sm" />}
+                        {(animalActiveFlags || []).some((f) => f.flag_tier === "management") && <FlagIcon color="teal" size="sm" />}
                       </div>
                     )}
                   </div>
@@ -1657,17 +1657,17 @@ export default function CowWorkProjectDetailScreen() {
               )}
             </div>
             <div className="space-y-2">
-              {sortByTag(worked, (a: any) => (a.animal as any)?.tag || "").map((a, i) => {
+              {sortByTag(worked, (a) => a.animal?.tag || "").map((a, i) => {
                 const preg = a.preg_stage || "—";
                 const pregColor = preg === "Confirmed" ? { bg: "rgba(85,186,170,0.15)", color: "#55BAAA" }
                   : preg === "Open" ? { bg: "rgba(232,116,97,0.15)", color: "#E87461" }
                     : { bg: "rgba(240,240,240,0.10)", color: "rgba(240,240,240,0.50)" };
-                const animalTag = (a.animal as any)?.tag || "Unknown";
+                const animalTag = a.animal?.tag || "Unknown";
                 return (
                   <div key={a.id || i} className="rounded-xl px-3 py-3.5 bg-[#0E2646] cursor-pointer active:scale-[0.98] transition-all"
                     onClick={() => {
                       // Load this cow_work record into the Add tab for editing
-                      const animal = a.animal as any;
+                      const animal = a.animal;
                       if (animal) {
                         setTagField(animal.tag || "");
                         setMatchedAnimal(animal);
@@ -1720,9 +1720,9 @@ export default function CowWorkProjectDetailScreen() {
                       </div>
                     )}
                     {/* Phase F: Show additional products if any */}
-                    {a.additional_products && Array.isArray(a.additional_products) && (a.additional_products as any[]).length > 0 && (
+                    {a.additional_products && Array.isArray(a.additional_products) && (a.additional_products as unknown as AdditionalProduct[]).length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {(a.additional_products as any[]).map((ap: any, j: number) => (
+                        {(a.additional_products as unknown as AdditionalProduct[]).map((ap, j) => (
                           <span
                             key={j}
                             className="rounded-full"
@@ -1749,7 +1749,7 @@ export default function CowWorkProjectDetailScreen() {
                 </div>
                 <div className="space-y-1">
                   {stillExpected.map(e => {
-                    const animal = e.animal as any;
+                    const animal = e.animal;
                     if (!animal) return null;
                     return (
                       <div
@@ -1990,7 +1990,7 @@ export default function CowWorkProjectDetailScreen() {
                 )}
                 {/* Field Defaults display */}
                 {(() => {
-                  const defs = (project as any)?.field_defaults || {};
+                  const defs = (project?.field_defaults as Record<string, string> | null) || {};
                   const entries = Object.entries(defs).filter(([_, v]) => v);
                   if (entries.length === 0) return null;
                   const labelMap: Record<string, string> = {
@@ -2228,11 +2228,11 @@ export default function CowWorkProjectDetailScreen() {
                   <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)" }}>No products configured</div>
                 ) : (
                   <div className="space-y-1">
-                    {(projectProducts || []).map((pp: any, i: number) => (
+                    {(projectProducts || []).map((pp, i) => (
                       <div key={pp.id || i} className="flex items-center gap-2">
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{(pp.product as any)?.name || pp.product_name || "Unknown"}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{pp.product?.name || pp.product_name || "Unknown"}</span>
                         <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>
-                          {[(pp.product as any)?.dosage, (pp.product as any)?.route].filter(Boolean).join(" · ")}
+                          {[pp.product?.dosage, pp.product?.route].filter(Boolean).join(" · ")}
                         </span>
                       </div>
                     ))}
