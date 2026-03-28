@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import ChatChart from "./ChatChart";
 import ChatTable from "./ChatTable";
+import ActionPreviewCard from "./ActionPreviewCard";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { useOperation } from "@/contexts/OperationContext";
 import { exportPDF, exportCSV, generateReportFilename } from "@/lib/ai-reports/export-utils";
@@ -27,6 +28,7 @@ export interface ChatMessage {
 interface Props {
   message: ChatMessage;
   onFollowUp: (text: string) => void;
+  onActionResult?: (resultMessage: { role: "assistant"; content: string; isError?: boolean }) => void;
 }
 
 const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp }) => {
