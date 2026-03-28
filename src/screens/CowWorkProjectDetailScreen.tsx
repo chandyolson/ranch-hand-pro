@@ -17,6 +17,132 @@ import { sortByTag } from "@/lib/natural-sort";
 import { ALL_FIELDS, getLockedFields, getOptionalFields, resolveFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
+import { type Json } from "@/integrations/supabase/types";
+
+// ── Local interfaces for join-query result shapes ──────────────────────────
+
+interface AnimalStub {
+  id: string;
+  tag: string | null;
+  tag_color: string | null;
+  sex: string | null;
+  type: string | null;
+  breed: string | null;
+  year_born: number | string | null;
+  status?: string | null;
+}
+
+interface WorkedAnimal {
+  id: string;
+  animal_id: string;
+  is_new_animal: boolean | null;
+  weight: number | null;
+  preg_stage: string | null;
+  bse_result: string | null;
+  breeding_sire: string | null;
+  breeding_type: string | null;
+  estrus_status: string | null;
+  scrotal: number | null;
+  sale_weight: number | null;
+  purchase_price: number | null;
+  purchase_source: string | null;
+  days_of_gestation: number | null;
+  fetal_sex: string | null;
+  quick_notes: string[] | null;
+  memo: string | null;
+  record_order: number | null;
+  dna: string | null;
+  technician: string | null;
+  cull_reason: string | null;
+  disposition: string | null;
+  disease: string | null;
+  additional_products: Json | null;
+  date: string;
+  flex_data: Json | null;
+  // merged from flex_data
+  [key: string]: unknown;
+  animal: AnimalStub | null;
+}
+
+interface ProjectProductWithJoin {
+  id: string;
+  product_id: string;
+  dosage: string | null;
+  route: string | null;
+  product_name?: string | null;
+  product: {
+    id: string;
+    name: string;
+    dosage: string | null;
+    route: string | null;
+  } | null;
+}
+
+interface ProjectWithJoins {
+  id: string;
+  name: string;
+  date: string;
+  project_status: string;
+  estimated_head: number | null;
+  head_count: number | null;
+  description: string | null;
+  field_visibility: Json | null;
+  field_defaults: Json | null;
+  group_id: string | null;
+  location_id: string | null;
+  group: { name: string } | null;
+  location: { name: string } | null;
+  work_types: { work_type_id?: string; work_type: { code: string; name: string } | null }[];
+}
+
+interface ExpectedAnimalWithJoin {
+  id: string;
+  animal_id: string;
+  status: string;
+  animal: AnimalStub | null;
+}
+
+interface CalvingWithJoins {
+  id: string;
+  calving_date: string;
+  calf_sex: string | null;
+  calf_status: string | null;
+  calf_tag: string | null;
+  birth_weight: number | null;
+  assistance: number | null;
+  calf_size: string | null;
+  death_explanation: string | null;
+  memo: string | null;
+  quick_notes: string[] | null;
+  calf: { tag: string | null; tag_color: string | null; sex: string | null; status: string | null } | null;
+  sire: { tag: string | null } | null;
+}
+
+interface WorkHistoryEntry {
+  id: string;
+  date: string;
+  weight: number | null;
+  preg_stage: string | null;
+  days_of_gestation: number | null;
+  scrotal: number | null;
+  estrus_status: string | null;
+  quick_notes: string[] | null;
+  memo: string | null;
+  breeding_sire_id: string | null;
+  flex_data: Json | null;
+  project: {
+    name: string;
+    work_types: { work_type: { code: string } | null }[];
+  } | null;
+}
+
+interface AdditionalProduct {
+  product_id: string;
+  product_name: string;
+  dosage: string;
+  route: string;
+  reason: string;
+}
 
 type Tab = "input" | "worked" | "stats" | "details";
 
@@ -71,7 +197,7 @@ export default function CowWorkProjectDetailScreen() {
   const [memo, setMemo] = useState("");
   // Phase F: Additional Products state
   const [additionalProductsOpen, setAdditionalProductsOpen] = useState(false);
-  const [additionalProducts, setAdditionalProducts] = useState<{ product_id: string; product_name: string; dosage: string; route: string; reason: string }[]>([]);
+  const [additionalProducts, setAdditionalProducts] = useState<AdditionalProduct[]>([]);
   const [addProdPickerOpen, setAddProdPickerOpen] = useState(false);
 
   // Load project
@@ -84,7 +210,7 @@ export default function CowWorkProjectDetailScreen() {
         .eq("id", id!)
         .single();
       if (error) throw error;
-      return data;
+      return data as unknown as ProjectWithJoins;
     },
     enabled: !!id,
   });
@@ -117,7 +243,7 @@ export default function CowWorkProjectDetailScreen() {
         .select("id, tag, tag_color, sex, type, breed, year_born")
         .in("id", animalIds);
       const animalMap = new Map((animals || []).map(a => [a.id, a]));
-      return cwData.map(r => ({ ...r, ...(r.flex_data as Record<string, any> || {}), animal: animalMap.get(r.animal_id) || null })) as any[];
+      return cwData.map(r => ({ ...r, ...(r.flex_data as Record<string, unknown> || {}), animal: animalMap.get(r.animal_id) || null })) as unknown as WorkedAnimal[];
     },
     enabled: !!id,
   });
@@ -131,7 +257,7 @@ export default function CowWorkProjectDetailScreen() {
         .select("*, product:products(id, name, dosage, route)")
         .eq("project_id", id!);
       if (error) throw error;
-      return data || [];
+      return (data || []) as unknown as ProjectProductWithJoin[];
     },
     enabled: !!id,
   });
@@ -208,13 +334,13 @@ export default function CowWorkProjectDetailScreen() {
     setEditHeadCount(project?.estimated_head ? String(project.estimated_head) : "");
     setEditMemo(project?.description || "");
     setEditFieldConfig(resolveFieldConfig(project?.field_visibility as unknown as FieldVisibilityConfig | null, projectType));
-    setEditFieldDefaults((project as any)?.field_defaults || {});
+    setEditFieldDefaults((project?.field_defaults as Record<string, string> | null) || {});
     // Load current products into edit state
-    setEditProducts((projectProducts || []).map((pp: any) => ({
-      id: (pp.product as any)?.id || pp.product_id,
-      name: (pp.product as any)?.name || pp.product_name || "Unknown",
-      dosage: (pp.product as any)?.dosage || "",
-      route: (pp.product as any)?.route || "",
+    setEditProducts((projectProducts || []).map((pp) => ({
+      id: pp.product?.id || pp.product_id,
+      name: pp.product?.name || pp.product_name || "Unknown",
+      dosage: pp.product?.dosage || "",
+      route: pp.product?.route || "",
     })));
     setEditProductPickerOpen(false);
     setEditProductSearch("");
@@ -233,8 +359,8 @@ export default function CowWorkProjectDetailScreen() {
           project_status: editStatus,
           estimated_head: editHeadCount ? parseInt(editHeadCount) : null,
           description: editMemo.trim() || null,
-          field_visibility: editFieldConfig as any,
-          field_defaults: editFieldDefaults as any,
+          field_visibility: editFieldConfig as unknown as Json,
+          field_defaults: editFieldDefaults as unknown as Json,
         })
         .eq("id", id!);
       if (error) throw error;
@@ -283,7 +409,7 @@ export default function CowWorkProjectDetailScreen() {
         .eq("project_id", id!)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data || [];
+      return (data || []) as unknown as ExpectedAnimalWithJoin[];
     },
     enabled: !!id,
   });
@@ -302,7 +428,7 @@ export default function CowWorkProjectDetailScreen() {
         .eq("operation_id", operationId)
         .order("calving_date", { ascending: false })
         .limit(10);
-      return data || [];
+      return (data || []) as unknown as CalvingWithJoins[];
     },
     enabled: !!matchedAnimal?.id,
   });
@@ -317,7 +443,7 @@ export default function CowWorkProjectDetailScreen() {
         .eq("operation_id", operationId)
         .order("date", { ascending: false })
         .limit(10);
-      return data || [];
+      return (data || []) as unknown as WorkHistoryEntry[];
     },
     enabled: !!matchedAnimal?.id,
   });
@@ -338,11 +464,11 @@ export default function CowWorkProjectDetailScreen() {
     enabled: !!matchedAnimal?.id,
   });
 
-  const projectType = (project?.work_types as any)?.[0]?.work_type?.code || "";
+  const projectType = project?.work_types?.[0]?.work_type?.code || "";
   const projectName = project?.name || "";
   const projectDate = project ? new Date(project.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
-  const projectGroup = (project?.group as any)?.name || "";
-  const projectLocation = (project?.location as any)?.name || "";
+  const projectGroup = project?.group?.name || "";
+  const projectLocation = project?.location?.name || "";
   const projectStatus = project?.project_status || "Pending";
   const headCount = project?.estimated_head || project?.head_count || 0;
   const worked = workedAnimals || [];
@@ -425,7 +551,7 @@ export default function CowWorkProjectDetailScreen() {
   const [defaultsApplied, setDefaultsApplied] = useState(false);
   useEffect(() => {
     if (!project || defaultsApplied) return;
-    const defaults = (project as any)?.field_defaults;
+    const defaults = project?.field_defaults as Record<string, string> | null;
     if (defaults) applyFieldDefaults(defaults);
     setDefaultsApplied(true);
   }, [project, defaultsApplied]);
@@ -462,8 +588,9 @@ export default function CowWorkProjectDetailScreen() {
         setMemo(existingRecord.memo || "");
         // Phase F: Load existing additional products
         if (existingRecord.additional_products && Array.isArray(existingRecord.additional_products)) {
-          setAdditionalProducts(existingRecord.additional_products as any[]);
-          if ((existingRecord.additional_products as any[]).length > 0) setAdditionalProductsOpen(true);
+          const ap = existingRecord.additional_products as unknown as AdditionalProduct[];
+          setAdditionalProducts(ap);
+          if (ap.length > 0) setAdditionalProductsOpen(true);
         } else {
           setAdditionalProducts([]);
         }
@@ -505,8 +632,9 @@ export default function CowWorkProjectDetailScreen() {
       setSampleId(existingRecord.dna || "");
       setMemo(existingRecord.memo || "");
       if (existingRecord.additional_products && Array.isArray(existingRecord.additional_products)) {
-        setAdditionalProducts(existingRecord.additional_products as any[]);
-        if ((existingRecord.additional_products as any[]).length > 0) setAdditionalProductsOpen(true);
+        const ap = existingRecord.additional_products as unknown as AdditionalProduct[];
+        setAdditionalProducts(ap);
+        if (ap.length > 0) setAdditionalProductsOpen(true);
       } else {
         setAdditionalProducts([]);
       }
@@ -569,7 +697,7 @@ export default function CowWorkProjectDetailScreen() {
     setPurchasePrice("");
     setPurchaseSource("");
     // Re-apply field defaults from project settings
-    applyFieldDefaults((project as any)?.field_defaults || {});
+    applyFieldDefaults((project?.field_defaults as Record<string, string> | null) || {});
     // Scroll to top and focus tag input
     setTimeout(() => {
       tagSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });

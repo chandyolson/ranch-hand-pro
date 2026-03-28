@@ -6,6 +6,7 @@ import { useOperation } from "@/contexts/OperationContext";
 import RedBookCard from "@/components/RedBookCard";
 import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { Skeleton } from "@/components/ui/skeleton";
+import QueryError from "@/components/QueryError";
 import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilters";
 import { applyFilters } from "@/lib/filter-utils";
 import type { FilterFieldConfig } from "@/lib/filter-types";
@@ -25,7 +26,7 @@ const RedBookScreen: React.FC = () => {
   const { filters, setFilters, clearFilters } = usePersistedFilters("chuteside_filters_redbook");
   const { presets, addPreset, deletePreset } = useFilterPresets("chuteside_presets_redbook");
 
-  const { data: entries, isLoading } = useQuery({
+  const { data: entries, isLoading, error, refetch } = useQuery({
     queryKey: ["red-book-notes", operationId],
     enabled: !!operationId,
     queryFn: async () => {
@@ -133,6 +134,8 @@ const RedBookScreen: React.FC = () => {
           {filtered.length} result{filtered.length !== 1 ? "s" : ""}
         </div>
       )}
+
+      {error && <QueryError message="Couldn't load Red Book entries" onRetry={refetch} />}
 
       {/* Loading */}
       {isLoading && (

@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import LoadingGrid from "@/components/LoadingGrid";
 import { useOperation } from "@/contexts/OperationContext";
 import ListScreenToolbar from "@/components/ListScreenToolbar";
+import QueryError from "@/components/QueryError";
 import AdvancedSearchPanel from "@/components/AdvancedSearchPanel";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { usePersistedFilters, useFilterPresets } from "@/hooks/usePersistedFilters";
@@ -57,7 +58,7 @@ export default function CalvingScreen() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
-  const { data: rawRecords, isLoading } = useQuery({
+  const { data: rawRecords, isLoading, error, refetch } = useQuery({
     queryKey: ["calving-list", operationId, selectedYear],
     enabled: !!operationId,
     queryFn: async () => {
@@ -255,6 +256,7 @@ export default function CalvingScreen() {
         </div>
       </div>
 
+      {error && <QueryError message="Couldn't load calving records" onRetry={refetch} />}
       {isLoading && <LoadingGrid count={4} columns={2} height={72} />}
 
       {/* Record list */}

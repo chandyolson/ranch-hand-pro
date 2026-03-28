@@ -9,6 +9,85 @@ import { SUB_LABEL, INPUT_CLS, LABEL_STYLE } from "@/lib/styles";
 import { ANIMAL_TYPE_OPTIONS, SEX_OPTIONS, BREED_OPTIONS, TAG_COLOR_HEX } from "@/lib/constants";
 import { sortByTag } from "@/lib/natural-sort";
 import { generateProjectReportPDF, type ReportAnimal, type ReportProduct, type ReportRecon } from "@/lib/project-report-pdf";
+import { type Json } from "@/integrations/supabase/types";
+
+// ── Local interfaces for join-query result shapes ──────────────────────────
+
+interface AnimalStub {
+  id: string;
+  tag: string | null;
+  tag_color: string | null;
+  sex: string | null;
+  type: string | null;
+  breed: string | null;
+  year_born: number | string | null;
+}
+
+type ReviewFields = { year_born?: string; type?: string; sex?: string; breed?: string };
+
+interface WorkedAnimal {
+  id: string;
+  animal_id: string | null;
+  is_new_animal: boolean | null;
+  weight: number | null;
+  preg_stage: string | null;
+  bse_result: string | null;
+  breeding_sire: string | null;
+  breeding_type: string | null;
+  estrus_status: string | null;
+  scrotal: number | null;
+  sale_weight: number | null;
+  purchase_price: number | null;
+  purchase_source: string | null;
+  days_of_gestation: number | null;
+  fetal_sex: string | null;
+  quick_notes: string[] | null;
+  memo: string | null;
+  record_order: number | null;
+  // merged from flex_data
+  [key: string]: unknown;
+  animal: AnimalStub | null;
+}
+
+interface ReconEntry {
+  animal_id: string;
+  animal: AnimalStub | null;
+}
+
+interface WorkType {
+  code: string;
+  name: string;
+}
+
+interface ProjectWorkType {
+  work_type_id?: string;
+  work_type: WorkType | null;
+}
+
+interface ProjectWithJoins {
+  id: string;
+  name: string | null;
+  date: string;
+  project_status: string | null;
+  estimated_head: number | null;
+  head_count: number | null;
+  description: string | null;
+  field_visibility: Json | null;
+  group: { name: string } | null;
+  location: { name: string } | null;
+  work_types: ProjectWorkType[];
+}
+
+interface ProjectProductWithJoin {
+  id: string;
+  dosage: string | null;
+  route: string | null;
+  product: {
+    name: string;
+    dosage: string | null;
+    route: string | null;
+  } | null;
+}
 
 export default function CowWorkCloseOutScreen() {
   const { id } = useParams<{ id: string }>();
@@ -34,7 +113,7 @@ export default function CowWorkCloseOutScreen() {
 
   // Phase E: Review New Animals wizard state
   const [reviewIndex, setReviewIndex] = useState(0);
-  const [reviewData, setReviewData] = useState<Record<string, { year_born?: string; type?: string; sex?: string; breed?: string }>>({});
+  const [reviewData, setReviewData] = useState<Record<string, ReviewFields>>({});
   const [reviewComplete, setReviewComplete] = useState(false);
   const [savingReview, setSavingReview] = useState(false);
 
@@ -47,7 +126,7 @@ export default function CowWorkCloseOutScreen() {
         .eq("id", id!)
         .single();
       if (error) throw error;
-      return data;
+      return data as unknown as ProjectWithJoins;
     },
     enabled: !!id,
   });
@@ -67,7 +146,7 @@ export default function CowWorkCloseOutScreen() {
         ? await supabase.from("animals").select("id, tag, tag_color, sex, type, breed, year_born").in("id", animalIds)
         : { data: [] };
       const animalMap = new Map((anData || []).map(a => [a.id, a]));
-      return cwData.map(cw => ({ ...cw, ...(cw.flex_data as Record<string, any> || {}), animal: animalMap.get(cw.animal_id) || null })) as any[];
+      return cwData.map(cw => ({ ...cw, ...(cw.flex_data as Record<string, unknown> || {}), animal: animalMap.get(cw.animal_id) || null })) as unknown as WorkedAnimal[];
     },
     enabled: !!id,
   });
@@ -75,7 +154,7 @@ export default function CowWorkCloseOutScreen() {
   const worked = workedAnimals || [];
   const headCount = project?.estimated_head || project?.head_count || 0;
   const projectName = project?.name || "";
-  const projectType = (project?.work_types as any)?.[0]?.work_type?.code || "";
+  const projectType = project?.work_types?.[0]?.work_type?.code || "";
 
   // Expected animals (from group preload)
   const { data: expectedAnimals } = useQuery({
@@ -86,7 +165,7 @@ export default function CowWorkCloseOutScreen() {
         .select("*, animal:animals(id, tag, tag_color, sex, type, year_born)")
         .eq("project_id", id!);
       if (error) throw error;
-      return data || [];
+      return (data || []) as unknown as ReconEntry[];
     },
     enabled: !!id,
   });
@@ -107,7 +186,7 @@ export default function CowWorkCloseOutScreen() {
         .select("*, product:products(name, dosage, route)")
         .eq("project_id", id!);
       if (error) throw error;
-      return data || [];
+      return (data || []) as unknown as ProjectProductWithJoin[];
     },
     enabled: !!id,
   });
@@ -143,7 +222,7 @@ export default function CowWorkCloseOutScreen() {
       const animalIds = [...new Set(cwData.map(r => r.animal_id).filter(Boolean))];
       if (animalIds.length === 0) return [];
       const { data: anData } = await supabase.from("animals").select("id, tag, tag_color, sex, type, year_born").in("id", animalIds);
-      return (anData || []).map(a => ({ animal_id: a.id, animal: a }));
+      return (anData || []).map(a => ({ animal_id: a.id, animal: a })) as ReconEntry[];
     },
     enabled: !!reconProjectId,
   });
@@ -153,15 +232,15 @@ export default function CowWorkCloseOutScreen() {
     : reconSource === "project" ? (pastProjectAnimals || [])
     : [];
   const workedAnimalIds = new Set(worked.map(w => w.animal_id));
-  const reconAnimalIds = new Set(reconList.map((e: any) => e.animal_id));
-  const matched = reconList.filter((e: any) => workedAnimalIds.has(e.animal_id));
-  const missing = reconList.filter((e: any) => !workedAnimalIds.has(e.animal_id));
+  const reconAnimalIds = new Set(reconList.map((e) => e.animal_id));
+  const matched = reconList.filter((e) => workedAnimalIds.has(e.animal_id));
+  const missing = reconList.filter((e) => !workedAnimalIds.has(e.animal_id));
   const extra = worked.filter(w => !reconAnimalIds.has(w.animal_id));
   const projectDate = project
     ? new Date(project.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : "";
-  const projectGroup = (project?.group as any)?.name || "—";
-  const projectLocation = (project?.location as any)?.name || "—";
+  const projectGroup = project?.group?.name || "—";
+  const projectLocation = project?.location?.name || "—";
 
   // Stats
   const confirmedCount = worked.filter((a) => a.preg_stage === "Confirmed").length;
@@ -177,7 +256,7 @@ export default function CowWorkCloseOutScreen() {
   const newAnimals = worked.filter(a => a.is_new_animal);
   const hasNewAnimals = newAnimals.length > 0 && !reviewComplete;
   const currentNewAnimal = newAnimals[reviewIndex];
-  const currentAnimalId = (currentNewAnimal?.animal as any)?.id || currentNewAnimal?.animal_id;
+  const currentAnimalId = currentNewAnimal?.animal?.id || currentNewAnimal?.animal_id;
 
   // Smart defaults for year_born based on cattle type
   const getSmartYearDefault = (cattleType: string) => {
@@ -190,7 +269,7 @@ export default function CowWorkCloseOutScreen() {
   // Get current review values for the active animal
   const getReviewField = (field: string) => {
     if (!currentAnimalId) return "";
-    return (reviewData[currentAnimalId] as any)?.[field] || "";
+    return (reviewData[currentAnimalId] as ReviewFields | undefined)?.[field as keyof ReviewFields] || "";
   };
 
   const setReviewField = (field: string, value: string) => {
@@ -281,7 +360,7 @@ export default function CowWorkCloseOutScreen() {
     if (!templateName.trim()) { showToast("error", "Template name is required"); return; }
     setSavingTemplate(true);
     try {
-      const workTypeId = (project?.work_types as any)?.[0]?.work_type_id;
+      const workTypeId = project?.work_types?.[0]?.work_type_id;
       const { error } = await supabase.from("project_templates").insert({
         operation_id: operationId,
         name: templateName.trim(),
@@ -464,9 +543,9 @@ export default function CowWorkCloseOutScreen() {
                   </div>
                   {matched.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                      {matched.map((e: any) => (
+                      {matched.map((e) => (
                         <span key={e.animal_id} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.10)", color: "#3D9A8B" }}>
-                          {(e.animal as any)?.tag || "?"}
+                          {e.animal?.tag || "?"}
                         </span>
                       ))}
                     </div>
@@ -481,19 +560,19 @@ export default function CowWorkCloseOutScreen() {
                   </div>
                   {missing.length > 0 ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {missing.map((e: any) => {
+                      {missing.map((e) => {
                         const animalId = e.animal_id;
-                        const tag = (e.animal as any)?.tag || "?";
+                        const tag = e.animal?.tag || "?";
                         const actioned = actionedMissing[animalId];
                         return (
                           <div key={animalId} style={{ borderRadius: 8, backgroundColor: actioned ? "rgba(85,186,170,0.06)" : "rgba(243,209,42,0.06)", border: `1px solid ${actioned ? "rgba(85,186,170,0.20)" : "rgba(243,209,42,0.15)"}`, padding: "8px 10px" }}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                {(e.animal as any)?.tag_color && (
-                                  <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TAG_COLOR_HEX[(e.animal as any).tag_color] || "#999", flexShrink: 0 }} />
+                                {e.animal?.tag_color && (
+                                  <span style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TAG_COLOR_HEX[e.animal.tag_color] || "#999", flexShrink: 0 }} />
                                 )}
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#0E2646" }}>{tag}</span>
-                                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{(e.animal as any)?.type || (e.animal as any)?.sex || ""}</span>
+                                <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)" }}>{e.animal?.type || e.animal?.sex || ""}</span>
                               </div>
                               {actioned && (
                                 <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(85,186,170,0.15)", color: "#3D9A8B" }}>{actioned}</span>
@@ -550,9 +629,9 @@ export default function CowWorkCloseOutScreen() {
                       <span style={{ fontSize: 13, fontWeight: 700, color: "#E87461" }}>Extra — {extra.length}</span>
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                      {extra.map((w: any) => (
+                      {extra.map((w) => (
                         <span key={w.id} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, backgroundColor: "rgba(232,116,97,0.10)", color: "#E87461" }}>
-                          {(w.animal as any)?.tag || "?"}
+                          {w.animal?.tag || "?"}
                         </span>
                       ))}
                     </div>
@@ -572,9 +651,9 @@ export default function CowWorkCloseOutScreen() {
       <div className="rounded-xl bg-white px-4 py-4" style={{ border: "1px solid rgba(212,212,208,0.60)" }}>
         <div style={SUB_LABEL}>ANIMALS WORKED · {worked.length}</div>
         <div className="space-y-0 mt-2">
-          {sortByTag(worked, (a: any) => (a.animal as any)?.tag || "").map((a, i) => {
-            const animalTag = (a.animal as any)?.tag || "Unknown";
-            const animalType = (a.animal as any)?.type || (a.animal as any)?.sex || "";
+          {sortByTag(worked, (a) => a.animal?.tag || "").map((a, i) => {
+            const animalTag = a.animal?.tag || "Unknown";
+            const animalType = a.animal?.type || a.animal?.sex || "";
             return (
               <div
                 key={a.id || i}
@@ -673,14 +752,14 @@ export default function CowWorkCloseOutScreen() {
           {/* Animal context card */}
           <div className="rounded-lg px-3 py-2.5" style={{ backgroundColor: "rgba(14,38,70,0.04)", border: "1px solid rgba(14,38,70,0.08)" }}>
             <div className="flex items-center gap-2">
-              {(currentNewAnimal.animal as any)?.tag_color && (
+              {currentNewAnimal.animal?.tag_color && (
                 <span
                   className="shrink-0 rounded-full"
-                  style={{ width: 10, height: 10, backgroundColor: TAG_COLOR_HEX[(currentNewAnimal.animal as any).tag_color] || "#999" }}
+                  style={{ width: 10, height: 10, backgroundColor: TAG_COLOR_HEX[currentNewAnimal.animal.tag_color] || "#999" }}
                 />
               )}
               <span style={{ fontSize: 18, fontWeight: 800, color: "#0E2646" }}>
-                {(currentNewAnimal.animal as any)?.tag || "Unknown"}
+                {currentNewAnimal.animal?.tag || "Unknown"}
               </span>
               <span
                 className="rounded-full"
@@ -863,13 +942,13 @@ export default function CowWorkCloseOutScreen() {
         </div>
         <button
           onClick={() => {
-            const reportAnimals: ReportAnimal[] = worked.map((w: any) => ({
-              tag: (w.animal as any)?.tag || "?",
-              tag_color: (w.animal as any)?.tag_color || "",
-              sex: (w.animal as any)?.sex || "",
-              type: (w.animal as any)?.type || "",
-              breed: (w.animal as any)?.breed || "",
-              year_born: (w.animal as any)?.year_born || "",
+            const reportAnimals: ReportAnimal[] = worked.map((w) => ({
+              tag: w.animal?.tag || "?",
+              tag_color: w.animal?.tag_color || "",
+              sex: w.animal?.sex || "",
+              type: w.animal?.type || "",
+              breed: w.animal?.breed || "",
+              year_born: w.animal?.year_born || "",
               weight: w.weight,
               preg_stage: w.preg_stage,
               bse_result: w.bse_result,
@@ -883,17 +962,17 @@ export default function CowWorkCloseOutScreen() {
               memo: w.memo,
               is_new_animal: w.is_new_animal,
             }));
-            const reportProducts: ReportProduct[] = (projectProducts || []).map((pp: any) => ({
-              name: (pp.product as any)?.name || "Unknown",
-              dosage: (pp.product as any)?.dosage || pp.dosage || "",
-              route: (pp.product as any)?.route || pp.route || "",
+            const reportProducts: ReportProduct[] = (projectProducts || []).map((pp) => ({
+              name: pp.product?.name || "Unknown",
+              dosage: pp.product?.dosage || pp.dosage || "",
+              route: pp.product?.route || pp.route || "",
             }));
             const reportRecon: ReportRecon | null = reconSource && reconList.length > 0 ? {
               matched: matched.length,
               missing: missing.length,
               extra: extra.length,
-              missingTags: missing.map((e: any) => (e.animal as any)?.tag || "?"),
-              extraTags: extra.map((w: any) => (w.animal as any)?.tag || "?"),
+              missingTags: missing.map((e) => e.animal?.tag || "?"),
+              extraTags: extra.map((w) => w.animal?.tag || "?"),
             } : null;
             generateProjectReportPDF({
               projectName, projectDate, projectType, group: projectGroup,
@@ -920,14 +999,14 @@ export default function CowWorkCloseOutScreen() {
             onClick={async () => {
               try {
                 const XLSX = await import("xlsx");
-                const sorted = sortByTag(worked, (w: any) => (w.animal as any)?.tag || "");
-                const rows = sorted.map((w: any, i: number) => ({
+                const sorted = sortByTag(worked, (w) => w.animal?.tag || "");
+                const rows = sorted.map((w, i) => ({
                   "#": i + 1,
-                  "Tag": (w.animal as any)?.tag || "",
-                  "Tag Color": (w.animal as any)?.tag_color || "",
-                  "Sex": (w.animal as any)?.sex || "",
-                  "Type": (w.animal as any)?.type || "",
-                  "Year Born": (w.animal as any)?.year_born || "",
+                  "Tag": w.animal?.tag || "",
+                  "Tag Color": w.animal?.tag_color || "",
+                  "Sex": w.animal?.sex || "",
+                  "Type": w.animal?.type || "",
+                  "Year Born": w.animal?.year_born || "",
                   "Weight": w.weight || "",
                   "Preg Stage": w.preg_stage || "",
                   "Days Gest.": w.days_of_gestation || "",
@@ -964,12 +1043,12 @@ export default function CowWorkCloseOutScreen() {
           </button>
           <button
             onClick={() => {
-              const sorted = sortByTag(worked, (w: any) => (w.animal as any)?.tag || "");
-              const rows = sorted.map((w: any) => [
-                (w.animal as any)?.tag || "",
-                (w.animal as any)?.tag_color || "",
-                (w.animal as any)?.sex || "",
-                (w.animal as any)?.type || "",
+              const sorted = sortByTag(worked, (w) => w.animal?.tag || "");
+              const rows = sorted.map((w) => [
+                w.animal?.tag || "",
+                w.animal?.tag_color || "",
+                w.animal?.sex || "",
+                w.animal?.type || "",
                 w.weight || "",
                 w.preg_stage || "",
                 w.memo || "",

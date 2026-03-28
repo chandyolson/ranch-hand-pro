@@ -7,6 +7,7 @@ import CowWorkProjectCard from "@/components/CowWorkProjectCard";
 import StatsBar from "@/components/StatsBar";
 import EmptyState from "@/components/EmptyState";
 import LoadingGrid from "@/components/LoadingGrid";
+import QueryError from "@/components/QueryError";
 
 const STATUS_ORDER: Record<string, number> = { "in-progress": 0, pending: 1, completed: 2 };
 
@@ -30,7 +31,7 @@ export default function CowWorkScreen() {
   const navigate = useNavigate();
   const { operationId } = useOperation();
 
-  const { data: projects, isLoading } = useQuery({
+  const { data: projects, isLoading, error, refetch } = useQuery({
     queryKey: ["projects", operationId],
     enabled: !!operationId,
     queryFn: async () => {
@@ -231,6 +232,7 @@ export default function CowWorkScreen() {
       )}
 
       {/* Project list */}
+      {error && <QueryError message="Couldn't load projects" onRetry={refetch} />}
       {isLoading && <LoadingGrid count={3} columns={1} height={100} />}
 
       {!isLoading && filtered.length > 0 && (
