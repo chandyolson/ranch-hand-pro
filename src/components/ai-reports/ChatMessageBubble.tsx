@@ -190,6 +190,10 @@ const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp, onActionResul
             </div>
           )}
 
+          {!isUser && !message.isError && message.log_id && (
+            <ChatFeedback logId={message.log_id} />
+          )}
+
           {message.follow_up_suggestions && message.follow_up_suggestions.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
               {message.follow_up_suggestions.map((s, i) => (
