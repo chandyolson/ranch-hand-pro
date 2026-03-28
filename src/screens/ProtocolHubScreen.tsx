@@ -32,6 +32,7 @@ export default function ProtocolHubScreen() {
   /* ── Customers query (vet_practice_clients → operations) ── */
   const { data: customers, isLoading: loadingCustomers } = useQuery({
     queryKey: ["protocol-hub-customers", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data: clients, error } = await supabase
         .from("vet_practice_clients")
@@ -45,20 +46,20 @@ export default function ProtocolHubScreen() {
           )
         `);
 
-      console.log("[ProtocolHub] vet_practice_clients full response:", JSON.stringify({ clients, error }, null, 2));
-
       if (error) throw error;
       if (!clients || clients.length === 0) return [];
 
-      const opIds = clients.map((c: any) => c.operation_id);
+      const opIds = clients.map(c => c.operation_id);
 
-      const customerOps = clients.map((c: any) => ({
+      type ClientWithOp = typeof clients[number] & {
+        operations: { id: string; name: string } | null;
+      };
+
+      const customerOps = (clients as ClientWithOp[]).map(c => ({
         operationId: c.operation_id,
-        name: (c.operations as any)?.name || "Unknown",
+        name: c.operations?.name || "Unknown",
         clinicClientId: c.clinic_client_id,
       }));
-
-      // reuse opIds from above
 
       /* Check assigned_protocols for history */
       const { data: protocols } = await supabase
@@ -67,10 +68,10 @@ export default function ProtocolHubScreen() {
         .in("client_operation_id", opIds);
 
       return customerOps.map((c) => {
-        const myProtos = (protocols || []).filter((p: any) => p.client_operation_id === c.operationId);
-        const animalTypes = [...new Set(myProtos.map((p: any) => p.animal_class))];
+        const myProtos = (protocols || []).filter(p => p.client_operation_id === c.operationId);
+        const animalTypes = [...new Set(myProtos.map(p => p.animal_class))];
         const latestYear = myProtos.length > 0
-          ? Math.max(...myProtos.map((p: any) => p.protocol_year).filter(Boolean))
+          ? Math.max(...myProtos.map(p => p.protocol_year).filter((y): y is number => y !== null))
           : null;
 
         return {
@@ -93,6 +94,7 @@ export default function ProtocolHubScreen() {
   /* ── Templates query ── */
   const { data: templates, isLoading: loadingTemplates } = useQuery({
     queryKey: ["protocol-hub-templates", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vaccination_protocol_templates")
@@ -100,12 +102,12 @@ export default function ProtocolHubScreen() {
         .eq("operation_id", operationId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []).map((t: any) => ({
+      return (data || []).map(t => ({
         id: t.id,
         name: t.name,
-        animalClass: t.animal_class || "Calves",
+        animalClass: (t as typeof t & { animal_class?: string }).animal_class || "Calves",
         eventCount: Array.isArray(t.events) ? t.events.length : 0,
-        isActive: t.is_active !== false,
+        isActive: (t as typeof t & { is_active?: boolean }).is_active !== false,
       }));
     },
   });

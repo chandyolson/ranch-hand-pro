@@ -27,6 +27,7 @@ const RedBookScreen: React.FC = () => {
 
   const { data: entries, isLoading } = useQuery({
     queryKey: ["red-book-notes", operationId],
+    enabled: !!operationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("red_book_notes")
