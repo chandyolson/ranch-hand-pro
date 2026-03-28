@@ -726,9 +726,9 @@ export default function CowWorkProjectDetailScreen() {
             sex: newSex || "F",
             type: newCattleType || null,
             breed: newBreed || null,
-            year_born: newYearBorn || null,
+            year_born: newYearBorn ? parseInt(newYearBorn) : null,
             status: "Active",
-          } as any)
+          })
           .select()
           .single();
         if (createErr) throw createErr;
@@ -1194,10 +1194,10 @@ export default function CowWorkProjectDetailScreen() {
                           <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)", textAlign: "center", padding: 12 }}>No calving records</div>
                         ) : (
                           (animalCalvings || []).map((c, idx) => {
-                            const calfTag = (c.calf as any)?.tag || c.calf_tag || "—";
+                            const calfTag = c.calf?.tag || c.calf_tag || "—";
                             const calfStatus = c.calf_status;
                             const isDead = calfStatus === "Dead";
-                            const sireTag = (c.sire as any)?.tag;
+                            const sireTag = c.sire?.tag;
                             const assistLabels: Record<number, string> = { 1: "No Assist", 2: "Easy Pull", 3: "Hard Pull", 4: "C-Section", 5: "Abnormal" };
                             const assistLabel = c.assistance ? assistLabels[c.assistance] || `Assist ${c.assistance}` : null;
                             const notes = Array.isArray(c.quick_notes) && c.quick_notes.length > 0 ? c.quick_notes : null;
@@ -1250,7 +1250,7 @@ export default function CowWorkProjectDetailScreen() {
                           <div style={{ fontSize: 13, color: "rgba(26,26,26,0.40)", textAlign: "center", padding: 12 }}>No work history</div>
                         ) : (
                           (animalWork || []).map((w, idx) => {
-                            const typeCode = (w.project as any)?.work_types?.[0]?.work_type?.code || "";
+                            const typeCode = w.project?.work_types?.[0]?.work_type?.code || "";
                             const details: string[] = [];
                             if (w.weight) details.push(`${w.weight} lbs`);
                             if (w.preg_stage) details.push(`Preg: ${w.preg_stage}`);
@@ -1273,7 +1273,7 @@ export default function CowWorkProjectDetailScreen() {
                                     {typeCode && (
                                       <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 9999, backgroundColor: "rgba(14,38,70,0.08)", color: "#0E2646", letterSpacing: "0.04em" }}>{typeCode}</span>
                                     )}
-                                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{(w.project as any)?.name || "—"}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A" }}>{w.project?.name || "—"}</span>
                                   </div>
                                   <span style={{ fontSize: 11, color: "rgba(26,26,26,0.40)", flexShrink: 0 }}>
                                     {new Date(w.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
