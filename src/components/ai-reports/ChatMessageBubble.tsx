@@ -31,12 +31,17 @@ interface Props {
   onActionResult?: (resultMessage: { role: "assistant"; content: string; isError?: boolean }) => void;
 }
 
-const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp }) => {
+const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp, onActionResult }) => {
   const { showToast } = useChuteSideToast();
   const { operationName } = useOperation();
   const isUser = message.role === "user";
   const chartRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<"pdf" | "csv" | null>(null);
+
+  // Render action preview card for write confirmations
+  if (message.type === "action_preview" && onActionResult) {
+    return <ActionPreviewCard message={message as any} onResult={onActionResult} />;
+  }
 
   const showExports = message.export_available !== false && !isUser && !message.isError;
 
