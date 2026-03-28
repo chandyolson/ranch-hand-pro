@@ -29,6 +29,7 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/reference/templates": { title: "Templates", subtitle: "Work Templates" },
   "/cow-cleaner": { title: "Cow Cleaner", subtitle: "Import & Clean Data" },
   "/ai-reports": { title: "AI Reports", subtitle: "" },
+  "/data-quality": { title: "Data Quality", subtitle: "Automated data integrity checks" },
   "/customers": { title: "Customers", subtitle: "Practice Clients" },
 };
 
@@ -42,6 +43,7 @@ const navRouteMap: Record<string, string> = {
   "Red Book": "/red-book",
   "Cow Cleaner": "/cow-cleaner",
   "AI Reports": "/ai-reports",
+  "Data Quality": "/data-quality",
   Reference: "/reference",
   Products: "/reference/products",
   Customers: "/customers",
