@@ -2,8 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOperation } from '@/contexts/OperationContext';
 
-const CALVING_PAGE_LIMIT = 500;
-
 export function useCalvingRecords() {
   const { operationId } = useOperation();
   return useQuery({
@@ -14,8 +12,7 @@ export function useCalvingRecords() {
         .from('calving_records')
         .select('*, dam:animals!calving_records_dam_id_fkey(tag, tag_color, sex, type)')
         .eq('operation_id', operationId)
-        .order('calving_date', { ascending: false })
-        .limit(CALVING_PAGE_LIMIT);
+        .order('calving_date', { ascending: false });
       if (error) throw error;
       return data;
     },
