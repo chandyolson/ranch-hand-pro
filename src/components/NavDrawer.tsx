@@ -14,6 +14,7 @@ const RANCH_NAV_ITEMS = [
   "Red Book",
   "AI Reports",
   "Data Quality",
+  "Import Data",
   "Cow Cleaner",
   "Reference",
 ];
@@ -27,6 +28,7 @@ const VET_NAV_ITEMS = [
   "Red Book",
   "AI Reports",
   "Data Quality",
+  "Import Data",
   "Products",
   "Reference",
 ];
