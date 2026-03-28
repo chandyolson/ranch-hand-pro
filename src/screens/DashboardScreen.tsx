@@ -12,6 +12,7 @@ import { useFlagCounts } from "@/hooks/useAnimalFlags";
 import { useOperation } from "@/contexts/OperationContext";
 import { supabase } from "@/integrations/supabase/client";
 import VetDashboardScreen from "@/screens/VetDashboardScreen";
+import DataGapNudges from "@/components/dashboard/DataGapNudges";
 
 function SectionHeading({ text }: { text: string }) {
   return (
@@ -337,6 +338,9 @@ const RanchDashboardScreen: React.FC = () => {
           <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(14,38,70,0.30)" }}>NEW NOTE</span>
         </div>
       </div>
+
+      {/* Data Gap Nudges */}
+      <DataGapNudges />
 
       {/* SECTION 3 — Herd Status */}
       <div>
