@@ -3035,6 +3035,64 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ai_create_calving_record: {
+        Args: {
+          p_assistance: number
+          p_birth_weight: number
+          p_calf_sex: string
+          p_calf_status: string
+          p_calf_tag: string
+          p_calving_date: string
+          p_created_by: string
+          p_dam_tag: string
+          p_memo: string
+          p_operation_id: string
+          p_sire_tag: string
+        }
+        Returns: Json
+      }
+      ai_create_flags: {
+        Args: {
+          p_animal_ids: string[]
+          p_flag_name: string
+          p_flag_note: string
+          p_flag_tier: string
+          p_operation_id: string
+          p_set_by: string
+        }
+        Returns: Json
+      }
+      ai_create_treatment: {
+        Args: {
+          p_animal_tag: string
+          p_created_by: string
+          p_disease_name: string
+          p_memo: string
+          p_operation_id: string
+          p_product_names: string[]
+          p_treatment_date: string
+        }
+        Returns: Json
+      }
+      ai_mark_animals_status: {
+        Args: {
+          p_animal_ids: string[]
+          p_changed_by: string
+          p_new_status: string
+          p_operation_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      ai_resolve_flags: {
+        Args: {
+          p_animal_ids: string[]
+          p_flag_name: string
+          p_flag_tier: string
+          p_operation_id: string
+        }
+        Returns: Json
+      }
       auth_user_operation_ids: { Args: never; Returns: string[] }
       bulk_insert_customers: { Args: { data: Json }; Returns: number }
       execute_readonly_query: { Args: { query_text: string }; Returns: Json }

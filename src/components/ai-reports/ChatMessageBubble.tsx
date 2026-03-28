@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import ChatChart from "./ChatChart";
 import ChatTable from "./ChatTable";
+import ActionPreviewCard from "./ActionPreviewCard";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { useOperation } from "@/contexts/OperationContext";
 import { exportPDF, exportCSV, generateReportFilename } from "@/lib/ai-reports/export-utils";
@@ -8,24 +9,39 @@ import { exportPDF, exportCSV, generateReportFilename } from "@/lib/ai-reports/e
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  type?: string;
   chart_config?: any;
   table_data?: { headers: string[]; rows: (string | number)[][] };
   export_available?: boolean;
   follow_up_suggestions?: string[];
   isError?: boolean;
+  // Action preview fields
+  action_type?: string;
+  risk_tier?: 1 | 2 | 3;
+  action_id?: string;
+  preview_title?: string;
+  preview_detail?: Record<string, string> | null;
+  preview_table?: { headers: string[]; rows: (string | number | null)[][] } | null;
+  diff?: { field: string; old_value: string; new_value: string }[] | null;
 }
 
 interface Props {
   message: ChatMessage;
   onFollowUp: (text: string) => void;
+  onActionResult?: (resultMessage: { role: "assistant"; content: string; isError?: boolean }) => void;
 }
 
-const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp }) => {
+const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp, onActionResult }) => {
   const { showToast } = useChuteSideToast();
   const { operationName } = useOperation();
   const isUser = message.role === "user";
   const chartRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<"pdf" | "csv" | null>(null);
+
+  // Render action preview card for write confirmations
+  if (message.type === "action_preview" && onActionResult) {
+    return <ActionPreviewCard message={message as any} onResult={onActionResult} />;
+  }
 
   const showExports = message.export_available !== false && !isUser && !message.isError;
 
