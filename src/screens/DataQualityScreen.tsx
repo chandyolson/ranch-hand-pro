@@ -3,6 +3,7 @@ import { useOperation } from "@/contexts/OperationContext";
 import { runAllChecks, type Violation } from "@/lib/data-quality/checks";
 import SeverityKPICards from "@/components/data-quality/SeverityKPICards";
 import ViolationCard from "@/components/data-quality/ViolationCard";
+import AutoFlagSuggestions from "@/components/data-quality/AutoFlagSuggestions";
 
 type Severity = "critical" | "high" | "medium" | "low";
 const DISMISSED_KEY = "dq_dismissed";
@@ -85,6 +86,9 @@ const DataQualityScreen: React.FC = () => {
 
   return (
     <div style={{ background: "#F5F5F0", minHeight: "100vh", paddingBottom: 32 }}>
+      {/* Auto-Flag Suggestions */}
+      <AutoFlagSuggestions />
+
       {/* KPI Cards */}
       {loading ? (
         <div style={{ padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
