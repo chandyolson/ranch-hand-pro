@@ -8,11 +8,20 @@ import { exportPDF, exportCSV, generateReportFilename } from "@/lib/ai-reports/e
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  type?: string;
   chart_config?: any;
   table_data?: { headers: string[]; rows: (string | number)[][] };
   export_available?: boolean;
   follow_up_suggestions?: string[];
   isError?: boolean;
+  // Action preview fields
+  action_type?: string;
+  risk_tier?: 1 | 2 | 3;
+  action_id?: string;
+  preview_title?: string;
+  preview_detail?: Record<string, string> | null;
+  preview_table?: { headers: string[]; rows: (string | number | null)[][] } | null;
+  diff?: { field: string; old_value: string; new_value: string }[] | null;
 }
 
 interface Props {
