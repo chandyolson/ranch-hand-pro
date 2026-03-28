@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_interaction_logs: {
+        Row: {
+          action_cancelled: boolean | null
+          action_confirmed: boolean | null
+          action_id: string | null
+          action_type: string | null
+          claude_calls: number | null
+          created_at: string | null
+          duration_ms: number | null
+          exported: boolean | null
+          feedback: string | null
+          feedback_note: string | null
+          follow_up_asked: boolean | null
+          generated_sql: string | null
+          id: string
+          intent: string | null
+          operation_id: string
+          query_row_count: number | null
+          question: string
+          response_type: string | null
+          sql_error: string | null
+          sql_valid: boolean | null
+          template_used: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_cancelled?: boolean | null
+          action_confirmed?: boolean | null
+          action_id?: string | null
+          action_type?: string | null
+          claude_calls?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          exported?: boolean | null
+          feedback?: string | null
+          feedback_note?: string | null
+          follow_up_asked?: boolean | null
+          generated_sql?: string | null
+          id?: string
+          intent?: string | null
+          operation_id: string
+          query_row_count?: number | null
+          question: string
+          response_type?: string | null
+          sql_error?: string | null
+          sql_valid?: boolean | null
+          template_used?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_cancelled?: boolean | null
+          action_confirmed?: boolean | null
+          action_id?: string | null
+          action_type?: string | null
+          claude_calls?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          exported?: boolean | null
+          feedback?: string | null
+          feedback_note?: string | null
+          follow_up_asked?: boolean | null
+          generated_sql?: string | null
+          id?: string
+          intent?: string | null
+          operation_id?: string
+          query_row_count?: number | null
+          question?: string
+          response_type?: string | null
+          sql_error?: string | null
+          sql_valid?: boolean | null
+          template_used?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       animal_flags: {
         Row: {
           animal_id: string
@@ -1351,6 +1426,47 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      pending_ai_actions: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          executed_at: string | null
+          expired_at: string | null
+          id: string
+          operation_id: string
+          params: Json
+          preview_title: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          executed_at?: string | null
+          expired_at?: string | null
+          id?: string
+          operation_id: string
+          params: Json
+          preview_title?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          executed_at?: string | null
+          expired_at?: string | null
+          id?: string
+          operation_id?: string
+          params?: Json
+          preview_title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_ai_actions_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pending_invitations: {
         Row: {
