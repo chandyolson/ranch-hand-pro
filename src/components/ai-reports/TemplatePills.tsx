@@ -26,6 +26,11 @@ const TEMPLATES = [
     prompt:
       "Run a comprehensive herd health scan for this operation. Analyze reproductive health (open rates from most recent preg check), calving performance (current year vs prior year), sire evaluation (birth weights and calving ease by sire), treatment patterns (last 12 months), herd age profile, and active flags. Only report findings that are actionable — skip areas with no concerns.",
   },
+  {
+    label: "Notes Analysis",
+    prompt:
+      "Analyze all notes across the operation for patterns and recurring themes. Scan these sources:\n\n1. animals.quick_notes arrays — look for frequently occurring notes across many animals\n2. animals.memo fields — look for keywords indicating health concerns, behavior issues, or management notes\n3. calving_records.memo fields — look for recurring calving problems or notes about specific cows\n4. calving_records.quick_notes arrays — look for patterns like 'Twin', 'Grafted', 'C-Section'\n5. cow_work.memo fields — look for notes recorded during chuteside work\n6. cow_work.quick_notes arrays — look for frequently used quick notes\n7. red_book_notes.body — look for action items, recurring concerns, or seasonal patterns\n\nFor each source, report:\n- The most common note values or keywords (top 10)\n- Any animal tags that appear in notes repeatedly (could indicate chronic issues)\n- Any keywords suggesting health problems: 'lame', 'limp', 'swollen', 'abscess', 'thin', 'poor', 'bad', 'weak', 'sick', 'sore'\n- Red Book entries with has_action = true that haven't been completed\n\nPresent findings as a summary with the most actionable items first. Include a table of animals mentioned in notes more than twice. Suggest follow-ups for any concerning patterns.",
+  },
 ];
 
 interface Props {
