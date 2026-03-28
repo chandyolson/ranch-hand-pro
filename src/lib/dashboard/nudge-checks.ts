@@ -86,7 +86,7 @@ async function nudgeMissedPregCheck(opId: string): Promise<Nudge | null> {
   if (!projects || projects.length === 0) return null;
 
   // Find one with preg_stage data
-  for (const proj of projects as any[]) {
+  for (const proj of projects) {
     if (!proj.group_id) continue;
 
     const { count: workedCount } = await supabase
@@ -156,16 +156,16 @@ async function nudgeBullsNeedBse(opId: string): Promise<Nudge | null> {
   const oneYearAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-  const bullIds = bulls.map((b: any) => b.id);
+  const bullIds = bulls.map(b => b.id);
   const { data: bseRecords } = await supabase
-    .from("cow_work" as any)
+    .from("cow_work")
     .select("animal_id")
     .in("animal_id", bullIds)
     .not("pass_fail", "is", null)
     .gte("date", oneYearAgo.toISOString().split("T")[0]);
 
-  const withBse = new Set((bseRecords || []).map((r: any) => r.animal_id));
-  const missing = bulls.filter((b: any) => !withBse.has(b.id)).length;
+  const withBse = new Set((bseRecords || []).map(r => r.animal_id));
+  const missing = bulls.filter(b => !withBse.has(b.id)).length;
 
   if (missing === 0) return null;
   return {

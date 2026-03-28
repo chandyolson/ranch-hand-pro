@@ -55,7 +55,8 @@ export default function ReferenceProductDetailScreen() {
     queryKey: ["product-usage-count", id, operationId],
     queryFn: async () => {
       const year = new Date().getFullYear();
-      const { count }: any = await (supabase.from("treatment_products") as any)
+      const { count } = await supabase
+        .from("treatment_products")
         .select("id", { count: "exact", head: true })
         .eq("product_id", id!)
         .eq("operation_id", operationId)
@@ -69,7 +70,8 @@ export default function ReferenceProductDetailScreen() {
   const { data: projectUsageCount } = useQuery({
     queryKey: ["product-project-count", id, operationId],
     queryFn: async () => {
-      const { count }: any = await (supabase.from("project_products") as any)
+      const { count } = await supabase
+        .from("project_products")
         .select("id", { count: "exact", head: true })
         .eq("product_id", id!)
         .eq("operation_id", operationId);
@@ -98,7 +100,7 @@ export default function ReferenceProductDetailScreen() {
 
   const catKey = (product.product_type || "other").toLowerCase();
   const cat = CATEGORY_CONFIG[catKey] || CATEGORY_CONFIG.other;
-  const mfr = (product as any).manufacturer?.name || "";
+  const mfr = (product as typeof product & { manufacturer: { name: string } | null }).manufacturer?.name || "";
 
   return (
     <div className="px-4 pt-1 pb-10 space-y-0">

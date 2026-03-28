@@ -35,6 +35,13 @@ interface AssignedProtocol {
   events: ProtocolEvent[];
 }
 
+interface ExtendedProtocolEvent extends ProtocolEvent {
+  recommended_products: ProtocolProduct[];
+  animal_class: string;
+  protocol_year: number | null;
+  protocol_status: string | null;
+}
+
 interface LoadFromProtocolDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -54,7 +61,7 @@ export default function LoadFromProtocolDrawer({
   onLoadProducts,
 }: LoadFromProtocolDrawerProps) {
   const { operationId } = useOperation();
-  const [selectedEvent, setSelectedEvent] = useState<ProtocolEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<ExtendedProtocolEvent | null>(null);
   const [step, setStep] = useState<"pick" | "confirm">("pick");
 
   const { data: protocols, isLoading } = useQuery({
@@ -77,9 +84,9 @@ export default function LoadFromProtocolDrawer({
   });
 
   // Flatten into event rows with protocol context
-  const eventRows = (protocols || []).flatMap(p =>
+  const eventRows: ExtendedProtocolEvent[] = (protocols || []).flatMap(p =>
     (p.events || [])
-      .filter(e => e.recommended_products && (e.recommended_products as any[]).length > 0)
+      .filter(e => e.recommended_products && e.recommended_products.length > 0)
       .map(e => ({
         ...e,
         recommended_products: e.recommended_products as ProtocolProduct[],
@@ -259,7 +266,7 @@ export default function LoadFromProtocolDrawer({
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>
-                    {(selectedEvent as any).animal_class}
+                    {selectedEvent.animal_class}
                   </span>
                   {selectedEvent.scheduled_date && (
                     <span style={{ fontSize: 11, color: "rgba(26,26,26,0.45)" }}>

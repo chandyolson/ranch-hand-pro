@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { COLORS, ANIMAL_TYPE_OPTIONS } from "@/lib/constants";
@@ -85,7 +86,7 @@ export default function CustomerProtocolScreen() {
         .from("assigned_protocols")
         .select("protocol_year")
         .eq("client_operation_id", clientOpId!);
-      const years = [...new Set((data || []).map((d: any) => d.protocol_year).filter(Boolean))] as number[];
+      const years = [...new Set((data || []).map(d => d.protocol_year).filter((y): y is number => y !== null))];
       if (!years.includes(CURRENT_YEAR)) years.push(CURRENT_YEAR);
       return years.sort((a, b) => a - b);
     },
@@ -280,16 +281,16 @@ export default function CustomerProtocolScreen() {
           .insert({
             operation_id: vetOpId,
             client_operation_id: clientOpId,
-            animal_class: (p as any).animal_class,
-            estimated_head_count: (p as any).estimated_head_count,
+            animal_class: p.animal_class,
+            estimated_head_count: p.estimated_head_count,
             protocol_year: CURRENT_YEAR,
             protocol_status: "draft",
-          } as any)
+          })
           .select("id")
           .single();
         if (pErr) throw pErr;
 
-        for (const ev of ((p as any).events || [])) {
+        for (const ev of (p.events || [])) {
           const newDate = ev.scheduled_date
             ? ev.scheduled_date.replace(/^\d{4}/, String(CURRENT_YEAR))
             : null;
@@ -300,7 +301,7 @@ export default function CustomerProtocolScreen() {
               event_name: ev.event_name,
               scheduled_date: newDate,
               event_status: "upcoming",
-              recommended_products: ev.recommended_products || [],
+              recommended_products: (ev.recommended_products || []) as unknown as Json,
             });
         }
       }
@@ -333,7 +334,7 @@ export default function CustomerProtocolScreen() {
               estimated_head_count: section.estimated_head_count,
               protocol_year: selectedYear,
               protocol_status: activate ? "active" : "draft",
-            } as any)
+            })
             .select("id")
             .single();
           if (error) throw error;
@@ -368,7 +369,7 @@ export default function CustomerProtocolScreen() {
                 event_status: stage.event_status,
                 completion_notes: stage.completion_notes || null,
                 actual_head_count: stage.actual_head_count,
-                recommended_products: recommendedProducts as any,
+                recommended_products: recommendedProducts as unknown as Json,
               })
               .eq("id", stage.id);
           } else {
@@ -381,7 +382,7 @@ export default function CustomerProtocolScreen() {
                 event_status: stage.event_status,
                 completion_notes: stage.completion_notes || null,
                 actual_head_count: stage.actual_head_count,
-                recommended_products: recommendedProducts as any,
+                recommended_products: recommendedProducts as unknown as Json,
               });
           }
         }

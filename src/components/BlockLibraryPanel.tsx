@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useOperation } from "@/contexts/OperationContext";
 import { COLORS } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
@@ -122,7 +123,7 @@ export default function BlockLibraryPanel({
         description: state.description.trim() || null,
         clinical_notes: state.clinicalNotes.trim() || null,
         equipment_notes: state.equipmentNotes.trim() || null,
-        default_products: state.products as any,
+        default_products: state.products as unknown as Json,
       };
 
       if (state.mode === "edit" && state.blockId) {

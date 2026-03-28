@@ -34,7 +34,7 @@ export async function runAutoFlagRules(operationId: string): Promise<FlagSuggest
   ]);
 
   const activeFlags = new Set(
-    (existingFlags.data || []).map((f: any) => `${f.animal_id}|${f.flag_tier}|${f.flag_name}`)
+    (existingFlags.data || []).map(f => `${f.animal_id}|${f.flag_tier}|${f.flag_name}`)
   );
 
   const suggestions: FlagSuggestion[] = [];
@@ -49,7 +49,6 @@ export async function runAutoFlagRules(operationId: string): Promise<FlagSuggest
 
 // Rule 1 — CULL: Cow open 2+ years in a row
 async function ruleOpenTwoYears(opId: string): Promise<FlagSuggestion[]> {
-  // Get preg check projects (work_type with preg check)
   const { data: pregRecords } = await supabase
     .from("cow_work")
     .select("animal_id, date, preg_stage, project_id")
@@ -61,7 +60,7 @@ async function ruleOpenTwoYears(opId: string): Promise<FlagSuggestion[]> {
 
   // Group by animal, get distinct years
   const animalYears = new Map<string, Set<number>>();
-  for (const r of pregRecords as any[]) {
+  for (const r of pregRecords) {
     const year = new Date(r.date).getFullYear();
     if (!animalYears.has(r.animal_id)) animalYears.set(r.animal_id, new Set());
     animalYears.get(r.animal_id)!.add(year);
@@ -81,7 +80,7 @@ async function ruleOpenTwoYears(opId: string): Promise<FlagSuggestion[]> {
     .eq("status", "Active")
     .eq("type", "Cow");
 
-  const animalMap = new Map((animals || []).map((a: any) => [a.id, a]));
+  const animalMap = new Map((animals || []).map(a => [a.id, a]));
 
   return candidates
     .filter((c) => animalMap.has(c.id))
@@ -112,9 +111,10 @@ async function ruleFailedBse(opId: string): Promise<FlagSuggestion[]> {
 
   if (!data || data.length === 0) return [];
 
+  type CowWorkEntry = typeof data[number];
   // Dedupe by animal (take most recent)
-  const seen = new Map<string, any>();
-  for (const r of data as any[]) {
+  const seen = new Map<string, CowWorkEntry>();
+  for (const r of data) {
     if (!seen.has(r.animal_id)) seen.set(r.animal_id, r);
   }
 
@@ -126,7 +126,7 @@ async function ruleFailedBse(opId: string): Promise<FlagSuggestion[]> {
     .eq("status", "Active")
     .eq("type", "Bull");
 
-  const animalMap = new Map((animals || []).map((a: any) => [a.id, a]));
+  const animalMap = new Map((animals || []).map(a => [a.id, a]));
 
   return [...seen.entries()]
     .filter(([id]) => animalMap.has(id))
@@ -151,7 +151,6 @@ async function ruleTreated3Times(opId: string): Promise<FlagSuggestion[]> {
   const oneYearAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-  // Treatments are cow_work records with additional_products or from treatment-type projects
   const { data } = await supabase
     .from("cow_work")
     .select("animal_id, date")
@@ -162,7 +161,7 @@ async function ruleTreated3Times(opId: string): Promise<FlagSuggestion[]> {
   if (!data || data.length === 0) return [];
 
   const counts = new Map<string, number>();
-  for (const r of data as any[]) {
+  for (const r of data) {
     counts.set(r.animal_id, (counts.get(r.animal_id) || 0) + 1);
   }
 
@@ -176,7 +175,7 @@ async function ruleTreated3Times(opId: string): Promise<FlagSuggestion[]> {
     .in("id", ids)
     .eq("status", "Active");
 
-  const animalMap = new Map((animals || []).map((a: any) => [a.id, a]));
+  const animalMap = new Map((animals || []).map(a => [a.id, a]));
 
   return frequent
     .filter(([id]) => animalMap.has(id))
@@ -208,8 +207,8 @@ async function ruleOldCow(opId: string): Promise<FlagSuggestion[]> {
     .eq("type", "Cow")
     .lte("year_born", cutoff);
 
-  return (data || []).map((a: any) => {
-    const age = new Date().getFullYear() - a.year_born;
+  return (data || []).map(a => {
+    const age = new Date().getFullYear() - (a.year_born ?? 0);
     return {
       id: uid(),
       animal_id: a.id,
@@ -237,7 +236,8 @@ async function ruleBadBag(opId: string): Promise<FlagSuggestion[]> {
   if (!data || data.length === 0) return [];
 
   const damYears = new Map<string, Set<number>>();
-  for (const r of data as any[]) {
+  for (const r of data) {
+    if (!r.dam_id) continue;
     const year = new Date(r.calving_date).getFullYear();
     if (!damYears.has(r.dam_id)) damYears.set(r.dam_id, new Set());
     damYears.get(r.dam_id)!.add(year);
@@ -256,7 +256,7 @@ async function ruleBadBag(opId: string): Promise<FlagSuggestion[]> {
     .in("id", ids)
     .eq("status", "Active");
 
-  const animalMap = new Map((animals || []).map((a: any) => [a.id, a]));
+  const animalMap = new Map((animals || []).map(a => [a.id, a]));
 
   return candidates
     .filter((c) => animalMap.has(c.id))
@@ -288,7 +288,8 @@ async function ruleDeadCalf(opId: string): Promise<FlagSuggestion[]> {
   if (!data || data.length === 0) return [];
 
   const damYears = new Map<string, Set<number>>();
-  for (const r of data as any[]) {
+  for (const r of data) {
+    if (!r.dam_id) continue;
     const year = new Date(r.calving_date).getFullYear();
     if (!damYears.has(r.dam_id)) damYears.set(r.dam_id, new Set());
     damYears.get(r.dam_id)!.add(year);
@@ -307,7 +308,7 @@ async function ruleDeadCalf(opId: string): Promise<FlagSuggestion[]> {
     .in("id", ids)
     .eq("status", "Active");
 
-  const animalMap = new Map((animals || []).map((a: any) => [a.id, a]));
+  const animalMap = new Map((animals || []).map(a => [a.id, a]));
 
   return candidates
     .filter((c) => animalMap.has(c.id))
@@ -329,7 +330,6 @@ async function ruleDeadCalf(opId: string): Promise<FlagSuggestion[]> {
 
 // Rule 7 — MANAGEMENT: Animal missing from expected project
 async function ruleMissingFromProject(opId: string): Promise<FlagSuggestion[]> {
-  // Get completed projects for this operation
   const { data: projects } = await supabase
     .from("projects")
     .select("id, name")
@@ -338,8 +338,8 @@ async function ruleMissingFromProject(opId: string): Promise<FlagSuggestion[]> {
 
   if (!projects || projects.length === 0) return [];
 
-  const projectIds = projects.map((p: any) => p.id);
-  const projMap = new Map(projects.map((p: any) => [p.id, p.name]));
+  const projectIds = projects.map(p => p.id);
+  const projMap = new Map(projects.map(p => [p.id, p.name]));
 
   const { data: expected } = await supabase
     .from("project_expected_animals")
@@ -349,18 +349,18 @@ async function ruleMissingFromProject(opId: string): Promise<FlagSuggestion[]> {
 
   if (!expected || expected.length === 0) return [];
 
-  const animalIds = [...new Set((expected as any[]).map((e) => e.animal_id))];
+  const animalIds = [...new Set(expected.map(e => e.animal_id))];
   const { data: animals } = await supabase
     .from("animals")
     .select("id, tag, tag_color, status")
     .in("id", animalIds)
     .eq("status", "Active");
 
-  const animalMap = new Map((animals || []).map((a: any) => [a.id, a]));
+  const animalMap = new Map((animals || []).map(a => [a.id, a]));
 
-  return (expected as any[])
-    .filter((e) => animalMap.has(e.animal_id))
-    .map((e) => {
+  return expected
+    .filter(e => animalMap.has(e.animal_id))
+    .map(e => {
       const a = animalMap.get(e.animal_id)!;
       return {
         id: uid(),
