@@ -2406,6 +2406,50 @@ export type Database = {
           },
         ]
       }
+      scheduled_reports: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          last_sent_at: string | null
+          operation_id: string
+          recipients: string[]
+          report_type: string
+          schedule: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sent_at?: string | null
+          operation_id: string
+          recipients: string[]
+          report_type: string
+          schedule: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sent_at?: string | null
+          operation_id?: string
+          recipients?: string[]
+          report_type?: string
+          schedule?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_reports_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sire_details: {
         Row: {
           animal_id: string
