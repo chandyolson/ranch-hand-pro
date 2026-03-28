@@ -56,6 +56,7 @@ const AIReportsScreen: React.FC = () => {
         preview_detail: data?.preview_detail,
         preview_table: data?.preview_table,
         diff: data?.diff,
+        log_id: data?.log_id,
       };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {

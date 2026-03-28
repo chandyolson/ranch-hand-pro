@@ -17,6 +17,7 @@ export interface ChatMessage {
   export_available?: boolean;
   follow_up_suggestions?: string[];
   isError?: boolean;
+  log_id?: string;
   // Action preview fields
   action_type?: string;
   risk_tier?: 1 | 2 | 3;
