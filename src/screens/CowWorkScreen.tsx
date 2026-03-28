@@ -45,14 +45,16 @@ export default function CowWorkScreen() {
     },
   });
 
+  const projectIds = (projects || []).map(p => p.id);
+
   const { data: workCounts } = useQuery({
-    queryKey: ["project-work-counts", operationId],
-    enabled: !!operationId,
+    queryKey: ["project-work-counts", projectIds],
+    enabled: projectIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cow_work")
         .select("project_id")
-        .eq("operation_id", operationId);
+        .in("project_id", projectIds);
       if (error) throw error;
       const counts: Record<string, number> = {};
       (data || []).forEach((r) => {
