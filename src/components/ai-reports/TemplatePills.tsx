@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { getSavedQuestions, removeSavedQuestion, SavedQuestion } from "./SaveQuestionPopover";
 
 const TEMPLATES = [
   {
@@ -38,40 +39,147 @@ interface Props {
   disabled: boolean;
 }
 
-const TemplatePills: React.FC<Props> = ({ onSelect, disabled }) => (
-  <div
-    style={{
-      background: "#fff",
-      borderBottom: "1px solid #D4D4D0",
-      padding: "10px 16px",
-      display: "flex",
-      gap: 8,
-      overflowX: "auto",
-    }}
-  >
-    {TEMPLATES.map((t) => (
-      <button
-        key={t.label}
-        disabled={disabled}
-        onClick={() => onSelect(t.prompt)}
-        style={{
-          borderRadius: 20,
-          border: "1.5px solid #0E2646",
-          background: "#fff",
-          color: "#0E2646",
-          fontSize: 13,
-          fontWeight: 600,
-          whiteSpace: "nowrap",
-          padding: "6px 14px",
-          cursor: disabled ? "not-allowed" : "pointer",
-          opacity: disabled ? 0.5 : 1,
-          flexShrink: 0,
-        }}
-      >
-        {t.label}
-      </button>
-    ))}
-  </div>
-);
+const TemplatePills: React.FC<Props> = ({ onSelect, disabled }) => {
+  const [saved, setSaved] = useState<SavedQuestion[]>(getSavedQuestions());
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const refresh = useCallback(() => setSaved(getSavedQuestions()), []);
+
+  useEffect(() => {
+    window.addEventListener("saved-questions-updated", refresh);
+    return () => window.removeEventListener("saved-questions-updated", refresh);
+  }, [refresh]);
+
+  const handleDelete = (id: string) => {
+    removeSavedQuestion(id);
+    setDeleteId(null);
+    refresh();
+  };
+
+  return (
+    <div
+      style={{
+        background: "#fff",
+        borderBottom: "1px solid #D4D4D0",
+        padding: "10px 16px",
+        display: "flex",
+        gap: 8,
+        overflowX: "auto",
+      }}
+    >
+      {TEMPLATES.map((t) => (
+        <button
+          key={t.label}
+          disabled={disabled}
+          onClick={() => onSelect(t.prompt)}
+          style={{
+            borderRadius: 20,
+            border: "1.5px solid #0E2646",
+            background: "#fff",
+            color: "#0E2646",
+            fontSize: 13,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            padding: "6px 14px",
+            cursor: disabled ? "not-allowed" : "pointer",
+            opacity: disabled ? 0.5 : 1,
+            flexShrink: 0,
+          }}
+        >
+          {t.label}
+        </button>
+      ))}
+
+      {saved.map((sq) => (
+        <div key={sq.id} style={{ position: "relative", flexShrink: 0 }}>
+          <button
+            disabled={disabled}
+            onClick={() => {
+              if (deleteId === sq.id) return;
+              onSelect(sq.prompt);
+            }}
+            onPointerDown={() => {
+              longPressTimer.current = setTimeout(() => setDeleteId(sq.id), 500);
+            }}
+            onPointerUp={() => {
+              if (longPressTimer.current) clearTimeout(longPressTimer.current);
+            }}
+            onPointerLeave={() => {
+              if (longPressTimer.current) clearTimeout(longPressTimer.current);
+            }}
+            style={{
+              borderRadius: 20,
+              border: "1.5px solid #0E2646",
+              background: "#fff",
+              color: "#0E2646",
+              fontSize: 13,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              padding: "6px 14px",
+              cursor: disabled ? "not-allowed" : "pointer",
+              opacity: disabled ? 0.5 : 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <span
+              style={{
+                width: 4,
+                height: 4,
+                borderRadius: "50%",
+                background: "#55BAAA",
+                flexShrink: 0,
+              }}
+            />
+            {sq.label}
+          </button>
+
+          {deleteId === sq.id && (
+            <>
+              <div
+                onClick={() => setDeleteId(null)}
+                style={{ position: "fixed", inset: 0, zIndex: 40 }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 4px)",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  background: "#fff",
+                  border: "1px solid #D4D4D0",
+                  borderRadius: 8,
+                  padding: "6px 0",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                  zIndex: 50,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <button
+                  onClick={() => handleDelete(sq.id)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#E74C3C",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    padding: "4px 16px",
+                    cursor: "pointer",
+                    width: "100%",
+                    textAlign: "left",
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export default TemplatePills;

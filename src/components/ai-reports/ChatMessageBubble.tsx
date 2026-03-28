@@ -1,7 +1,9 @@
 import React, { useRef, useState } from "react";
+import { Bookmark } from "lucide-react";
 import ChatChart from "./ChatChart";
 import ChatTable from "./ChatTable";
 import ActionPreviewCard from "./ActionPreviewCard";
+import SaveQuestionPopover from "./SaveQuestionPopover";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { useOperation } from "@/contexts/OperationContext";
 import { exportPDF, exportCSV, generateReportFilename } from "@/lib/ai-reports/export-utils";
@@ -37,6 +39,7 @@ const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp, onActionResul
   const isUser = message.role === "user";
   const chartRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<"pdf" | "csv" | null>(null);
+  const [showSavePopover, setShowSavePopover] = useState(false);
 
   // Render action preview card for write confirmations
   if (message.type === "action_preview" && onActionResult) {
@@ -51,8 +54,37 @@ const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp, onActionResul
         style={{
           maxWidth: "calc(100% - 48px)",
           ...(isUser ? { paddingLeft: 48 } : { paddingRight: 48 }),
+          position: "relative",
         }}
       >
+        {isUser && (
+          <div style={{ position: "relative", display: "inline-block", float: "right", marginLeft: 6, marginTop: 2 }}>
+            <button
+              onClick={() => setShowSavePopover((v) => !v)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 2,
+                opacity: 0.5,
+              }}
+              title="Save question"
+            >
+              <Bookmark size={14} color="#F0F0F0" />
+            </button>
+            {showSavePopover && (
+              <SaveQuestionPopover
+                prompt={message.content}
+                onClose={() => setShowSavePopover(false)}
+                onSaved={() => {
+                  showToast("success", "Question saved");
+                  window.dispatchEvent(new Event("saved-questions-updated"));
+                }}
+                onMaxReached={() => showToast("error", "Maximum saved questions reached")}
+              />
+            )}
+          </div>
+        )}
         <div
           style={{
             background: message.isError
