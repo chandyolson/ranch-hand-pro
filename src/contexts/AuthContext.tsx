@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadUserData = useCallback(async (userId: string) => {
+    setLoadError(null);
     try {
       // Load user profile
       const { data: profile } = await supabase
@@ -109,9 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // onAuthStateChange fires immediately with INITIAL_SESSION, covering the
-    // existing-session case. No separate getSession() call is needed, which
-    // would otherwise trigger a redundant loadUserData on startup.
+    // INITIAL_SESSION fires synchronously on subscribe, so getSession() is redundant.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);

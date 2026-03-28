@@ -53,17 +53,21 @@ export function useAnimalCounts() {
     queryKey: ['animal-counts', operationId],
     enabled: !!operationId,
     queryFn: async () => {
-      const { count: total, error: totalError } = await supabase
-        .from('animals')
-        .select('*', { count: 'exact', head: true })
-        .eq('operation_id', operationId);
+      const [
+        { count: total, error: totalError },
+        { count: active, error: activeError },
+      ] = await Promise.all([
+        supabase
+          .from('animals')
+          .select('*', { count: 'exact', head: true })
+          .eq('operation_id', operationId),
+        supabase
+          .from('animals')
+          .select('*', { count: 'exact', head: true })
+          .eq('operation_id', operationId)
+          .eq('status', 'Active'),
+      ]);
       if (totalError) throw totalError;
-
-      const { count: active, error: activeError } = await supabase
-        .from('animals')
-        .select('*', { count: 'exact', head: true })
-        .eq('operation_id', operationId)
-        .eq('status', 'Active');
       if (activeError) throw activeError;
 
       return { total: total ?? 0, active: active ?? 0 };
