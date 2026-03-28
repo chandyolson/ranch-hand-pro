@@ -73,20 +73,29 @@ export default function CalvingScreen() {
     },
   });
 
-  const records = (rawRecords || []).map(r => ({
-    id: r.id,
-    damTag: (r.dam as any)?.tag || "Unknown",
-    damColor: (r.dam as any)?.tag_color || "None",
-    damColorHex: TAG_HEX[(r.dam as any)?.tag_color || "None"] || "#999",
-    calfTag: (r as any).calf_tag || (r as any).calf?.tag || "",
-    calfSex: (r.calf_sex || "Unknown") as string,
-    calfStatus: (r.calf_status || "Alive") as string,
-    date: fmtDate(r.calving_date),
-    rawDate: r.calving_date,
-    birthWeight: r.birth_weight ? `${r.birth_weight} lbs` : "",
-    assistance: assistanceLabel(r.assistance),
-    note: r.memo || "",
-  }));
+  type CalvingRow = typeof rawRecords extends (infer T)[] | null | undefined ? T & {
+    dam: { tag: string; tag_color: string | null } | null;
+    calf: { tag: string; tag_color: string | null } | null;
+  } : never;
+
+  const records = (rawRecords || []).map(r => {
+    const row = r as CalvingRow;
+    const damColor = row.dam?.tag_color || "None";
+    return {
+      id: r.id,
+      damTag: row.dam?.tag || "Unknown",
+      damColor,
+      damColorHex: TAG_HEX[damColor] || "#999",
+      calfTag: r.calf_tag || row.calf?.tag || "",
+      calfSex: (r.calf_sex || "Unknown") as string,
+      calfStatus: (r.calf_status || "Alive") as string,
+      date: fmtDate(r.calving_date),
+      rawDate: r.calving_date,
+      birthWeight: r.birth_weight ? `${r.birth_weight} lbs` : "",
+      assistance: assistanceLabel(r.assistance),
+      note: r.memo || "",
+    };
+  });
 
   const sortOptions = [
     { value: "newest", label: "Newest" },
