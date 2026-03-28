@@ -3,6 +3,7 @@ import { Bookmark } from "lucide-react";
 import ChatChart from "./ChatChart";
 import ChatTable from "./ChatTable";
 import ActionPreviewCard from "./ActionPreviewCard";
+import ChatFeedback from "./ChatFeedback";
 import SaveQuestionPopover from "./SaveQuestionPopover";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { useOperation } from "@/contexts/OperationContext";
