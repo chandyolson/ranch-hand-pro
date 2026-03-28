@@ -15,6 +15,7 @@ const RANCH_NAV_ITEMS = [
   "AI Reports",
   "Data Quality",
   "Import Data",
+  "Registration",
   "Cow Cleaner",
   "Reference",
 ];
