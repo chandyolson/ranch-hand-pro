@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { SUB_LABEL } from "@/lib/styles";
+import type { Json } from "@/integrations/supabase/types";
 
 export default function WorkTemplateListScreen() {
   const { operationId } = useOperation();
@@ -66,7 +67,7 @@ export default function WorkTemplateListScreen() {
       ) : (
         <div className="space-y-2">
           {(templates || []).map((t) => {
-            const productCount = Array.isArray(t.default_products) ? (t.default_products as any[]).length : 0;
+            const productCount = Array.isArray(t.default_products) ? (t.default_products as Json[]).length : 0;
             return (
               <div
                 key={t.id}
@@ -80,12 +81,12 @@ export default function WorkTemplateListScreen() {
                 >
                   <div className="flex items-center gap-2">
                     <span style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>{t.name}</span>
-                    {(t.work_type as any)?.code && (
+                    {t.work_type?.code && (
                       <span
                         className="rounded-full shrink-0"
                         style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", backgroundColor: "rgba(243,209,42,0.15)", color: "#C4A600" }}
                       >
-                        {(t.work_type as any).code}
+                        {t.work_type.code}
                       </span>
                     )}
                   </div>

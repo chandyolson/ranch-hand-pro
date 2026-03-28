@@ -23,20 +23,20 @@ const RegistrationAssistantScreen: React.FC = () => {
   // Load groups + operation info
   useEffect(() => {
     if (!operationId) return;
-    (supabase.from("groups") as any)
+    supabase.from("groups")
       .select("id, name")
       .eq("operation_id", operationId)
       .eq("is_active", true)
       .order("name")
-      .then(({ data }: any) => setGroups(data || []));
+      .then(({ data }) => setGroups(data || []));
 
-    (supabase.from("operations") as any)
+    supabase.from("operations")
       .select("name, owner_name, address")
       .eq("id", operationId)
       .single()
-      .then(({ data }: any) => {
+      .then(({ data }) => {
         if (data) {
-          const addr = data.address;
+          const addr = data.address as unknown as Record<string, string> | null;
           let addressStr = "";
           if (addr && typeof addr === "object") {
             addressStr = [addr.line1, addr.city, addr.state, addr.zip].filter(Boolean).join(", ");
@@ -59,7 +59,7 @@ const RegistrationAssistantScreen: React.FC = () => {
 
     try {
       // Get calving records in date range
-      let q = (supabase.from("calving_records") as any)
+      let q = supabase.from("calving_records")
         .select("id, calving_date, birth_weight, calf_sex, calf_tag, calf_tag_color, calf_id, dam_id, sire_id")
         .eq("operation_id", operationId)
         .gte("calving_date", dateStart)
@@ -87,12 +87,12 @@ const RegistrationAssistantScreen: React.FC = () => {
       }
 
       // Fetch animal data
-      const { data: animals } = await (supabase.from("animals") as any)
+      const { data: animals } = await supabase.from("animals")
         .select("id, tag, tag_color, breed, reg_name, reg_number, sex, year_born")
         .in("id", Array.from(animalIds));
 
-      const animalMap = new Map<string, any>();
-      (animals || []).forEach((a: any) => animalMap.set(a.id, a));
+      const animalMap = new Map<string, typeof animals extends (infer T)[] | null | undefined ? T : never>();
+      (animals || []).forEach((a) => animalMap.set(a.id, a));
 
       // Build calf rows — only include calves where dam or sire has reg_number AND calf does NOT
       const rows: CalfRow[] = [];

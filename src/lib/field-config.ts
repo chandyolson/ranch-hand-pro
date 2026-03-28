@@ -90,8 +90,9 @@ export function getDefaultFieldConfig(workTypeCode?: string): FieldVisibilityCon
 export function resolveFieldConfig(saved: FieldVisibilityConfig | null, workTypeCode?: string): FieldVisibilityConfig {
   if (!saved) return getDefaultFieldConfig(workTypeCode);
   // Handle legacy format that used optionalFields
-  if ((saved as any).optionalFields && !(saved as any).enabledFields) {
-    return { enabledFields: (saved as any).optionalFields };
+  const savedCompat = saved as unknown as Record<string, unknown>;
+  if (savedCompat.optionalFields && !savedCompat.enabledFields) {
+    return { enabledFields: savedCompat.optionalFields as string[] };
   }
   if (!saved.enabledFields) return getDefaultFieldConfig(workTypeCode);
   return saved;

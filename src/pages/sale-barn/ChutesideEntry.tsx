@@ -137,7 +137,7 @@ const ChutesideEntry: React.FC = () => {
     queryKey: ["work_order_chute", woId],
     enabled: !!woId,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_orders") as any).select("*").eq("id", woId!).single();
+      const { data } = await supabase.from("work_orders").select("*").eq("id", woId!).single();
       return data as unknown as WorkOrder | null;
     },
   });
@@ -146,7 +146,7 @@ const ChutesideEntry: React.FC = () => {
     queryKey: ["chute_animals", woId],
     enabled: !!woId,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_animals") as any)
+      const { data } = await supabase.from("sale_barn_animals")
         .select("*").eq("work_order_id", woId!)
         .order("created_at", { ascending: false });
       return (data ?? []) as unknown as SaleBarnAnimal[];
@@ -163,7 +163,7 @@ const ChutesideEntry: React.FC = () => {
     queryKey: ["chute_assigned_animals", woId],
     enabled: !!woId && isBuyer,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_animals") as any)
+      const { data } = await supabase.from("sale_barn_animals")
         .select("*").eq("buyer_work_order_id", woId!)
         .order("created_at", { ascending: true });
       return (data ?? []) as unknown as SaleBarnAnimal[];
@@ -181,9 +181,9 @@ const ChutesideEntry: React.FC = () => {
     queryKey: ["chute_customer", wo?.customer_id],
     enabled: !!wo?.customer_id,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_customers") as any)
+      const { data } = await supabase.from("sale_barn_customers")
         .select("name").eq("id", wo!.customer_id!).single();
-      return (data as any)?.name as string ?? "Customer";
+      return data?.name ?? "Customer";
     },
   });
 
@@ -298,7 +298,7 @@ const ChutesideEntry: React.FC = () => {
       source_animal_id: matchedAssignment?.id ?? null,
     };
 
-    const { error } = await (supabase.from("sale_barn_animals") as any).insert(animalRow);
+    const { error } = await supabase.from("sale_barn_animals").insert(animalRow);
     if (error) {
       setSaving(false);
       console.error("Save failed:", error);
@@ -308,7 +308,7 @@ const ChutesideEntry: React.FC = () => {
     }
 
     if (sorted && sortDestPen) {
-      await (supabase.from("sort_records") as any).insert({
+      await supabase.from("sort_records").insert({
         animal_id: eid.trim(),
         source_pen: (wo?.pens ?? [])[0] ?? "",
         dest_pen: sortDestPen,
@@ -380,7 +380,7 @@ const ChutesideEntry: React.FC = () => {
             onChange={(e) => setGroupNotes(e.target.value)}
             onBlur={() => {
               if (woId && groupNotes !== (wo?.group_notes ?? "")) {
-                (supabase.from("work_orders") as any).update({ group_notes: groupNotes || null }).eq("id", woId);
+                supabase.from("work_orders").update({ group_notes: groupNotes || null }).eq("id", woId);
               }
             }}
           />
@@ -524,7 +524,7 @@ const ChutesideEntry: React.FC = () => {
                 placeholder="Notes for this animal…"
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
-                onFocus={focusGold as any} onBlur={blurReset as any}
+                onFocus={focusGold} onBlur={blurReset}
               />
             </div>
           </div>
@@ -537,7 +537,7 @@ const ChutesideEntry: React.FC = () => {
             <div style={{ fontSize: 12, fontWeight: 600, color: "#717182", marginBottom: 4 }}>Sex</div>
             <select style={{ ...INPUT, width: "100%", flex: "none", appearance: "none", WebkitAppearance: "none" }}
               value={sex} onChange={(e) => setSex(e.target.value)}
-              onFocus={focusGold as any} onBlur={blurReset as any}>
+              onFocus={focusGold} onBlur={blurReset}>
               <option value="">—</option>
               <option value="Bull">Bull</option>
               <option value="Heifer">Heifer</option>

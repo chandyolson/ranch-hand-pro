@@ -5,6 +5,10 @@ import { parseFile, ParsedFile } from '@/lib/import/file-parser';
 import { guessMapping } from '@/lib/import/column-guesser';
 import { matchAnimals, MatchResult } from '@/lib/import/animal-matcher';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type AnimalUpdate = Database['public']['Tables']['animals']['Update'];
+type AnimalInsert = Database['public']['Tables']['animals']['Insert'];
 import UploadStep from '@/components/import/UploadStep';
 import ColumnMappingStep from '@/components/import/ColumnMappingStep';
 import MatchReviewStep from '@/components/import/MatchReviewStep';
@@ -86,7 +90,7 @@ const ImportDataScreen: React.FC = () => {
           if (item.matchType === 'matched' && item.animalId) {
             const updates = item.updateFields || {};
             if (Object.keys(updates).length > 0) {
-              await (supabase.from('animals') as any).update(updates).eq('id', item.animalId);
+              await supabase.from('animals').update(updates as unknown as AnimalUpdate).eq('id', item.animalId);
               updated++;
             } else {
               skipped++;
@@ -100,7 +104,7 @@ const ImportDataScreen: React.FC = () => {
               }
             }
             if (Object.keys(updates).length > 0) {
-              await (supabase.from('animals') as any).update(updates).eq('id', item.animalId);
+              await supabase.from('animals').update(updates as unknown as AnimalUpdate).eq('id', item.animalId);
               updated++;
             } else {
               skipped++;
@@ -122,7 +126,7 @@ const ImportDataScreen: React.FC = () => {
               skipped++;
               continue;
             }
-            await (supabase.from('animals') as any).insert(newAnimal);
+            await supabase.from('animals').insert(newAnimal as unknown as AnimalInsert);
             created++;
           }
         } catch {

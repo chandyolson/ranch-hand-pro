@@ -260,7 +260,7 @@ async function checkDuplicateCowWork(opId: string): Promise<Violation[]> {
   if (!data || data.length === 0) return [];
 
   const counts = new Map<string, { ids: string[]; animal_id: string; project_id: string }>();
-  for (const r of data as any[]) {
+  for (const r of data) {
     const key = `${r.animal_id}|${r.project_id}`;
     if (!counts.has(key)) counts.set(key, { ids: [r.id], animal_id: r.animal_id, project_id: r.project_id });
     else counts.get(key)!.ids.push(r.id);

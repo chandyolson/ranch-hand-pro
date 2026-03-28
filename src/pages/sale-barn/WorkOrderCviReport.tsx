@@ -17,7 +17,7 @@ const WorkOrderCviReport: React.FC = () => {
     queryKey: ["cvi_wo", woId],
     enabled: !!woId,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_orders") as any).select("*").eq("id", woId!).single();
+      const { data } = await supabase.from("work_orders").select("*").eq("id", woId!).single();
       return data as unknown as WorkOrder | null;
     },
   });
@@ -26,7 +26,7 @@ const WorkOrderCviReport: React.FC = () => {
     queryKey: ["cvi_cust", wo?.customer_id],
     enabled: !!wo?.customer_id,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_customers") as any).select("*").eq("id", wo!.customer_id!).single();
+      const { data } = await supabase.from("sale_barn_customers").select("*").eq("id", wo!.customer_id!).single();
       return data as unknown as SaleBarnCustomer | null;
     },
   });
@@ -35,7 +35,7 @@ const WorkOrderCviReport: React.FC = () => {
     queryKey: ["cvi_sd", saleDayId],
     enabled: !!saleDayId,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_days") as any).select("date").eq("id", saleDayId!).single();
+      const { data } = await supabase.from("sale_days").select("date").eq("id", saleDayId!).single();
       return data as { date: string } | null;
     },
   });
@@ -44,7 +44,7 @@ const WorkOrderCviReport: React.FC = () => {
     queryKey: ["cvi_animals", woId],
     enabled: !!woId,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_animals") as any)
+      const { data } = await supabase.from("sale_barn_animals")
         .select("*").eq("work_order_id", woId!)
         .order("created_at", { ascending: true });
       return (data ?? []) as unknown as SaleBarnAnimal[];

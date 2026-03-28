@@ -52,7 +52,7 @@ const AnimalsWorkedSheet: React.FC<{
     queryKey: ["wo_sheet_animals", woId],
     enabled: open && !!woId,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_animals") as any)
+      const { data } = await supabase.from("sale_barn_animals")
         .select("*").eq("work_order_id", woId)
         .order("created_at", { ascending: true });
       return (data ?? []) as unknown as SaleBarnAnimal[];
@@ -198,7 +198,7 @@ const CviSheet: React.FC<{
     queryKey: ["cvi_sheet_animals", woId],
     enabled: open && !!woId,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_animals") as any)
+      const { data } = await supabase.from("sale_barn_animals")
         .select("*").eq("work_order_id", woId)
         .order("created_at", { ascending: true });
       return (data ?? []) as unknown as SaleBarnAnimal[];
@@ -324,7 +324,7 @@ const ReportButtons: React.FC<{
   const { data: animalCount } = useQuery({
     queryKey: ["wo_animal_count", woId],
     queryFn: async () => {
-      const { count, error } = await (supabase.from("sale_barn_animals") as any)
+      const { count, error } = await supabase.from("sale_barn_animals")
         .select("id", { count: "exact", head: true })
         .eq("work_order_id", woId);
       if (error) return 0;
@@ -488,7 +488,7 @@ const CustomerSearch: React.FC<{
     queryKey: ["wo_cust_search", operationId, search],
     enabled: search.length >= 2 && !selected,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_customers") as any)
+      const { data } = await supabase.from("sale_barn_customers")
         .select("*").eq("operation_id", operationId)
         .ilike("name", `%${search}%`).limit(20);
       return (data ?? []) as unknown as SaleBarnCustomer[];
@@ -573,7 +573,7 @@ const NotesThread: React.FC<{ woId: string | undefined; showToast: (v: string, m
     queryKey: ["work_order_notes", woId],
     enabled: !!woId,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_order_notes") as any)
+      const { data } = await supabase.from("work_order_notes")
         .select("*").eq("work_order_id", woId!)
         .order("created_at", { ascending: true });
       return (data ?? []) as unknown as WorkOrderNote[];
@@ -583,7 +583,7 @@ const NotesThread: React.FC<{ woId: string | undefined; showToast: (v: string, m
   const addNote = useCallback(async () => {
     if (!text.trim() || !woId) return;
     setSubmitting(true);
-    const { error } = await (supabase.from("work_order_notes") as any).insert({
+    const { error } = await supabase.from("work_order_notes").insert({
       work_order_id: woId,
       author: "Office",
       text: text.trim(),
@@ -943,7 +943,7 @@ const AssignAnimalsSection: React.FC<{
   const { data: assignedAnimals } = useQuery({
     queryKey: ["assigned_animals", woId],
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_animals") as any)
+      const { data } = await supabase.from("sale_barn_animals")
         .select("id,eid,tag_number,designation_key,work_order_id")
         .eq("buyer_work_order_id", woId)
         .order("created_at", { ascending: true });
@@ -957,14 +957,14 @@ const AssignAnimalsSection: React.FC<{
     queryKey: ["assigned_seller_wos", sellerWoIds],
     enabled: sellerWoIds.length > 0,
     queryFn: async () => {
-      const { data: wos } = await (supabase.from("work_orders") as any).select("id,customer_id").in("id", sellerWoIds);
+      const { data: wos } = await supabase.from("work_orders").select("id,customer_id").in("id", sellerWoIds);
       if (!wos?.length) return {};
-      const custIds = wos.map((w: any) => w.customer_id).filter(Boolean);
-      const { data: custs } = await (supabase.from("sale_barn_customers") as any).select("id,name").in("id", custIds);
+      const custIds = wos.map((w) => w.customer_id).filter(Boolean) as string[];
+      const { data: custs } = await supabase.from("sale_barn_customers").select("id,name").in("id", custIds);
       const custMap: Record<string, string> = {};
-      (custs ?? []).forEach((c: any) => { custMap[c.id] = c.name; });
+      (custs ?? []).forEach((c) => { custMap[c.id] = c.name; });
       const woMap: Record<string, string> = {};
-      wos.forEach((w: any) => { woMap[w.id] = custMap[w.customer_id] ?? "Unknown"; });
+      wos.forEach((w) => { woMap[w.id] = custMap[w.customer_id ?? ""] ?? "Unknown"; });
       return woMap;
     },
   });
@@ -1042,7 +1042,7 @@ const WorkOrderForm: React.FC = () => {
     queryKey: ["sale_day_detail", saleDayId],
     enabled: !!saleDayId,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_days") as any).select("*").eq("id", saleDayId!).single();
+      const { data } = await supabase.from("sale_days").select("*").eq("id", saleDayId!).single();
       return data as unknown as SaleDay | null;
     },
   });
@@ -1056,7 +1056,7 @@ const WorkOrderForm: React.FC = () => {
     queryKey: ["work_order_edit", woId],
     enabled: isEdit,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_orders") as any).select("*").eq("id", woId!).single();
+      const { data } = await supabase.from("work_orders").select("*").eq("id", woId!).single();
       return data as unknown as WorkOrder | null;
     },
   });
@@ -1081,9 +1081,9 @@ const WorkOrderForm: React.FC = () => {
   const handleDeleteWo = async () => {
     if (!woId) return;
     setWoDeleting(true);
-    await (supabase.from("sale_barn_animals") as any).delete().eq("work_order_id", woId);
-    await (supabase.from("work_order_notes") as any).delete().eq("work_order_id", woId);
-    await (supabase.from("work_orders") as any).delete().eq("id", woId);
+    await supabase.from("sale_barn_animals").delete().eq("work_order_id", woId);
+    await supabase.from("work_order_notes").delete().eq("work_order_id", woId);
+    await supabase.from("work_orders").delete().eq("id", woId);
     queryClient.invalidateQueries({ queryKey: ["work_orders"] });
     setWoDeleting(false);
     showToast("success", "Work order deleted");
@@ -1105,9 +1105,9 @@ const WorkOrderForm: React.FC = () => {
     setSpecialLumpSum(existingWo.special_lump_sum || 0);
     setGroupNotes(existingWo.group_notes || "");
     if (existingWo.customer_id) {
-      (supabase.from("sale_barn_customers") as any)
+      supabase.from("sale_barn_customers")
         .select("*").eq("id", existingWo.customer_id).single()
-        .then(({ data }: any) => { if (data) setCustomer(data as SaleBarnCustomer); });
+        .then(({ data }) => { if (data) setCustomer(data as unknown as SaleBarnCustomer); });
     }
   }, [existingWo]);
 
@@ -1119,11 +1119,11 @@ const WorkOrderForm: React.FC = () => {
     const qAnimalType = searchParams.get("animalType");
     if (qCustomer && !customer) {
       // Search for customer by name to get the full object
-      (supabase.from("sale_barn_customers") as any)
+      supabase.from("sale_barn_customers")
         .select("*").eq("operation_id", operationId)
         .ilike("name", qCustomer).limit(1)
-        .then(({ data }: any) => {
-          if (data && data.length > 0) setCustomer(data[0] as SaleBarnCustomer);
+        .then(({ data }) => {
+          if (data && data.length > 0) setCustomer(data[0] as unknown as SaleBarnCustomer);
         });
     }
     if (qHeadCount && !headCount) setHeadCount(qHeadCount);
@@ -1182,9 +1182,9 @@ const WorkOrderForm: React.FC = () => {
 
     let error: any;
     if (isEdit && woId) {
-      ({ error } = await (supabase.from("work_orders") as any).update(row).eq("id", woId));
+      ({ error } = await supabase.from("work_orders").update(row).eq("id", woId));
     } else {
-      ({ error } = await (supabase.from("work_orders") as any).insert(row));
+      ({ error } = await supabase.from("work_orders").insert(row));
     }
 
     setSaving(false);
@@ -1195,7 +1195,7 @@ const WorkOrderForm: React.FC = () => {
       // If created from a consignment, mark it as converted
       const consignmentId = searchParams.get("consignmentId");
       if (consignmentId && !isEdit) {
-        await (supabase.from("consignments") as any)
+        await supabase.from("consignments")
           .update({ status: "converted" })
           .eq("id", consignmentId);
         queryClient.invalidateQueries({ queryKey: ["consignments"] });
@@ -1275,7 +1275,7 @@ const WorkOrderForm: React.FC = () => {
             style={{ ...INPUT, appearance: "none", WebkitAppearance: "none" }}
             value={workType}
             onChange={(e) => setWorkType(e.target.value)}
-            onFocus={focusGold as any} onBlur={blurReset as any}
+            onFocus={focusGold} onBlur={blurReset}
           >
             <option value="">Select…</option>
             {prices.map((p) => (
@@ -1289,7 +1289,7 @@ const WorkOrderForm: React.FC = () => {
             style={{ ...INPUT, appearance: "none", WebkitAppearance: "none" }}
             value={animalType}
             onChange={(e) => setAnimalType(e.target.value)}
-            onFocus={focusGold as any} onBlur={blurReset as any}
+            onFocus={focusGold} onBlur={blurReset}
           >
             <option value="">Select…</option>
             {ANIMAL_TYPES.map((t) => (
@@ -1337,7 +1337,7 @@ const WorkOrderForm: React.FC = () => {
             placeholder="General work order notes…"
             value={groupNotes}
             onChange={(e) => setGroupNotes(e.target.value)}
-            onFocus={focusGold as any} onBlur={blurReset as any}
+            onFocus={focusGold} onBlur={blurReset}
           />
         </FieldRow>
       </div>

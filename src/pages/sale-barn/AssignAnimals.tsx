@@ -57,7 +57,7 @@ const AssignAnimals: React.FC = () => {
     queryKey: ["assign_buyer_wo", woId],
     enabled: !!woId,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_orders") as any).select("*").eq("id", woId!).single();
+      const { data } = await supabase.from("work_orders").select("*").eq("id", woId!).single();
       return data as unknown as WorkOrder | null;
     },
   });
@@ -67,7 +67,7 @@ const AssignAnimals: React.FC = () => {
     queryKey: ["assign_buyer_customer", buyerWo?.customer_id],
     enabled: !!buyerWo?.customer_id,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_customers") as any).select("*").eq("id", buyerWo!.customer_id!).single();
+      const { data } = await supabase.from("sale_barn_customers").select("*").eq("id", buyerWo!.customer_id!).single();
       return data as unknown as SaleBarnCustomer | null;
     },
   });
@@ -77,7 +77,7 @@ const AssignAnimals: React.FC = () => {
     queryKey: ["assign_seller_wos", saleDayId],
     enabled: !!saleDayId,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_orders") as any)
+      const { data } = await supabase.from("work_orders")
         .select("*").eq("sale_day_id", saleDayId!).eq("entity_type", "seller")
         .order("created_at", { ascending: false });
       return (data ?? []) as unknown as WorkOrder[];
@@ -90,7 +90,7 @@ const AssignAnimals: React.FC = () => {
     queryKey: ["assign_seller_customers", sellerCustomerIds],
     enabled: sellerCustomerIds.length > 0,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_customers") as any)
+      const { data } = await supabase.from("sale_barn_customers")
         .select("*").in("id", sellerCustomerIds);
       return (data ?? []) as unknown as SaleBarnCustomer[];
     },
@@ -107,7 +107,7 @@ const AssignAnimals: React.FC = () => {
     queryKey: ["assign_seller_animals_counts", sellerWoIds],
     enabled: sellerWoIds.length > 0,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_animals") as any)
+      const { data } = await supabase.from("sale_barn_animals")
         .select("id,work_order_id,buyer_work_order_id").in("work_order_id", sellerWoIds);
       return (data ?? []) as { id: string; work_order_id: string; buyer_work_order_id: string | null }[];
     },
@@ -137,7 +137,7 @@ const AssignAnimals: React.FC = () => {
     queryKey: ["assign_step2_animals", selectedSellerArr],
     enabled: step >= 1 && selectedSellerArr.length > 0,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_animals") as any)
+      const { data } = await supabase.from("sale_barn_animals")
         .select("*").in("work_order_id", selectedSellerArr)
         .order("created_at", { ascending: true });
       return (data ?? []) as unknown as SaleBarnAnimal[];
@@ -219,7 +219,7 @@ const AssignAnimals: React.FC = () => {
     if (selectedAnimalIds.size === 0) return;
     setSaving(true);
     const ids = [...selectedAnimalIds];
-    const { error } = await (supabase.from("sale_barn_animals") as any)
+    const { error } = await supabase.from("sale_barn_animals")
       .update({ buyer_work_order_id: woId })
       .in("id", ids);
     setSaving(false);

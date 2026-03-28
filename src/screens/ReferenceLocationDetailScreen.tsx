@@ -6,6 +6,20 @@ import { useOperation } from "@/contexts/OperationContext";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LABEL_STYLE, INPUT_CLS } from "@/lib/styles";
+/** Shape of coordinates JSONB column */
+interface LocationCoords {
+  lat?: number;
+  lng?: number;
+}
+
+/** Recent project row returned from the join query */
+interface RecentProjectRow {
+  id: string;
+  name: string;
+  date: string | null;
+  head_count: number | null;
+  work_types: { work_type: { code: string } | null }[];
+}
 
 const LOCATION_TYPES = ["Pasture", "Pen", "Barn", "Corral", "Feedlot", "Headquarters", "Working Facility", "Water Source", "Lot", "Other"];
 
@@ -86,7 +100,7 @@ export default function ReferenceLocationDetailScreen() {
   const { data: animalCount } = useQuery({
     queryKey: ["location-animal-count", id],
     queryFn: async () => {
-      const { count } = await (supabase.from("animals") as any).select("id", { count: "exact", head: true } as any)
+      const { count } = await supabase.from("animals").select("id", { count: "exact", head: true })
         .eq("location_id", id!).eq("operation_id", operationId).eq("status", "Active");
       return count || 0;
     },
@@ -119,11 +133,12 @@ export default function ReferenceLocationDetailScreen() {
   const { data: recentProjects } = useQuery({
     queryKey: ["location-recent-projects", id],
     queryFn: async () => {
-      const { data } = await (supabase.from("projects") as any)
+      const { data } = await supabase
+        .from("projects")
         .select("id, name, date, head_count, work_types:project_work_types(work_type:work_types(code))")
         .eq("location_id", id!).eq("operation_id", operationId)
         .order("date", { ascending: false }).limit(5);
-      return (data || []) as any[];
+      return (data || []) as unknown as RecentProjectRow[];
     },
     enabled: !!id,
   });
@@ -135,7 +150,7 @@ export default function ReferenceLocationDetailScreen() {
       setDescription(location.description || "");
       setLocationType(location.location_type);
       setIsActive(location.is_active);
-      const coords = location.coordinates as any;
+      const coords = location.coordinates as unknown as LocationCoords | null;
       setLat(coords?.lat ? String(coords.lat) : "");
       setLng(coords?.lng ? String(coords.lng) : "");
       setInitialized(true);
@@ -174,7 +189,7 @@ export default function ReferenceLocationDetailScreen() {
     if (location) {
       setName(location.name); setDescription(location.description || "");
       setLocationType(location.location_type); setIsActive(location.is_active);
-      const coords = location.coordinates as any;
+      const coords = location.coordinates as unknown as LocationCoords | null;
       setLat(coords?.lat ? String(coords.lat) : "");
       setLng(coords?.lng ? String(coords.lng) : "");
     }
@@ -218,7 +233,7 @@ export default function ReferenceLocationDetailScreen() {
   );
 
   const tc = TYPE_COLORS[location.location_type] || { bg: "rgba(136,135,128,0.20)", text: "#888780" };
-  const coords = location.coordinates as any;
+  const coords = location.coordinates as unknown as LocationCoords | null;
   const hasCoords = coords?.lat && coords?.lng;
   const createdDate = location.created_at ? fmtDate(location.created_at) : "";
 
@@ -363,9 +378,9 @@ export default function ReferenceLocationDetailScreen() {
           </div>
         )}
 
-        {sublocations && sublocations.length > 0 ? sublocations.map((sub: any) => {
+        {sublocations && sublocations.length > 0 ? sublocations.map((sub) => {
           const stc = TYPE_COLORS[sub.location_type] || { bg: "rgba(136,135,128,0.12)", text: "#888780" };
-          // Count sublocations of this sublocation (recursive)
+          const subCoords = sub.coordinates as unknown as LocationCoords | null;
           return (
             <div key={sub.id} onClick={() => navigate("/reference/locations/" + sub.id)}
               style={{ background: "#fff", border: "1px solid #D4D4D0", borderRadius: 8, padding: "10px 12px", marginBottom: 6, cursor: "pointer" }}>
@@ -377,9 +392,9 @@ export default function ReferenceLocationDetailScreen() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3L9 7L5 11" stroke="rgba(26,26,26,0.25)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
               {sub.description && <div style={{ fontSize: 11, color: "rgba(26,26,26,0.45)", marginTop: 2 }}>{sub.description}</div>}
-              {sub.coordinates && (
+              {subCoords && (
                 <div style={{ fontSize: 10, color: "rgba(26,26,26,0.3)", marginTop: 2 }}>
-                  GPS: {(sub.coordinates as any).lat?.toFixed(4)}, {(sub.coordinates as any).lng?.toFixed(4)}
+                  GPS: {subCoords.lat?.toFixed(4)}, {subCoords.lng?.toFixed(4)}
                 </div>
               )}
             </div>
@@ -393,7 +408,7 @@ export default function ReferenceLocationDetailScreen() {
       {recentProjects && recentProjects.length > 0 && (
         <div style={{ marginTop: 14 }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.3)", textTransform: "uppercase" as const, marginBottom: 6 }}>Recent projects</div>
-          {recentProjects.map((p: any) => {
+          {recentProjects.map((p) => {
             const code = p.work_types?.[0]?.work_type?.code || "WORK";
             return (
               <div key={p.id} onClick={() => navigate("/cow-work/" + p.id)}

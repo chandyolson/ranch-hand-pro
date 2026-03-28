@@ -126,6 +126,7 @@ function matchesFilter<T extends Record<string, any>>(
 
     case "range": {
       const [min, max] = filter.value as [string, string];
+      if (val === null || val === undefined) return false;
       const numVal = Number(val);
       if (isNaN(numVal)) return false;
       if (min && numVal < Number(min)) return false;

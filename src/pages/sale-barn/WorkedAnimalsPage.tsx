@@ -97,7 +97,7 @@ const WorkedAnimalsPage: React.FC = () => {
   const { data: saleDay } = useQuery({
     queryKey: ["sale_day", saleDayId],
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_days" as any)).select("*").eq("id", saleDayId).single();
+      const { data } = await supabase.from("sale_days").select("*").eq("id", saleDayId).single();
       return data as unknown as SaleDay;
     },
   });
@@ -107,7 +107,7 @@ const WorkedAnimalsPage: React.FC = () => {
     queryKey: ["wa_work_orders", saleDayId],
     enabled: !!saleDayId,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_orders" as any)).select("*").eq("sale_day_id", saleDayId);
+      const { data } = await supabase.from("work_orders").select("*").eq("sale_day_id", saleDayId);
       return (data ?? []) as unknown as WorkOrder[];
     },
   });
@@ -120,7 +120,7 @@ const WorkedAnimalsPage: React.FC = () => {
     queryKey: ["wa_animals", woIds],
     enabled: woIds.length > 0,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_animals" as any)).select("*").in("work_order_id", woIds);
+      const { data } = await supabase.from("sale_barn_animals").select("*").in("work_order_id", woIds);
       return (data ?? []) as unknown as SaleBarnAnimal[];
     },
   });
@@ -130,8 +130,8 @@ const WorkedAnimalsPage: React.FC = () => {
     queryKey: ["wa_customers", customerIds],
     enabled: customerIds.length > 0,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_customers" as any)).select("id, name").in("id", customerIds);
-      return Object.fromEntries((data ?? []).map((c: any) => [c.id, c.name])) as Record<string, string>;
+      const { data } = await supabase.from("sale_barn_customers").select("id, name").in("id", customerIds);
+      return Object.fromEntries((data ?? []).map((c) => [c.id, c.name])) as Record<string, string>;
     },
   });
 
@@ -140,7 +140,7 @@ const WorkedAnimalsPage: React.FC = () => {
     queryKey: ["wa_desg_keys", operationId],
     enabled: !!operationId,
     queryFn: async () => {
-      const { data } = await (supabase.from("designation_keys" as any)).select("*").eq("operation_id", operationId).order("sort_order");
+      const { data } = await supabase.from("designation_keys").select("*").eq("operation_id", operationId).order("sort_order");
       return (data ?? []) as unknown as DesignationKey[];
     },
   });

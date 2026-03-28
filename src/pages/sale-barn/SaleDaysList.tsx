@@ -50,19 +50,19 @@ const SaleDaysList: React.FC = () => {
     if (!formDate) { showToast("error", "Date is required"); return; }
     setFormSaving(true);
     try {
-      const { data, error } = await (supabase.from("sale_days" as any).insert({
+      const { data, error } = await supabase.from("sale_days").insert({
         operation_id: operationId,
         date: formDate,
         vet_crew: formCrew || null,
         status: formStatus,
-      } as any).select().single() as any);
+      }).select().single();
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["sale_days"] });
       showToast("success", "Sale day created");
       setFormOpen(false);
       setFormCrew("");
       setFormStatus("active");
-      navigate(`/sale-barn/${(data as any).id}`);
+      navigate(`/sale-barn/${data.id}`);
     } catch (e: any) {
       showToast("error", e.message || "Failed to create sale day");
     } finally {
@@ -77,7 +77,7 @@ const SaleDaysList: React.FC = () => {
     enabled: saleDayIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("work_orders" as any)
+        .from("work_orders")
         .select("*")
         .in("sale_day_id", saleDayIds);
       if (error) throw error;
@@ -92,19 +92,19 @@ const SaleDaysList: React.FC = () => {
     enabled: saleDayIds.length > 0,
     queryFn: async () => {
       // Fetch by sale_day_id
-      const { data: byId, error: e1 } = await (supabase.from("consignments") as any)
+      const { data: byId, error: e1 } = await supabase.from("consignments")
         .select("*")
         .in("sale_day_id", saleDayIds);
       if (e1) throw e1;
       // Fetch unlinked by expected_sale_date
-      const { data: byDate, error: e2 } = await (supabase.from("consignments") as any)
+      const { data: byDate, error: e2 } = await supabase.from("consignments")
         .select("*")
         .is("sale_day_id", null)
         .in("expected_sale_date", saleDayDates)
         .eq("operation_id", operationId);
       if (e2) throw e2;
-      const idSet = new Set((byId ?? []).map((c: any) => c.id));
-      return [...(byId ?? []), ...(byDate ?? []).filter((c: any) => !idSet.has(c.id))] as unknown as Consignment[];
+      const idSet = new Set((byId ?? []).map((c) => c.id));
+      return [...(byId ?? []), ...(byDate ?? []).filter((c) => !idSet.has(c.id))] as unknown as Consignment[];
     },
   });
 

@@ -9,6 +9,15 @@ import { useChuteSideToast } from "../components/ToastContext";
 import { TAG_COLOR_OPTIONS, TAG_COLOR_HEX, CALF_SEX_OPTIONS, FLAG_OPTIONS, QUICK_NOTES, TRAIT_LABELS, type FlagColor } from "@/lib/constants";
 import { LABEL_STYLE, INPUT_BASE, INPUT_READONLY, SUB_LABEL, focusGold, blurReset } from "@/lib/styles";
 
+/* ── Query result shape for calving record with joins ── */
+interface CalvingRecordRow {
+  dam?: { tag: string; tag_color: string | null; sex: string | null; type: string | null; year_born: number | null } | null;
+  calf?: { tag: string; tag_color: string | null } | null;
+  sire?: { tag: string } | null;
+  group?: { name: string } | null;
+  location?: { name: string } | null;
+}
+
 /* ── Types ── */
 interface CalvingRecord {
   id: string;
@@ -140,7 +149,8 @@ export default function CalvingRecordScreen() {
       if (!workRows?.length) return [];
       const projectIds = [...new Set(workRows.map(w => w.project_id))];
       const { data: projects } = await supabase.from("projects").select("id, name, date, work_types:project_work_types(work_type:work_types(code, name))").in("id", projectIds);
-      const projMap = new Map((projects || []).map((p: any) => [p.id, p]));
+      type ProjectRow = { id: string; name: string | null; date: string | null };
+      const projMap = new Map((projects || []).map((p: ProjectRow) => [p.id, p]));
       return workRows.map(w => ({ ...w, project: projMap.get(w.project_id) })).sort((a, b) => {
         const da = a.project?.date || "";
         const db = b.project?.date || "";
@@ -154,27 +164,28 @@ export default function CalvingRecordScreen() {
   const damFlagTier = damFlagData ? (flagTierToColor[damFlagData as string] || null) : null;
 
   // Map database fields to screen display fields
-  const dam = dbRecord?.dam as any;
+  const dbRecordWithJoins = dbRecord as typeof dbRecord & CalvingRecordRow;
+  const dam = dbRecordWithJoins?.dam;
   const record = dbRecord ? {
     id: dbRecord.id,
     date: dbRecord.calving_date,
-    group: (dbRecord as any).group?.name || "",
-    location: (dbRecord as any).location?.name || "",
+    group: dbRecordWithJoins.group?.name || "",
+    location: dbRecordWithJoins.location?.name || "",
     damTag: dam?.tag || "Unknown",
     damColor: dam?.tag_color || "None",
-    damColorHex: TAG_COLOR_HEX[dam?.tag_color] || "#999",
+    damColorHex: TAG_COLOR_HEX[dam?.tag_color ?? ""] || "#999",
     damType: dam?.type || dam?.sex || "",
     damYearBorn: dam?.year_born ? String(dam.year_born) : "",
     damFlag: damFlagTier || null,
-    calfTag: (dbRecord as any).calf_tag || (dbRecord as any).calf?.tag || "",
-    calfColor: (dbRecord as any).calf_tag_color || (dbRecord as any).calf?.tag_color || "Yellow",
-    calfColorHex: TAG_COLOR_HEX[(dbRecord as any).calf_tag_color || (dbRecord as any).calf?.tag_color || "Yellow"] || "#F3D12A",
+    calfTag: dbRecord.calf_tag || dbRecordWithJoins.calf?.tag || "",
+    calfColor: dbRecord.calf_tag_color || dbRecordWithJoins.calf?.tag_color || "Yellow",
+    calfColorHex: TAG_COLOR_HEX[dbRecord.calf_tag_color || dbRecordWithJoins.calf?.tag_color || "Yellow"] || "#F3D12A",
     calfEid: "",
     calfSex: (dbRecord.calf_sex || "Unknown") as "Bull" | "Heifer" | "Unknown",
     calfStatus: (dbRecord.calf_status || "Alive") as "Alive" | "Dead",
     birthWeight: dbRecord.birth_weight ? String(dbRecord.birth_weight) : "",
     calfSize: dbRecord.calf_size ? String(dbRecord.calf_size) : "",
-    sire: (dbRecord as any).sire?.tag || "",
+    sire: dbRecordWithJoins.sire?.tag || "",
     disposition: dbRecord.disposition ? String(dbRecord.disposition) : "",
     assistance: dbRecord.assistance ? String(dbRecord.assistance) : "",
     udder: dbRecord.udder ? String(dbRecord.udder) : "",
@@ -184,7 +195,7 @@ export default function CalvingRecordScreen() {
     mothering: dbRecord.mothering ? String(dbRecord.mothering) : "",
     calfVigor: dbRecord.calf_vigor ? String(dbRecord.calf_vigor) : "",
     calfSize2: dbRecord.calf_size ? String(dbRecord.calf_size) : "",
-    quickNotes: (dbRecord as any).quick_notes || [],
+    quickNotes: dbRecord.quick_notes || [],
     memo: dbRecord.memo || "",
   } : null;
 

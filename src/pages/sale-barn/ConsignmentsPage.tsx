@@ -56,7 +56,7 @@ const CustomerSearch: React.FC<{
     queryKey: ["consign_cust_search", operationId, value],
     enabled: value.length >= 2 && !customerId,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_customers") as any)
+      const { data } = await supabase.from("sale_barn_customers")
         .select("id, name").eq("operation_id", operationId)
         .ilike("name", `%${value}%`).limit(8);
       return (data ?? []) as { id: string; name: string }[];
@@ -239,7 +239,7 @@ const ConsignmentsPage: React.FC = () => {
   const { data: saleDay } = useQuery({
     queryKey: ["sale_day", saleDayId],
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_days") as any).select("*").eq("id", saleDayId).single();
+      const { data } = await supabase.from("sale_days").select("*").eq("id", saleDayId).single();
       return data as SaleDay | null;
     },
   });
@@ -270,7 +270,7 @@ const ConsignmentsPage: React.FC = () => {
   const handleSave = async () => {
     if (!custName.trim() || !headCount || parseInt(headCount) < 1) return;
     setSaving(true);
-    const { error } = await (supabase.from("consignments") as any).insert({
+    const { error } = await supabase.from("consignments").insert({
       operation_id: operationId, sale_day_id: saleDayId,
       customer_id: custId, customer_name: custName.trim(),
       head_count: parseInt(headCount), animal_type: animalType || null,
@@ -285,7 +285,7 @@ const ConsignmentsPage: React.FC = () => {
   };
 
   const markArrived = async (c: Consignment) => {
-    await (supabase.from("consignments") as any).update({ status: "arrived" }).eq("id", c.id);
+    await supabase.from("consignments").update({ status: "arrived" }).eq("id", c.id);
     qc.invalidateQueries({ queryKey: ["consignments"] });
     showToast("success", "Marked as arrived");
   };

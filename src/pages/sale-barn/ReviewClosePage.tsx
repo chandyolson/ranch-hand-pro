@@ -79,14 +79,14 @@ const ReviewClosePage: React.FC = () => {
   const { data: wo } = useQuery({
     queryKey: ["review_wo", woId], enabled: !!woId,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_orders") as any).select("*").eq("id", woId!).single();
+      const { data } = await supabase.from("work_orders").select("*").eq("id", woId!).single();
       return data as unknown as WorkOrder | null;
     },
   });
   const { data: animalsRaw, refetch: refetchAnimals } = useQuery({
     queryKey: ["review_animals", woId], enabled: !!woId,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_animals") as any)
+      const { data } = await supabase.from("sale_barn_animals")
         .select("*").eq("work_order_id", woId!).order("created_at", { ascending: true });
       return (data ?? []) as unknown as SaleBarnAnimal[];
     },
@@ -95,9 +95,9 @@ const ReviewClosePage: React.FC = () => {
   const { data: customerName } = useQuery({
     queryKey: ["review_customer", wo?.customer_id], enabled: !!wo?.customer_id,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_customers") as any)
+      const { data } = await supabase.from("sale_barn_customers")
         .select("name").eq("id", wo!.customer_id!).single();
-      return (data as any)?.name as string ?? "Customer";
+      return data?.name ?? "Customer";
     },
   });
   const { data: dkData } = useDesignationKeys();
@@ -153,7 +153,7 @@ const ReviewClosePage: React.FC = () => {
     } else if (field === "memo") { update = { memo: batchMemo.trim() || null }; label = "Memo"; }
 
     await Promise.all(ids.map((aid) =>
-      (supabase.from("sale_barn_animals") as any).update(update).eq("id", aid)
+      supabase.from("sale_barn_animals").update(update).eq("id", aid)
     ));
     setApplying(false);
     showToast("success", `Updated ${label} on ${ids.length} animals`);
@@ -199,7 +199,7 @@ const ReviewClosePage: React.FC = () => {
     if (!expandedId) return;
     setEditSaving(true);
     const breedVal = editNotes.find((n) => BREED_NOTES.includes(n)) ?? null;
-    await (supabase.from("sale_barn_animals") as any).update({
+    await supabase.from("sale_barn_animals").update({
       preg_status: editPreg || null,
       designation_key: editDes || null,
       sex: editSex || null,
@@ -225,7 +225,7 @@ const ReviewClosePage: React.FC = () => {
       return;
     }
     setClosing(true);
-    await (supabase.from("work_orders") as any).update({ work_complete: true }).eq("id", woId);
+    await supabase.from("work_orders").update({ work_complete: true }).eq("id", woId);
     qc.invalidateQueries({ queryKey: ["work_orders"] });
     showToast("success", "Work order complete");
     navigate(`/sale-barn/${saleDayId}`);
@@ -374,7 +374,7 @@ const ReviewClosePage: React.FC = () => {
                       fontSize: 16, fontFamily: "Inter, sans-serif", padding: "8px 12px",
                       outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 8,
                     }}
-                    onFocus={focusGold as any} onBlur={blurReset as any}
+                    onFocus={focusGold} onBlur={blurReset}
                   />
                 )}
 
@@ -536,7 +536,7 @@ const ReviewClosePage: React.FC = () => {
                       fontSize: 16, fontFamily: "Inter, sans-serif", padding: "8px 12px",
                       outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 8,
                     }}
-                    onFocus={focusGold as any} onBlur={blurReset as any}
+                    onFocus={focusGold} onBlur={blurReset}
                   />
 
                   <button type="button" className="active:scale-[0.97]" disabled={editSaving} onClick={saveEdit}

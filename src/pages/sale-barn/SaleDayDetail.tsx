@@ -54,7 +54,7 @@ const ConsignCustomerSearch: React.FC<{
     queryKey: ["consign_cust_search", operationId, value],
     enabled: value.length >= 2 && !customerId,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_customers") as any)
+      const { data } = await supabase.from("sale_barn_customers")
         .select("*").eq("operation_id", operationId)
         .ilike("name", `%${value}%`).limit(20);
       return (data ?? []) as unknown as SaleBarnCustomer[];
@@ -175,9 +175,9 @@ const ConsignmentsTab: React.FC<{
     };
     let error: any;
     if (editId) {
-      ({ error } = await (supabase.from("consignments") as any).update(row).eq("id", editId));
+      ({ error } = await supabase.from("consignments").update(row).eq("id", editId));
     } else {
-      ({ error } = await (supabase.from("consignments") as any).insert(row));
+      ({ error } = await supabase.from("consignments").insert(row));
     }
     setSaving(false);
     if (error) { showToast("error", error.message); return; }
@@ -400,7 +400,7 @@ const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; 
     queryKey: ["recon_animals", woIds],
     enabled: activeTab === "Reconciliation" && woIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("sale_barn_animals" as any).select("*").in("work_order_id", woIds);
+      const { data } = await supabase.from("sale_barn_animals").select("*").in("work_order_id", woIds);
       return (data ?? []) as unknown as SaleBarnAnimal[];
     },
   });
@@ -409,7 +409,7 @@ const ReconciliationTab: React.FC<{ workOrders: WorkOrder[]; saleDayId: string; 
     queryKey: ["recon_sorts", woIds],
     enabled: activeTab === "Reconciliation" && woIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("sort_records" as any).select("*").in("work_order_id", woIds);
+      const { data } = await supabase.from("sort_records").select("*").in("work_order_id", woIds);
       return (data ?? []) as unknown as SortRecord[];
     },
   });
@@ -667,7 +667,7 @@ const FlaggedNotesBanner: React.FC<{
     queryKey: ["flagged_notes", woIds],
     enabled: woIds.length > 0,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_order_notes") as any)
+      const { data } = await supabase.from("work_order_notes")
         .select("*")
         .in("work_order_id", woIds)
         .eq("is_flagged", true)
@@ -684,7 +684,7 @@ const FlaggedNotesBanner: React.FC<{
     queryKey: ["flagged_replies", flaggedIds],
     enabled: flaggedIds.length > 0,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_order_notes") as any)
+      const { data } = await supabase.from("work_order_notes")
         .select("*")
         .in("parent_id", flaggedIds)
         .order("created_at", { ascending: true });
@@ -708,7 +708,7 @@ const FlaggedNotesBanner: React.FC<{
   if (unresolved.length === 0) return null;
 
   const handleResolve = async (noteId: string) => {
-    await (supabase.from("work_order_notes") as any)
+    await supabase.from("work_order_notes")
       .update({ resolved_at: new Date().toISOString(), resolved_by: "Office" })
       .eq("id", noteId);
     qc.invalidateQueries({ queryKey: ["flagged_notes"] });
@@ -719,7 +719,7 @@ const FlaggedNotesBanner: React.FC<{
   const handleSendReply = async (parentNote: WorkOrderNote) => {
     if (!replyText.trim() || sending) return;
     setSending(true);
-    await (supabase.from("work_order_notes") as any).insert({
+    await supabase.from("work_order_notes").insert({
       work_order_id: parentNote.work_order_id,
       parent_id: parentNote.id,
       author: replyAuthor,
@@ -939,9 +939,9 @@ const WoCard: React.FC<{
 
   const handleDelete = async () => {
     setDeleting(true);
-    await (supabase.from("sale_barn_animals") as any).delete().eq("work_order_id", wo.id);
-    await (supabase.from("work_order_notes") as any).delete().eq("work_order_id", wo.id);
-    await (supabase.from("work_orders") as any).delete().eq("id", wo.id);
+    await supabase.from("sale_barn_animals").delete().eq("work_order_id", wo.id);
+    await supabase.from("work_order_notes").delete().eq("work_order_id", wo.id);
+    await supabase.from("work_orders").delete().eq("id", wo.id);
     queryClient.invalidateQueries({ queryKey: ["work_orders"] });
     setDeleting(false);
     setConfirmDelete(false);
@@ -1146,7 +1146,7 @@ const SaleDayDetail: React.FC = () => {
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("sale_days" as any)
+        .from("sale_days")
         .select("*")
         .eq("id", id!)
         .single();
@@ -1168,7 +1168,7 @@ const SaleDayDetail: React.FC = () => {
     queryKey: ["wo_customers", customerIds],
     enabled: customerIds.length > 0,
     queryFn: async () => {
-      const { data } = await (supabase.from("sale_barn_customers") as any)
+      const { data } = await supabase.from("sale_barn_customers")
         .select("id, name")
         .in("id", customerIds);
       const map: Record<string, string> = {};
@@ -1189,7 +1189,7 @@ const SaleDayDetail: React.FC = () => {
     queryKey: ["flagged_notes_counts", woIds],
     enabled: woIds.length > 0,
     queryFn: async () => {
-      const { data } = await (supabase.from("work_order_notes") as any)
+      const { data } = await supabase.from("work_order_notes")
         .select("work_order_id, id, resolved_at")
         .in("work_order_id", woIds)
         .eq("is_flagged", true);

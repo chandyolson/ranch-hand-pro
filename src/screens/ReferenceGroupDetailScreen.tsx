@@ -56,7 +56,7 @@ export default function ReferenceGroupDetailScreen() {
     setName(group.name);
     setDescription(group.description || "");
     setCattleType(group.cattle_type);
-    setGroupType((group as any).group_type || "general");
+    setGroupType(group.group_type || "general");
     setIsActive(group.is_active);
     setInitialized(true);
   }
@@ -92,7 +92,7 @@ export default function ReferenceGroupDetailScreen() {
   });
 
   // ── Flags for current members ──
-  const memberIds = (currentMembers || []).map((m: any) => m.animal_id);
+  const memberIds = (currentMembers || []).map((m) => m.animal_id);
   const { data: memberFlags } = useQuery({
     queryKey: ["group-member-flags", id, memberIds.length],
     queryFn: async () => {
@@ -185,9 +185,7 @@ export default function ReferenceGroupDetailScreen() {
     if (!name.trim()) { showToast("error", "Name is required"); return; }
     setSaving(true);
     try {
-      const updateObj: any = { name: name.trim(), description: description.trim() || null, cattle_type: cattleType, is_active: isActive };
-      // group_type column may not exist yet — try to include it
-      updateObj.group_type = groupType;
+      const updateObj = { name: name.trim(), description: description.trim() || null, cattle_type: cattleType, is_active: isActive, group_type: groupType };
       const { error } = await supabase.from("groups").update(updateObj).eq("id", id!);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["groups"] });
@@ -212,7 +210,7 @@ export default function ReferenceGroupDetailScreen() {
   const handleCancel = () => {
     if (group) {
       setName(group.name); setDescription(group.description || "");
-      setCattleType(group.cattle_type); setGroupType((group as any).group_type || "general");
+      setCattleType(group.cattle_type); setGroupType(group.group_type || "general");
       setIsActive(group.is_active);
     }
     setEditing(false);
@@ -247,7 +245,7 @@ export default function ReferenceGroupDetailScreen() {
   );
 
   const createdDate = group.created_at ? fmtDate(group.created_at.slice(0, 10)) : "";
-  const gType = GROUP_TYPE_LABELS[(group as any).group_type] || "General";
+  const gType = GROUP_TYPE_LABELS[group.group_type] || "General";
   const currentCount = currentMembers?.length || 0;
   const inventory = computeInventory();
 
@@ -342,9 +340,9 @@ export default function ReferenceGroupDetailScreen() {
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(26,26,26,0.3)", textTransform: "uppercase" as const, marginBottom: 6 }}>Current members ({currentCount})</div>
           {currentMembers && currentMembers.length > 0 ? currentMembers.map((m: any) => {
             const a = m.animals;
-            const flags = (memberFlags as any)?.[m.animal_id] || [];
-            const lastWork = (memberWorkDates as any)?.[m.animal_id];
-            const lastCalv = (memberCalvDates as any)?.[m.animal_id];
+            const flags = memberFlags?.[m.animal_id] || [];
+            const lastWork = memberWorkDates?.[m.animal_id];
+            const lastCalv = memberCalvDates?.[m.animal_id];
             return (
               <div key={m.id} onClick={() => navigate("/animals/" + a.id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid rgba(26,26,26,0.06)", cursor: "pointer" }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#0E2646", minWidth: 48 }}>{a.tag}</span>

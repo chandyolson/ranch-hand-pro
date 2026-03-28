@@ -66,7 +66,7 @@ const AutoFlagSuggestions: React.FC = () => {
         flag_tier: s.flag_tier,
         flag_name: s.flag_name,
         flag_note: s.flag_note,
-      } as any);
+      });
       if (error) throw error;
       if (navigator.vibrate) navigator.vibrate(15);
       showToast("success", `Flagged ${s.tag} as ${TIER_LABELS[s.flag_tier] || s.flag_tier} — ${s.flag_name}`);

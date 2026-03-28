@@ -9,6 +9,7 @@ import { INPUT_CLS } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoreVertical, Trash2, X, ChevronRight } from "lucide-react";
 import { CLASS_BADGE_COLORS } from "@/lib/protocol-constants";
+import type { Json } from "@/integrations/supabase/types";
 
 interface CustomerOption {
   operationId: string;
@@ -62,9 +63,9 @@ export default function ProtocolTemplateDetailScreen() {
         .from("vet_practice_clients")
         .select(`id, operation_id, clinic_client_id, operations:operation_id (id, name)`);
       if (error) throw error;
-      return (clients || []).map((c: any) => ({
+      return (clients || []).map((c) => ({
         operationId: c.operation_id,
-        name: (c.operations as any)?.name || "Unknown",
+        name: (c.operations as { id: string; name: string } | null)?.name || "Unknown",
         clinicClientId: c.clinic_client_id,
       })).sort((a: CustomerOption, b: CustomerOption) => a.name.localeCompare(b.name));
     },
@@ -108,7 +109,7 @@ export default function ProtocolTemplateDetailScreen() {
           protocol_status: "draft",
           estimated_head_count: headCount,
           start_date: assignDate,
-        } as any)
+        })
         .select("id")
         .single();
       if (protoErr) throw protoErr;
@@ -134,7 +135,7 @@ export default function ProtocolTemplateDetailScreen() {
             template_event_id: evt.id,
             scheduled_date: scheduledDateStr,
             event_status: "upcoming",
-            recommended_products: recommendedProducts as any,
+            recommended_products: recommendedProducts as unknown as Json,
           });
       }
 
