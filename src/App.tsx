@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/ToastContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AuthGuard from "@/components/auth/AuthGuard";
 import AppLayout from "@/components/AppLayout";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Auth pages — small, needed immediately on cold load
 import SignInPage from "@/pages/SignInPage";
@@ -94,6 +95,7 @@ const App = () => (
     <OperationProvider>
       <ToastProvider>
         <BrowserRouter>
+          <ErrorBoundary>
           <Suspense fallback={<div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }} />}>
           <Routes>
             {/* Public auth routes */}
@@ -170,6 +172,7 @@ const App = () => (
             <Route path="*" element={<Navigate to="/sign-in" replace />} />
           </Routes>
           </Suspense>
+          </ErrorBoundary>
         </BrowserRouter>
       </ToastProvider>
     </OperationProvider>

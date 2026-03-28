@@ -25,12 +25,12 @@ const ReportConfigForm: React.FC<Props> = (props) => {
 
   useEffect(() => {
     if (!operationId) return;
-    (supabase.from('groups') as any)
+    supabase.from('groups')
       .select('id, name')
       .eq('operation_id', operationId)
       .eq('is_active', true)
       .order('name')
-      .then(({ data }: any) => setGroups(data || []));
+      .then(({ data }) => setGroups(data || []));
   }, [operationId]);
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (

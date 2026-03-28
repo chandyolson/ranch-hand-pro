@@ -10,7 +10,7 @@ export function useSaleDays() {
     enabled: !!operationId,
     queryFn: async () => {
       const { data, error, count } = await supabase
-        .from("sale_days" as any)
+        .from("sale_days")
         .select("*", { count: "exact" })
         .eq("operation_id", operationId)
         .order("date", { ascending: false });

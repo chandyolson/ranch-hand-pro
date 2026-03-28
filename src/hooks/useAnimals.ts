@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOperation } from '@/contexts/OperationContext';
 import { applyFiltersToQuery } from '@/lib/filter-utils';
@@ -12,29 +12,33 @@ export interface UseAnimalsOptions {
   sort?: AnimalSortKey;
 }
 
+export const ANIMALS_PAGE_SIZE = 100;
+
 export function useAnimals(options: UseAnimalsOptions = {}) {
   const { search = '', filters = [], sort = 'tag-asc' } = options;
   const { operationId } = useOperation();
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['animals', operationId, search, filters, sort],
     enabled: !!operationId,
-    queryFn: async () => {
+    initialPageParam: 0,
+    getNextPageParam: (lastPage: unknown[], allPages: unknown[][]) => {
+      if (lastPage.length < ANIMALS_PAGE_SIZE) return undefined;
+      return allPages.length * ANIMALS_PAGE_SIZE;
+    },
+    queryFn: async ({ pageParam }: { pageParam: number }) => {
       let query = supabase
         .from('animals')
         .select('*')
         .eq('operation_id', operationId);
 
-      // Full-text search across tag, breed, and EID
       const q = search.trim();
       if (q) {
         query = query.or(`tag.ilike.%${q}%,breed.ilike.%${q}%,eid.ilike.%${q}%`);
       }
 
-      // Advanced filters (translated to server-side conditions)
       query = applyFiltersToQuery(query, filters);
 
-      // Sort
       switch (sort) {
         case 'tag-desc':
           query = query.order('tag', { ascending: false });
@@ -46,7 +50,7 @@ export function useAnimals(options: UseAnimalsOptions = {}) {
           query = query.order('tag', { ascending: true });
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query.range(pageParam, pageParam + ANIMALS_PAGE_SIZE - 1);
       if (error) throw error;
       return data;
     },

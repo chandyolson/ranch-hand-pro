@@ -29,7 +29,7 @@ export async function matchAnimals(
     .select('id, tag, tag_color, eid, breed, sex, type, year_born, birth_date, status, memo, reg_number, reg_name')
     .eq('operation_id', operationId)
     .eq('status', 'Active')
-    .limit(5000) as any;
+    .limit(5000);
 
   const animalList = animals || [];
   const eidMap = new Map<string, any>();

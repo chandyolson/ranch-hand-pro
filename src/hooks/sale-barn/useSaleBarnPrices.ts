@@ -10,7 +10,7 @@ export function useSaleBarnPrices() {
     enabled: !!operationId,
     queryFn: async () => {
       const { data, error, count } = await supabase
-        .from("sale_barn_prices" as any)
+        .from("sale_barn_prices")
         .select("*", { count: "exact" })
         .eq("operation_id", operationId);
       if (error) throw error;

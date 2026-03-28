@@ -90,7 +90,7 @@ async function nudgeMissedPregCheck(opId: string): Promise<Nudge | null> {
     if (!proj.group_id) continue;
 
     const { count: workedCount } = await supabase
-      .from("cow_work" as any)
+      .from("cow_work")
       .select("*", { count: "exact", head: true })
       .eq("project_id", proj.id)
       .not("preg_stage", "is", null);

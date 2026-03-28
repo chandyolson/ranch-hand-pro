@@ -8,7 +8,7 @@ export function useWorkOrders(saleDayId: string | undefined) {
     enabled: !!saleDayId,
     queryFn: async () => {
       const { data, error, count } = await supabase
-        .from("work_orders" as any)
+        .from("work_orders")
         .select("*", { count: "exact" })
         .eq("sale_day_id", saleDayId!)
         .order("entity_type", { ascending: true })

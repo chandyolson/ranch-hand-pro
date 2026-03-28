@@ -10,6 +10,17 @@ import LoadingGrid from "@/components/LoadingGrid";
 
 const STATUS_ORDER: Record<string, number> = { "in-progress": 0, pending: 1, completed: 2 };
 
+interface ProjectRow {
+  id: string;
+  name: string;
+  date: string;
+  project_status: string;
+  estimated_head: number | null;
+  head_count: number | null;
+  group: { name: string } | null;
+  work_types: Array<{ work_type: { code: string; name: string } | null }>;
+}
+
 export default function CowWorkScreen() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -29,7 +40,7 @@ export default function CowWorkScreen() {
         .eq("operation_id", operationId)
         .order("date", { ascending: false });
       if (error) throw error;
-      return data;
+      return data as unknown as ProjectRow[];
     },
   });
 
@@ -51,7 +62,7 @@ export default function CowWorkScreen() {
   });
 
   const mapped = (projects || []).map((p) => {
-    const workType = (p.work_types as any)?.[0]?.work_type;
+    const workType = p.work_types[0]?.work_type;
     return {
       id: p.id,
       name: p.name,
@@ -60,7 +71,7 @@ export default function CowWorkScreen() {
       status: p.project_status.toLowerCase().replace(" ", "-") as "pending" | "in-progress" | "completed",
       type: workType?.name || workType?.code || "",
       typeCode: workType?.code || "",
-      group: (p.group as any)?.name || "",
+      group: p.group?.name || "",
       headCount: p.estimated_head || p.head_count || 0,
       workedCount: workCounts?.[p.id] || 0,
     };

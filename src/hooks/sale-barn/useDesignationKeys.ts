@@ -10,7 +10,7 @@ export function useDesignationKeys() {
     enabled: !!operationId,
     queryFn: async () => {
       const { data, error, count } = await supabase
-        .from("designation_keys" as any)
+        .from("designation_keys")
         .select("*", { count: "exact" })
         .eq("operation_id", operationId)
         .order("sort_order", { ascending: true });

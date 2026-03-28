@@ -57,16 +57,27 @@ const AnimalsScreen: React.FC = () => {
   // Debounce so we don't fire a query on every keystroke
   const debouncedSearch = useDebounce(search, 300);
 
-  const { data: animals, isLoading, error, refetch } = useAnimals({
+  const {
+    data: animalPages,
+    isLoading,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useAnimals({
     search:  debouncedSearch,
     filters,
     sort,
   });
 
+  const animals = animalPages?.pages.flat() ?? [];
+
   // Stats always reflect the full herd, not the current search result
   const { data: counts } = useAnimalCounts();
 
   const isFiltering = search.length > 0 || filters.length > 0;
+  const totalLoaded = animals.length;
 
   return (
     <div className="px-4 pt-1 pb-10 space-y-2">
@@ -101,7 +112,7 @@ const AnimalsScreen: React.FC = () => {
         onExport={() => showToast("info", "Export — coming soon")}
         onMassSelect={() => showToast("info", "Mass Select — coming soon")}
         onMassEdit={() => showToast("info", "Mass Edit — coming soon")}
-        resultCount={animals?.length ?? 0}
+        resultCount={totalLoaded}
         isFiltering={isFiltering}
         advancedFilter={
           <AdvancedSearchPanel
@@ -131,25 +142,40 @@ const AnimalsScreen: React.FC = () => {
         </div>
       )}
 
-      {!isLoading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {(animals ?? []).map(animal => (
-            <div
-              key={animal.id}
-              className="cursor-pointer active:scale-[0.99] transition-transform duration-100"
-              onClick={() => navigate("/animals/" + animal.id)}
-            >
-              <DataCard
-                title={`Tag ${animal.tag}`}
-                values={[animal.breed || "Unknown", animal.sex, animal.year_born ? String(animal.year_born) : ""].filter(Boolean)}
-                badge={getTypeBadge(animal.type)}
-              />
+      {!isLoading && !error && animals.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {animals.map(animal => (
+              <div
+                key={animal.id}
+                className="cursor-pointer active:scale-[0.99] transition-transform duration-100"
+                onClick={() => navigate("/animals/" + animal.id)}
+              >
+                <DataCard
+                  title={`Tag ${animal.tag}`}
+                  values={[animal.breed || "Unknown", animal.sex, animal.year_born ? String(animal.year_born) : ""].filter(Boolean)}
+                  badge={getTypeBadge(animal.type)}
+                />
+              </div>
+            ))}
+          </div>
+
+          {hasNextPage && (
+            <div className="flex justify-center pt-2 pb-4">
+              <button
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+                className="px-6 py-2.5 rounded-xl text-sm font-semibold"
+                style={{ backgroundColor: "#0E2646", color: "white", opacity: isFetchingNextPage ? 0.6 : 1 }}
+              >
+                {isFetchingNextPage ? "Loading…" : "Load More"}
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
-      {!isLoading && !error && (animals ?? []).length === 0 && (
+      {!isLoading && !error && animals.length === 0 && (
         <EmptyState
           title={isFiltering ? "No animals match your search" : "No animals yet"}
           subtitle={isFiltering ? "Try a different search or filter" : undefined}

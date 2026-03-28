@@ -55,9 +55,9 @@ const SaleDayStatusPicker: React.FC<SaleDayStatusPickerProps> = ({
   };
 
   const doUpdate = async (status: string) => {
-    const { error } = await (supabase.from("sale_days" as any)
-      .update({ status } as any)
-      .eq("id", saleDayId) as any);
+    const { error } = await supabase.from("sale_days")
+      .update({ status })
+      .eq("id", saleDayId);
     if (error) {
       showToast("error", error.message);
       return;

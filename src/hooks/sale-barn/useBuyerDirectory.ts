@@ -10,7 +10,7 @@ export function useBuyerDirectory() {
     enabled: !!operationId,
     queryFn: async () => {
       const { data, error, count } = await supabase
-        .from("buyer_directory" as any)
+        .from("buyer_directory")
         .select("*", { count: "exact" })
         .eq("operation_id", operationId)
         .order("buyer_num", { ascending: true });

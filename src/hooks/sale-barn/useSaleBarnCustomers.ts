@@ -11,7 +11,7 @@ export function useSaleBarnCustomers(search: string = "", page: number = 0) {
     enabled: !!operationId,
     queryFn: async () => {
       let query = supabase
-        .from("sale_barn_customers" as any)
+        .from("sale_barn_customers")
         .select("*", { count: "exact" })
         .eq("operation_id", operationId);
       if (search) {

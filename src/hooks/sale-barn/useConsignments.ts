@@ -11,7 +11,7 @@ export function useConsignments(saleDayId?: string, saleDayDate?: string) {
     queryFn: async () => {
       if (saleDayId) {
         // Fetch linked consignments
-        const { data: linked, error: e1 } = await (supabase.from("consignments") as any)
+        const { data: linked, error: e1 } = await supabase.from("consignments")
           .select("*", { count: "exact" })
           .eq("sale_day_id", saleDayId)
           .order("created_at", { ascending: false });
@@ -20,7 +20,7 @@ export function useConsignments(saleDayId?: string, saleDayDate?: string) {
         // Also fetch unlinked consignments matching by expected_sale_date
         let unlinked: any[] = [];
         if (saleDayDate) {
-          const { data: dateMatched, error: e2 } = await (supabase.from("consignments") as any)
+          const { data: dateMatched, error: e2 } = await supabase.from("consignments")
             .select("*")
             .is("sale_day_id", null)
             .eq("expected_sale_date", saleDayDate)
@@ -34,7 +34,7 @@ export function useConsignments(saleDayId?: string, saleDayDate?: string) {
         const merged = [...(linked ?? []), ...unlinked.filter((c: any) => !linkedIds.has(c.id))];
         return { data: merged as unknown as Consignment[], count: merged.length };
       } else {
-        const { data, error, count } = await (supabase.from("consignments") as any)
+        const { data, error, count } = await supabase.from("consignments")
           .select("*", { count: "exact" })
           .eq("operation_id", operationId)
           .order("created_at", { ascending: false });

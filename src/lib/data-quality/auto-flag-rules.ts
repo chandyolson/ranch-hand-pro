@@ -51,7 +51,7 @@ export async function runAutoFlagRules(operationId: string): Promise<FlagSuggest
 async function ruleOpenTwoYears(opId: string): Promise<FlagSuggestion[]> {
   // Get preg check projects (work_type with preg check)
   const { data: pregRecords } = await supabase
-    .from("cow_work" as any)
+    .from("cow_work")
     .select("animal_id, date, preg_stage, project_id")
     .eq("operation_id", opId)
     .eq("preg_stage", "Open")
@@ -104,7 +104,7 @@ async function ruleOpenTwoYears(opId: string): Promise<FlagSuggestion[]> {
 // Rule 2 — CULL: Bull failed BSE
 async function ruleFailedBse(opId: string): Promise<FlagSuggestion[]> {
   const { data } = await supabase
-    .from("cow_work" as any)
+    .from("cow_work")
     .select("animal_id, date, pass_fail")
     .eq("operation_id", opId)
     .in("pass_fail", ["Fail", "Permanent Fail"])
@@ -153,7 +153,7 @@ async function ruleTreated3Times(opId: string): Promise<FlagSuggestion[]> {
 
   // Treatments are cow_work records with additional_products or from treatment-type projects
   const { data } = await supabase
-    .from("cow_work" as any)
+    .from("cow_work")
     .select("animal_id, date")
     .eq("operation_id", opId)
     .gte("date", oneYearAgo.toISOString().split("T")[0])
@@ -342,7 +342,7 @@ async function ruleMissingFromProject(opId: string): Promise<FlagSuggestion[]> {
   const projMap = new Map(projects.map((p: any) => [p.id, p.name]));
 
   const { data: expected } = await supabase
-    .from("project_expected_animals" as any)
+    .from("project_expected_animals")
     .select("animal_id, project_id, status")
     .in("project_id", projectIds)
     .eq("status", "Expected");
