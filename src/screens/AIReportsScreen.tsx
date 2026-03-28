@@ -42,10 +42,19 @@ const AIReportsScreen: React.FC = () => {
       const aiMsg: ChatMessage = {
         role: "assistant",
         content: data?.summary || data?.message || "No response received.",
+        type: data?.type,
         chart_config: data?.chart_config,
         table_data: data?.table_data,
         export_available: !!(data?.chart_config || data?.table_data),
         follow_up_suggestions: data?.follow_up_suggestions,
+        // Action preview fields
+        action_type: data?.action_type,
+        risk_tier: data?.risk_tier,
+        action_id: data?.action_id,
+        preview_title: data?.preview_title,
+        preview_detail: data?.preview_detail,
+        preview_table: data?.preview_table,
+        diff: data?.diff,
       };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {
@@ -115,7 +124,12 @@ const AIReportsScreen: React.FC = () => {
         )}
 
         {messages.map((m, i) => (
-          <ChatMessageBubble key={i} message={m} onFollowUp={sendMessage} />
+          <ChatMessageBubble
+            key={i}
+            message={m}
+            onFollowUp={sendMessage}
+            onActionResult={(resultMsg) => setMessages((prev) => [...prev, resultMsg])}
+          />
         ))}
 
         {isLoading && (
