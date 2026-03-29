@@ -134,18 +134,66 @@ export async function exportPDF(params: {
   if (params.table_data && params.table_data.rows.length > 0) {
     const columns = params.table_data.columns || params.table_data.headers || [];
     const colCount = columns.length;
-    const colW = Math.min(contentW / colCount, 50);
     const rowH = 7;
-    const fontSize = 8;
+    const cellPadX = 2;
+
+    // Switch to landscape if 6+ columns
+    const useSmallFont = colCount >= 6;
+    const fontSize = useSmallFont ? 6.5 : 8;
+
+    // Smart column widths: measure max content width per column
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(fontSize);
+
+    const colWidths: number[] = [];
+    for (let c = 0; c < colCount; c++) {
+      let maxW = doc.getTextWidth(String(columns[c])) + cellPadX * 2 + 1;
+      for (let r = 0; r < Math.min(params.table_data.rows.length, 20); r++) {
+        const cell = String(params.table_data.rows[r]?.[c] ?? "");
+        const w = doc.getTextWidth(cell.substring(0, 40)) + cellPadX * 2 + 1;
+        if (w > maxW) maxW = w;
+      }
+      colWidths.push(maxW);
+    }
+
+    // Scale to fit contentW
+    const totalNatural = colWidths.reduce((a, b) => a + b, 0);
+    const scale = totalNatural > contentW ? contentW / totalNatural : 1;
+    const scaledWidths = colWidths.map((w) => w * scale);
+
+    // Ensure total exactly equals contentW
+    const totalScaled = scaledWidths.reduce((a, b) => a + b, 0);
+    if (totalScaled < contentW) {
+      scaledWidths[scaledWidths.length - 1] += contentW - totalScaled;
+    }
+
+    // Truncate helper: clip text to fit column width
+    const truncate = (text: string, maxWidth: number): string => {
+      const available = maxWidth - cellPadX * 2;
+      if (available <= 0) return "";
+      if (doc.getTextWidth(text) <= available) return text;
+      let t = text;
+      while (t.length > 0 && doc.getTextWidth(t + "...") > available) {
+        t = t.substring(0, t.length - 1);
+      }
+      return t.length > 0 ? t + "..." : text.substring(0, 3);
+    };
+
+    const getColX = (colIndex: number): number => {
+      let x = marginL;
+      for (let i = 0; i < colIndex; i++) x += scaledWidths[i];
+      return x;
+    };
 
     const drawHeaderRow = () => {
       doc.setFillColor("#0E2646");
-      doc.rect(marginL, y, colW * colCount, rowH, "F");
+      doc.rect(marginL, y, contentW, rowH, "F");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(fontSize);
       doc.setTextColor("#FFFFFF");
       columns.forEach((col, i) => {
-        doc.text(String(col), marginL + i * colW + 3, y + 5);
+        const x = getColX(i) + cellPadX;
+        doc.text(truncate(String(col), scaledWidths[i]), x, y + 5);
       });
       y += rowH;
     };
@@ -166,18 +214,21 @@ export async function exportPDF(params: {
       }
       const bg = r % 2 === 0 ? "#FFFFFF" : "#F7F7F5";
       doc.setFillColor(bg);
-      doc.rect(marginL, y, colW * colCount, rowH, "F");
+      doc.rect(marginL, y, contentW, rowH, "F");
       doc.setTextColor("#1A1A1A");
       params.table_data.rows[r].forEach((cell, i) => {
-        doc.text(String(cell ?? ""), marginL + i * colW + 3, y + 5);
+        if (i >= colCount) return;
+        const x = getColX(i) + cellPadX;
+        doc.text(truncate(String(cell ?? ""), scaledWidths[i]), x, y + 5);
       });
       y += rowH;
     }
 
     // table border
-    const tableH = y - (y - rowH * params.table_data.rows.length - rowH);
     doc.setDrawColor("#D4D4D0");
     doc.setLineWidth(0.3);
+    doc.rect(marginL, y - rowH * (params.table_data.rows.length + 1), contentW,
+      rowH * (params.table_data.rows.length + 1));
     y += 8;
   }
 
