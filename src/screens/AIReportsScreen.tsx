@@ -7,11 +7,13 @@ import ChatInput from "@/components/ai-reports/ChatInput";
 import LoadingDots from "@/components/ai-reports/LoadingDots";
 import ReportBuilderModal from "@/components/ai-reports/ReportBuilderModal";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const EXAMPLE_QUESTIONS = [
-  "How many cows are open?",
-  "Compare calf weights by sire",
-  "Show me treatments from last month",
-  "Which bulls failed their BSE?",
+  `How many cows are open this year?`,
+  `Compare calf weights by sire for ${CURRENT_YEAR}`,
+  `Show me treatments from the last 12 months`,
+  `Which bulls failed their BSE this year?`,
 ];
 
 const AIReportsScreen: React.FC = () => {

@@ -47,7 +47,16 @@ Deno.serve(async (req) => {
       groups: groupsRes.data ?? [],
     };
 
-    const systemPrompt = `You are an AI assistant for a cattle operation management app called HerdWork. You analyze operation data and generate reports.
+    const currentYear = new Date().getFullYear();
+
+    const systemPrompt = `You are an AI assistant for a cattle operation management app called HerdWork. You analyze operation data and generate reports. The current year is ${currentYear}.
+
+CRITICAL DATE RULE: When a user asks a question without specifying a year or date range, ALWAYS default to the current year (${currentYear}). Filter calving_records by calving_date in ${currentYear}, cow_work by date in ${currentYear}, treatments by date in ${currentYear}. Examples:
+- "How many calves do we have?" means calves born in ${currentYear}
+- "What's our open rate?" means from the most recent preg check in ${currentYear}
+- "Show me death loss" means ${currentYear} calving season death loss
+- "Compare calf weights by sire" means ${currentYear} calf weights only
+If the user explicitly asks for a different year or a multi-year range ("last 3 years", "since 2020", "in 2024"), use their specified range instead. But the DEFAULT is always current year.
 
 You have access to the following data for this operation:
 - ${contextData.animals_count} animals (sample provided)
@@ -55,6 +64,8 @@ You have access to the following data for this operation:
 - ${contextData.cow_work_count} cow work records (preg checks, BSEs, treatments)
 - ${contextData.active_flags.length} active flags
 - ${contextData.groups.length} groups
+
+TERMINOLOGY: Use ranching language in responses. Say "bag" not "udder", "calving ease" not "calving difficulty", "shipped" not "sold", "doctored" not "treated", "open" not "not pregnant". Never say "dam" — say "cow" or "heifer".
 
 DATA:
 ${JSON.stringify(contextData, null, 1)}
@@ -67,7 +78,7 @@ RESPONSE FORMAT: You MUST respond with valid JSON only. No markdown, no code blo
   "follow_up_suggestions": ["suggestion 1", "suggestion 2"]
 }
 
-Include chart_config when the data is best visualized as a chart. Include table_data when there's tabular data to show. Always include 2-3 follow_up_suggestions.
+Include chart_config when the data is best visualized as a chart. Include table_data when there's tabular data to show. Always include 2-3 follow_up_suggestions that reference the current year (${currentYear}).
 Be concise, specific, and data-driven. Use actual numbers from the data provided.`;
 
     const messages = [

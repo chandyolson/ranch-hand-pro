@@ -1,21 +1,23 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getSavedQuestions, removeSavedQuestion, SavedQuestion } from "./SaveQuestionPopover";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const TEMPLATES = [
   {
     label: "Preg Check Summary",
     prompt:
-      "Generate a pregnancy check summary for the most recent preg check project. Include total head count, count and percentage for each preg stage (Bull Bred, AI, Open, Embryo), and list all Open animals with tag, tag color, and year born.",
+      `Generate a pregnancy check summary for the most recent preg check project in ${CURRENT_YEAR}. Include total head count, count and percentage for each preg stage (Bull Bred, AI, Open, Embryo), and list all Open animals with tag, tag color, and year born.`,
   },
   {
     label: "Calving Report",
     prompt:
-      "Generate a calving season report for the current year. Include total calves born, live vs dead count with death rate percentage, average birth weight, average birth weight by sire, and calving ease breakdown by assistance score.",
+      `Generate a calving season report for ${CURRENT_YEAR}. Include total calves born, live vs dead count with death rate percentage, average birth weight, average birth weight by sire, and calving ease breakdown by assistance score. Only include calving records from ${CURRENT_YEAR}.`,
   },
   {
     label: "Herd Inventory",
     prompt:
-      "Generate a herd inventory showing total active head count broken down by animal type, sex, breed, and status.",
+      "Generate a herd inventory showing current active head count broken down by animal type, sex, breed, and status.",
   },
   {
     label: "Cull List",
@@ -25,17 +27,17 @@ const TEMPLATES = [
   {
     label: "Herd Scan",
     prompt:
-      "Run a comprehensive herd health scan for this operation. Analyze reproductive health (open rates from most recent preg check), calving performance (current year vs prior year), sire evaluation (birth weights and calving ease by sire), treatment patterns (last 12 months), herd age profile, and active flags. Only report findings that are actionable — skip areas with no concerns.",
+      `Run a comprehensive herd health scan for ${CURRENT_YEAR}. Analyze reproductive health (open rates from most recent preg check in ${CURRENT_YEAR}), calving performance (${CURRENT_YEAR} vs ${CURRENT_YEAR - 1}), sire evaluation (birth weights and calving ease by sire for ${CURRENT_YEAR} calves), treatment patterns (last 12 months), herd age profile, and active flags. Only report findings that are actionable — skip areas with no concerns.`,
   },
   {
     label: "Notes Analysis",
     prompt:
-      "Analyze all notes across the operation for patterns and recurring themes. Scan these sources:\n\n1. animals.quick_notes arrays — look for frequently occurring notes across many animals\n2. animals.memo fields — look for keywords indicating health concerns, behavior issues, or management notes\n3. calving_records.memo fields — look for recurring calving problems or notes about specific cows\n4. calving_records.quick_notes arrays — look for patterns like 'Twin', 'Grafted', 'C-Section'\n5. cow_work.memo fields — look for notes recorded during chuteside work\n6. cow_work.quick_notes arrays — look for frequently used quick notes\n7. red_book_notes.body — look for action items, recurring concerns, or seasonal patterns\n\nFor each source, report:\n- The most common note values or keywords (top 10)\n- Any animal tags that appear in notes repeatedly (could indicate chronic issues)\n- Any keywords suggesting health problems: 'lame', 'limp', 'swollen', 'abscess', 'thin', 'poor', 'bad', 'weak', 'sick', 'sore'\n- Red Book entries with has_action = true that haven't been completed\n\nPresent findings as a summary with the most actionable items first. Include a table of animals mentioned in notes more than twice. Suggest follow-ups for any concerning patterns.",
+      `Analyze all notes across the operation for patterns and recurring themes from ${CURRENT_YEAR}. Scan these sources:\n\n1. animals.quick_notes arrays — look for frequently occurring notes across many animals\n2. animals.memo fields — look for keywords indicating health concerns, behavior issues, or management notes\n3. calving_records.memo fields — look for recurring calving problems from ${CURRENT_YEAR} calving records\n4. calving_records.quick_notes arrays — look for patterns like 'Twin', 'Grafted', 'C-Section'\n5. cow_work.memo fields — look for notes recorded during chuteside work in ${CURRENT_YEAR}\n6. cow_work.quick_notes arrays — look for frequently used quick notes\n7. red_book_notes.body — look for action items, recurring concerns, or seasonal patterns\n\nFor each source, report:\n- The most common note values or keywords (top 10)\n- Any animal tags that appear in notes repeatedly (could indicate chronic issues)\n- Any keywords suggesting health problems: 'lame', 'limp', 'swollen', 'abscess', 'thin', 'poor', 'bad', 'weak', 'sick', 'sore'\n- Red Book entries with has_action = true that haven't been completed\n\nPresent findings as a summary with the most actionable items first. Include a table of animals mentioned in notes more than twice. Suggest follow-ups for any concerning patterns.`,
   },
   {
     label: "Cull Candidates",
     prompt:
-      "Analyze the herd and recommend cull candidates based on data. Check each of these criteria and list any animals that match. Only include active animals.\n\nCRITERIA:\n\n1. REPEAT OPEN: Cows that were preg-checked Open in 2 or more different years. Query cow_work.preg_stage = 'Open' grouped by animal across multiple PREG projects. List the years they were open.\n\n2. OLD + LOW PERFORMANCE: Cows 10+ years old (year_born <= current_year - 10) that also have any negative indicator: open in most recent preg check, lost a calf in the last 2 years, or have an active production flag.\n\n3. CHRONIC HEALTH: Animals treated 3+ times in the last 12 months. Show diseases and treatment count.\n\n4. POOR CALVING HISTORY: Cows whose calves needed assistance (calving_records.assistance >= 3) more than 50% of the time across all calving records.\n\n5. FAILED BSE BULLS: Bulls with pass_fail = 'Fail' or 'Permanent Fail' on their most recent BSE.\n\n6. STALE CULL FLAGS: Animals already flagged for cull (flag_tier = 'cull', resolved_at IS NULL) for more than 3 months that are still Active.\n\nFORMAT:\n\n- Summary: 'Found X cull candidates across Y criteria'\n- Table with columns: Tag, Tag Color, Year Born, Breed, Criteria, Details\n- Sort by most criteria matched (animals matching 2+ criteria listed first)\n- Suggest: 'Want me to flag all of these as cull candidates?'\n- Follow-ups: 'Show me the treatment history on these', 'Which of these have calves on them right now?', 'How much are cull cows worth right now?'",
+      `Analyze the herd and recommend cull candidates based on ${CURRENT_YEAR} data. Check each of these criteria and list any animals that match. Only include active animals.\n\nCRITERIA:\n\n1. REPEAT OPEN: Cows that were preg-checked Open in 2 or more different years. Query cow_work.preg_stage = 'Open' grouped by animal across multiple PREG projects. List the years they were open.\n\n2. OLD + LOW PERFORMANCE: Cows 10+ years old (year_born <= ${CURRENT_YEAR} - 10) that also have any negative indicator: open in most recent preg check, lost a calf in the last 2 years, or have an active production flag.\n\n3. CHRONIC HEALTH: Animals treated 3+ times in the last 12 months. Show diseases and treatment count.\n\n4. POOR CALVING HISTORY: Cows whose calves needed assistance (calving_records.assistance >= 3) more than 50% of the time across all calving records.\n\n5. FAILED BSE BULLS: Bulls with pass_fail = 'Fail' or 'Permanent Fail' on their most recent BSE.\n\n6. STALE CULL FLAGS: Animals already flagged for cull (flag_tier = 'cull', resolved_at IS NULL) for more than 3 months that are still Active.\n\nFORMAT:\n\n- Summary: 'Found X cull candidates across Y criteria'\n- Table with columns: Tag, Tag Color, Year Born, Breed, Criteria, Details\n- Sort by most criteria matched (animals matching 2+ criteria listed first)\n- Suggest: 'Want me to flag all of these as cull candidates?'\n- Follow-ups: 'Show me the treatment history on these', 'Which of these have calves on them right now?', 'How much are cull cows worth right now?'`,
   },
 ];
 
