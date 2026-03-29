@@ -88,3 +88,6 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.hover-green:hover { color: #22C55E !important; }
+.hover-red:hover { color: #E74C3C !important; }

@@ -14,6 +14,212 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_health_snapshots: {
+        Row: {
+          actions_cancelled: number | null
+          actions_confirmed: number | null
+          actions_previewed: number | null
+          avg_duration_ms: number | null
+          created_at: string | null
+          export_count: number | null
+          id: string
+          period_end: string
+          period_start: string
+          read_queries: number | null
+          recent_failures: Json | null
+          recent_thumbs_down: Json | null
+          slow_query_count: number | null
+          sql_failure_count: number | null
+          sql_failure_rate: number | null
+          template_usage: Json | null
+          thumbs_down_count: number | null
+          thumbs_up_count: number | null
+          top_questions: Json | null
+          total_queries: number | null
+          usage_by_operation: Json | null
+          write_queries: number | null
+          zero_row_count: number | null
+        }
+        Insert: {
+          actions_cancelled?: number | null
+          actions_confirmed?: number | null
+          actions_previewed?: number | null
+          avg_duration_ms?: number | null
+          created_at?: string | null
+          export_count?: number | null
+          id?: string
+          period_end: string
+          period_start: string
+          read_queries?: number | null
+          recent_failures?: Json | null
+          recent_thumbs_down?: Json | null
+          slow_query_count?: number | null
+          sql_failure_count?: number | null
+          sql_failure_rate?: number | null
+          template_usage?: Json | null
+          thumbs_down_count?: number | null
+          thumbs_up_count?: number | null
+          top_questions?: Json | null
+          total_queries?: number | null
+          usage_by_operation?: Json | null
+          write_queries?: number | null
+          zero_row_count?: number | null
+        }
+        Update: {
+          actions_cancelled?: number | null
+          actions_confirmed?: number | null
+          actions_previewed?: number | null
+          avg_duration_ms?: number | null
+          created_at?: string | null
+          export_count?: number | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          read_queries?: number | null
+          recent_failures?: Json | null
+          recent_thumbs_down?: Json | null
+          slow_query_count?: number | null
+          sql_failure_count?: number | null
+          sql_failure_rate?: number | null
+          template_usage?: Json | null
+          thumbs_down_count?: number | null
+          thumbs_up_count?: number | null
+          top_questions?: Json | null
+          total_queries?: number | null
+          usage_by_operation?: Json | null
+          write_queries?: number | null
+          zero_row_count?: number | null
+        }
+        Relationships: []
+      }
+      ai_improvement_actions: {
+        Row: {
+          action: string
+          category: string
+          created_at: string | null
+          details: string | null
+          fixed_in: string | null
+          id: string
+          metric_value: string | null
+          priority: string
+          resolved_at: string | null
+          snapshot_id: string | null
+          status: string | null
+          week_of: string | null
+        }
+        Insert: {
+          action: string
+          category: string
+          created_at?: string | null
+          details?: string | null
+          fixed_in?: string | null
+          id?: string
+          metric_value?: string | null
+          priority: string
+          resolved_at?: string | null
+          snapshot_id?: string | null
+          status?: string | null
+          week_of?: string | null
+        }
+        Update: {
+          action?: string
+          category?: string
+          created_at?: string | null
+          details?: string | null
+          fixed_in?: string | null
+          id?: string
+          metric_value?: string | null
+          priority?: string
+          resolved_at?: string | null
+          snapshot_id?: string | null
+          status?: string | null
+          week_of?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_improvement_actions_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "ai_health_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_interaction_logs: {
+        Row: {
+          action_cancelled: boolean | null
+          action_confirmed: boolean | null
+          action_id: string | null
+          action_type: string | null
+          claude_calls: number | null
+          created_at: string | null
+          duration_ms: number | null
+          exported: boolean | null
+          feedback: string | null
+          feedback_note: string | null
+          follow_up_asked: boolean | null
+          generated_sql: string | null
+          id: string
+          intent: string | null
+          operation_id: string
+          query_row_count: number | null
+          question: string
+          response_type: string | null
+          sql_error: string | null
+          sql_valid: boolean | null
+          template_used: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_cancelled?: boolean | null
+          action_confirmed?: boolean | null
+          action_id?: string | null
+          action_type?: string | null
+          claude_calls?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          exported?: boolean | null
+          feedback?: string | null
+          feedback_note?: string | null
+          follow_up_asked?: boolean | null
+          generated_sql?: string | null
+          id?: string
+          intent?: string | null
+          operation_id: string
+          query_row_count?: number | null
+          question: string
+          response_type?: string | null
+          sql_error?: string | null
+          sql_valid?: boolean | null
+          template_used?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_cancelled?: boolean | null
+          action_confirmed?: boolean | null
+          action_id?: string | null
+          action_type?: string | null
+          claude_calls?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          exported?: boolean | null
+          feedback?: string | null
+          feedback_note?: string | null
+          follow_up_asked?: boolean | null
+          generated_sql?: string | null
+          id?: string
+          intent?: string | null
+          operation_id?: string
+          query_row_count?: number | null
+          question?: string
+          response_type?: string | null
+          sql_error?: string | null
+          sql_valid?: boolean | null
+          template_used?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       animal_flags: {
         Row: {
           animal_id: string
@@ -1351,6 +1557,47 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      pending_ai_actions: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          executed_at: string | null
+          expired_at: string | null
+          id: string
+          operation_id: string
+          params: Json
+          preview_title: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          executed_at?: string | null
+          expired_at?: string | null
+          id?: string
+          operation_id: string
+          params: Json
+          preview_title?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          executed_at?: string | null
+          expired_at?: string | null
+          id?: string
+          operation_id?: string
+          params?: Json
+          preview_title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_ai_actions_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pending_invitations: {
         Row: {
