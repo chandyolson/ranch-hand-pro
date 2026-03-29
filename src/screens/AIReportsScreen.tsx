@@ -85,42 +85,42 @@ const AIReportsScreen: React.FC = () => {
           marginRight: -16,
         }}
       >
-        {/* Action buttons row */}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '8px 16px 0' }}>
-          <button
-            onClick={() => setReportModalOpen(true)}
-            style={{
-              border: '1.5px solid #fff',
-              background: 'transparent',
-              color: '#fff',
-              borderRadius: 20,
-              padding: '6px 14px',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Build Report
-          </button>
-          <button
-            onClick={() => setMessages([])}
-            style={{
-              border: '1.5px solid #55BAAA',
-              background: 'transparent',
-              color: '#55BAAA',
-              borderRadius: 20,
-              padding: '6px 14px',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            New Chat
-          </button>
+        {/* Combined header: buttons + template pills */}
+        <div style={{ background: '#fff', borderBottom: '1px solid #D4D4D0', padding: '10px 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <button
+              onClick={() => setReportModalOpen(true)}
+              style={{
+                border: '1.5px solid #0E2646',
+                background: 'transparent',
+                color: '#0E2646',
+                borderRadius: 20,
+                padding: '6px 14px',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Build Report
+            </button>
+            <button
+              onClick={() => setMessages([])}
+              style={{
+                border: '1.5px solid #55BAAA',
+                background: 'transparent',
+                color: '#55BAAA',
+                borderRadius: 20,
+                padding: '6px 14px',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              New Chat
+            </button>
+          </div>
+          <TemplatePills onSelect={sendMessage} disabled={isLoading} />
         </div>
-
-        {/* Template pills */}
-        <TemplatePills onSelect={sendMessage} disabled={isLoading} />
 
         {/* Chat area */}
         <div

@@ -65,12 +65,12 @@ const TemplatePills: React.FC<Props> = ({ onSelect, disabled }) => {
   return (
     <div
       style={{
-        background: "#fff",
-        borderBottom: "1px solid #D4D4D0",
-        padding: "10px 16px",
         display: "flex",
         gap: 8,
         overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+        msOverflowStyle: "none",
+        scrollbarWidth: "none",
       }}
     >
       {TEMPLATES.map((t) => (
