@@ -37,7 +37,7 @@ export default function CompareFileScreen() {
     queryKey: ['projects-list', operationId],
     queryFn: async () => {
       const { data } = await (supabase.from('projects' as any).select('id, name, date').eq('operation_id', operationId).order('date', { ascending: false }));
-      return (data ?? []) as Array<{ id: string; name: string; date: string }>;
+      return (data ?? []) as unknown as Array<{ id: string; name: string; date: string }>;
     },
   });
 
