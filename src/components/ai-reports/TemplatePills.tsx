@@ -77,6 +77,31 @@ const TemplatePills: React.FC<Props> = ({ onSelect, disabled, onScanPhoto }) => 
         scrollbarWidth: "none",
       }}
     >
+      {onScanPhoto && (
+        <button
+          disabled={disabled}
+          onClick={onScanPhoto}
+          style={{
+            borderRadius: 20,
+            border: "1.5px solid #0E2646",
+            background: "#fff",
+            color: "#0E2646",
+            fontSize: 13,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            padding: "6px 14px",
+            cursor: disabled ? "not-allowed" : "pointer",
+            opacity: disabled ? 0.5 : 1,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+          }}
+        >
+          <Camera size={14} />
+          Scan Photo
+        </button>
+      )}
       {TEMPLATES.map((t) => (
         <button
           key={t.label}
