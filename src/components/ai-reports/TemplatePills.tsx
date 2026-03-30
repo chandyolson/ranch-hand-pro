@@ -45,9 +45,10 @@ const TEMPLATES = [
 interface Props {
   onSelect: (prompt: string) => void;
   disabled: boolean;
+  onScanPhoto?: () => void;
 }
 
-const TemplatePills: React.FC<Props> = ({ onSelect, disabled }) => {
+const TemplatePills: React.FC<Props> = ({ onSelect, disabled, onScanPhoto }) => {
   const [saved, setSaved] = useState<SavedQuestion[]>(getSavedQuestions());
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
