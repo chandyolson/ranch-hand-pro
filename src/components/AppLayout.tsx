@@ -32,6 +32,8 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
   "/data-quality": { title: "Data Quality", subtitle: "Automated data integrity checks" },
   "/import": { title: "Import Data", subtitle: "CSV & Excel Import" },
   "/registration": { title: "Registration Assistant", subtitle: "Pre-fill breed association forms" },
+  "/compare": { title: "Compare File", subtitle: "Compare files against groups" },
+  "/photo-scan": { title: "Scan Photo", subtitle: "Extract data from photos" },
   "/customers": { title: "Customers", subtitle: "Practice Clients" },
 };
 
@@ -48,6 +50,8 @@ const navRouteMap: Record<string, string> = {
   "Data Quality": "/data-quality",
   "Import Data": "/import",
   Registration: "/registration",
+  "Compare File": "/compare",
+  "Scan Photo": "/photo-scan",
   Reference: "/reference",
   Products: "/reference/products",
   Customers: "/customers",

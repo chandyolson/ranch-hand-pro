@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Camera } from "lucide-react";
 import { getSavedQuestions, removeSavedQuestion, SavedQuestion } from "./SaveQuestionPopover";
 
 const CURRENT_YEAR = new Date().getFullYear();
