@@ -3326,6 +3326,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ai_add_animals_to_group: {
+        Args: {
+          p_animal_ids: string[]
+          p_group_id: string
+          p_operation_id: string
+          p_source?: string
+        }
+        Returns: Json
+      }
       ai_create_calving_record: {
         Args: {
           p_assistance: number
@@ -3352,6 +3361,16 @@ export type Database = {
           p_set_by: string
         }
         Returns: Json
+      }
+      ai_create_group: {
+        Args: {
+          p_cattle_type?: string
+          p_description?: string
+          p_group_type?: string
+          p_name: string
+          p_operation_id: string
+        }
+        Returns: string
       }
       ai_create_treatment: {
         Args: {
