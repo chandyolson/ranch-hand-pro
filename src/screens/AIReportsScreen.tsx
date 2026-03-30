@@ -22,6 +22,7 @@ const AIReportsScreen: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [photoScanOpen, setPhotoScanOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const showWelcome = messages.length === 0;
@@ -122,7 +123,7 @@ const AIReportsScreen: React.FC = () => {
               New Chat
             </button>
           </div>
-          <TemplatePills onSelect={sendMessage} disabled={isLoading} />
+          <TemplatePills onSelect={sendMessage} disabled={isLoading} onScanPhoto={() => setPhotoScanOpen(true)} />
         </div>
 
         {/* Chat area */}
