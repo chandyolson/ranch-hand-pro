@@ -6,6 +6,7 @@ import ChatMessageBubble, { ChatMessage } from "@/components/ai-reports/ChatMess
 import ChatInput from "@/components/ai-reports/ChatInput";
 import LoadingDots from "@/components/ai-reports/LoadingDots";
 import ReportBuilderModal from "@/components/ai-reports/ReportBuilderModal";
+import PhotoScanScreen from "@/screens/PhotoScanScreen";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
