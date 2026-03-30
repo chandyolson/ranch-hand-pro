@@ -197,6 +197,7 @@ const AIReportsScreen: React.FC = () => {
       </div>
 
       <ReportBuilderModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
+      {photoScanOpen && <PhotoScanScreen asModal onClose={() => setPhotoScanOpen(false)} />}
     </>
   );
 };
