@@ -44,6 +44,7 @@ import AIReportsScreen from "@/screens/AIReportsScreen";
 import DataQualityScreen from "@/screens/DataQualityScreen";
 import ImportDataScreen from "@/screens/ImportDataScreen";
 import CompareFileScreen from "@/screens/CompareFileScreen";
+import PhotoScanScreen from "@/screens/PhotoScanScreen";
 import RegistrationAssistantScreen from "@/screens/RegistrationAssistantScreen";
 import CustomerListScreen from "@/screens/CustomerListScreen";
 import CustomerDetailScreen from "@/screens/CustomerDetailScreen";
@@ -146,6 +147,7 @@ const App = () => (
               <Route path="import" element={<ImportDataScreen />} />
               <Route path="registration" element={<RegistrationAssistantScreen />} />
               <Route path="compare" element={<CompareFileScreen />} />
+              <Route path="photo-scan" element={<PhotoScanScreen />} />
               <Route path="sale-barn" element={<SaleBarnGuard><SaleDaysList /></SaleBarnGuard>} />
               <Route path="sale-barn/customers" element={<SaleBarnGuard><CustomerDirectory /></SaleBarnGuard>} />
               <Route path="sale-barn/buyers" element={<SaleBarnGuard><BuyerDirectory /></SaleBarnGuard>} />

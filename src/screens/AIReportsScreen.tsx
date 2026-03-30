@@ -6,6 +6,7 @@ import ChatMessageBubble, { ChatMessage } from "@/components/ai-reports/ChatMess
 import ChatInput from "@/components/ai-reports/ChatInput";
 import LoadingDots from "@/components/ai-reports/LoadingDots";
 import ReportBuilderModal from "@/components/ai-reports/ReportBuilderModal";
+import PhotoScanScreen from "@/screens/PhotoScanScreen";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -21,6 +22,7 @@ const AIReportsScreen: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [photoScanOpen, setPhotoScanOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const showWelcome = messages.length === 0;
@@ -121,7 +123,7 @@ const AIReportsScreen: React.FC = () => {
               New Chat
             </button>
           </div>
-          <TemplatePills onSelect={sendMessage} disabled={isLoading} />
+          <TemplatePills onSelect={sendMessage} disabled={isLoading} onScanPhoto={() => setPhotoScanOpen(true)} />
         </div>
 
         {/* Chat area */}
@@ -195,6 +197,7 @@ const AIReportsScreen: React.FC = () => {
       </div>
 
       <ReportBuilderModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
+      {photoScanOpen && <PhotoScanScreen asModal onClose={() => setPhotoScanOpen(false)} />}
     </>
   );
 };

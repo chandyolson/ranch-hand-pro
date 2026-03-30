@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Camera } from "lucide-react";
 import { getSavedQuestions, removeSavedQuestion, SavedQuestion } from "./SaveQuestionPopover";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -44,9 +45,10 @@ const TEMPLATES = [
 interface Props {
   onSelect: (prompt: string) => void;
   disabled: boolean;
+  onScanPhoto?: () => void;
 }
 
-const TemplatePills: React.FC<Props> = ({ onSelect, disabled }) => {
+const TemplatePills: React.FC<Props> = ({ onSelect, disabled, onScanPhoto }) => {
   const [saved, setSaved] = useState<SavedQuestion[]>(getSavedQuestions());
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -75,6 +77,31 @@ const TemplatePills: React.FC<Props> = ({ onSelect, disabled }) => {
         scrollbarWidth: "none",
       }}
     >
+      {onScanPhoto && (
+        <button
+          disabled={disabled}
+          onClick={onScanPhoto}
+          style={{
+            borderRadius: 20,
+            border: "1.5px solid #0E2646",
+            background: "#fff",
+            color: "#0E2646",
+            fontSize: 13,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            padding: "6px 14px",
+            cursor: disabled ? "not-allowed" : "pointer",
+            opacity: disabled ? 0.5 : 1,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+          }}
+        >
+          <Camera size={14} />
+          Scan Photo
+        </button>
+      )}
       {TEMPLATES.map((t) => (
         <button
           key={t.label}
