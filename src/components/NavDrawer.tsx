@@ -12,6 +12,10 @@ const RANCH_NAV_ITEMS = [
   "Protocols",
   "Calving",
   "Red Book",
+  "Reference",
+];
+
+const AI_TOOLS_ITEMS = [
   "AI Reports",
   "Data Quality",
   "Import Data",
@@ -19,7 +23,6 @@ const RANCH_NAV_ITEMS = [
   "Scan Photo",
   "Registration",
   "Cow Cleaner",
-  "Reference",
 ];
 
 const VET_NAV_ITEMS = [
@@ -29,11 +32,14 @@ const VET_NAV_ITEMS = [
   "Sale Barn",
   "Protocols",
   "Red Book",
+  "Products",
+  "Reference",
+];
+
+const VET_AI_TOOLS = [
   "AI Reports",
   "Data Quality",
   "Import Data",
-  "Products",
-  "Reference",
 ];
 
 interface NavDrawerProps {
@@ -53,6 +59,10 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
   const isVet = operationType === 'vet_practice';
   const showSaleBarn = isVet;
   const hasMultipleOps = operations.length > 1;
+  const [aiToolsOpen, setAiToolsOpen] = React.useState(() => {
+    const aiItems = isVet ? VET_AI_TOOLS : AI_TOOLS_ITEMS;
+    return aiItems.includes(activeItem || "");
+  });
 
   useEffect(() => {
     if (open) {
@@ -194,6 +204,70 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
               </button>
             );
           })}
+
+          {/* AI Tools collapsible section */}
+          {(() => {
+            const aiItems = isVet ? VET_AI_TOOLS : AI_TOOLS_ITEMS;
+            const isAnyAiActive = aiItems.includes(activeItem || "");
+            return (
+              <>
+                <button
+                  className="w-full text-left relative block"
+                  style={{
+                    padding: "12px 24px",
+                    marginTop: 4,
+                    fontSize: 15,
+                    fontWeight: isAnyAiActive ? 600 : 400,
+                    color: isAnyAiActive ? "#55BAAA" : "rgba(240,240,240,0.6)",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                  onClick={() => setAiToolsOpen(!aiToolsOpen)}
+                >
+                  <span>AI Tools</span>
+                  <ChevronDown
+                    size={16}
+                    style={{
+                      color: isAnyAiActive ? "#55BAAA" : "rgba(255,255,255,0.3)",
+                      transform: aiToolsOpen ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.2s ease",
+                    }}
+                  />
+                </button>
+                {aiToolsOpen && aiItems.map((item) => {
+                  const isActive = activeItem === item;
+                  return (
+                    <button
+                      key={item}
+                      className="w-full text-left relative block"
+                      style={{
+                        padding: "10px 40px",
+                        fontSize: 14,
+                        fontWeight: isActive ? 600 : 400,
+                        color: isActive ? "#F3D12A" : "rgba(240,240,240,0.45)",
+                        backgroundColor: isActive ? "rgba(243,209,42,0.06)" : "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => onItemSelect?.(item)}
+                    >
+                      {isActive && (
+                        <span
+                          className="absolute left-0 rounded-r-sm"
+                          style={{ width: 3, height: 24, backgroundColor: "#F3D12A", top: "50%", transform: "translateY(-50%)" }}
+                        />
+                      )}
+                      {item}
+                    </button>
+                  );
+                })}
+              </>
+            );
+          })()}
 
           {/* Sale Barn sub-nav — only if Sale Barn isn't already in the main nav list */}
           {showSaleBarn && !isVet && (
