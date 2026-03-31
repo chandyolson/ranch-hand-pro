@@ -16,28 +16,37 @@ const ResetPasswordPage: React.FC = () => {
   useEffect(() => {
     let safetyTimer: ReturnType<typeof setTimeout> | null = null;
 
-    // Listen for the PASSWORD_RECOVERY event — this fires when Supabase
-    // finishes consuming the recovery token from the URL hash fragment.
+    // Listen for PASSWORD_RECOVERY (hash flow) or SIGNED_IN (PKCE flow)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setReady(true);
       }
-      // Some Supabase versions fire SIGNED_IN instead of PASSWORD_RECOVERY
-      if (event === 'SIGNED_IN' && session?.user?.recovery_sent_at) {
-        setReady(true);
+      if (event === 'SIGNED_IN' && session) {
+        // PKCE flow: Supabase exchanges the code and fires SIGNED_IN
+        // Check if this came from a recovery link
+        const params = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+        const isRecovery =
+          params.get('type') === 'recovery' ||
+          hashParams.get('type') === 'recovery' ||
+          !!session.user?.recovery_sent_at;
+        if (isRecovery) setReady(true);
       }
     });
 
-    // Check if the URL has a recovery hash — if not, user navigated here
-    // directly without a reset link
+    // Detect token in either hash (#access_token=...&type=recovery)
+    // or query string (?code=...&type=recovery) — Supabase uses both
     const hash = window.location.hash;
-    const hasRecoveryToken = hash.includes('type=recovery') || hash.includes('type=magiclink');
+    const search = window.location.search;
+    const hasRecoveryToken =
+      hash.includes('type=recovery') ||
+      hash.includes('access_token') ||
+      search.includes('type=recovery') ||
+      search.includes('code=');
 
     if (!hasRecoveryToken) {
-      // No token — give onAuthStateChange a moment, then show expired
       safetyTimer = setTimeout(() => setExpired(true), 2000);
     } else {
-      // Have a token but PASSWORD_RECOVERY might not fire (expired link)
       safetyTimer = setTimeout(() => {
         setExpired((prev) => { if (!ready) return true; return prev; });
       }, 8000);
