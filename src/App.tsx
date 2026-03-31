@@ -66,6 +66,7 @@ import WorkOrderAnimalsReport from "@/pages/sale-barn/WorkOrderAnimalsReport";
 import WorkOrderCviReport from "@/pages/sale-barn/WorkOrderCviReport";
 import ReviewClosePage from "@/pages/sale-barn/ReviewClosePage";
 import AssignAnimals from "@/pages/sale-barn/AssignAnimals";
+import SaleBarnSettings from "@/pages/sale-barn/SaleBarnSettings";
 import SignInPage from "@/pages/SignInPage";
 import SignUpPage from "@/pages/SignUpPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
@@ -153,6 +154,7 @@ const App = () => (
               <Route path="sale-barn" element={<SaleBarnGuard><SaleDaysList /></SaleBarnGuard>} />
               <Route path="sale-barn/customers" element={<SaleBarnGuard><CustomerDirectory /></SaleBarnGuard>} />
               <Route path="sale-barn/buyers" element={<SaleBarnGuard><BuyerDirectory /></SaleBarnGuard>} />
+              <Route path="sale-barn/settings" element={<SaleBarnGuard><SaleBarnSettings /></SaleBarnGuard>} />
               <Route path="sale-barn/settings/prices" element={<SaleBarnGuard><PriceSchedule /></SaleBarnGuard>} />
               <Route path="sale-barn/settings/designations" element={<SaleBarnGuard><DesignationKeyConfig /></SaleBarnGuard>} />
               <Route path="sale-barn/:id" element={<SaleBarnGuard><SaleDayDetail /></SaleBarnGuard>} />

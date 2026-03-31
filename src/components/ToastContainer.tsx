@@ -13,7 +13,7 @@ const ToastContainer: React.FC = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 left-0 right-0 z-[200] flex flex-col items-center gap-2 px-4 pointer-events-none">
+    <div className="fixed top-4 left-0 right-0 z-[200] flex flex-col items-center gap-2 px-4 pointer-events-none" role="status" aria-live="polite" aria-atomic="true">
       {toasts.map((t) => {
         const s = variantStyles[t.variant];
         return (

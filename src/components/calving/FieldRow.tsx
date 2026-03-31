@@ -7,7 +7,7 @@ interface FieldRowProps {
 }
 
 const FieldRow: React.FC<FieldRowProps> = ({ label, req, children }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }} role="group" aria-label={label}>
     <span
       style={{
         width: 85,

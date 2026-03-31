@@ -216,7 +216,7 @@ const AppLayout: React.FC = () => {
         }}
       />
 
-      <main className="py-5">
+      <main className="py-5" role="main" aria-label="Page content">
         <div className="max-w-xl mx-auto w-full">
           <Outlet />
         </div>

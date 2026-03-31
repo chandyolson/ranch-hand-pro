@@ -106,11 +106,15 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
           pointerEvents: open ? "auto" : "none",
         }}
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Drawer */}
-      <div
+      <nav
         className="fixed top-0 left-0 bottom-0 z-50 flex flex-col font-inter"
+        role="navigation"
+        aria-label="Main navigation"
+        aria-hidden={!open}
         style={{
           width: 280,
           background: "linear-gradient(180deg, #153566 0%, #081020 100%)",
@@ -346,7 +350,7 @@ const NavDrawer: React.FC<NavDrawerProps> = ({ open, onClose, activeItem, operat
           Sign Out
         </button>
         <div className="h-6" />
-      </div>
+      </nav>
     </>
   );
 };
