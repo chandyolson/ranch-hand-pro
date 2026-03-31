@@ -107,6 +107,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
+        // Set loading before deferred data load to prevent AuthGuard
+        // from seeing empty operations and redirecting to onboarding
+        setIsLoading(true);
         // Defer to avoid Supabase client deadlock
         setTimeout(() => loadUserData(newSession.user.id), 0);
       } else {
