@@ -1,10 +1,11 @@
 import React, { useRef, useState } from "react";
-import { Bookmark } from "lucide-react";
+import { Bookmark, FileSpreadsheet, Image } from "lucide-react";
 import ChatChart from "./ChatChart";
 import ChatTable from "./ChatTable";
 import ActionPreviewCard from "./ActionPreviewCard";
 import ChatFeedback from "./ChatFeedback";
 import SaveQuestionPopover from "./SaveQuestionPopover";
+import DataReviewCard from "./DataReviewCard";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { useOperation } from "@/contexts/OperationContext";
 import { exportPDF, exportCSV, generateReportFilename } from "@/lib/ai-reports/export-utils";
