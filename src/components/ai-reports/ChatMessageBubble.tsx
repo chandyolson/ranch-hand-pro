@@ -55,6 +55,26 @@ const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp, onActionResul
     return <ActionPreviewCard message={message as any} onResult={onActionResult} />;
   }
 
+  // Render data review card for photo extraction results
+  if (message.type === "data_review" && message.data_review && onActionResult) {
+    return (
+      <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 12 }}>
+        <div style={{ maxWidth: "calc(100% - 48px)", paddingRight: 48 }}>
+          <div style={{ background: "#fff", border: "1px solid #D4D4D0", borderRadius: "16px 16px 16px 4px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "10px 14px", fontSize: 14, lineHeight: 1.5 }}>
+            <div style={{ whiteSpace: "pre-wrap", marginBottom: 4 }}>{message.content}</div>
+            <DataReviewCard
+              records={message.data_review.records}
+              context={message.data_review.context}
+              confidence={message.data_review.confidence}
+              notes={message.data_review.notes}
+              onComplete={(msg) => onActionResult({ role: "assistant", content: msg })}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const showExports = message.export_available !== false && !isUser && !message.isError;
 
   return (
