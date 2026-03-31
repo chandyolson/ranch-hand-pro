@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
   const log: Record<string, any> = { claude_calls: 0 };
 
   try {
-    const { question, operation_id, conversation_history, template_used } = await req.json();
+    const { question, operation_id, conversation_history, template_used, file_context } = await req.json();
     if (!question || !operation_id) return new Response(JSON.stringify({error:"question and operation_id are required"}),{status:400,headers:{...corsHeaders,"Content-Type":"application/json"}});
 
     log.operation_id = operation_id;
@@ -85,6 +85,69 @@ Deno.serve(async (req) => {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!anthropicKey) return new Response(JSON.stringify({summary:"AI not configured. Add ANTHROPIC_API_KEY.",chart_config:null,table_data:null,follow_up_suggestions:[]}),{headers:{...corsHeaders,"Content-Type":"application/json"}});
+
+    // ── FILE PATH: If a file is attached, analyze it ──
+    if (file_context && file_context.headers && file_context.row_count > 0) {
+      console.log(`[ai-report] File attached: ${file_context.filename} | ${file_context.row_count} rows | Cols: ${file_context.headers.join(", ")}`);
+      log.intent = "file";
+      log.action_type = "file_analysis";
+
+      // Fetch groups for comparison options
+      const { data: groups } = await supabase.from("groups").select("id,name,cattle_type").eq("operation_id",operation_id).eq("is_active",true).limit(50);
+      // Fetch animal data for matching context
+      const { data: animals } = await supabase.from("animals").select("id,tag,tag_color,eid,status,type,year_born,breed").eq("operation_id",operation_id).eq("status","Active").limit(500);
+
+      // Try to match file rows against existing animals
+      const hasEID = file_context.headers.some((h: string) => /eid|electronic.?id|rfid/i.test(h));
+      const hasTag = file_context.headers.some((h: string) => /^tag$|animal.?tag|cow.?tag|ear.?tag/i.test(h));
+      const hasWeight = file_context.headers.some((h: string) => /weight|wt|lbs|pounds/i.test(h));
+
+      const fileAnalysisPrompt = `You are an AI assistant for HerdWork. A user uploaded a file in the chat. Analyze it and tell them what you can do with it.
+
+FILE: "${file_context.filename}"
+COLUMNS: ${file_context.headers.join(", ")}
+ROW COUNT: ${file_context.row_count}
+SAMPLE ROWS (first 5):
+${JSON.stringify(file_context.sample_rows?.slice(0, 5) || [], null, 1)}
+
+USER'S MESSAGE: "${question}"
+
+AVAILABLE GROUPS: ${(groups || []).map((g: any) => g.name).join(", ") || "none"}
+ACTIVE ANIMALS: ${(animals || []).length} in the system
+FILE HAS EID COLUMN: ${hasEID}
+FILE HAS TAG COLUMN: ${hasTag}
+FILE HAS WEIGHT COLUMN: ${hasWeight}
+
+Based on the file contents, tell the user:
+1. What you found in the file (column types, row count, what it appears to be)
+2. What you can do with it. Options to offer:
+   - If it has EIDs or tags: "Compare against a group to find who's missing"
+   - If it has EIDs or tags: "Import these animals or update existing records"
+   - If it has EIDs or tags: "Create a new group from these animals"
+   - If it has weights: "Update weights on matched animals"
+   - If the user specified what they want, do that directly
+
+RESPONSE FORMAT: Valid JSON only:
+{"summary":"your analysis and options","chart_config":null,"table_data":null,"follow_up_suggestions":["Compare against 2026 Cows group","Import these as new records","Create a group from this file"]}
+
+Be specific about what you found. Use actual column names and counts.`;
+
+      const fileAnalysis = await callClaude(anthropicKey, fileAnalysisPrompt, [{role:"user",content:question}], 2048);
+      log.claude_calls++;
+
+      let parsed;
+      try { parsed = parseJSON(fileAnalysis); } catch { parsed = {summary:fileAnalysis,chart_config:null,table_data:null,follow_up_suggestions:[]}; }
+
+      log.sql_valid = true;
+      log.response_type = "text";
+      log.query_row_count = file_context.row_count;
+      log.duration_ms = Date.now() - startTime;
+      const {data:logRow} = await supabase.from("ai_interaction_logs").insert(log).select("id").single();
+      parsed.log_id = logRow?.id || null;
+
+      console.log(`[ai-report] File analysis complete | ${log.duration_ms}ms`);
+      return new Response(JSON.stringify(parsed),{headers:{...corsHeaders,"Content-Type":"application/json"}});
+    }
 
     // ── Step 1: Classify intent ──
     console.log(`[ai-report] Q: "${question.substring(0,80)}" | Op: ${operation_id}`);
