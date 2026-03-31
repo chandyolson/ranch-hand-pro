@@ -284,7 +284,7 @@ const CviSheet: React.FC<{
               background: idx % 2 === 1 ? "#F5F5F0" : "#FFFFFF",
             }}>
               <span style={{ width: 30, fontSize: 11, fontWeight: 600, color: "#717182", flexShrink: 0 }}>{idx + 1}</span>
-              <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: "#1A1A1A", fontFamily: "monospace", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.eid ?? "—"}</span>
+              <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: "#1A1A1A", fontFamily: "Inter, sans-serif", fontFeatureSettings: '"tnum"', minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.eid ?? "—"}</span>
               <span style={{ flex: 1, fontSize: 12, color: "#717182", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.back_tag ?? "—"}</span>
               <span style={{ flex: 1, fontSize: 12, color: "#717182", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.tag_number ?? "—"}</span>
             </div>
@@ -840,7 +840,7 @@ const SpecialChargesSheet: React.FC<{
             }}>
               <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
                 <select
-                  style={{ ...INPUT, flex: 1, fontSize: 14 }}
+                  style={{ ...INPUT, flex: 1, fontSize: 16 }}
                   value={row.productId}
                   onChange={(e) => {
                     const pid = e.target.value;
@@ -867,7 +867,7 @@ const SpecialChargesSheet: React.FC<{
                   <input
                     type="number" min={1} value={row.qty}
                     onChange={(e) => updateRow(row.id, { qty: parseInt(e.target.value) || 0 })}
-                    style={{ ...INPUT, width: "100%", flex: "none", fontSize: 14 }}
+                    style={{ ...INPUT, width: "100%", flex: "none", fontSize: 16 }}
                     onFocus={focusGold} onBlur={blurReset}
                   />
                 </div>
@@ -876,7 +876,7 @@ const SpecialChargesSheet: React.FC<{
                   <input
                     type="number" step="0.01" value={row.unitCost}
                     onChange={(e) => updateRow(row.id, { unitCost: parseFloat(e.target.value) || 0 })}
-                    style={{ ...INPUT, width: "100%", flex: "none", fontSize: 14 }}
+                    style={{ ...INPUT, width: "100%", flex: "none", fontSize: 16 }}
                     onFocus={focusGold} onBlur={blurReset}
                   />
                 </div>

@@ -12,6 +12,8 @@ export default function WorkTemplateListScreen() {
   const queryClient = useQueryClient();
   const { showToast } = useChuteSideToast();
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteName, setConfirmDeleteName] = useState("");
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ["project-templates", operationId],
@@ -27,10 +29,16 @@ export default function WorkTemplateListScreen() {
   });
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete template "${name}"?`)) return;
-    setDeleting(id);
+    setConfirmDeleteId(id);
+    setConfirmDeleteName(name);
+  };
+
+  const executeDelete = async () => {
+    if (!confirmDeleteId) return;
+    setDeleting(confirmDeleteId);
+    setConfirmDeleteId(null);
     try {
-      const { error } = await supabase.from("project_templates").delete().eq("id", id);
+      const { error } = await supabase.from("project_templates").delete().eq("id", confirmDeleteId);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["project-templates"] });
       showToast("success", "Template deleted");
@@ -65,6 +73,33 @@ export default function WorkTemplateListScreen() {
         </div>
       ) : (
         <div className="space-y-2">
+          {confirmDeleteId && (
+            <div style={{
+              border: "2px solid #D4183D", borderRadius: 12, padding: 16, marginBottom: 4,
+              background: "rgba(212,24,61,0.04)",
+            }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#D4183D", marginBottom: 4 }}>Delete "{confirmDeleteName}"?</div>
+              <div style={{ fontSize: 13, color: "rgba(26,26,26,0.55)", marginBottom: 12 }}>
+                This template will be permanently removed. This cannot be undone.
+              </div>
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  style={{
+                    padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(212,212,208,0.60)",
+                    background: "#FFFFFF", fontSize: 13, fontWeight: 600, color: "#1A1A1A", cursor: "pointer",
+                  }}
+                >Cancel</button>
+                <button
+                  onClick={executeDelete}
+                  style={{
+                    padding: "8px 16px", borderRadius: 8, border: "none",
+                    background: "#D4183D", fontSize: 13, fontWeight: 700, color: "#FFFFFF", cursor: "pointer",
+                  }}
+                >Delete</button>
+              </div>
+            </div>
+          )}
           {(templates || []).map((t) => {
             const productCount = Array.isArray(t.default_products) ? (t.default_products as any[]).length : 0;
             return (

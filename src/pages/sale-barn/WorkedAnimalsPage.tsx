@@ -410,7 +410,8 @@ const WorkedAnimalsPage: React.FC = () => {
               <div style={{ display: "flex", alignItems: "center", gap: 6, minHeight: 24 }}>
                 <span style={{
                   fontSize: 14, fontWeight: 600, color: a.tag_number ? "#1A1A1A" : "#717182",
-                  fontFamily: a.tag_number ? "Inter, sans-serif" : "monospace",
+                  fontFamily: "Inter, sans-serif",
+                  fontFeatureSettings: a.tag_number ? undefined : '"tnum"',
                   flexShrink: 0,
                 }}>{displayTag}</span>
 
@@ -450,7 +451,7 @@ const WorkedAnimalsPage: React.FC = () => {
               {/* Expanded detail */}
               {isExpanded && (
                 <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(212,212,208,0.30)", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ fontSize: 13, color: "#717182" }}>EID: <span style={{ fontFamily: "monospace" }}>{a.eid}</span></div>
+                  <div style={{ fontSize: 13, color: "#717182" }}>EID: <span style={{ fontFamily: "Inter, sans-serif", fontFeatureSettings: '"tnum"' }}>{a.eid}</span></div>
                   {a.back_tag && <div style={{ fontSize: 13, color: "#717182" }}>Back Tag: {a.back_tag}</div>}
                   {a.eid_2 && <div style={{ fontSize: 13, color: "#717182" }}>EID 2: {a.eid_2}</div>}
                   {a.preg_status && (

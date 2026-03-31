@@ -70,7 +70,7 @@ const ComparisonResults: React.FC<Props> = ({ results, fileName, targetName, fil
                   {st.label}
                 </span>
               </div>
-              {a.eid && <p style={{ fontSize: 12, color: '#888', fontFamily: 'monospace', marginTop: 2 }}>{a.eid}</p>}
+              {a.eid && <p style={{ fontSize: 12, color: '#888', fontFamily: 'Inter, sans-serif', fontFeatureSettings: '"tnum"', marginTop: 2 }}>{a.eid}</p>}
               {(a.breed || a.year_born || a.sex) && (
                 <p style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
                   {[a.breed, a.year_born, a.sex].filter(Boolean).join(' · ')}

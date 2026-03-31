@@ -525,7 +525,7 @@ const AssignAnimals: React.FC = () => {
               {selectedAnimals.map((a, idx) => (
                 <div key={a.id} style={{ display: "flex", alignItems: "center", padding: "6px 12px", gap: 8, borderBottom: "1px solid rgba(212,212,208,0.15)" }}>
                   <span style={{ fontSize: 11, color: "#717182", width: 24 }}>{idx + 1}</span>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: "#1A1A1A", fontFamily: "monospace", flex: 1 }}>{a.eid}</span>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: "#1A1A1A", fontFamily: "Inter, sans-serif", fontFeatureSettings: '"tnum"', flex: 1 }}>{a.eid}</span>
                   <span style={{ fontSize: 12, color: "#717182" }}>{a.tag_number ?? ""}</span>
                   {a.designation_key && (
                     <span style={{ fontSize: 10, borderRadius: 9999, padding: "1px 5px", background: "rgba(14,38,70,0.06)", display: "inline-flex", alignItems: "center", gap: 3 }}>

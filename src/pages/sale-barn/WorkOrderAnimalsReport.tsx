@@ -169,7 +169,8 @@ const WorkOrderAnimalsReport: React.FC = () => {
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{
                   fontSize: 14, fontWeight: 600, color: "#1A1A1A",
-                  fontFamily: isEidFallback ? "monospace" : "Inter, sans-serif",
+                  fontFamily: "Inter, sans-serif",
+                  fontFeatureSettings: isEidFallback ? '"tnum"' : undefined,
                   ...(isEidFallback ? { fontWeight: 500, color: "#717182" } : {}),
                 }}>
                   {displayTag}

@@ -206,7 +206,7 @@ const WorkOrderCviReport: React.FC = () => {
             EID LIST ({summary.eids.length})
           </div>
           {summary.eids.length > 0 ? (
-            <div style={{ fontFamily: "monospace", fontSize: 13, color: "#1A1A1A", lineHeight: 1.6 }}>
+            <div style={{ fontFamily: "Inter, sans-serif", fontFeatureSettings: '"tnum"', fontSize: 13, color: "#1A1A1A", lineHeight: 1.6 }}>
               {summary.eids.map((eid, i) => (
                 <div key={i} style={{
                   padding: "4px 0",

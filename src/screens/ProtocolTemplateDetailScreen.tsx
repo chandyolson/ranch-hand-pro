@@ -23,6 +23,7 @@ export default function ProtocolTemplateDetailScreen() {
   const queryClient = useQueryClient();
   const { showToast } = useChuteSideToast();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Assign flow state
   const [assignOpen, setAssignOpen] = useState(false);
@@ -251,7 +252,7 @@ export default function ProtocolTemplateDetailScreen() {
                   style={{ fontSize: 14, fontWeight: 600, color: COLORS.destructiveRed }}
                   onClick={() => {
                     setMenuOpen(false);
-                    if (confirm("Delete this template?")) deleteMutation.mutate();
+                    setConfirmDelete(true);
                   }}
                 >
                   <Trash2 size={14} />
@@ -262,6 +263,37 @@ export default function ProtocolTemplateDetailScreen() {
           )}
         </div>
       </div>
+
+      {/* Inline Delete Confirmation */}
+      {confirmDelete && (
+        <div style={{
+          border: "2px solid #D4183D", borderRadius: 12, padding: 16, marginBottom: 12,
+          background: "rgba(212,24,61,0.04)",
+        }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#D4183D", marginBottom: 4 }}>Delete this template?</div>
+          <div style={{ fontSize: 13, color: "rgba(26,26,26,0.55)", marginBottom: 12 }}>
+            This will permanently remove the template and all its stages. This cannot be undone.
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              style={{
+                padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(212,212,208,0.60)",
+                background: "#FFFFFF", fontSize: 13, fontWeight: 600, color: "#1A1A1A", cursor: "pointer",
+              }}
+            >Cancel</button>
+            <button
+              onClick={() => { setConfirmDelete(false); deleteMutation.mutate(); }}
+              disabled={deleteMutation.isPending}
+              style={{
+                padding: "8px 16px", borderRadius: 8, border: "none",
+                background: "#D4183D", fontSize: 13, fontWeight: 700, color: "#FFFFFF", cursor: "pointer",
+                opacity: deleteMutation.isPending ? 0.6 : 1,
+              }}
+            >{deleteMutation.isPending ? "Deleting…" : "Delete"}</button>
+          </div>
+        </div>
+      )}
 
       {/* Stage Cards */}
       <div className="space-y-3">
