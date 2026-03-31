@@ -1,10 +1,11 @@
 import React, { useRef, useState } from "react";
-import { Bookmark } from "lucide-react";
+import { Bookmark, FileSpreadsheet, Image } from "lucide-react";
 import ChatChart from "./ChatChart";
 import ChatTable from "./ChatTable";
 import ActionPreviewCard from "./ActionPreviewCard";
 import ChatFeedback from "./ChatFeedback";
 import SaveQuestionPopover from "./SaveQuestionPopover";
+import DataReviewCard from "./DataReviewCard";
 import { useChuteSideToast } from "@/components/ToastContext";
 import { useOperation } from "@/contexts/OperationContext";
 import { exportPDF, exportCSV, generateReportFilename } from "@/lib/ai-reports/export-utils";
@@ -27,6 +28,12 @@ export interface ChatMessage {
   preview_detail?: Record<string, string> | null;
   preview_table?: { headers: string[]; rows: (string | number | null)[][] } | null;
   diff?: { field: string; old_value: string; new_value: string }[] | null;
+  // File attachment fields
+  file_name?: string;
+  file_row_count?: number;
+  file_is_image?: boolean;
+  // Data review fields (photo extraction)
+  data_review?: { records: Record<string, string>[]; context: string; confidence: "high" | "medium" | "low"; notes?: string };
 }
 
 interface Props {
@@ -46,6 +53,26 @@ const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp, onActionResul
   // Render action preview card for write confirmations
   if (message.type === "action_preview" && onActionResult) {
     return <ActionPreviewCard message={message as any} onResult={onActionResult} />;
+  }
+
+  // Render data review card for photo extraction results
+  if (message.type === "data_review" && message.data_review && onActionResult) {
+    return (
+      <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 12 }}>
+        <div style={{ maxWidth: "calc(100% - 48px)", paddingRight: 48 }}>
+          <div style={{ background: "#fff", border: "1px solid #D4D4D0", borderRadius: "16px 16px 16px 4px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "10px 14px", fontSize: 14, lineHeight: 1.5 }}>
+            <div style={{ whiteSpace: "pre-wrap", marginBottom: 4 }}>{message.content}</div>
+            <DataReviewCard
+              records={message.data_review.records}
+              context={message.data_review.context}
+              confidence={message.data_review.confidence}
+              notes={message.data_review.notes}
+              onComplete={(msg) => onActionResult({ role: "assistant", content: msg })}
+            />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const showExports = message.export_available !== false && !isUser && !message.isError;
@@ -108,6 +135,15 @@ const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp, onActionResul
           }}
         >
           <div style={{ whiteSpace: "pre-wrap" }}>{message.content}</div>
+
+          {isUser && message.file_name && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, opacity: 0.8 }}>
+              {message.file_is_image ? <Image size={12} color="#55BAAA" /> : <FileSpreadsheet size={12} color="#55BAAA" />}
+              <span style={{ fontSize: 11, color: "#B0D4CF" }}>
+                {message.file_name}{message.file_row_count != null ? ` • ${message.file_row_count} rows` : ""}
+              </span>
+            </div>
+          )}
 
           {message.chart_config && (
             <div ref={chartRef}>
