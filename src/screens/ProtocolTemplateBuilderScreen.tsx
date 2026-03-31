@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
+import { useChuteSideToast } from "@/components/ToastContext";
 import { COLORS } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
 import { ChevronDown, ChevronUp, Plus, X, Package } from "lucide-react";
@@ -35,6 +36,7 @@ export default function ProtocolTemplateBuilderScreen() {
   const editId = searchParams.get("edit");
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
+  const { showToast } = useChuteSideToast();
 
   const [templateName, setTemplateName] = useState("");
   const [animalType, setAnimalType] = useState("");
@@ -266,6 +268,9 @@ export default function ProtocolTemplateBuilderScreen() {
       queryClient.invalidateQueries({ queryKey: ["protocol-hub-templates"] });
       queryClient.invalidateQueries({ queryKey: ["protocol-template-detail", id] });
       navigate(`/protocols/templates/${id}`);
+    },
+    onError: (err: any) => {
+      showToast("error", err.message || "Failed to save template");
     },
   });
 

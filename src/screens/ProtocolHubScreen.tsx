@@ -45,8 +45,6 @@ export default function ProtocolHubScreen() {
           )
         `);
 
-      console.log("[ProtocolHub] vet_practice_clients full response:", JSON.stringify({ clients, error }, null, 2));
-
       if (error) throw error;
       if (!clients || clients.length === 0) return [];
 

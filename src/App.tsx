@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { useOperation, OperationProvider } from "@/contexts/OperationContext";
 import { useChuteSideToast as useToast } from "@/components/ToastContext";
 import { ToastProvider } from "@/components/ToastContext";
@@ -90,9 +91,10 @@ const SaleBarnGuard: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 };
 
 const App = () => (
-  <AuthProvider>
-    <OperationProvider>
-      <ToastProvider>
+  <ErrorBoundary>
+    <AuthProvider>
+      <OperationProvider>
+        <ToastProvider>
         <BrowserRouter>
           <Routes>
             {/* Public auth routes */}
@@ -174,6 +176,7 @@ const App = () => (
       </ToastProvider>
     </OperationProvider>
   </AuthProvider>
+  </ErrorBoundary>
 );
 
 export default App;

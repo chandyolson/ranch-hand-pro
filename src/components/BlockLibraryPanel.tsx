@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperation } from "@/contexts/OperationContext";
+import { useChuteSideToast } from "@/components/ToastContext";
 import { COLORS } from "@/lib/constants";
 import { INPUT_CLS } from "@/lib/styles";
 import { WORK_TYPES } from "@/lib/constants";
@@ -86,6 +87,7 @@ export default function BlockLibraryPanel({
 }: BlockLibraryPanelProps) {
   const { operationId } = useOperation();
   const queryClient = useQueryClient();
+  const { showToast } = useChuteSideToast();
 
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [editor, setEditor] = useState<EditorState | null>(null);
@@ -142,6 +144,9 @@ export default function BlockLibraryPanel({
       queryClient.invalidateQueries({ queryKey: ["protocol-blocks"] });
       setEditor(null);
     },
+    onError: (err: any) => {
+      showToast("error", err.message || "Failed to save block");
+    },
   });
 
   // ── Delete block ──
@@ -156,6 +161,9 @@ export default function BlockLibraryPanel({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["protocol-blocks"] });
       setDeleteConfirmId(null);
+    },
+    onError: (err: any) => {
+      showToast("error", err.message || "Failed to delete block");
     },
   });
 

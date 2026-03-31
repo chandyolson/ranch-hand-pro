@@ -87,6 +87,9 @@ export default function ProtocolTemplateDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ["protocol-hub-templates"] });
       navigate("/protocols");
     },
+    onError: (err: any) => {
+      showToast("error", err.message || "Failed to delete template");
+    },
   });
 
   // ── Assign mutation ──

@@ -255,13 +255,11 @@ export default function CowWorkCloseOutScreen() {
           ? `${project?.description || ""}\n\n--- Close-out Notes ---\n${closingNotes.trim()}`.trim()
           : project?.description || null,
       };
-      console.log("Close-out update:", { id, updatePayload });
       const { error, data } = await supabase
         .from("projects")
         .update(updatePayload)
         .eq("id", id!)
         .select();
-      console.log("Close-out result:", { error, data });
       if (error) throw error;
       if (!data || data.length === 0) throw new Error("Update returned no rows — project may not exist or RLS blocked it");
       queryClient.invalidateQueries({ queryKey: ["project", id] });
