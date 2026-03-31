@@ -3090,6 +3090,102 @@ export type Database = {
           },
         ]
       }
+      vet_call_log: {
+        Row: {
+          ai_summary: string | null
+          animals_mentioned: Json | null
+          audio_file_name: string | null
+          audio_storage_path: string | null
+          call_category: string | null
+          call_date: string | null
+          call_sentiment: string | null
+          client_name_detected: string | null
+          commitments: Json | null
+          created_at: string | null
+          direction: string | null
+          duration_seconds: number | null
+          id: string
+          match_method: string | null
+          next_action: string | null
+          operation_id: string | null
+          operation_name_detected: string | null
+          phone_number: string | null
+          phone_number_normalized: string | null
+          processing_status: string | null
+          project_id: string | null
+          source_call_log_id: string | null
+          source_project: string | null
+          topics: Json | null
+          transcript: string | null
+          transcript_segments: Json | null
+          transcription_confidence: number | null
+          updated_at: string | null
+          vet_practice_client_id: string | null
+        }
+        Insert: {
+          ai_summary?: string | null
+          animals_mentioned?: Json | null
+          audio_file_name?: string | null
+          audio_storage_path?: string | null
+          call_category?: string | null
+          call_date?: string | null
+          call_sentiment?: string | null
+          client_name_detected?: string | null
+          commitments?: Json | null
+          created_at?: string | null
+          direction?: string | null
+          duration_seconds?: number | null
+          id?: string
+          match_method?: string | null
+          next_action?: string | null
+          operation_id?: string | null
+          operation_name_detected?: string | null
+          phone_number?: string | null
+          phone_number_normalized?: string | null
+          processing_status?: string | null
+          project_id?: string | null
+          source_call_log_id?: string | null
+          source_project?: string | null
+          topics?: Json | null
+          transcript?: string | null
+          transcript_segments?: Json | null
+          transcription_confidence?: number | null
+          updated_at?: string | null
+          vet_practice_client_id?: string | null
+        }
+        Update: {
+          ai_summary?: string | null
+          animals_mentioned?: Json | null
+          audio_file_name?: string | null
+          audio_storage_path?: string | null
+          call_category?: string | null
+          call_date?: string | null
+          call_sentiment?: string | null
+          client_name_detected?: string | null
+          commitments?: Json | null
+          created_at?: string | null
+          direction?: string | null
+          duration_seconds?: number | null
+          id?: string
+          match_method?: string | null
+          next_action?: string | null
+          operation_id?: string | null
+          operation_name_detected?: string | null
+          phone_number?: string | null
+          phone_number_normalized?: string | null
+          processing_status?: string | null
+          project_id?: string | null
+          source_call_log_id?: string | null
+          source_project?: string | null
+          topics?: Json | null
+          transcript?: string | null
+          transcript_segments?: Json | null
+          transcription_confidence?: number | null
+          updated_at?: string | null
+          vet_practice_client_id?: string | null
+        }
+        Relationships: []
+      }
       vet_practice_clients: {
         Row: {
           clinic_client_id: string | null
