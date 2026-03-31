@@ -91,3 +91,8 @@
 
 .hover-green:hover { color: #22C55E !important; }
 .hover-red:hover { color: #E74C3C !important; }
+
+@keyframes mic-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(0.94); }
+}

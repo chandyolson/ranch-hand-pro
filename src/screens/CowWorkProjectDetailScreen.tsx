@@ -17,6 +17,7 @@ import { sortByTag } from "@/lib/natural-sort";
 import { ALL_FIELDS, getLockedFields, getOptionalFields, resolveFieldConfig, type FieldVisibilityConfig } from "@/lib/field-config";
 import { LABEL_STYLE, INPUT_CLS, SUB_LABEL } from "@/lib/styles";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDeepgramVoice } from "@/hooks/useDeepgramVoice";
 
 type Tab = "input" | "worked" | "stats" | "details";
 
@@ -49,6 +50,21 @@ export default function CowWorkProjectDetailScreen() {
   const [headerOpen, setHeaderOpen] = useState(false);
   const [tagField, setTagField] = useState("");
   const [isMatched, setIsMatched] = useState(false);
+
+  // Deepgram voice — tag field
+  const { voiceState: tagVoiceState, startListening: startTagVoice, stopListening: stopTagVoice } = useDeepgramVoice({
+    onResult: (text) => {
+      const cleaned = text.replace(/[.,!?;:]/g, "").trim();
+      setTagField(cleaned);
+    },
+    onError: (msg) => showToast("error", msg),
+  });
+
+  // Deepgram voice — notes/memo field
+  const { voiceState: memoVoiceState, startListening: startMemoVoice, stopListening: stopMemoVoice } = useDeepgramVoice({
+    onResult: (text) => setMemo((prev) => prev ? prev + " " + text : text),
+    onError: (msg) => showToast("error", msg),
+  });
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [matchedAnimal, setMatchedAnimal] = useState<any>(null);
   const [historyTab, setHistoryTab] = useState<"info" | "calving" | "history">("info");
@@ -905,6 +921,30 @@ export default function CowWorkProjectDetailScreen() {
                   placeholder="Tag or EID…"
                   inputStyle={{ flex: 1, minWidth: 0, height: 48, borderRadius: 8, border: "2px solid #F3D12A", paddingLeft: 12, paddingRight: 12, fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 600, color: "#0E2646", outline: "none", backgroundColor: "white", boxSizing: "border-box" as const }}
                 />
+                {/* Deepgram mic — tag field */}
+                <button
+                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 cursor-pointer active:scale-[0.97]"
+                  style={{
+                    backgroundColor: tagVoiceState === "listening" ? "#E74C3C" : tagVoiceState === "processing" ? "#F3D12A" : "#F5F5F0",
+                    border: tagVoiceState === "idle" ? "1px solid #D4D4D0" : "none",
+                    animation: tagVoiceState === "listening" ? "mic-pulse 1s ease-in-out infinite" : undefined,
+                  }}
+                  onClick={() => tagVoiceState === "listening" ? stopTagVoice() : startTagVoice()}
+                  title={tagVoiceState === "listening" ? "Tap to stop" : "Speak tag number"}
+                >
+                  {tagVoiceState === "processing" ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E2646" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tagVoiceState === "listening" ? "white" : "#888"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="1" width="6" height="11" rx="3" />
+                      <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+                      <line x1="12" y1="19" x2="12" y2="23" />
+                      <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                  )}
+                </button>
                 <button
                   className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 cursor-pointer active:scale-[0.97]"
                   style={{ backgroundColor: "#55BAAA", border: "none" }}
@@ -1426,11 +1466,36 @@ export default function CowWorkProjectDetailScreen() {
                     );
                     case "memo": return (
                       <FieldRow key={f.key} label="Notes">
-                        <textarea
-                          value={memo} onChange={e => setMemo(e.target.value)}
-                          style={{ ...IS, height: "auto", minHeight: 36, paddingTop: 8, paddingBottom: 8, resize: "none" as const }}
-                          placeholder="Notes…"
-                        />
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 6, flex: 1, minWidth: 0 }}>
+                          <textarea
+                            value={memo} onChange={e => setMemo(e.target.value)}
+                            style={{ ...IS, flex: 1, height: "auto", minHeight: 36, paddingTop: 8, paddingBottom: 8, resize: "none" as const }}
+                            placeholder={memoVoiceState === "listening" ? "Listening…" : memoVoiceState === "processing" ? "Transcribing…" : "Notes…"}
+                          />
+                          <button
+                            style={{
+                              width: 36, height: 36, borderRadius: 8, border: memoVoiceState === "idle" ? "1px solid #D4D4D0" : "none",
+                              backgroundColor: memoVoiceState === "listening" ? "#E74C3C" : memoVoiceState === "processing" ? "#F3D12A" : "#F5F5F0",
+                              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                              animation: memoVoiceState === "listening" ? "mic-pulse 1s ease-in-out infinite" : undefined,
+                            }}
+                            onClick={() => memoVoiceState === "listening" ? stopMemoVoice() : startMemoVoice()}
+                            title={memoVoiceState === "listening" ? "Tap to stop" : "Speak notes"}
+                          >
+                            {memoVoiceState === "processing" ? (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E2646" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
+                                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                              </svg>
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={memoVoiceState === "listening" ? "white" : "#888"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="9" y="1" width="6" height="11" rx="3" />
+                                <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+                                <line x1="12" y1="19" x2="12" y2="23" />
+                                <line x1="8" y1="23" x2="16" y2="23" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
                       </FieldRow>
                     );
                     case "tag_color": return (
