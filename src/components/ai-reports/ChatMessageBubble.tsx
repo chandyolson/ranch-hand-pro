@@ -27,6 +27,12 @@ export interface ChatMessage {
   preview_detail?: Record<string, string> | null;
   preview_table?: { headers: string[]; rows: (string | number | null)[][] } | null;
   diff?: { field: string; old_value: string; new_value: string }[] | null;
+  // File attachment fields
+  file_name?: string;
+  file_row_count?: number;
+  file_is_image?: boolean;
+  // Data review fields (photo extraction)
+  data_review?: { records: Record<string, string>[]; context: string; confidence: "high" | "medium" | "low"; notes?: string };
 }
 
 interface Props {
