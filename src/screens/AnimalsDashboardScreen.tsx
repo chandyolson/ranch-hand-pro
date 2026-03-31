@@ -148,7 +148,7 @@ function useHerdMetrics(raw: any[] | undefined) {
     if (!raw?.length) return null;
     const currentYear = new Date().getFullYear();
     const total = raw.length;
-    const cows = raw.filter((a) => a.type === "Cow" && a.sex === "Cow");
+    const cows = raw.filter((a) => a.type === "Cow" && (a.sex === "Heifer" || a.sex === "Cow" || a.sex === "Spayed Heifer"));
     const replacements = raw.filter((a) => a.type === "Replacement");
     const bulls = raw.filter((a) => a.type === "Bull");
     const calves = raw.filter((a) => a.type === "Calf");
@@ -195,7 +195,7 @@ function useHerdMetrics(raw: any[] | undefined) {
 
     // Calf breakdown by sex
     const bullCalves = calves.filter((a) => a.sex === "Bull").length;
-    const heiferCalves = calves.filter((a) => a.sex === "Cow").length;
+    const heiferCalves = calves.filter((a) => a.sex === "Heifer" || a.sex === "Cow").length;
 
     // Sire data availability
     const hasSireData = raw.some((a) => a.sire_id != null);

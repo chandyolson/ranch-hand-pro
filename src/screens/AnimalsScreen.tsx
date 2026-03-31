@@ -76,7 +76,7 @@ const AnimalsScreen: React.FC = () => {
   const stats = {
     total: allAnimals.length,
     active: allAnimals.filter(a => a.status === "Active").length,
-    cows: allAnimals.filter(a => a.sex === "Cow").length,
+    cows: allAnimals.filter(a => a.sex === "Heifer" || a.sex === "Cow").length,
     bulls: allAnimals.filter(a => a.sex === "Bull").length,
   };
 

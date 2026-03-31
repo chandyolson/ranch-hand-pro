@@ -381,7 +381,7 @@ export default function CalvingNewScreen() {
             tag: calfTag.trim(),
             calf_tag: calfTag.trim(),
             tag_color: calfColor === "None" ? null : calfColor,
-            sex: calfSex === "Bull" ? "Bull" : "Cow",
+            sex: calfSex === "Bull" ? "Bull" : "Heifer",
             type: "Calf",
             status: "Active",
             year_born: date ? new Date(date).getFullYear() : new Date().getFullYear(),
@@ -611,7 +611,7 @@ export default function CalvingNewScreen() {
               onNoMatch={(search) => { setQuickAddTag(search); setQuickAddOpen(true); setQuickAddYear(String(new Date().getFullYear() - 3)); }}
               placeholder="Type dam tag…"
               inputStyle={IS}
-              sexFilter={["Cow", "Spayed Heifer"]}
+              sexFilter={["Heifer", "Cow", "Spayed Heifer"]}
             />
           </FieldRow>
 
@@ -649,7 +649,7 @@ export default function CalvingNewScreen() {
                           operation_id: operationId,
                           tag: quickAddTag.trim(),
                           tag_color: quickAddColor,
-                          sex: "Cow",
+                          sex: "Heifer",
                           type: "Cow",
                           year_born: yr || null,
                           status: "Active",
