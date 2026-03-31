@@ -136,6 +136,15 @@ const ChatMessageBubble: React.FC<Props> = ({ message, onFollowUp, onActionResul
         >
           <div style={{ whiteSpace: "pre-wrap" }}>{message.content}</div>
 
+          {isUser && message.file_name && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, opacity: 0.8 }}>
+              {message.file_is_image ? <Image size={12} color="#55BAAA" /> : <FileSpreadsheet size={12} color="#55BAAA" />}
+              <span style={{ fontSize: 11, color: "#B0D4CF" }}>
+                {message.file_name}{message.file_row_count != null ? ` • ${message.file_row_count} rows` : ""}
+              </span>
+            </div>
+          )}
+
           {message.chart_config && (
             <div ref={chartRef}>
               <ChatChart config={message.chart_config} />
