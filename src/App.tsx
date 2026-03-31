@@ -154,7 +154,7 @@ const App = () => (
               <Route path="sale-barn" element={<SaleBarnGuard><SaleDaysList /></SaleBarnGuard>} />
               <Route path="sale-barn/customers" element={<SaleBarnGuard><CustomerDirectory /></SaleBarnGuard>} />
               <Route path="sale-barn/buyers" element={<SaleBarnGuard><BuyerDirectory /></SaleBarnGuard>} />
-              <Route path="sale-barn/settings" element={<SaleBarnGuard><SaleBarnSettings /></SaleBarnGuard>} />
+              <Route path="sale-barn/settings" element={<SaleBarnGuard><SaleBarnSettings activeTab="prices" /></SaleBarnGuard>} />
               <Route path="sale-barn/settings/prices" element={<SaleBarnGuard><PriceSchedule /></SaleBarnGuard>} />
               <Route path="sale-barn/settings/designations" element={<SaleBarnGuard><DesignationKeyConfig /></SaleBarnGuard>} />
               <Route path="sale-barn/:id" element={<SaleBarnGuard><SaleDayDetail /></SaleBarnGuard>} />
