@@ -119,6 +119,28 @@ export default function AnimalDetailScreen() {
     enabled: !!id,
   });
 
+  // ── Pedigree query — resolve sire + dam from sire_id / dam_id ──
+  const { data: pedigree } = useQuery({
+    queryKey: ["animal-pedigree", id, animal?.sire_id, animal?.dam_id],
+    queryFn: async () => {
+      if (!animal) return null;
+      const ids = [animal.sire_id, animal.dam_id].filter(Boolean) as string[];
+      if (!ids.length) return null;
+      const { data, error } = await supabase
+        .from("animals")
+        .select("id, tag, tag_color, year_born, type, sex, name, reg_name, reg_number, characteristics, lifetime_id")
+        .in("id", ids);
+      if (error) throw error;
+      const map: Record<string, typeof data[0]> = {};
+      (data || []).forEach(a => { map[a.id] = a; });
+      return {
+        sire: animal.sire_id ? map[animal.sire_id] || null : null,
+        dam:  animal.dam_id  ? map[animal.dam_id]  || null : null,
+      };
+    },
+    enabled: !!animal && !!(animal.sire_id || animal.dam_id),
+  });
+
   // ── Local edit state ──
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<"details" | "history">("details");
@@ -741,6 +763,106 @@ export default function AnimalDetailScreen() {
               </div>
             )}
           </CollapsibleSection>
+
+          {/* ── Pedigree Section ── */}
+          {(pedigree?.sire || pedigree?.dam || (animal as any)?.characteristics?.dam_pedigree) && (
+            <CollapsibleSection title="Pedigree">
+              {/* Sire */}
+              {pedigree?.sire && (() => {
+                const s = pedigree.sire;
+                const regLink = (s.characteristics as any)?.reg_link;
+                const label = s.reg_name || s.name || s.tag;
+                return (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(26,26,26,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Sire</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <button
+                        onClick={() => navigate(`/animals/${s.id}`)}
+                        style={{ flex: 1, textAlign: "left", background: "rgba(14,38,70,0.03)", border: "1px solid rgba(14,38,70,0.10)", borderRadius: 10, padding: "10px 14px", cursor: "pointer" }}
+                      >
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#0E2646" }}>{label}</div>
+                        <div style={{ fontSize: 11, color: "rgba(26,26,26,0.5)", marginTop: 2 }}>
+                          {[s.tag !== label && `Tag ${s.tag}`, s.reg_number && `Reg# ${s.reg_number}`, s.year_born && String(s.year_born)].filter(Boolean).join(" · ")}
+                        </div>
+                      </button>
+                      {regLink && (
+                        <a href={regLink} target="_blank" rel="noopener noreferrer"
+                          style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 12px", background: "rgba(14,38,70,0.04)", border: "1px solid rgba(14,38,70,0.10)", borderRadius: 10, textDecoration: "none" }}>
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2H2.5A1.5 1.5 0 001 3.5v8A1.5 1.5 0 002.5 13h8a1.5 1.5 0 001.5-1.5V9M8 1h5v5M13 1L6 8" stroke="#0E2646" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: "#0E2646" }}>AAA</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Dam */}
+              {pedigree?.dam && (() => {
+                const d = pedigree.dam;
+                const regLink = (d.characteristics as any)?.reg_link;
+                const label = d.reg_name || d.name || d.tag;
+                const damPedText = (animal as any)?.characteristics?.dam_pedigree as string | undefined;
+                const damSire = (animal as any)?.characteristics?.dam_sire as string | undefined;
+                return (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(26,26,26,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Dam</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <button
+                        onClick={() => navigate(`/animals/${d.id}`)}
+                        style={{ flex: 1, textAlign: "left", background: "rgba(85,186,170,0.05)", border: "1px solid rgba(85,186,170,0.20)", borderRadius: 10, padding: "10px 14px", cursor: "pointer" }}
+                      >
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#0E2646" }}>{label}</div>
+                        <div style={{ fontSize: 11, color: "rgba(26,26,26,0.5)", marginTop: 2 }}>
+                          {[d.tag !== label && `Tag ${d.tag}`, d.reg_number && `Reg# ${d.reg_number}`, d.year_born && String(d.year_born)].filter(Boolean).join(" · ")}
+                        </div>
+                        {damSire && (
+                          <div style={{ fontSize: 11, color: "rgba(26,26,26,0.45)", marginTop: 3 }}>Sire of dam: {damSire}</div>
+                        )}
+                      </button>
+                      {regLink && (
+                        <a href={regLink} target="_blank" rel="noopener noreferrer"
+                          style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 12px", background: "rgba(85,186,170,0.06)", border: "1px solid rgba(85,186,170,0.20)", borderRadius: 10, textDecoration: "none" }}>
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2H2.5A1.5 1.5 0 001 3.5v8A1.5 1.5 0 002.5 13h8a1.5 1.5 0 001.5-1.5V9M8 1h5v5M13 1L6 8" stroke="#55BAAA" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: "#55BAAA" }}>AAA</span>
+                        </a>
+                      )}
+                    </div>
+                    {/* Dam pedigree text string */}
+                    {damPedText && (
+                      <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(26,26,26,0.03)", borderRadius: 8, border: "1px solid rgba(26,26,26,0.07)" }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Dam Pedigree</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 0" }}>
+                          {damPedText.split(",").map((name, i) => (
+                            <span key={i} style={{ fontSize: 11, color: "rgba(26,26,26,0.6)" }}>
+                              {name.trim()}{i < damPedText.split(",").length - 1 && <span style={{ color: "rgba(26,26,26,0.25)", margin: "0 4px" }}>›</span>}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Dam pedigree text only (no dam animal linked) */}
+              {!pedigree?.dam && (animal as any)?.characteristics?.dam_pedigree && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(26,26,26,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Dam Pedigree</div>
+                  {(animal as any)?.characteristics?.dam_sire && (
+                    <div style={{ fontSize: 12, color: "#0E2646", fontWeight: 600, marginBottom: 4 }}>Sire of dam: {(animal as any).characteristics.dam_sire}</div>
+                  )}
+                  <div style={{ padding: "8px 12px", background: "rgba(26,26,26,0.03)", borderRadius: 8, border: "1px solid rgba(26,26,26,0.07)", display: "flex", flexWrap: "wrap", gap: "4px 0" }}>
+                    {((animal as any).characteristics.dam_pedigree as string).split(",").map((name: string, i: number, arr: string[]) => (
+                      <span key={i} style={{ fontSize: 11, color: "rgba(26,26,26,0.6)" }}>
+                        {name.trim()}{i < arr.length - 1 && <span style={{ color: "rgba(26,26,26,0.25)", margin: "0 4px" }}>›</span>}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CollapsibleSection>
+          )}
 
           <CollapsibleSection title="Quick Notes">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
