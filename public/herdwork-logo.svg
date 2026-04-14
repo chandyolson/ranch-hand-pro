@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 56" fill="none">
+  <!-- Cattle head mark -->
+  <g transform="translate(0, 4)">
+    <!-- Horns -->
+    <path d="M14 10 Q6 4 4 12 Q6 16 12 15" stroke="#55BAAA" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <path d="M34 10 Q42 4 44 12 Q42 16 36 15" stroke="#55BAAA" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <!-- Head outline -->
+    <ellipse cx="24" cy="24" rx="14" ry="16" fill="#0E2646"/>
+    <!-- Ears -->
+    <ellipse cx="10" cy="20" rx="4" ry="3" fill="#0E2646"/>
+    <ellipse cx="38" cy="20" rx="4" ry="3" fill="#0E2646"/>
+    <!-- Muzzle -->
+    <ellipse cx="24" cy="33" rx="8" ry="5" fill="#153566"/>
+    <!-- Nostrils -->
+    <circle cx="21" cy="33" r="1.5" fill="#55BAAA"/>
+    <circle cx="27" cy="33" r="1.5" fill="#55BAAA"/>
+    <!-- Eyes -->
+    <circle cx="18" cy="21" r="2.5" fill="#F5F5F0"/>
+    <circle cx="30" cy="21" r="2.5" fill="#F5F5F0"/>
+    <circle cx="18.5" cy="21" r="1.2" fill="#0E2646"/>
+    <circle cx="30.5" cy="21" r="1.2" fill="#0E2646"/>
+    <!-- Gold highlight dot on eyes -->
+    <circle cx="19" cy="20.3" r="0.5" fill="#F3D12A"/>
+    <circle cx="31" cy="20.3" r="0.5" fill="#F3D12A"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="54" y="36" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="22" fill="#0E2646" letter-spacing="-0.5">Herd</text>
+  <text x="103" y="36" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="22" fill="#55BAAA" letter-spacing="-0.5">Work</text>
+</svg>

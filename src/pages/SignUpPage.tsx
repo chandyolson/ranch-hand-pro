@@ -46,7 +46,9 @@ const SignUpPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-white px-4 font-inter">
       <div className="w-full max-w-[400px] border border-[#E8E4DC] rounded-2xl shadow-sm p-8">
         <div className="text-center mb-8">
-          <h1 style={{ color: '#0E2646', fontSize: 24, fontWeight: 800 }}>HerdWork</h1>
+          <div className="flex justify-center mb-3">
+            <img src="/herdwork-logo.svg" alt="HerdWork" style={{ height: 48, width: 'auto' }} />
+          </div>
           <p style={{ color: '#717182', fontSize: 14, marginTop: 4 }}>Create your account</p>
         </div>
 

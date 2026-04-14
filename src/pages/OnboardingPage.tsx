@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,8 +9,18 @@ const OP_TYPES = [
 ] as const;
 
 const OnboardingPage: React.FC = () => {
-  const { user, userProfile, switchOperation, reloadOperations } = useAuth();
+  const { user, userProfile, switchOperation, reloadOperations, operations, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Guard: authenticated user who already has an operation should never be here
+  useEffect(() => {
+    if (isLoading) return;
+    if (operations.length === 1) {
+      navigate('/', { replace: true });
+    } else if (operations.length > 1) {
+      navigate('/operation-picker', { replace: true });
+    }
+  }, [operations, isLoading, navigate]);
 
   const [name, setName] = useState('');
   const [opType, setOpType] = useState<string>('ranch');
@@ -26,6 +36,16 @@ const OnboardingPage: React.FC = () => {
     setSubmitting(true);
 
     try {
+      // Check for duplicate operation name among this user's existing operations
+      const duplicate = operations.some(
+        (op) => op.name.trim().toLowerCase() === name.trim().toLowerCase()
+      );
+      if (duplicate) {
+        setError(`You already have an operation named "${name.trim()}"`);
+        setSubmitting(false);
+        return;
+      }
+
       // 1. Insert operation
       const { data: newOp, error: opErr } = await (supabase as any)
         .from('operations')
@@ -79,7 +99,10 @@ const OnboardingPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-white px-4 font-inter">
       <div className="w-full max-w-[400px] border border-[#E8E4DC] rounded-2xl shadow-sm p-8">
         <div className="text-center mb-8">
-          <h1 style={{ color: '#0E2646', fontSize: 24, fontWeight: 800 }}>Create Your Operation</h1>
+          <div className="flex justify-center mb-3">
+            <img src="/herdwork-logo.svg" alt="HerdWork" style={{ height: 48, width: 'auto' }} />
+          </div>
+          <h2 style={{ color: '#0E2646', fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Create Your Operation</h2>
           <p style={{ color: '#717182', fontSize: 14, marginTop: 4 }}>Set up your ranch or practice to get started</p>
         </div>
 
